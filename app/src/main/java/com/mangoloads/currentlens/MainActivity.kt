@@ -94,6 +94,7 @@ import com.styropyr0.prismal.components.PrismalGlassSlider
 import com.styropyr0.prismal.shapes.PrismalRoundedRectangle
 import com.styropyr0.prismal.sources.prismalGlassLayer
 import com.styropyr0.prismal.sources.rememberPrismalGlassLayer
+import com.styropyr0.prismal.specular.PrismalSpecular
 import org.json.JSONTokener
 import java.time.DayOfWeek
 import java.time.Instant
@@ -519,11 +520,8 @@ private fun GlassTabBar(backdrop: PrismalBackdrop, selectedTab: Int, glassAlpha:
         backdrop = backdrop,
         tabsCount = 4,
         tintDropletContent = false,
-        blurRadius = 5.dp,
-        refractionHeight = 21.dp,
-        refractionAmount = 21.dp,
-        dropletChromaticAberration = 0.28f,
-        pressGlow = 0.22f,
+        adaptiveLuminance = true,
+        specular = { PrismalSpecular.Default.copy(alpha = glassAlpha) },
         modifier = Modifier.fillMaxWidth().height(70.dp).graphicsLayer { alpha = (0.76f + glassAlpha * 0.4f).coerceIn(0.80f, 0.98f) }
     ) {
         GlassTab(0, "Today", Icons.Outlined.Today, onSelect)
@@ -542,36 +540,6 @@ private fun RowScope.GlassTab(index: Int, label: String, icon: ImageVector, onSe
         Icon(icon, contentDescription = label, tint = tint, modifier = Modifier.size(21.dp))
         Text(label, fontSize = 10.sp, lineHeight = 12.sp,
             fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal, color = tint)
-    }
-}
-
-@Composable
-private fun GlassSettingsScreen(backdrop: PrismalBackdrop, glassAlpha: Float, onGlassAlphaChange: (Float) -> Unit, onBack: () -> Unit) {
-    Column(Modifier.fillMaxSize().padding(horizontal = 18.dp)) {
-        Row(Modifier.fillMaxWidth().padding(vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
-            IconButton(onClick = onBack) { Icon(Icons.Outlined.ArrowBack, contentDescription = "Back") }
-            Text("Appearance", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-        }
-        PrismalGlassSurface(backdrop = backdrop, modifier = Modifier.fillMaxWidth(),
-            shape = { PrismalRoundedRectangle(26.dp) }, blurRadius = 11.dp,
-            tint = if (isSystemInDarkTheme()) Color(0xFF30394B) else Color(0xFFEAF0FA), tintAlpha = glassAlpha) {
-            Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(13.dp)) {
-                Text("Liquid Glass", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-                Text("Adjust the transparency of CurrentLens glass surfaces.", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.secondary)
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text("Clear", fontSize = 11.sp, color = MaterialTheme.colorScheme.secondary)
-                    Spacer(Modifier.weight(1f))
-                    Text((glassAlpha * 100).toInt().toString() + "%", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
-                    Spacer(Modifier.weight(1f))
-                    Text("Frosted", fontSize = 11.sp, color = MaterialTheme.colorScheme.secondary)
-                }
-                PrismalGlassSlider(value = { glassAlpha }, onValueChange = onGlassAlphaChange,
-                    valueRange = 0.12f..0.55f, visibilityThreshold = 0.01f, backdrop = backdrop,
-                    modifier = Modifier.fillMaxWidth())
-            }
-        }
-        Text("Four-tab navigation, editorial cards and adaptive glass effects. Heavy shader effects fall back on unsupported devices.",
-            style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.secondary, modifier = Modifier.padding(vertical = 16.dp))
     }
 }
 
@@ -684,7 +652,7 @@ private fun readerDocument(article: Article, content: String, fontSize: Int, dar
     val muted = if (dark) "#AAB4C5" else "#717985"
     val title = article.title.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
     val source = article.source.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
-    return "<!doctype html><html><head><meta charset=\"utf-8\"><meta name=\\"viewport\\" content=\\"width=device-width, initial-scale=1, maximum-scale=1\\"><style>" +
+    return "<!doctype html><html><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1, maximum-scale=1\"><style>" +
         "html{background:" + background + ";color:" + foreground + ";}body{margin:0;padding:22px 20px 44px;background:" + background + ";color:" + foreground + ";font-family:Georgia,'Iowan Old Style',serif;font-size:" + fontSize + "px;line-height:1.78;-webkit-text-size-adjust:100%;}" +
         ".cl-source{font:700 11px/1.4 system-ui,sans-serif;letter-spacing:1.2px;text-transform:uppercase;color:" + muted + ";margin:4px 0 14px;}" +
         "h1{font:700 1.65em/1.15 system-ui,sans-serif;letter-spacing:-.035em;margin:0 0 18px;color:" + foreground + ";}" +
@@ -721,7 +689,7 @@ private class ReaderWebView(
             override fun onActionItemClicked(mode: ActionMode, item: MenuItem): Boolean {
                 if (item.itemId == MENU_DEFINE_WORD) {
                     evaluateJavascript("(function(){return JSON.stringify(window.getSelection().toString());})()") { encoded ->
-                        val selected = runCatching { JSONTokener(encoded ?: "\""\"").nextValue() as? String }.getOrNull().orEmpty()
+                        val selected = runCatching { JSONTokener(encoded ?: "\"\"").nextValue() as? String }.getOrNull().orEmpty()
                         val word = selected.trim().take(100)
                         if (word.isNotBlank()) onDefineWord(word)
                     }
