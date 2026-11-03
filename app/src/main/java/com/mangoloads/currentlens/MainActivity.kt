@@ -228,7 +228,7 @@ private fun CurrentLensApp() {
                     readHistory = readHistory,
                     readingSessions = readingSessions,
                     quizAttempts = quizAttempts,
-                    totalUniqueRead = readHistory.size,
+                    totalUniqueRead = readingSessions.map { it.articleUrl }.distinct().size,
                     articlesReadToday = StudyStatsPolicy.articlesReadOn(
                         readingSessions, LocalDate.now(ZoneId.of(INDIA_ZONE))
                     ),
@@ -635,7 +635,7 @@ private fun YouDashboard(
         }
         item {
             Row(horizontalArrangement = Arrangement.spacedBy(9.dp)) {
-                MetricTile("Unique read", totalUniqueRead.toString(), Modifier.weight(1f))
+                MetricTile("Articles read", totalUniqueRead.toString(), Modifier.weight(1f))
                 MetricTile("Read today", articlesReadToday.toString(), Modifier.weight(1f))
             }
         }
@@ -669,7 +669,7 @@ private fun YouDashboard(
         item { DestinationRow("Quiz & Practice Stats", "Submitted answers, correct and incorrect", "›", onQuizStats) }
         item { DestinationRow("Settings", "Liquid Glass appearance", "›", onSettings) }
         item {
-            Text("Reading-time and quiz statistics begin with this version. Older read markers remain counted as unique reads, but no historical dates or durations are inferred.",
+            Text("Previously opened stories remain in your saved/history list. They are not counted as confirmed reads; tracked reading totals begin only after an article loads and remains open in the foreground for at least five seconds.",
                 style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.secondary,
                 modifier = Modifier.padding(top = 5.dp))
         }
@@ -987,33 +987,38 @@ private fun matchesSearchTerms(article: Article, query: String): Boolean =
 private fun ReaderScreen(article: Article, backdrop: PrismalBackdrop, glassAlpha: Float, dark: Boolean, onBack: () -> Unit, onQuiz: () -> Unit, onSessionRecorded: () -> Unit) {
     val context = LocalContext.current
 
+    var contentLoaded by remember(article.url) { mutableStateOf(false) }
     val lifecycleOwner = context as? LifecycleOwner
-    DisposableEffect(lifecycleOwner, article.url) {
-        val clock = ForegroundReadingSessionClock()
-        fun resumeSession() {
-            clock.resume(System.currentTimeMillis(), SystemClock.elapsedRealtime())
-        }
-        fun flushSession() {
-            clock.pause(SystemClock.elapsedRealtime())?.let { window ->
-                if (LocalStore.recordReadingSession(context, article, window.startedAtMillis, window.durationMillis)) {
-                    onSessionRecorded()
+    DisposableEffect(lifecycleOwner, article.url, contentLoaded) {
+        if (!contentLoaded) {
+            onDispose { }
+        } else {
+            val clock = ForegroundReadingSessionClock()
+            fun resumeSession() {
+                clock.resume(System.currentTimeMillis(), SystemClock.elapsedRealtime())
+            }
+            fun flushSession() {
+                clock.pause(SystemClock.elapsedRealtime())?.let { window ->
+                    if (LocalStore.recordReadingSession(context, article, window.startedAtMillis, window.durationMillis)) {
+                        onSessionRecorded()
+                    }
                 }
             }
-        }
-        val observer = LifecycleEventObserver { _, event ->
-            when (event) {
-                Lifecycle.Event.ON_RESUME -> resumeSession()
-                Lifecycle.Event.ON_PAUSE, Lifecycle.Event.ON_STOP, Lifecycle.Event.ON_DESTROY -> flushSession()
-                else -> Unit
+            val observer = LifecycleEventObserver { _, event ->
+                when (event) {
+                    Lifecycle.Event.ON_RESUME -> resumeSession()
+                    Lifecycle.Event.ON_PAUSE, Lifecycle.Event.ON_STOP, Lifecycle.Event.ON_DESTROY -> flushSession()
+                    else -> Unit
+                }
             }
-        }
-        lifecycleOwner?.lifecycle?.addObserver(observer)
-        if (lifecycleOwner == null ||
-            lifecycleOwner.lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)
-        ) resumeSession()
-        onDispose {
-            lifecycleOwner?.lifecycle?.removeObserver(observer)
-            flushSession()
+            lifecycleOwner?.lifecycle?.addObserver(observer)
+            if (lifecycleOwner == null ||
+                lifecycleOwner.lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)
+            ) resumeSession()
+            onDispose {
+                lifecycleOwner?.lifecycle?.removeObserver(observer)
+                flushSession()
+            }
         }
     }
     var extractedHtml by remember(article.url) { mutableStateOf<String?>(null) }
@@ -1098,13 +1103,18 @@ private fun ReaderScreen(article: Article, backdrop: PrismalBackdrop, glassAlpha
                     webView.onDefineWord = { activeWord = it }
                     webView.onReaderPageFinished = {
                         pageLoaded = true
+                        contentLoaded = true
                         publisherLoadFailed = false
                         if (extractedHtml == null) {
                             val size = fontSize
                             webView.evaluateJavascript("(function(){document.body.style.fontSize='" + size + "px';document.body.style.lineHeight='1.7';})();", null)
                         }
                     }
-                    webView.onReaderMainFrameError = { pageLoaded = true; publisherLoadFailed = true }
+                    webView.onReaderMainFrameError = {
+                        pageLoaded = true
+                        contentLoaded = false
+                        publisherLoadFailed = true
+                    }
                     webView.allowReaderNavigation = { target -> PublisherHostPolicy.allows(article.source, target) }
                     webView.settings.javaScriptEnabled = extractedHtml == null && fallbackToPublisher
                     webView.settings.domStorageEnabled = extractedHtml == null && fallbackToPublisher
@@ -1118,6 +1128,7 @@ private fun ReaderScreen(article: Article, backdrop: PrismalBackdrop, glassAlpha
                         if (webView.loadedKey != key) {
                             webView.loadedKey = key
                             pageLoaded = false
+                            contentLoaded = false
                             webView.loadDataWithBaseURL(article.url, readerDocument(article, cleanHtml, fontSize, dark), "text/html", "UTF-8", null)
                         }
                     } else if (fallbackToPublisher) {
@@ -1125,6 +1136,7 @@ private fun ReaderScreen(article: Article, backdrop: PrismalBackdrop, glassAlpha
                         if (webView.loadedKey != key) {
                             webView.loadedKey = key
                             pageLoaded = false
+                            contentLoaded = false
                             webView.loadUrl(article.url)
                         }
                     }

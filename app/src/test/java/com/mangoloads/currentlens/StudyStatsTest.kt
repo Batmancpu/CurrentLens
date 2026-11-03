@@ -45,6 +45,19 @@ class StudyStatsTest {
     }
 
     @Test
+    fun foregroundClockRequiresFiveSecondsOfForegroundReading() {
+        val shortSession = ForegroundReadingSessionClock()
+        shortSession.resume(10_000L, 100L)
+        assertNull(shortSession.pause(5_099L))
+
+        val validSession = ForegroundReadingSessionClock()
+        validSession.resume(20_000L, 200L)
+        val window = validSession.pause(5_200L)
+        assertNotNull(window)
+        assertEquals(5_000L, window!!.durationMillis)
+    }
+
+    @Test
     fun readingTimeIsSplitAcrossIndiaLocalMidnight() {
         val start = ZonedDateTime.of(2026, 11, 2, 23, 59, 0, 0, zone).toInstant().toEpochMilli()
         val record = ReadingSession("one", "https://example.com/a", "Article", "The Hindu",

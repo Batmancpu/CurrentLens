@@ -72,7 +72,7 @@ internal class ForegroundReadingSessionClock {
     }
 
     companion object {
-        const val MIN_SESSION_MILLIS = 1_000L
+        const val MIN_SESSION_MILLIS = 5_000L
         const val MAX_SESSION_MILLIS = 24L * 60L * 60L * 1_000L
     }
 }
