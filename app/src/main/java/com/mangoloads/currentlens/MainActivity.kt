@@ -193,8 +193,7 @@ private fun CurrentLensApp() {
                     refreshing = refreshing,
                     loading = loading,
                     loadError = loadError,
-                    todaysArticles = articles.filter { articleDate(it) == LocalDate.now(ZoneId.of(INDIA_ZONE)) }
-                        .sortedByDescending { it.publishedAtMillis ?: 0L },
+                    todaysArticles = ArticleFilters.today(articles, LocalDate.now(ZoneId.of(INDIA_ZONE))),
                     allCachedArticles = articles,
                     bookmarks = LocalStore.bookmarks(context),
                     readHistory = LocalStore.readHistory(context),
@@ -221,11 +220,6 @@ private fun CurrentLensApp() {
         }
     }
 }
-
-private fun articleDate(article: Article): LocalDate? =
-    article.publishedAtMillis?.let {
-        runCatching { Instant.ofEpochMilli(it).atZone(ZoneId.of(INDIA_ZONE)).toLocalDate() }.getOrNull()
-    }
 
 @Composable
 private fun HomeScreen(
@@ -272,7 +266,7 @@ private fun HomeScreen(
         ) { tab ->
             when (tab) {
                 0 -> TodayFeed(todaysArticles, allCachedArticles, loading, loadError, refreshing, bookmarks, onOpenArticle, onToggleBookmark)
-                1 -> ExploreFeed(todaysArticles, exploreCategory, { exploreCategory = it }, bookmarks, onOpenArticle, onToggleBookmark)
+                1 -> ExploreFeed(ArticleFilters.explore(allCachedArticles), exploreCategory, { exploreCategory = it }, bookmarks, onOpenArticle, onToggleBookmark)
                 2 -> ArchiveFeed(allCachedArticles, archiveWindow, { archiveWindow = it }, bookmarks, onOpenArticle, onToggleBookmark)
                 else -> SavedFeed(allCachedArticles, bookmarks, readHistory, onOpenArticle, onToggleBookmark)
             }
@@ -295,7 +289,7 @@ private fun TodayFeed(
     val weekend = today.dayOfWeek == DayOfWeek.SATURDAY || today.dayOfWeek == DayOfWeek.SUNDAY
     val weekendStories = if (weekend) {
         weekendArticles.filter { article ->
-            article.weekendRead && articleDate(article)?.let { it >= today.minusDays(2) && it <= today } == true
+            article.weekendRead && ArticleFilters.publishedDate(article)?.let { it >= today.minusDays(2) && it <= today } == true
         }.sortedByDescending { it.publishedAtMillis ?: 0L }.take(5)
     } else emptyList()
 
@@ -375,7 +369,7 @@ private fun ExploreFeed(
             contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 110.dp),
             verticalArrangement = Arrangement.spacedBy(13.dp)) {
             if (filtered.isEmpty()) item { EmptyPanel("No stories in this topic today", "Try another topic or check again after the next feed update.") }
-            else items(filtered.take(45), key = { it.id }) { article ->
+            else items(filtered, key = { it.id }) { article ->
                 NewsCard(article, bookmarks.contains(article.url), onOpenArticle, onToggleBookmark)
             }
         }
@@ -392,10 +386,7 @@ private fun ArchiveFeed(
     onToggleBookmark: (Article) -> Unit
 ) {
     val today = LocalDate.now(ZoneId.of(INDIA_ZONE))
-    val filtered = articles.filter {
-        val date = articleDate(it)
-        date != null && date.isBefore(today) && !date.isBefore(today.minusDays(days.toLong()))
-    }.sortedByDescending { it.publishedAtMillis ?: 0L }
+    val filtered = ArticleFilters.archive(articles, today, days)
 
     Column(Modifier.fillMaxSize()) {
         Row(Modifier.padding(horizontal = 16.dp, vertical = 5.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -480,14 +471,20 @@ private fun NewsCard(
                     }
                 }
             }
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text("UPSC " + relevance.score + "/100", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
-                Spacer(Modifier.weight(1f))
-                Text(relevance.gsPaper + " · " + relevance.subject, fontSize = 10.sp,
-                    color = MaterialTheme.colorScheme.secondary, maxLines = 1, overflow = TextOverflow.Ellipsis)
-            }
-            Box(Modifier.fillMaxWidth().height(4.dp).clip(CircleShape).background(MaterialTheme.colorScheme.surfaceVariant)) {
-                Box(Modifier.fillMaxWidth(relevance.score / 100f).height(4.dp).clip(CircleShape).background(MaterialTheme.colorScheme.primary))
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text("INDICATIVE SYLLABUS MATCH", fontSize = 10.sp, fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary, letterSpacing = 0.5.sp)
+                    Spacer(Modifier.weight(1f))
+                    Text(relevance.signalLabel, fontSize = 10.sp, color = MaterialTheme.colorScheme.secondary)
+                }
+                Text(relevance.gsPaper + " · " + relevance.subject, fontSize = 11.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                Text(
+                    if (relevance.matchedTerms.isEmpty()) "No mapped keywords in RSS headline/excerpt"
+                    else "Matched in RSS headline/excerpt: " + relevance.matchedTerms.joinToString(", "),
+                    fontSize = 10.sp, color = MaterialTheme.colorScheme.secondary
+                )
             }
             Text("Read in CurrentLens  →", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.SemiBold, fontSize = 13.sp)
         }
@@ -803,7 +800,13 @@ private fun QuizScreen(article: Article, onBack: () -> Unit) {
         LazyColumn(Modifier.weight(1f), contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
             item {
                 Text(article.title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-                Text(relevance.gsPaper + " · " + relevance.subject + " · relevance " + relevance.score + "/100", color = MaterialTheme.colorScheme.primary, fontSize = 12.sp)
+                Text(relevance.gsPaper + " · " + relevance.subject + " · " + relevance.signalLabel,
+                    color = MaterialTheme.colorScheme.primary, fontSize = 12.sp)
+                Text(
+                    if (relevance.matchedTerms.isEmpty()) "No mapped keywords in RSS headline/excerpt"
+                    else "Matched terms: " + relevance.matchedTerms.joinToString(", "),
+                    color = MaterialTheme.colorScheme.secondary, fontSize = 11.sp
+                )
             }
             items(questions.size) { index ->
                 val question = questions[index]

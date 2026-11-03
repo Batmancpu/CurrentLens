@@ -1,12 +1,11 @@
 package com.mangoloads.currentlens
 
 data class Relevance(
-    val score: Int,
     val gsPaper: String,
     val subject: String,
     val syllabusLink: String,
     val matchedTerms: List<String>,
-    val confidence: String,
+    val signalLabel: String,
     val topicKey: String
 )
 data class QuizQuestion(
@@ -40,21 +39,36 @@ object UpscEngine {
     )
 
     fun classify(article: Article): Relevance {
+        // This is a transparent keyword signal over RSS metadata, not a validated relevance score.
         val text = (article.title + " " + article.description).lowercase()
         val matches = rules.map { rule -> Pair(rule, rule.keywords.filter { text.contains(it) }) }
             .filter { it.second.isNotEmpty() }
             .sortedByDescending { it.second.size }
         val best = matches.firstOrNull()
-        if (best == null) return Relevance(18, "GS I–IV", "General current affairs", "Check the official syllabus before prioritising this story.", emptyList(), "Low", "general")
-        val hits = matches.sumOf { it.second.distinct().size }.coerceAtMost(7)
-        val score = (25 + hits * 7 + if (article.section == "UPSC" || article.section == "Explained") 8 else 0).coerceIn(25, 92)
-        val confidence = when { best.second.size >= 3 -> "High"; best.second.size == 2 -> "Moderate"; else -> "Indicative" }
-        return Relevance(score, best.first.paper, best.first.subject, best.first.syllabus, matches.flatMap { it.second }.distinct().take(6), confidence, best.first.key)
+            ?: return Relevance(
+                gsPaper = "Unmapped",
+                subject = "No clear syllabus match",
+                syllabusLink = "No mapped keywords were found in the RSS headline or excerpt. Review the publisher article and official syllabus manually.",
+                matchedTerms = emptyList(),
+                signalLabel = "No keyword match",
+                topicKey = "general"
+            )
+
+        val matchedTerms = best.second.distinct()
+        val countLabel = if (matchedTerms.size == 1) "1 matched keyword" else "${matchedTerms.size} matched keywords"
+        return Relevance(
+            gsPaper = best.first.paper,
+            subject = best.first.subject,
+            syllabusLink = best.first.syllabus,
+            matchedTerms = matchedTerms,
+            signalLabel = countLabel,
+            topicKey = best.first.key
+        )
     }
 
     fun questions(article: Article, relevance: Relevance): List<QuizQuestion> {
-        val gs = listOf("GS I", "GS II", "GS III", "GS IV")
-        val gsIndex = gs.indexOf(relevance.gsPaper).let { if (it < 0) 0 else it }
+        val gs = listOf("GS I", "GS II", "GS III", "GS IV", "No clear match")
+        val gsIndex = gs.indexOf(relevance.gsPaper).let { if (it < 0) gs.lastIndex else it }
         return listOf(
             QuizQuestion("01 · Basic", "Comprehension", "Which development is the report primarily about?",
                 listOf(article.title.take(100), "A separate event not mentioned in the report", "A general definition unrelated to the report", "A historical episode unrelated to the report"),

@@ -9,7 +9,7 @@ A free, open-source Android editorial news reader for Indian and international j
 - RSS supplies attributed headlines, publication dates, images and short excerpts; it does not supply full articles. CurrentLens attempts best-effort extraction only from publicly accessible publisher pages, without WebView cookies, subscription tokens or paywall circumvention. If extraction is blocked, paywalled or incomplete, the original publisher page remains available in the in-app WebView.
 - Article extraction is not yet an offline full-text archive. Publisher pages are fetched when opened; RSS metadata and excerpts are cached locally.
 - The five-question flow distinguishes the headline/excerpt comprehension item from authored UPSC practice prompts. Generic prompts are never described as article-specific, and no item is labelled an official PYQ without a verified UPSC paper reference.
-- The current syllabus mapping is a preliminary keyword heuristic over the headline and RSS excerpt. Its matched terms are shown for transparency; it is not yet an official syllabus/PYQ-validated relevance score or exam prediction.
+- The current syllabus mapping is a preliminary keyword match over the headline and RSS excerpt. The app shows the matched terms and GS mapping, not a numeric relevance score. It is not yet validated against a structured official UPSC syllabus/PYQ corpus and is not an exam prediction.
 - No accounts, subscriptions, paid APIs, AI runtime, telemetry or analytics. The dictionary uses a free public API and caches successful lookups locally.
 
 ## Initial sources
