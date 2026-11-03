@@ -27,6 +27,7 @@ data class Article(
 ) {
     val publishedAtMillis: Long?
         get() = FeedDateParser.parse(published)
+}
 
 data class FeedSource(
     val name: String,
