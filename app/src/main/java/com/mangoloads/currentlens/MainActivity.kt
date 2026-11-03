@@ -684,14 +684,14 @@ private fun readerDocument(article: Article, content: String, fontSize: Int, dar
     val muted = if (dark) "#AAB4C5" else "#717985"
     val title = article.title.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
     val source = article.source.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
-    return "<!doctype html><html><head><meta charset=\\"utf-8\\"><meta name=\\"viewport\\" content=\\"width=device-width, initial-scale=1, maximum-scale=1\\"><style>" +
+    return "<!doctype html><html><head><meta charset=\"utf-8\"><meta name=\\"viewport\\" content=\\"width=device-width, initial-scale=1, maximum-scale=1\\"><style>" +
         "html{background:" + background + ";color:" + foreground + ";}body{margin:0;padding:22px 20px 44px;background:" + background + ";color:" + foreground + ";font-family:Georgia,'Iowan Old Style',serif;font-size:" + fontSize + "px;line-height:1.78;-webkit-text-size-adjust:100%;}" +
         ".cl-source{font:700 11px/1.4 system-ui,sans-serif;letter-spacing:1.2px;text-transform:uppercase;color:" + muted + ";margin:4px 0 14px;}" +
         "h1{font:700 1.65em/1.15 system-ui,sans-serif;letter-spacing:-.035em;margin:0 0 18px;color:" + foreground + ";}" +
         "h2,h3{font-family:system-ui,sans-serif;line-height:1.25;margin:1.55em 0 .55em;}p,li{margin:0 0 1.1em;}img,figure,video{max-width:100%;height:auto;border-radius:14px;}figure{margin:1.4em 0;}figcaption{font:12px/1.5 system-ui,sans-serif;color:" + muted + ";}" +
         "a{color:" + (dark ? "#9CB9FF" : "#2859A8") + ";text-decoration:none;}blockquote{margin:1.4em 0;padding-left:1em;border-left:3px solid " + (dark ? "#52658D" : "#A9BCE0") + ";color:" + muted + ";}" +
         "table{display:block;max-width:100%;overflow-x:auto;border-collapse:collapse;font:14px/1.5 system-ui,sans-serif;}td,th{padding:8px;border:1px solid " + muted + ";}iframe{max-width:100%;}pre{white-space:pre-wrap;overflow-wrap:anywhere;}" +
-        "</style></head><body><div class=\\"cl-source\\">" + source + " · CurrentLens Reader</div><h1>" + title + "</h1><main>" + content + "</main></body></html>"
+        "</style></head><body><div class=\"cl-source\">" + source + " · CurrentLens Reader</div><h1>" + title + "</h1><main>" + content + "</main></body></html>"
 }
 
 private class ReaderWebView(
@@ -721,7 +721,7 @@ private class ReaderWebView(
             override fun onActionItemClicked(mode: ActionMode, item: MenuItem): Boolean {
                 if (item.itemId == MENU_DEFINE_WORD) {
                     evaluateJavascript("(function(){return JSON.stringify(window.getSelection().toString());})()") { encoded ->
-                        val selected = runCatching { JSONTokener(encoded ?: "\\""\\"").nextValue() as? String }.getOrNull().orEmpty()
+                        val selected = runCatching { JSONTokener(encoded ?: "\""\"").nextValue() as? String }.getOrNull().orEmpty()
                         val word = selected.trim().take(100)
                         if (word.isNotBlank()) onDefineWord(word)
                     }
