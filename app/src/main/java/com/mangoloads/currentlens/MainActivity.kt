@@ -38,6 +38,14 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.selection.SelectionContainer
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.animation.animateContentSize
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Archive
 import androidx.compose.material.icons.outlined.ArrowBack
@@ -45,6 +53,8 @@ import androidx.compose.material.icons.outlined.Bookmark
 import androidx.compose.material.icons.outlined.BookmarkBorder
 import androidx.compose.material.icons.outlined.Explore
 import androidx.compose.material.icons.outlined.Refresh
+import androidx.compose.material.icons.outlined.Search
+import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material.icons.outlined.Today
 import androidx.compose.material.icons.outlined.TextDecrease
@@ -146,6 +156,7 @@ private fun CurrentLensApp() {
     var quizMode by remember { mutableStateOf(false) }
     var showSettings by remember { mutableStateOf(false) }
     var glassAlpha by remember { mutableFloatStateOf(LocalStore.glassAlpha(context)) }
+    var searchQuery by remember { mutableStateOf("") }
 
     LaunchedEffect(refreshKey) {
         loading = articles.isEmpty()
@@ -197,6 +208,8 @@ private fun CurrentLensApp() {
                     allCachedArticles = articles,
                     bookmarks = LocalStore.bookmarks(context),
                     readHistory = LocalStore.readHistory(context),
+                    searchQuery = searchQuery,
+                    onSearchQueryChange = { searchQuery = it },
                     onSettings = { showSettings = true },
                     onOpenArticle = {
                         LocalStore.markRead(context, it.url)
@@ -213,9 +226,13 @@ private fun CurrentLensApp() {
         if (selectedArticle == null && !showSettings) {
             Box(
                 Modifier.align(Alignment.BottomCenter).fillMaxWidth()
-                    .navigationBarsPadding().padding(horizontal = 10.dp, vertical = 6.dp)
+                    .imePadding().navigationBarsPadding().padding(horizontal = 10.dp, vertical = 6.dp)
             ) {
-                GlassTabBar(backdrop, selectedTab, glassAlpha) { selectedTab = it }
+                AnimatedContent(targetState = selectedTab == 2,
+                    transitionSpec = { fadeIn(tween(180)) togetherWith fadeOut(tween(120)) }, label = "Navigation morph") { searching ->
+                    if (searching) SearchGlassBar(backdrop, searchQuery, { searchQuery = it }, glassAlpha)
+                    else GlassTabBar(backdrop, selectedTab, glassAlpha) { selectedTab = it }
+                }
             }
         }
     }
@@ -232,6 +249,8 @@ private fun HomeScreen(
     allCachedArticles: List<Article>,
     bookmarks: Set<String>,
     readHistory: Set<String>,
+    searchQuery: String,
+    onSearchQueryChange: (String) -> Unit,
     onSettings: () -> Unit,
     onOpenArticle: (Article) -> Unit,
     onToggleBookmark: (Article) -> Unit
@@ -248,7 +267,7 @@ private fun HomeScreen(
         ) {
             Column(Modifier.weight(1f)) {
                 Text(
-                    when (selectedTab) { 0 -> "Today"; 1 -> "Explore"; 2 -> "Archive"; else -> "Saved" },
+                    when (selectedTab) { 0 -> "Today"; 1 -> "Explore"; 2 -> "Search"; else -> "Saved" },
                     style = MaterialTheme.typography.headlineMedium,
                     fontWeight = FontWeight.Bold
                 )
@@ -267,7 +286,7 @@ private fun HomeScreen(
             when (tab) {
                 0 -> TodayFeed(todaysArticles, allCachedArticles, loading, loadError, refreshing, bookmarks, onOpenArticle, onToggleBookmark)
                 1 -> ExploreFeed(ArticleFilters.explore(allCachedArticles), exploreCategory, { exploreCategory = it }, bookmarks, onOpenArticle, onToggleBookmark)
-                2 -> ArchiveFeed(allCachedArticles, archiveWindow, { archiveWindow = it }, bookmarks, onOpenArticle, onToggleBookmark)
+                2 -> SearchFeed(allCachedArticles, searchQuery, bookmarks, onOpenArticle, onToggleBookmark)
                 else -> SavedFeed(allCachedArticles, bookmarks, readHistory, onOpenArticle, onToggleBookmark)
             }
         }
@@ -511,32 +530,75 @@ private fun EmptyPanel(title: String, description: String) {
 
 @Composable
 private fun GlassTabBar(backdrop: PrismalBackdrop, selectedTab: Int, glassAlpha: Float, onSelect: (Int) -> Unit) {
-    PrismalGlassBottomTabs(
-        selectedTabIndex = { selectedTab },
-        onTabSelected = onSelect,
-        backdrop = backdrop,
-        tabsCount = 4,
-        tintDropletContent = false,
-        adaptiveLuminance = true,
-        specular = { PrismalSpecular.Default.copy(alpha = glassAlpha) },
-        modifier = Modifier.fillMaxWidth().height(70.dp).graphicsLayer { alpha = (0.76f + glassAlpha * 0.4f).coerceIn(0.80f, 0.98f) }
-    ) {
-        GlassTab(0, "Today", Icons.Outlined.Today, onSelect)
-        GlassTab(1, "Explore", Icons.Outlined.Explore, onSelect)
-        GlassTab(2, "Archive", Icons.Outlined.Archive, onSelect)
-        GlassTab(3, "Saved", Icons.Outlined.BookmarkBorder, onSelect)
+    PrismalGlassSurface(backdrop = backdrop, modifier = Modifier.fillMaxWidth().height(76.dp),
+        shape = { PrismalRoundedRectangle(34.dp) }, blurRadius = 16.dp,
+        tint = if (isSystemInDarkTheme()) Color(0xFF252B38) else Color(0xFFF5F7FC),
+        tintAlpha = (glassAlpha * 0.62f).coerceIn(0.10f, 0.36f)) {
+        Row(Modifier.fillMaxSize().padding(5.dp), verticalAlignment = Alignment.CenterVertically) {
+            GlassTabItem(0, "Today", Icons.Outlined.Today, selectedTab, onSelect)
+            GlassTabItem(1, "Explore", Icons.Outlined.Explore, selectedTab, onSelect)
+            GlassTabItem(2, "Search", Icons.Outlined.Search, selectedTab, onSelect)
+            GlassTabItem(3, "Saved", Icons.Outlined.BookmarkBorder, selectedTab, onSelect)
+        }
     }
 }
-
 @Composable
-private fun RowScope.GlassTab(index: Int, label: String, icon: ImageVector, onSelect: (Int) -> Unit) {
-    val highlighted = LocalPrismalBottomTabHighlightedIndex.current()
-    val selected = highlighted == index
+private fun RowScope.GlassTabItem(index: Int, label: String, icon: ImageVector, selectedTab: Int, onSelect: (Int) -> Unit) {
+    val selected = selectedTab == index
     val tint = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
-    PrismalGlassBottomTab(onClick = { onSelect(index) }) {
-        Icon(icon, contentDescription = label, tint = tint, modifier = Modifier.size(21.dp))
-        Text(label, fontSize = 10.sp, lineHeight = 12.sp,
-            fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal, color = tint)
+    Box(Modifier.weight(1f).fillMaxSize().clip(RoundedCornerShape(28.dp)).clickable { onSelect(index) }, contentAlignment = Alignment.Center) {
+        if (selected) Box(Modifier.fillMaxSize().padding(2.dp).clip(RoundedCornerShape(26.dp)).background(MaterialTheme.colorScheme.primary.copy(alpha = 0.13f)))
+        Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(3.dp)) {
+            Icon(icon, contentDescription = label, tint = tint, modifier = Modifier.size(21.dp))
+            Text(label, fontSize = 10.sp, lineHeight = 12.sp, fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal, color = tint)
+        }
+    }
+}
+@Composable
+private fun SearchGlassBar(backdrop: PrismalBackdrop, query: String, onQueryChange: (String) -> Unit, glassAlpha: Float) {
+    val focusRequester = remember { FocusRequester() }
+    val keyboard = LocalSoftwareKeyboardController.current
+    LaunchedEffect(Unit) { focusRequester.requestFocus(); keyboard?.show() }
+    PrismalGlassSurface(backdrop = backdrop, modifier = Modifier.fillMaxWidth().height(62.dp).animateContentSize(),
+        shape = { PrismalRoundedRectangle(31.dp) }, blurRadius = 18.dp,
+        tint = if (isSystemInDarkTheme()) Color(0xFF252B38) else Color(0xFFF5F7FC),
+        tintAlpha = (glassAlpha * 0.58f).coerceIn(0.10f, 0.34f)) {
+        Row(Modifier.fillMaxSize().padding(horizontal = 17.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            Icon(Icons.Outlined.Search, contentDescription = "Search articles", tint = MaterialTheme.colorScheme.primary)
+            BasicTextField(value = query, onValueChange = onQueryChange, modifier = Modifier.weight(1f).focusRequester(focusRequester),
+                singleLine = true, textStyle = MaterialTheme.typography.bodyLarge.copy(color = MaterialTheme.colorScheme.onSurface),
+                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+                decorationBox = { inner -> Box { if (query.isBlank()) Text("Search · India, GS1…", color = MaterialTheme.colorScheme.secondary); inner() } })
+            if (query.isNotBlank()) IconButton(onClick = { onQueryChange("") }) { Icon(Icons.Outlined.Close, contentDescription = "Clear search") }
+        }
+    }
+}
+@Composable
+private fun SearchFeed(articles: List<Article>, query: String, bookmarks: Set<String>, onOpenArticle: (Article) -> Unit, onToggleBookmark: (Article) -> Unit) {
+    val terms = remember(query) { query.split(",").map { it.trim() }.filter { it.isNotBlank() } }
+    val results = remember(articles, terms) {
+        if (terms.isEmpty()) emptyList() else articles.filter { article ->
+            val text = (article.title + " " + article.description + " " + article.section + " " + article.source).lowercase()
+            terms.all { raw ->
+                when (raw.lowercase().replace(" ", "")) {
+                    "gs1", "gsi", "gs-i" -> UpscEngine.classify(article).gsPaper == "GS I"
+                    "gs2", "gsii", "gs-ii" -> UpscEngine.classify(article).gsPaper == "GS II"
+                    "gs3", "gsiii", "gs-iii" -> UpscEngine.classify(article).gsPaper == "GS III"
+                    "gs4", "gsiv", "gs-iv" -> UpscEngine.classify(article).gsPaper == "GS IV"
+                    "india", "indian" -> text.contains("india") || text.contains("indian") || text.contains("new delhi")
+                    "world", "global", "international" -> article.section.contains("world", true) || article.section.contains("international", true) || text.contains("global")
+                    "economy", "economic" -> text.contains("econom") || text.contains("rbi") || text.contains("inflation")
+                    "environment", "climate" -> text.contains("environment") || text.contains("climate") || text.contains("biodiversity")
+                    else -> text.contains(raw.lowercase())
+                }
+            }
+        }
+    }
+    LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 10.dp, bottom = 110.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        if (terms.isEmpty()) item { EmptyPanel("Search your current-affairs library", "Try India, GS1 · Economy, GS3 · World · climate, GS3") }
+        else item { Text("${results.size} matching stories", color = MaterialTheme.colorScheme.secondary, style = MaterialTheme.typography.labelLarge) }
+        if (terms.isNotEmpty() && results.isEmpty()) item { EmptyPanel("No matching stories", "Try broader words or remove one comma-separated filter.") }
+        items(results, key = { it.id }) { article -> NewsCard(article, bookmarks.contains(article.url), onOpenArticle, onToggleBookmark) }
     }
 }
 
@@ -656,9 +718,9 @@ private fun readerDocument(article: Article, content: String, fontSize: Int, dar
     val title = article.title.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
     val source = article.source.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
     return "<!doctype html><html><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1, maximum-scale=1\"><style>" +
-        "html{background:" + background + ";color:" + foreground + ";}body{margin:0;padding:22px 20px 44px;background:" + background + ";color:" + foreground + ";font-family:Georgia,'Iowan Old Style',serif;font-size:" + fontSize + "px;line-height:1.78;-webkit-text-size-adjust:100%;}" +
+        "html{background:" + background + ";color:" + foreground + ";}body{margin:0;padding:22px 20px 44px;background:" + background + ";color:" + foreground + ";font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue',system-ui,sans-serif;font-size:" + fontSize + "px;line-height:1.78;-webkit-text-size-adjust:100%;}" +
         ".cl-source{font:700 11px/1.4 system-ui,sans-serif;letter-spacing:1.2px;text-transform:uppercase;color:" + muted + ";margin:4px 0 14px;}" +
-        "h1{font:700 1.65em/1.15 system-ui,sans-serif;letter-spacing:-.035em;margin:0 0 18px;color:" + foreground + ";}" +
+        "h1{font:700 1.72em/1.12 -apple-system,BlinkMacSystemFont,'SF Pro Display',system-ui,sans-serif;letter-spacing:-.045em;margin:0 0 18px;color:" + foreground + ";}" +
         "h2,h3{font-family:system-ui,sans-serif;line-height:1.25;margin:1.55em 0 .55em;}p,li{margin:0 0 1.1em;}img,figure,video{max-width:100%;height:auto;border-radius:14px;}figure{margin:1.4em 0;}figcaption{font:12px/1.5 system-ui,sans-serif;color:" + muted + ";}" +
         "a{color:" + (if (dark) "#9CB9FF" else "#2859A8") + ";text-decoration:none;}blockquote{margin:1.4em 0;padding-left:1em;border-left:3px solid " + (if (dark) "#52658D" else "#A9BCE0") + ";color:" + muted + ";}" +
         "table{display:block;max-width:100%;overflow-x:auto;border-collapse:collapse;font:14px/1.5 system-ui,sans-serif;}td,th{padding:8px;border:1px solid " + muted + ";}iframe{max-width:100%;}pre{white-space:pre-wrap;overflow-wrap:anywhere;}" +
