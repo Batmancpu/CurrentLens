@@ -2,6 +2,7 @@ package com.mangoloads.currentlens
 
 import android.graphics.Rect
 import android.view.ActionMode
+import android.view.HapticFeedbackConstants
 import android.view.Menu
 import android.view.MenuItem
 import android.view.MotionEvent
@@ -14,9 +15,15 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -81,6 +88,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -953,7 +961,15 @@ private fun GlassTabBar(backdrop: PrismalBackdrop, selectedTab: Int, glassAlpha:
         tintDropletContent = false,
         adaptiveLuminance = true,
         specular = { PrismalSpecular.Default.copy(alpha = glassAlpha) },
-        modifier = Modifier.fillMaxWidth().height(72.dp)
+        blurRadius = 8.dp,
+        refractionHeight = 30.dp,
+        refractionAmount = 30.dp,
+        dropletBlurRadius = 8.dp,
+        dropletChromaticAberration = 0.5f,
+        dropletRefractionHeight = 24.dp,
+        dropletRefractionAmount = 18.dp,
+        pressGlow = 0.52f,
+        modifier = Modifier.fillMaxWidth().height(66.dp)
             .graphicsLayer { alpha = (0.78f + glassAlpha * 0.36f).coerceIn(0.82f, 0.98f) }
     ) {
         GlassTab(0, "Today", Icons.Outlined.Today, onSelect)
@@ -969,11 +985,11 @@ private fun RowScope.GlassTab(index: Int, label: String, icon: ImageVector, onSe
     val selected = highlighted == index
     val tint = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
     PrismalGlassBottomTab(onClick = { onSelect(index) }) {
-        Icon(icon, contentDescription = label, tint = tint, modifier = Modifier.size(21.dp))
+        Icon(icon, contentDescription = label, tint = tint, modifier = Modifier.size(20.dp))
         Text(
             label,
-            fontSize = 10.sp,
-            lineHeight = 12.sp,
+            fontSize = 9.sp,
+            lineHeight = 11.sp,
             fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
             color = tint
         )
@@ -1240,7 +1256,25 @@ private class ReaderWebView(context: android.content.Context) : WebView(context)
         object : ActionMode.Callback2() {
             override fun onCreateActionMode(mode: ActionMode, menu: Menu): Boolean {
                 val created = original.onCreateActionMode(mode, menu)
-                if (created) menu.add(0, MENU_DEFINE_WORD, menu.size(), "Define").setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS)
+                if (created) {
+                    menu.add(0, MENU_DEFINE_WORD, menu.size(), "Define")
+                        .setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS)
+                    // A native long-press on exactly one word opens its meaning immediately.
+                    // Multi-word selections retain Android's normal Copy/Select/Define actions.
+                    post {
+                        evaluateJavascript("(function(){return JSON.stringify(window.getSelection().toString());})()") { encoded ->
+                            val selected = runCatching {
+                                JSONTokener(encoded ?: "null").nextValue() as? String
+                            }.getOrNull().orEmpty()
+                            val word = DictionaryWordPolicy.singleSelectedWord(selected)
+                            if (word != null) {
+                                performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK)
+                                onDefineWord(word)
+                                mode.finish()
+                            }
+                        }
+                    }
+                }
                 return created
             }
             override fun onPrepareActionMode(mode: ActionMode, menu: Menu): Boolean = original.onPrepareActionMode(mode, menu)
@@ -1248,8 +1282,11 @@ private class ReaderWebView(context: android.content.Context) : WebView(context)
                 if (item.itemId == MENU_DEFINE_WORD) {
                     evaluateJavascript("(function(){return JSON.stringify(window.getSelection().toString());})()") { encoded ->
                         val selected = runCatching { JSONTokener(encoded ?: "\"\"").nextValue() as? String }.getOrNull().orEmpty()
-                        val word = selected.trim().take(100)
-                        if (word.isNotBlank()) onDefineWord(word)
+                        val word = DictionaryWordPolicy.singleSelectedWord(selected)
+                        if (word != null) {
+                            performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK)
+                            onDefineWord(word)
+                        }
                     }
                     mode.finish()
                     return true
@@ -1320,37 +1357,81 @@ private fun DefinitionGlassOverlay(word: String, backdrop: PrismalBackdrop, glas
         result = DictionaryRepository.lookup(context, word)
         loading = false
     }
+    val definition = result
     Box(Modifier.fillMaxSize()) {
-        Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.24f)).clickable { onClose() })
-        PrismalGlassSurface(
-            backdrop = backdrop,
-            modifier = Modifier.align(Alignment.BottomCenter).fillMaxWidth().padding(13.dp),
-            shape = { PrismalRoundedRectangle(28.dp) },
-            blurRadius = 14.dp,
-            tint = if (isSystemInDarkTheme()) Color(0xFF293347) else Color(0xFFEAF0FA),
-            tintAlpha = glassAlpha
+        AnimatedVisibility(
+            visible = true,
+            modifier = Modifier.align(Alignment.BottomCenter).fillMaxWidth(),
+            enter = fadeIn(tween(150)) +
+                scaleIn(
+                    initialScale = 0.88f,
+                    transformOrigin = TransformOrigin(0.5f, 1f),
+                    animationSpec = spring(dampingRatio = 0.74f, stiffness = 480f)
+                ) +
+                slideInVertically(
+                    initialOffsetY = { it / 7 },
+                    animationSpec = spring(dampingRatio = 0.74f, stiffness = 480f)
+                ),
+            exit = fadeOut(tween(110)) +
+                scaleOut(
+                    targetScale = 0.94f,
+                    transformOrigin = TransformOrigin(0.5f, 1f),
+                    animationSpec = spring(dampingRatio = 0.82f, stiffness = 520f)
+                ) +
+                slideOutVertically(targetOffsetY = { it / 9 }, animationSpec = spring())
         ) {
-            Column(Modifier.padding(22.dp), verticalArrangement = Arrangement.spacedBy(11.dp)) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Column(Modifier.weight(1f)) {
-                        Text(word, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
-                        if (result?.phonetic?.isNotBlank() == true) Text(result!!.phonetic, color = MaterialTheme.colorScheme.secondary)
+            PrismalGlassSurface(
+                backdrop = backdrop,
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 13.dp, vertical = 10.dp),
+                shape = { PrismalRoundedRectangle(25.dp) },
+                blurRadius = 17.dp,
+                refractionHeightPx = 22f,
+                refractionAmountPx = 24f,
+                depthEffect = true,
+                chromaticAberration = 0.24f,
+                tint = if (isSystemInDarkTheme()) Color(0xFF263247) else Color(0xFFEAF0FA),
+                tintAlpha = (glassAlpha * 0.82f).coerceIn(0.10f, 0.48f)
+            ) {
+                Column(Modifier.padding(horizontal = 19.dp, vertical = 16.dp),
+                    verticalArrangement = Arrangement.spacedBy(9.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Column(Modifier.weight(1f)) {
+                            Text(word, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                            Text("OFFLINE DICTIONARY", style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.secondary, letterSpacing = 1.1.sp)
+                        }
+                        TextButton(onClick = onClose) { Text("Done") }
                     }
-                    TextButton(onClick = onClose) { Text("Close") }
-                }
-                when {
-                    loading -> CircularProgressIndicator()
-                    result == null || result!!.meanings.isEmpty() -> Text("No definition found. Try selecting a single word or its base form.")
-                    else -> result!!.meanings.forEachIndexed { index, meaning ->
-                        Text((index + 1).toString() + ". " + meaning, style = MaterialTheme.typography.bodyLarge, lineHeight = 23.sp)
+                    when {
+                        loading -> CircularProgressIndicator()
+                        definition == null ->
+                            Text("The offline dictionary lookup could not be completed.",
+                                style = MaterialTheme.typography.bodyMedium)
+                        !definition.dictionaryAvailable ->
+                            Text("The offline word database is not included in this build.",
+                                style = MaterialTheme.typography.bodyMedium)
+                        definition.meanings.isEmpty() ->
+                            Text("No entry found in the offline English dictionary. Try the base form of the word.",
+                                style = MaterialTheme.typography.bodyMedium)
+                        else -> {
+                            definition.meanings.take(3).forEach { meaning ->
+                                Text(meaning, style = MaterialTheme.typography.bodyLarge, lineHeight = 23.sp)
+                            }
+                            if (definition.synonyms.isNotEmpty()) {
+                                Text("RELATED WORDS", style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.secondary, letterSpacing = 1.sp)
+                                Text(definition.synonyms.take(8).joinToString(" · "),
+                                    style = MaterialTheme.typography.bodyMedium)
+                            }
+                        }
                     }
+                    Text("Open English WordNet 2025+ · CC BY 4.0",
+                        style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.secondary)
                 }
-                Text("Free Dictionary API · Cached on this device", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.secondary)
             }
         }
     }
 }
-
 @Composable
 private fun GlassSettingsScreen(backdrop: PrismalBackdrop, glassAlpha: Float, onGlassAlphaChange: (Float) -> Unit, onBack: () -> Unit) {
     Column(Modifier.fillMaxSize().padding(horizontal = 18.dp)) {

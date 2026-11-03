@@ -1,11 +1,17 @@
 package com.mangoloads.currentlens
 
 import android.content.Context
+import android.database.sqlite.SQLiteDatabase
 import android.os.Bundle
 import android.view.Gravity
 import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -27,136 +33,217 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.TransformOrigin
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import org.json.JSONArray
-import java.net.HttpURLConnection
-import java.net.URL
-import java.net.URLEncoder
+import java.io.File
+import java.io.FileOutputStream
+import java.util.Locale
 
-data class Definition(val word: String, val phonetic: String, val meanings: List<String>)
+data class Definition(
+    val word: String,
+    val phonetic: String,
+    val meanings: List<String>,
+    val synonyms: List<String> = emptyList(),
+    val dictionaryAvailable: Boolean = true
+)
 
+/**
+ * Offline-first lookup against the bundled Open English WordNet 2025+ SQLite database.
+ * No dictionary network request is made; definitions remain available in airplane mode.
+ */
 object DictionaryRepository {
-    private const val CACHE_INDEX = "__cache_index"
-    private const val MAX_CACHE_ENTRIES = 500
-
-    private fun updateCache(prefs: android.content.SharedPreferences, key: String, value: String?) {
-        val existing = prefs.all.keys.filterNot { it == CACHE_INDEX }.toSet() + if (value != null) setOf(key) else emptySet()
-        val previous = runCatching {
-            val array = JSONArray(prefs.getString(CACHE_INDEX, "[]"))
-            buildList { for (i in 0 until array.length()) add(array.optString(i)) }
-        }.getOrDefault(emptyList())
-        val ordered = (previous.filter { it in existing } + existing.filterNot { it in previous }.sorted()).distinct()
-        val next = DictionaryCachePolicy.touch(ordered, key, MAX_CACHE_ENTRIES)
-        val index = JSONArray().apply { next.forEach { put(it) } }
-        val editor = prefs.edit().putString(CACHE_INDEX, index.toString())
-        if (value != null) editor.putString(key, value)
-        existing.filterNot { it in next }.forEach { editor.remove(it) }
-        editor.apply()
-    }
+    private const val ASSET_NAME = "wordnet.db"
+    private const val DATABASE_NAME = "currentlens_wordnet_2025_plus.db"
+    private val databaseLock = Any()
 
     suspend fun lookup(context: Context, word: String): Definition? = withContext(Dispatchers.IO) {
-        val key = word.trim().lowercase()
-        if (key.isBlank() || key.length > 60) return@withContext null
-        val prefs = context.getSharedPreferences("currentlens_dictionary", Context.MODE_PRIVATE)
-        val cached = prefs.getString(key, null)
-        if (cached != null) {
-            updateCache(prefs, key, null)
-            return@withContext parse(cached, word)
-        }
-        val encoded = URLEncoder.encode(key, "UTF-8")
-        val connection = (URL("https://api.dictionaryapi.dev/api/v2/entries/en/" + encoded).openConnection() as HttpURLConnection)
+        val normalized = DictionaryWordPolicy.singleSelectedWord(word) ?: return@withContext null
+        val database = openDatabase(context.applicationContext)
+            ?: return@withContext Definition(word.trim(), "", emptyList(), dictionaryAvailable = false)
         try {
-            connection.connectTimeout = 5000
-            connection.readTimeout = 7000
-            connection.setRequestProperty("User-Agent", "CurrentLens/0.2")
-            val status = connection.responseCode
-            if (status !in 200..299 || connection.contentLengthLong > NetworkLimits.MAX_DICTIONARY_BYTES) null
-            else {
-                val json = connection.inputStream.use { input ->
-                    NetworkLimits.readUtf8Limited(input, NetworkLimits.MAX_DICTIONARY_BYTES)
+            val candidates = buildList {
+                addAll(DictionaryWordPolicy.candidates(normalized))
+                addAll(exceptionForms(database, normalized))
+            }.distinct().take(10)
+
+            for (candidate in candidates) {
+                val result = queryEntries(database, candidate)
+                if (result.meanings.isNotEmpty()) {
+                    return@withContext Definition(
+                        word = word.trim(),
+                        phonetic = "",
+                        meanings = result.meanings,
+                        synonyms = result.synonyms
+                    )
                 }
-                updateCache(prefs, key, json)
-                parse(json, word)
             }
+            null
         } catch (_: Exception) {
             null
         } finally {
-            connection.disconnect()
+            database.close()
         }
     }
 
-    private fun parse(raw: String, displayWord: String): Definition? = try {
-        val entry = JSONArray(raw).optJSONObject(0) ?: return null
-        val phonetics = entry.optJSONArray("phonetics")
-        var phonetic = ""
-        if (phonetics != null) {
-            for (i in 0 until phonetics.length()) {
-                val candidate = phonetics.optJSONObject(i)?.optString("text").orEmpty()
-                if (candidate.isNotBlank()) { phonetic = candidate; break }
-            }
-        }
-        val meanings = mutableListOf<String>()
-        val groups = entry.optJSONArray("meanings")
-        if (groups != null) {
-            for (i in 0 until groups.length()) {
-                val group = groups.optJSONObject(i) ?: continue
-                val part = group.optString("partOfSpeech")
-                val definitions = group.optJSONArray("definitions") ?: continue
-                for (j in 0 until minOf(definitions.length(), 3)) {
-                    val text = definitions.optJSONObject(j)?.optString("definition").orEmpty()
-                    if (text.isNotBlank()) meanings.add((if (part.isNotBlank()) part + " · " else "") + text)
+    private fun openDatabase(context: Context): SQLiteDatabase? = try {
+        val destination = File(context.noBackupFilesDir, DATABASE_NAME)
+        if (!destination.isFile || destination.length() < 1_000_000L) {
+            synchronized(databaseLock) {
+                if (!destination.isFile || destination.length() < 1_000_000L) {
+                    val temporary = File(destination.parentFile, "$DATABASE_NAME.tmp")
+                    temporary.delete()
+                    context.assets.open(ASSET_NAME).use { input ->
+                        FileOutputStream(temporary).use { output -> input.copyTo(output) }
+                    }
+                    if (destination.exists()) destination.delete()
+                    check(temporary.renameTo(destination)) { "Could not install offline dictionary" }
                 }
             }
         }
-        Definition(displayWord, phonetic, meanings.take(5))
-    } catch (_: Exception) { null }
+        SQLiteDatabase.openDatabase(destination.absolutePath, null, SQLiteDatabase.OPEN_READONLY)
+    } catch (_: Exception) {
+        null
+    }
+
+    private data class LookupRows(val meanings: List<String>, val synonyms: List<String>)
+
+    private fun queryEntries(database: SQLiteDatabase, word: String): LookupRows {
+        val meanings = mutableListOf<String>()
+        val synonyms = linkedSetOf<String>()
+        database.rawQuery(
+            "SELECT pos, definition, synonyms FROM entries WHERE word = ? " +
+                "ORDER BY CASE pos WHEN 'noun' THEN 0 WHEN 'verb' THEN 1 WHEN 'adjective' THEN 2 ELSE 3 END LIMIT 6",
+            arrayOf(word)
+        ).use { cursor ->
+            while (cursor.moveToNext()) {
+                val partOfSpeech = cursor.getString(0).orEmpty()
+                val definition = cursor.getString(1).orEmpty()
+                val related = cursor.getString(2).orEmpty()
+                if (definition.isNotBlank()) {
+                    meanings.add(posLabel(partOfSpeech) + " · " + definition)
+                }
+                related.split(',').map { it.trim() }.filter { it.isNotBlank() }
+                    .forEach { synonyms.add(it) }
+            }
+        }
+        return LookupRows(meanings.distinct().take(5), synonyms.take(10))
+    }
+
+    private fun exceptionForms(database: SQLiteDatabase, word: String): List<String> {
+        val bases = linkedSetOf<String>()
+        database.rawQuery(
+            "SELECT base_forms FROM exceptions WHERE inflected = ? LIMIT 4",
+            arrayOf(word)
+        ).use { cursor ->
+            while (cursor.moveToNext()) {
+                cursor.getString(0).orEmpty().split(' ').filter { it.isNotBlank() }.forEach { bases.add(it) }
+            }
+        }
+        return bases.toList()
+    }
+
+    private fun posLabel(value: String): String = when (value.lowercase(Locale.ROOT)) {
+        "noun" -> "noun"
+        "verb" -> "verb"
+        "adjective" -> "adjective"
+        "adverb" -> "adverb"
+        else -> value
+    }
 }
 
 class DictionaryActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        val word = intent.getCharSequenceExtra("android.intent.extra.PROCESS_TEXT")
-            ?.toString().orEmpty().trim().split(Regex("\\s+")).firstOrNull().orEmpty().trim { !it.isLetter() }
+        val word = DictionaryWordPolicy.singleSelectedWord(
+            intent.getCharSequenceExtra("android.intent.extra.PROCESS_TEXT")?.toString().orEmpty()
+        ).orEmpty()
         window?.setBackgroundDrawableResource(android.R.color.transparent)
         window?.setLayout(WindowManager.LayoutParams.MATCH_PARENT, WindowManager.LayoutParams.WRAP_CONTENT)
         window?.setGravity(Gravity.BOTTOM)
-        setContent { MaterialTheme { DictionaryPopup(word.ifBlank { "Word" }) { finish() } } }
+        setContent {
+            MaterialTheme {
+                DictionaryPopup(word.ifBlank { "Select one word" }) { finish() }
+            }
+        }
     }
 }
 
 @Composable
 private fun DictionaryPopup(word: String, onClose: () -> Unit) {
-    val context = androidx.compose.ui.platform.LocalContext.current
+    val context = LocalContext.current
     var result by remember(word) { mutableStateOf<Definition?>(null) }
     var loading by remember(word) { mutableStateOf(true) }
     LaunchedEffect(word) {
         result = DictionaryRepository.lookup(context, word)
         loading = false
     }
-    Surface(
-        modifier = Modifier.fillMaxWidth().padding(12.dp),
-        shape = RoundedCornerShape(26.dp),
-        tonalElevation = 8.dp,
-        shadowElevation = 18.dp
+    AnimatedVisibility(
+        visible = true,
+        enter = fadeIn() +
+            scaleIn(
+                initialScale = 0.92f,
+                transformOrigin = TransformOrigin(0.5f, 1f),
+                animationSpec = spring(dampingRatio = 0.78f, stiffness = 520f)
+            ) +
+            slideInVertically(
+                initialOffsetY = { it / 7 },
+                animationSpec = spring(dampingRatio = 0.78f, stiffness = 520f)
+            )
     ) {
-        Column(Modifier.padding(22.dp).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            Row {
-                Column(Modifier.weight(1f)) {
-                    Text(word, style = MaterialTheme.typography.headlineMedium)
-                    if (result?.phonetic?.isNotBlank() == true) Text(result?.phonetic.orEmpty(), color = MaterialTheme.colorScheme.secondary)
+        Surface(
+            modifier = Modifier.fillMaxWidth().padding(12.dp),
+            shape = RoundedCornerShape(26.dp),
+            color = MaterialTheme.colorScheme.surface.copy(alpha = 0.96f),
+            tonalElevation = 8.dp,
+            shadowElevation = 18.dp
+        ) {
+            Column(
+                Modifier.padding(20.dp).verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(9.dp)
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Column(Modifier.weight(1f)) {
+                        Text(word, style = MaterialTheme.typography.headlineSmall)
+                        Text(
+                            "OFFLINE DICTIONARY",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.secondary
+                        )
+                    }
+                    TextButton(onClick = onClose) { Text("Close") }
                 }
-                TextButton(onClick = onClose) { Text("Close") }
+                val definition = result
+                when {
+                    loading -> CircularProgressIndicator()
+                    definition == null ->
+                        Text("The offline dictionary lookup could not be completed.")
+                    !definition.dictionaryAvailable ->
+                        Text("The offline dictionary is not bundled in this build.")
+                    definition.meanings.isEmpty() ->
+                        Text("No entry found in the offline English dictionary.")
+                    else -> {
+                        definition.meanings.forEach { meaning ->
+                            Text(meaning, style = MaterialTheme.typography.bodyLarge)
+                        }
+                        if (definition.synonyms.isNotEmpty()) {
+                            Spacer(Modifier.height(2.dp))
+                            Text("RELATED WORDS", style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.secondary)
+                            Text(definition.synonyms.joinToString(" · "), style = MaterialTheme.typography.bodyMedium)
+                        }
+                    }
+                }
+                Text(
+                    "Open English WordNet 2025+ · CC BY 4.0 · Princeton WordNet attribution",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.secondary
+                )
             }
-            when {
-                loading -> CircularProgressIndicator()
-                result == null || result?.meanings.isNullOrEmpty() -> Text("No definition available. Check your connection or try the base form of the word.")
-                else -> result!!.meanings.forEachIndexed { index, meaning -> Text((index + 1).toString() + ". " + meaning, style = MaterialTheme.typography.bodyLarge) }
-            }
-            Spacer(Modifier.height(4.dp))
-            Text("Free Dictionary API · Definition cached on this device", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.secondary)
         }
     }
 }

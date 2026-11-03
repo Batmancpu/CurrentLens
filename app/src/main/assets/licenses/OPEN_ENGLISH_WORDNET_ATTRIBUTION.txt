@@ -1,0 +1,19 @@
+Open English WordNet 2025+ — Dictionary data attribution
+
+This application includes a local SQLite conversion of the Open English WordNet 2025+ WNDB dataset.
+
+Open English WordNet is licensed under the Creative Commons Attribution 4.0 International License (CC BY 4.0):
+https://creativecommons.org/licenses/by/4.0/
+
+Attribution: Open English WordNet team, Open English WordNet 2025+ (2025-12-31).
+The dataset is derived from Princeton WordNet 3.1:
+WordNet 3.1 Copyright 2011 by Princeton University. All rights reserved.
+
+The following WNDB attribution and disclaimer apply:
+This software and database is provided by the Open English WordNet team under CC BY 4.0. Permission to use, copy, modify and distribute it is granted subject to preservation of this notice and disclaimer. Princeton University makes no express or implied warranties, including merchantability, fitness for a particular purpose or non-infringement. The name of Princeton University or Princeton may not be used in advertising or publicity pertaining to distribution. Copyright in the underlying WordNet 3.1 database remains with Princeton University.
+
+Source and full licence texts:
+https://github.com/globalwordnet/english-wordnet
+https://github.com/globalwordnet/english-wordnet/blob/main/LICENSE.md
+https://github.com/globalwordnet/english-wordnet/blob/main/WNDB_License.txt
+https://en-word.net/downloads

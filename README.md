@@ -40,13 +40,13 @@ There is no Archive destination and no Saved bottom tab. **Saved** is a section 
 ## Privacy and dependencies
 
 - No accounts, analytics, telemetry, cloud AI runtime or paid APIs are included.
-- Network access is used for RSS feeds, publicly accessible publisher pages and the free dictionary endpoint. Bookmarks, read markers, study sessions, quiz attempts, settings and caches are stored locally.
+- Network access is used for RSS feeds and publicly accessible publisher pages. The English dictionary is bundled as a local SQLite database in release builds and works without a runtime dictionary request. Bookmarks, read markers, study sessions, quiz attempts, settings and caches are stored locally.
 - The only declared Android permission is INTERNET; cleartext traffic is disabled and Android backup is disabled.
 - Runtime dependencies retain their own licences. See [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
 
 ## Build and download
 
-The single concurrency-protected **Build Android APK** workflow runs on pushes to main, runs JVM unit tests before packaging, and publishes a debug-signed APK as a GitHub Release asset. Actions artifacts are retained for 14 days.
+The single concurrency-protected **Build Android APK** workflow tests the dictionary builder, generates the offline Open English WordNet database from the official CC BY 4.0 dataset, runs JVM unit tests, and publishes a debug-signed APK as a GitHub Release asset. Actions artifacts are retained for 14 days.
 
 [Download the latest APK from Releases](https://github.com/Batmancpu/CurrentLens/releases).
 
