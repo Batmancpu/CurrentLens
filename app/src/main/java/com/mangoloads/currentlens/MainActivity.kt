@@ -752,7 +752,7 @@ private class ReaderWebView(context: android.content.Context) : WebView(context)
             override fun onPrepareActionMode(mode: ActionMode, menu: Menu): Boolean {
                 menu.clear()
                 evaluateJavascript("(function(){return JSON.stringify(window.getSelection().toString());})()") { encoded ->
-                    val selected = runCatching { JSONTokener(encoded ?: "\"\\\"\\\"").nextValue() as? String }.getOrNull().orEmpty()
+                    val selected = runCatching { JSONTokener(encoded ?: "\"\\"").nextValue() as? String }.getOrNull().orEmpty()
                     val word = selected.trim().take(100)
                     if (word.isNotBlank()) onDefineWord(word)
                     mode.finish()
