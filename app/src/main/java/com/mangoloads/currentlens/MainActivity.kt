@@ -49,6 +49,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.selection.SelectionContainer
@@ -1268,7 +1269,7 @@ private fun readerDocument(article: Article, content: String, fontSize: Int, dar
 private class ReaderWebView(context: android.content.Context) : WebView(context) {
     var loadedKey: String? = null
     var onReachedBottom: () -> Unit = {}
-    var onDefineWord: (String, RectF?) -> Unit = {}
+    var onDefineWord: (String, RectF?) -> Unit = { _, _ -> }
     var onReaderPageFinished: () -> Unit = {}
     var onReaderMainFrameError: () -> Unit = {}
     var allowReaderNavigation: (String) -> Boolean = { false }
