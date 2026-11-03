@@ -1525,15 +1525,11 @@ private fun DefinitionGlassOverlay(word: String, anchor: Offset?, backdrop: Pris
                         }
                         if (definition != null && definition.dictionaryAvailable && definition.meanings.isNotEmpty()) {
                             TextButton(onClick = {
-                                val copiedText = buildString {
-                                    append(word)
-                                    append("\n\n")
-                                    append(definition.meanings.joinToString("\n\n"))
-                                    if (definition.synonyms.isNotEmpty()) {
-                                        append("\n\nRelated: ")
-                                        append(definition.synonyms.joinToString(" · "))
-                                    }
-                                }
+                                val copiedText = DictionaryMeaningPolicy.copyText(
+                                    word = word,
+                                    meanings = definition.meanings,
+                                    synonyms = definition.synonyms
+                                )
                                 val clipboard = context.getSystemService(android.content.Context.CLIPBOARD_SERVICE)
                                     as? android.content.ClipboardManager
                                 clipboard?.setPrimaryClip(
@@ -1557,7 +1553,22 @@ private fun DefinitionGlassOverlay(word: String, anchor: Offset?, backdrop: Pris
                                 style = MaterialTheme.typography.bodyMedium)
                         else -> {
                             definition.meanings.take(3).forEach { meaning ->
-                                Text(meaning, style = MaterialTheme.typography.bodyLarge, lineHeight = 23.sp)
+                                val presentation = DictionaryMeaningPolicy.present(meaning)
+                                Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                                    presentation.partOfSpeech?.let { partOfSpeech ->
+                                        Text(
+                                            partOfSpeech.uppercase(Locale.ROOT),
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = MaterialTheme.colorScheme.primary,
+                                            letterSpacing = 1.sp
+                                        )
+                                    }
+                                    Text(
+                                        presentation.definition,
+                                        style = MaterialTheme.typography.bodyLarge,
+                                        lineHeight = 23.sp
+                                    )
+                                }
                             }
                             if (definition.synonyms.isNotEmpty()) {
                                 Text("RELATED WORDS", style = MaterialTheme.typography.labelSmall,

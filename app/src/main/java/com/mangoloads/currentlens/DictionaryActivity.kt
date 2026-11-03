@@ -223,6 +223,19 @@ private fun DictionaryPopup(word: String, onClose: () -> Unit) {
                             color = MaterialTheme.colorScheme.secondary
                         )
                     }
+                    if (result?.let { it.dictionaryAvailable && it.meanings.isNotEmpty() } == true) {
+                        TextButton(onClick = {
+                            val current = result ?: return@TextButton
+                            val clipboard = context.getSystemService(android.content.Context.CLIPBOARD_SERVICE)
+                                as? android.content.ClipboardManager
+                            clipboard?.setPrimaryClip(
+                                android.content.ClipData.newPlainText(
+                                    "Definition of $word",
+                                    DictionaryMeaningPolicy.copyText(word, current.meanings, current.synonyms)
+                                )
+                            )
+                        }) { Text("Copy") }
+                    }
                     TextButton(onClick = onClose) { Text("Close") }
                 }
                 val definition = result
@@ -236,7 +249,17 @@ private fun DictionaryPopup(word: String, onClose: () -> Unit) {
                         Text("No entry found in the offline English dictionary.")
                     else -> {
                         definition.meanings.forEach { meaning ->
-                            Text(meaning, style = MaterialTheme.typography.bodyLarge)
+                            val presentation = DictionaryMeaningPolicy.present(meaning)
+                            Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                                presentation.partOfSpeech?.let { partOfSpeech ->
+                                    Text(
+                                        partOfSpeech.uppercase(Locale.ROOT),
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.primary
+                                    )
+                                }
+                                Text(presentation.definition, style = MaterialTheme.typography.bodyLarge)
+                            }
                         }
                         if (definition.synonyms.isNotEmpty()) {
                             Spacer(Modifier.height(2.dp))
