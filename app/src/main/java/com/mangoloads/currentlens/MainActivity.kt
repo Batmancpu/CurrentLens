@@ -6,6 +6,7 @@ import android.view.Menu
 import android.view.MenuItem
 import android.view.MotionEvent
 import android.view.View
+import android.os.SystemClock
 import android.webkit.WebResourceRequest
 import android.webkit.WebView
 import android.webkit.WebViewClient
@@ -41,13 +42,13 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Archive
 import androidx.compose.material.icons.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.Bookmark
 import androidx.compose.material.icons.outlined.BookmarkBorder
 import androidx.compose.material.icons.outlined.Explore
 import androidx.compose.material.icons.outlined.Refresh
 import androidx.compose.material.icons.outlined.Search
+import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material.icons.outlined.Today
@@ -67,6 +68,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
@@ -87,6 +89,9 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.LifecycleOwner
 import androidx.compose.foundation.isSystemInDarkTheme
 import coil.compose.AsyncImage
 import com.styropyr0.prismal.PrismalBackdrop
@@ -135,6 +140,8 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+private enum class YouPage { DASHBOARD, SAVED, READING_STATS, QUIZ_STATS }
+
 @Composable
 private fun CurrentLensApp() {
     val context = LocalContext.current
@@ -143,11 +150,14 @@ private fun CurrentLensApp() {
     var articles by remember { mutableStateOf(LocalStore.cachedArticles(context)) }
     var bookmarks by remember { mutableStateOf(LocalStore.bookmarks(context)) }
     var readHistory by remember { mutableStateOf(LocalStore.readHistory(context)) }
+    var readingSessions by remember { mutableStateOf(LocalStore.readingSessions(context)) }
+    var quizAttempts by remember { mutableStateOf(LocalStore.quizAttempts(context)) }
     var loading by remember { mutableStateOf(articles.isEmpty()) }
     var refreshing by remember { mutableStateOf(false) }
     var loadError by remember { mutableStateOf(false) }
     var refreshKey by remember { mutableIntStateOf(0) }
     var selectedTab by remember { mutableIntStateOf(0) }
+    var youPage by remember { mutableStateOf(YouPage.DASHBOARD) }
     var selectedArticle by remember { mutableStateOf<Article?>(null) }
     var quizMode by remember { mutableStateOf(false) }
     var showSettings by remember { mutableStateOf(false) }
@@ -165,25 +175,35 @@ private fun CurrentLensApp() {
         refreshing = false
     }
 
-    BackHandler(enabled = selectedArticle != null || showSettings) {
+    BackHandler(enabled = selectedArticle != null || showSettings || selectedTab != 0) {
         when {
             quizMode -> quizMode = false
             selectedArticle != null -> selectedArticle = null
             showSettings -> showSettings = false
+            selectedTab == 3 && youPage != YouPage.DASHBOARD -> youPage = YouPage.DASHBOARD
+            selectedTab != 0 -> selectedTab = 0
         }
     }
 
     Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
         Column(Modifier.fillMaxSize().prismalGlassLayer(backdrop)) {
             when {
-                selectedArticle != null && quizMode -> QuizScreen(selectedArticle!!, onBack = { quizMode = false })
+                selectedArticle != null && quizMode -> QuizScreen(
+                    article = selectedArticle!!,
+                    onBack = { quizMode = false },
+                    onSubmit = { answers, questions ->
+                        LocalStore.recordQuizAttempt(context, selectedArticle!!, answers, questions)
+                        quizAttempts = LocalStore.quizAttempts(context)
+                    }
+                )
                 selectedArticle != null -> ReaderScreen(
                     article = selectedArticle!!,
                     backdrop = backdrop,
                     glassAlpha = glassAlpha,
                     dark = dark,
                     onBack = { selectedArticle = null },
-                    onQuiz = { quizMode = true }
+                    onQuiz = { quizMode = true },
+                    onSessionRecorded = { readingSessions = LocalStore.readingSessions(context) }
                 )
                 showSettings -> GlassSettingsScreen(
                     backdrop = backdrop,
@@ -196,6 +216,8 @@ private fun CurrentLensApp() {
                 )
                 else -> HomeScreen(
                     selectedTab = selectedTab,
+                    youPage = youPage,
+                    onYouPageChange = { youPage = it },
                     onRefresh = { if (!refreshing) refreshKey++ },
                     refreshing = refreshing,
                     loading = loading,
@@ -204,6 +226,12 @@ private fun CurrentLensApp() {
                     allCachedArticles = articles,
                     bookmarks = bookmarks,
                     readHistory = readHistory,
+                    readingSessions = readingSessions,
+                    quizAttempts = quizAttempts,
+                    totalUniqueRead = readHistory.size,
+                    articlesReadToday = StudyStatsPolicy.articlesReadOn(
+                        readingSessions, LocalDate.now(ZoneId.of(INDIA_ZONE))
+                    ),
                     searchQuery = searchQuery,
                     onSearchQueryChange = { searchQuery = it },
                     onSettings = { showSettings = true },
@@ -225,7 +253,10 @@ private fun CurrentLensApp() {
                 Modifier.align(Alignment.BottomCenter).fillMaxWidth()
                     .navigationBarsPadding().padding(horizontal = 10.dp, vertical = 6.dp)
             ) {
-                GlassTabBar(backdrop, selectedTab, glassAlpha) { selectedTab = it }
+                GlassTabBar(backdrop, selectedTab, glassAlpha) {
+                    selectedTab = it
+                    if (it == 3) youPage = YouPage.DASHBOARD
+                }
             }
         }
     }
@@ -234,6 +265,8 @@ private fun CurrentLensApp() {
 @Composable
 private fun HomeScreen(
     selectedTab: Int,
+    youPage: YouPage,
+    onYouPageChange: (YouPage) -> Unit,
     onRefresh: () -> Unit,
     refreshing: Boolean,
     loading: Boolean,
@@ -242,6 +275,10 @@ private fun HomeScreen(
     allCachedArticles: List<Article>,
     bookmarks: Set<String>,
     readHistory: Set<String>,
+    readingSessions: List<ReadingSession>,
+    quizAttempts: List<QuizAttempt>,
+    totalUniqueRead: Int,
+    articlesReadToday: Int,
     searchQuery: String,
     onSearchQueryChange: (String) -> Unit,
     onSettings: () -> Unit,
@@ -251,36 +288,87 @@ private fun HomeScreen(
     val today = LocalDate.now(ZoneId.of(INDIA_ZONE))
     val dateLabel = remember(today) { today.format(DateTimeFormatter.ofPattern("EEEE, d MMMM", Locale.ENGLISH)) }
     var exploreCategory by remember { mutableStateOf("All") }
-    var archiveWindow by remember { mutableIntStateOf(7) }
+
+    val pageTitle = when (selectedTab) {
+        0 -> "Today"
+        1 -> "Explore"
+        2 -> "Search"
+        else -> when (youPage) {
+            YouPage.DASHBOARD -> "You"
+            YouPage.SAVED -> "Saved"
+            YouPage.READING_STATS -> "Reading Stats"
+            YouPage.QUIZ_STATS -> "Quiz & Practice Stats"
+        }
+    }
+    val subtitle = when (selectedTab) {
+        0 -> dateLabel
+        1 -> "Recent stories across your sources"
+        2 -> "Find articles by topic, subject or GS paper"
+        else -> when (youPage) {
+            YouPage.DASHBOARD -> "Your reading and practice at a glance"
+            YouPage.SAVED -> "Your saved articles and previously opened stories"
+            YouPage.READING_STATS -> "Time and reading activity recorded on this device"
+            YouPage.QUIZ_STATS -> "Submitted practice results and answer accuracy"
+        }
+    }
 
     Column(Modifier.fillMaxSize()) {
         Row(
-            Modifier.fillMaxWidth().padding(start = 20.dp, end = 12.dp, top = 12.dp, bottom = 8.dp),
+            Modifier.fillMaxWidth().padding(start = 12.dp, end = 12.dp, top = 10.dp, bottom = 8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Column(Modifier.weight(1f)) {
-                Text(
-                    when (selectedTab) { 0 -> "Today"; 1 -> "Explore"; 2 -> "Archive"; else -> "Saved" },
-                    style = MaterialTheme.typography.headlineMedium,
-                    fontWeight = FontWeight.Bold
-                )
-                Text(if (selectedTab == 0) dateLabel else "Your daily reading, beautifully organised",
-                    style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.secondary)
+            if (selectedTab == 3 && youPage != YouPage.DASHBOARD) {
+                IconButton(onClick = { onYouPageChange(YouPage.DASHBOARD) }) {
+                    Icon(Icons.Outlined.ArrowBack, contentDescription = "Back to You")
+                }
             }
-            IconButton(onClick = onRefresh, enabled = !refreshing) { Icon(Icons.Outlined.Refresh, contentDescription = "Refresh news") }
-            IconButton(onClick = onSettings) { Icon(Icons.Outlined.Settings, contentDescription = "Appearance settings") }
+            Column(Modifier.weight(1f)) {
+                Text(pageTitle, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
+                Text(subtitle, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.secondary)
+            }
+            if (selectedTab != 3) {
+                IconButton(onClick = onRefresh, enabled = !refreshing) {
+                    Icon(Icons.Outlined.Refresh, contentDescription = "Refresh news")
+                }
+            }
         }
 
         AnimatedContent(
-            targetState = selectedTab,
+            targetState = selectedTab to youPage,
             transitionSpec = { fadeIn(tween(190)) togetherWith fadeOut(tween(120)) },
-            label = "CurrentLens tab transition"
-        ) { tab ->
+            label = "CurrentLens destination transition"
+        ) { target ->
+            val (tab, page) = target
             when (tab) {
-                0 -> TodayFeed(todaysArticles, allCachedArticles, loading, loadError, refreshing, bookmarks, onOpenArticle, onToggleBookmark)
-                1 -> ExploreFeed(ArticleFilters.explore(allCachedArticles), exploreCategory, { exploreCategory = it }, searchQuery, onSearchQueryChange, bookmarks, onOpenArticle, onToggleBookmark)
-                2 -> ArchiveFeed(allCachedArticles, archiveWindow, { archiveWindow = it }, bookmarks, onOpenArticle, onToggleBookmark)
-                else -> SavedFeed(allCachedArticles, bookmarks, readHistory, onOpenArticle, onToggleBookmark)
+                0 -> TodayFeed(
+                    todaysArticles, allCachedArticles, loading, loadError, refreshing,
+                    bookmarks, onOpenArticle, onToggleBookmark
+                )
+                1 -> ExploreFeed(
+                    ArticleFilters.explore(allCachedArticles), exploreCategory,
+                    { exploreCategory = it }, bookmarks, onOpenArticle, onToggleBookmark
+                )
+                2 -> SearchFeed(
+                    allCachedArticles, searchQuery, onSearchQueryChange,
+                    bookmarks, onOpenArticle, onToggleBookmark
+                )
+                else -> when (page) {
+                    YouPage.DASHBOARD -> YouDashboard(
+                        totalUniqueRead = totalUniqueRead,
+                        articlesReadToday = articlesReadToday,
+                        savedCount = bookmarks.size,
+                        attempts = quizAttempts,
+                        onSaved = { onYouPageChange(YouPage.SAVED) },
+                        onReadingStats = { onYouPageChange(YouPage.READING_STATS) },
+                        onQuizStats = { onYouPageChange(YouPage.QUIZ_STATS) },
+                        onSettings = onSettings
+                    )
+                    YouPage.SAVED -> SavedFeed(
+                        allCachedArticles, bookmarks, readHistory, onOpenArticle, onToggleBookmark
+                    )
+                    YouPage.READING_STATS -> ReadingStatsScreen(readingSessions)
+                    YouPage.QUIZ_STATS -> QuizStatsScreen(quizAttempts)
+                }
             }
         }
     }
@@ -323,13 +411,13 @@ private fun TodayFeed(
         when {
             loading && articles.isEmpty() -> item { LoadingPanel() }
             loadError && articles.isEmpty() -> item { EmptyPanel("News is temporarily unavailable", "Check your connection and refresh.") }
-            articles.isEmpty() -> item { EmptyPanel("No articles dated today yet", "Older stories are kept separately in Archive.") }
+            articles.isEmpty() -> item { EmptyPanel("No articles dated today yet", "Explore keeps recent stories from all your feeds.") }
             else -> items(articles.take(45), key = { it.id }) { article ->
                 NewsCard(article, bookmarks.contains(article.url), onOpenArticle, onToggleBookmark)
             }
         }
         if (articles.size > 45) item {
-            Text("Showing today's 45 most recent stories. Older stories are in Archive.",
+            Text("Showing today's 45 most recent stories. Explore has the wider recent feed.",
                 style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.secondary,
                 modifier = Modifier.fillMaxWidth().padding(8.dp), textAlign = TextAlign.Center)
         }
@@ -360,54 +448,30 @@ private fun ExploreFeed(
     articles: List<Article>,
     selectedCategory: String,
     onCategory: (String) -> Unit,
-    searchQuery: String,
-    onSearchQueryChange: (String) -> Unit,
     bookmarks: Set<String>,
     onOpenArticle: (Article) -> Unit,
     onToggleBookmark: (Article) -> Unit
 ) {
     val categories = listOf("All", "India", "World", "Politics", "Economy", "Environment", "Science", "Explained", "UPSC", "Opinion")
-    val filtered = articles.filter { article ->
-        ExploreFilters.matches(article, selectedCategory, searchQuery)
-    }
+    val filtered = articles.filter { article -> ExploreFilters.matches(article, selectedCategory, "") }
     Column(Modifier.fillMaxSize()) {
         Row(
-            Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp)
-                .clip(RoundedCornerShape(18.dp)).background(MaterialTheme.colorScheme.surfaceVariant)
-                .padding(horizontal = 12.dp, vertical = 9.dp),
-            verticalAlignment = Alignment.CenterVertically
+            Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(horizontal = 14.dp, vertical = 5.dp),
+            horizontalArrangement = Arrangement.spacedBy(7.dp)
         ) {
-            Icon(Icons.Outlined.Search, contentDescription = "Search Explore", tint = MaterialTheme.colorScheme.primary)
-            BasicTextField(
-                value = searchQuery,
-                onValueChange = onSearchQueryChange,
-                modifier = Modifier.weight(1f).padding(horizontal = 10.dp),
-                singleLine = true,
-                textStyle = MaterialTheme.typography.bodyLarge.copy(color = MaterialTheme.colorScheme.onSurface),
-                decorationBox = { inner ->
-                    Box {
-                        if (searchQuery.isBlank()) Text("Search stories or GS topics…", color = MaterialTheme.colorScheme.secondary)
-                        inner()
-                    }
-                }
-            )
-            if (searchQuery.isNotBlank()) {
-                IconButton(onClick = { onSearchQueryChange("") }) {
-                    Icon(Icons.Outlined.Close, contentDescription = "Clear search")
-                }
-            }
-        }
-        Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(horizontal = 14.dp, vertical = 5.dp),
-            horizontalArrangement = Arrangement.spacedBy(7.dp)) {
             categories.forEach { category ->
-                FilterChip(selected = selectedCategory == category, onClick = { onCategory(category) }, label = { Text(category, fontSize = 12.sp) })
+                FilterChip(selected = selectedCategory == category, onClick = { onCategory(category) },
+                    label = { Text(category, fontSize = 12.sp) })
             }
         }
-        LazyColumn(Modifier.fillMaxSize(),
+        LazyColumn(
+            Modifier.weight(1f),
             contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 110.dp),
-            verticalArrangement = Arrangement.spacedBy(13.dp)) {
-            if (filtered.isEmpty()) item { EmptyPanel("No stories in this topic today", "Try another topic or check again after the next feed update.") }
-            else items(filtered, key = { it.id }) { article ->
+            verticalArrangement = Arrangement.spacedBy(13.dp)
+        ) {
+            if (filtered.isEmpty()) item {
+                EmptyPanel("No stories in this topic", "Try another topic or refresh your feeds.")
+            } else items(filtered, key = { it.id }) { article ->
                 NewsCard(article, bookmarks.contains(article.url), onOpenArticle, onToggleBookmark)
             }
         }
@@ -415,39 +479,73 @@ private fun ExploreFeed(
 }
 
 @Composable
-private fun ArchiveFeed(
+private fun SearchFeed(
     articles: List<Article>,
-    days: Int,
-    onDays: (Int) -> Unit,
+    query: String,
+    onQueryChange: (String) -> Unit,
     bookmarks: Set<String>,
     onOpenArticle: (Article) -> Unit,
     onToggleBookmark: (Article) -> Unit
 ) {
-    val today = LocalDate.now(ZoneId.of(INDIA_ZONE))
-    val filtered = ArticleFilters.archive(articles, today, days)
-
+    var selectedCategory by remember { mutableStateOf("All") }
+    var selectedSubject by remember { mutableStateOf("All") }
+    var selectedGsPaper by remember { mutableStateOf("All") }
+    val categories = listOf("All", "India", "World", "Politics", "Economy", "Environment", "Science", "Explained", "UPSC", "Opinion")
+    val subjects = remember(articles) {
+        listOf("All") + articles.map { UpscEngine.classify(it).subject }.distinct().sorted()
+    }
+    val gsPapers = listOf("All", "GS I", "GS II", "GS III", "GS IV", "Unmapped")
+    val filtered = articles.filter { article ->
+        val relevance = UpscEngine.classify(article)
+        ExploreFilters.matches(article, selectedCategory, query) &&
+            (selectedSubject == "All" || relevance.subject == selectedSubject) &&
+            (selectedGsPaper == "All" || relevance.gsPaper == selectedGsPaper)
+    }
     Column(Modifier.fillMaxSize()) {
-        Row(Modifier.padding(horizontal = 16.dp, vertical = 5.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            FilterChip(selected = days == 7, onClick = { onDays(7) }, label = { Text("7 days") })
-            FilterChip(selected = days == 30, onClick = { onDays(30) }, label = { Text("30 days") })
+        Row(
+            Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 7.dp)
+                .clip(RoundedCornerShape(18.dp)).background(MaterialTheme.colorScheme.surfaceVariant)
+                .padding(horizontal = 12.dp, vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(Icons.Outlined.Search, contentDescription = "Search stories", tint = MaterialTheme.colorScheme.primary)
+            BasicTextField(
+                value = query,
+                onValueChange = onQueryChange,
+                modifier = Modifier.weight(1f).padding(horizontal = 10.dp),
+                singleLine = true,
+                textStyle = MaterialTheme.typography.bodyLarge.copy(color = MaterialTheme.colorScheme.onSurface),
+                decorationBox = { inner ->
+                    Box {
+                        if (query.isBlank()) Text("Search headlines, publishers or topics…", color = MaterialTheme.colorScheme.secondary)
+                        inner()
+                    }
+                }
+            )
+            if (query.isNotBlank()) {
+                IconButton(onClick = { onQueryChange("") }) {
+                    Icon(Icons.Outlined.Close, contentDescription = "Clear search")
+                }
+            }
         }
-        LazyColumn(Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 110.dp),
-            verticalArrangement = Arrangement.spacedBy(11.dp)) {
-            if (filtered.isEmpty()) item { EmptyPanel("Your archive is empty", "CurrentLens keeps recently fetched headlines on this device for up to 30 days.") }
-            else filtered.groupBy { ArticleFilters.publishedDate(it) }.entries.sortedByDescending { it.key }.forEach { (date, group) ->
-                item {
-                    Text(date?.format(DateTimeFormatter.ofPattern("EEEE, d MMMM", Locale.ENGLISH)) ?: "Earlier",
-                        style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold,
-                        modifier = Modifier.padding(top = 10.dp, bottom = 2.dp))
-                }
-                items(group, key = { it.id }) { article ->
-                    NewsCard(article, bookmarks.contains(article.url), onOpenArticle, onToggleBookmark)
-                }
+        FilterChipRow("Topic", categories, selectedCategory, { selectedCategory = it })
+        FilterChipRow("GS paper", gsPapers, selectedGsPaper, { selectedGsPaper = it })
+        FilterChipRow("Subject", subjects, selectedSubject, { selectedSubject = it })
+        LazyColumn(
+            Modifier.weight(1f),
+            contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 7.dp, bottom = 110.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            if (filtered.isEmpty()) item {
+                EmptyPanel("No matching articles", "Change your search or remove one of the filters.")
+            } else items(filtered, key = { it.id }) { article ->
+                NewsCard(article, bookmarks.contains(article.url), onOpenArticle, onToggleBookmark)
             }
         }
     }
 }
+
+
 
 @Composable
 private fun SavedFeed(
@@ -457,19 +555,317 @@ private fun SavedFeed(
     onOpenArticle: (Article) -> Unit,
     onToggleBookmark: (Article) -> Unit
 ) {
-    val saved = articles.filter { bookmarks.contains(it.url) }.sortedByDescending { it.publishedAtMillis ?: 0L }
-    val recent = articles.filter { readHistory.contains(it.url) && !bookmarks.contains(it.url) }
+    var dateRange by remember { mutableStateOf(StatsDateRange.ALL_TIME) }
+    var selectedSubject by remember { mutableStateOf("All") }
+    var selectedGsPaper by remember { mutableStateOf("All") }
+    val today = LocalDate.now(ZoneId.of(INDIA_ZONE))
+    val savedArticles = articles.filter { bookmarks.contains(it.url) }
+    val subjects = remember(savedArticles) {
+        listOf("All") + savedArticles.map { UpscEngine.classify(it).subject }.distinct().sorted()
+    }
+    val filtered = StudyStatsPolicy.filterArticles(
+        savedArticles, dateRange, selectedSubject, selectedGsPaper, today
+    )
+    val previouslyOpened = articles.filter { readHistory.contains(it.url) && !bookmarks.contains(it.url) }
         .sortedByDescending { it.publishedAtMillis ?: 0L }.take(15)
-    LazyColumn(Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 110.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        item { Text("BOOKMARKS", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold, fontSize = 10.sp, letterSpacing = 1.4.sp) }
-        if (saved.isEmpty()) item { EmptyPanel("Nothing saved yet", "Tap the bookmark on any story to keep it here.") }
-        else items(saved, key = { it.id }) { article -> NewsCard(article, true, onOpenArticle, onToggleBookmark) }
-        if (recent.isNotEmpty()) {
-            item { Text("RECENTLY READ", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold, fontSize = 10.sp, letterSpacing = 1.4.sp, modifier = Modifier.padding(top = 12.dp)) }
-            items(recent, key = { "read-" + it.id }) { article -> NewsCard(article, false, onOpenArticle, onToggleBookmark) }
+
+    Column(Modifier.fillMaxSize()) {
+        FilterChipRow("Published", StatsDateRange.values().map { it.label }, dateRange.label) { label ->
+            dateRange = StatsDateRange.values().first { it.label == label }
         }
+        FilterChipRow("GS paper", listOf("All", "GS I", "GS II", "GS III", "GS IV", "Unmapped"),
+            selectedGsPaper, { selectedGsPaper = it })
+        FilterChipRow("Subject", subjects, selectedSubject, { selectedSubject = it })
+        LazyColumn(
+            Modifier.weight(1f),
+            contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 110.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            item {
+                Text("SAVED ARTICLES", color = MaterialTheme.colorScheme.primary,
+                    fontWeight = FontWeight.Bold, fontSize = 10.sp, letterSpacing = 1.4.sp)
+            }
+            if (savedArticles.isEmpty()) item {
+                EmptyPanel("Nothing saved yet", "Tap the bookmark on any story to keep it here.")
+            } else if (filtered.isEmpty()) item {
+                EmptyPanel("No saved articles match", "Change the publication-date, subject or GS-paper filter.")
+            } else items(filtered, key = { it.id }) { article ->
+                NewsCard(article, true, onOpenArticle, onToggleBookmark)
+            }
+            if (previouslyOpened.isNotEmpty()) {
+                item {
+                    Text("PREVIOUSLY OPENED", color = MaterialTheme.colorScheme.primary,
+                        fontWeight = FontWeight.Bold, fontSize = 10.sp, letterSpacing = 1.4.sp,
+                        modifier = Modifier.padding(top = 12.dp))
+                    Text("Older read markers are preserved, but their original read dates and durations were not recorded.",
+                        style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.secondary)
+                }
+                items(previouslyOpened, key = { "opened-" + it.id }) { article ->
+                    NewsCard(article, false, onOpenArticle, onToggleBookmark)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun YouDashboard(
+    totalUniqueRead: Int,
+    articlesReadToday: Int,
+    savedCount: Int,
+    attempts: List<QuizAttempt>,
+    onSaved: () -> Unit,
+    onReadingStats: () -> Unit,
+    onQuizStats: () -> Unit,
+    onSettings: () -> Unit
+) {
+    val answersAttempted = attempts.sumOf { it.answeredCount }
+    val correctAnswers = attempts.sumOf { it.correctCount }
+    val wrongAnswers = attempts.sumOf { it.wrongCount }
+    LazyColumn(
+        Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 112.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        item {
+            Text("YOUR ACTIVITY", color = MaterialTheme.colorScheme.primary,
+                fontWeight = FontWeight.Bold, fontSize = 10.sp, letterSpacing = 1.4.sp)
+            Text("A private snapshot of your reading and UPSC practice.",
+                style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.secondary)
+        }
+        item {
+            Row(horizontalArrangement = Arrangement.spacedBy(9.dp)) {
+                MetricTile("Unique read", totalUniqueRead.toString(), Modifier.weight(1f))
+                MetricTile("Read today", articlesReadToday.toString(), Modifier.weight(1f))
+            }
+        }
+        item {
+            Row(horizontalArrangement = Arrangement.spacedBy(9.dp)) {
+                MetricTile("Saved", savedCount.toString(), Modifier.weight(1f))
+                MetricTile("Quiz attempts", attempts.size.toString(), Modifier.weight(1f))
+            }
+        }
+        item {
+            Row(horizontalArrangement = Arrangement.spacedBy(9.dp)) {
+                MetricTile("Answers attempted", answersAttempted.toString(), Modifier.weight(1f))
+                MetricTile("Correct", correctAnswers.toString(), Modifier.weight(1f))
+            }
+        }
+        item {
+            Row(horizontalArrangement = Arrangement.spacedBy(9.dp)) {
+                MetricTile("Incorrect", wrongAnswers.toString(), Modifier.weight(1f))
+                MetricTile("Accuracy", if (answersAttempted == 0) "—" else
+                    ((correctAnswers * 100f / answersAttempted).toInt().toString() + "%"),
+                    Modifier.weight(1f))
+            }
+        }
+        item {
+            Text("YOUR LIBRARY & STATS", color = MaterialTheme.colorScheme.primary,
+                fontWeight = FontWeight.Bold, fontSize = 10.sp, letterSpacing = 1.4.sp,
+                modifier = Modifier.padding(top = 8.dp))
+        }
+        item { DestinationRow("Saved", "Your bookmarked articles", savedCount.toString(), onSaved) }
+        item { DestinationRow("Reading Stats", "Daily reading time, articles and filters", "›", onReadingStats) }
+        item { DestinationRow("Quiz & Practice Stats", "Submitted answers, correct and incorrect", "›", onQuizStats) }
+        item { DestinationRow("Settings", "Liquid Glass appearance", "›", onSettings) }
+        item {
+            Text("Reading-time and quiz statistics begin with this version. Older read markers remain counted as unique reads, but no historical dates or durations are inferred.",
+                style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.secondary,
+                modifier = Modifier.padding(top = 5.dp))
+        }
+    }
+}
+
+@Composable
+private fun MetricTile(label: String, value: String, modifier: Modifier = Modifier) {
+    Card(
+        modifier = modifier,
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+    ) {
+        Column(Modifier.padding(horizontal = 14.dp, vertical = 13.dp),
+            verticalArrangement = Arrangement.spacedBy(5.dp)) {
+            Text(value, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.primary)
+            Text(label, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.secondary)
+        }
+    }
+}
+
+@Composable
+private fun DestinationRow(title: String, description: String, trailing: String, onClick: () -> Unit) {
+    Card(
+        modifier = Modifier.fillMaxWidth().clickable(onClick = onClick),
+        shape = RoundedCornerShape(18.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+    ) {
+        Row(Modifier.fillMaxWidth().padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                Text(title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                Text(description, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.secondary)
+            }
+            Text(trailing, style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.primary)
+        }
+    }
+}
+
+@Composable
+private fun FilterChipRow(
+    title: String,
+    options: List<String>,
+    selected: String,
+    onSelected: (String) -> Unit
+) {
+    Column(Modifier.fillMaxWidth().padding(top = 3.dp)) {
+        Text(title, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.secondary,
+            modifier = Modifier.padding(start = 16.dp, bottom = 2.dp))
+        Row(
+            Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(horizontal = 13.dp, vertical = 3.dp),
+            horizontalArrangement = Arrangement.spacedBy(6.dp)
+        ) {
+            options.distinct().forEach { option ->
+                FilterChip(selected = selected == option, onClick = { onSelected(option) },
+                    label = { Text(option, fontSize = 11.sp) })
+            }
+        }
+    }
+}
+
+@Composable
+private fun ReadingStatsScreen(sessions: List<ReadingSession>) {
+    var dateRange by remember { mutableStateOf(StatsDateRange.LAST_7_DAYS) }
+    var selectedSubject by remember { mutableStateOf("All") }
+    var selectedGsPaper by remember { mutableStateOf("All") }
+    val today = LocalDate.now(ZoneId.of(INDIA_ZONE))
+    val subjects = remember(sessions) {
+        listOf("All") + sessions.map { it.subject }.distinct().sorted()
+    }
+    val summary = StudyStatsPolicy.readingSummary(
+        sessions, dateRange, selectedSubject, selectedGsPaper, today
+    )
+    Column(Modifier.fillMaxSize()) {
+        FilterChipRow("Date", StatsDateRange.values().map { it.label }, dateRange.label) { label ->
+            dateRange = StatsDateRange.values().first { it.label == label }
+        }
+        FilterChipRow("GS paper", listOf("All", "GS I", "GS II", "GS III", "GS IV", "Unmapped"),
+            selectedGsPaper, { selectedGsPaper = it })
+        FilterChipRow("Subject", subjects, selectedSubject, { selectedSubject = it })
+        Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 7.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            MetricTile("Reading time", formatDuration(summary.totalDurationMillis), Modifier.weight(1f))
+            MetricTile("Unique articles", summary.uniqueArticleCount.toString(), Modifier.weight(1f))
+            MetricTile("Sessions", summary.sessionCount.toString(), Modifier.weight(1f))
+        }
+        if (summary.days.isEmpty()) {
+            EmptyPanel("No timed reading sessions in this range",
+                "Open an article and keep it in the foreground. Older read markers have no historical date or duration.")
+        } else {
+            LazyColumn(
+                Modifier.weight(1f),
+                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+                verticalArrangement = Arrangement.spacedBy(9.dp)
+            ) {
+                item {
+                    Text("TIME SPENT PER DAY", color = MaterialTheme.colorScheme.primary,
+                        fontWeight = FontWeight.Bold, fontSize = 10.sp, letterSpacing = 1.3.sp)
+                }
+                items(summary.days, key = { it.date.toString() }) { day ->
+                    Card(shape = RoundedCornerShape(17.dp),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
+                        Row(Modifier.fillMaxWidth().padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
+                            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                                Text(day.date.format(DateTimeFormatter.ofPattern("EEE, d MMM", Locale.ENGLISH)),
+                                    fontWeight = FontWeight.SemiBold)
+                                Text(day.articleCount.toString() + " unique articles",
+                                    style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.secondary)
+                            }
+                            Text(formatDuration(day.durationMillis), fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.primary)
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun QuizStatsScreen(attempts: List<QuizAttempt>) {
+    var dateRange by remember { mutableStateOf(StatsDateRange.ALL_TIME) }
+    var selectedSubject by remember { mutableStateOf("All") }
+    var selectedGsPaper by remember { mutableStateOf("All") }
+    val today = LocalDate.now(ZoneId.of(INDIA_ZONE))
+    val subjects = remember(attempts) {
+        listOf("All") + attempts.map { it.subject }.distinct().sorted()
+    }
+    val summary = StudyStatsPolicy.quizSummary(
+        attempts, dateRange, selectedSubject, selectedGsPaper, today
+    )
+    val accuracy = if (summary.answersAttempted == 0) "—" else
+        ((summary.correctAnswers * 100f / summary.answersAttempted).toInt().toString() + "%")
+    Column(Modifier.fillMaxSize()) {
+        FilterChipRow("Date", StatsDateRange.values().map { it.label }, dateRange.label) { label ->
+            dateRange = StatsDateRange.values().first { it.label == label }
+        }
+        FilterChipRow("GS paper", listOf("All", "GS I", "GS II", "GS III", "GS IV", "Unmapped"),
+            selectedGsPaper, { selectedGsPaper = it })
+        FilterChipRow("Subject", subjects, selectedSubject, { selectedSubject = it })
+        Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 7.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            MetricTile("Attempts", summary.attemptCount.toString(), Modifier.weight(1f))
+            MetricTile("Answered", summary.answersAttempted.toString(), Modifier.weight(1f))
+        }
+        Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 3.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            MetricTile("Correct", summary.correctAnswers.toString(), Modifier.weight(1f))
+            MetricTile("Incorrect", summary.wrongAnswers.toString(), Modifier.weight(1f))
+            MetricTile("Accuracy", accuracy, Modifier.weight(1f))
+        }
+        if (summary.attempts.isEmpty()) {
+            EmptyPanel("No submitted quizzes in this range",
+                "Quiz statistics are saved only after you submit answers. Unsubmitted selections are not counted.")
+        } else {
+            LazyColumn(
+                Modifier.weight(1f),
+                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+                verticalArrangement = Arrangement.spacedBy(9.dp)
+            ) {
+                items(summary.attempts, key = { it.id }) { attempt ->
+                    Card(shape = RoundedCornerShape(17.dp),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
+                        Column(Modifier.fillMaxWidth().padding(14.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) {
+                            Text(attempt.articleTitle, fontWeight = FontWeight.SemiBold,
+                                maxLines = 2, overflow = TextOverflow.Ellipsis)
+                            Text(
+                                Instant.ofEpochMilli(attempt.submittedAtMillis).atZone(ZoneId.of(INDIA_ZONE))
+                                    .format(DateTimeFormatter.ofPattern("d MMM yyyy · h:mm a", Locale.ENGLISH)),
+                                style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.secondary
+                            )
+                            Text(attempt.gsPaper + " · " + attempt.subject,
+                                style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.secondary)
+                            Text(
+                                attempt.answeredCount.toString() + "/" + attempt.totalQuestions + " answered  ·  " +
+                                    attempt.correctCount + " correct  ·  " + attempt.wrongCount + " incorrect",
+                                style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+private fun formatDuration(durationMillis: Long): String {
+    val totalMinutes = durationMillis.coerceAtLeast(0L) / 60_000L
+    val hours = totalMinutes / 60L
+    val minutes = totalMinutes % 60L
+    return when {
+        hours > 0L -> hours.toString() + "h " + minutes.toString() + "m"
+        totalMinutes > 0L -> totalMinutes.toString() + "m"
+        durationMillis > 0L -> "<1m"
+        else -> "0m"
     }
 }
 
@@ -562,8 +958,8 @@ private fun GlassTabBar(backdrop: PrismalBackdrop, selectedTab: Int, glassAlpha:
     ) {
         GlassTab(0, "Today", Icons.Outlined.Today, onSelect)
         GlassTab(1, "Explore", Icons.Outlined.Explore, onSelect)
-        GlassTab(2, "Archive", Icons.Outlined.Archive, onSelect)
-        GlassTab(3, "Saved", Icons.Outlined.BookmarkBorder, onSelect)
+        GlassTab(2, "Search", Icons.Outlined.Search, onSelect)
+        GlassTab(3, "You", Icons.Outlined.Person, onSelect)
     }
 }
 
@@ -588,13 +984,44 @@ private fun matchesSearchTerms(article: Article, query: String): Boolean =
     ExploreFilters.matchesSearchTerms(article, query)
 
 @Composable
-private fun ReaderScreen(article: Article, backdrop: PrismalBackdrop, glassAlpha: Float, dark: Boolean, onBack: () -> Unit, onQuiz: () -> Unit) {
+private fun ReaderScreen(article: Article, backdrop: PrismalBackdrop, glassAlpha: Float, dark: Boolean, onBack: () -> Unit, onQuiz: () -> Unit, onSessionRecorded: () -> Unit) {
     val context = LocalContext.current
+
+    val lifecycleOwner = context as? LifecycleOwner
+    DisposableEffect(lifecycleOwner, article.url) {
+        val clock = ForegroundReadingSessionClock()
+        fun resumeSession() {
+            clock.resume(System.currentTimeMillis(), SystemClock.elapsedRealtime())
+        }
+        fun flushSession() {
+            clock.pause(SystemClock.elapsedRealtime())?.let { window ->
+                if (LocalStore.recordReadingSession(context, article, window.startedAtMillis, window.durationMillis)) {
+                    onSessionRecorded()
+                }
+            }
+        }
+        val observer = LifecycleEventObserver { _, event ->
+            when (event) {
+                Lifecycle.Event.ON_RESUME -> resumeSession()
+                Lifecycle.Event.ON_PAUSE, Lifecycle.Event.ON_STOP, Lifecycle.Event.ON_DESTROY -> flushSession()
+                else -> Unit
+            }
+        }
+        lifecycleOwner?.lifecycle?.addObserver(observer)
+        if (lifecycleOwner == null ||
+            lifecycleOwner.lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)
+        ) resumeSession()
+        onDispose {
+            lifecycleOwner?.lifecycle?.removeObserver(observer)
+            flushSession()
+        }
+    }
     var extractedHtml by remember(article.url) { mutableStateOf<String?>(null) }
     var loadedFromCache by remember(article.url) { mutableStateOf(false) }
     var extracting by remember(article.url) { mutableStateOf(true) }
     var fallbackToPublisher by remember(article.url) { mutableStateOf(false) }
     var pageLoaded by remember(article.url) { mutableStateOf(false) }
+    var publisherLoadFailed by remember(article.url) { mutableStateOf(false) }
     var reachedBottom by remember(article.url) { mutableStateOf(false) }
     var activeWord by remember(article.url) { mutableStateOf<String?>(null) }
     var fontSize by remember(article.url) { mutableIntStateOf(20) }
@@ -615,6 +1042,7 @@ private fun ReaderScreen(article: Article, backdrop: PrismalBackdrop, glassAlpha
                 }
             }
             fallbackToPublisher = extractedHtml == null && PublisherHostPolicy.allows(article.source, article.url)
+            if (extractedHtml == null && !fallbackToPublisher) pageLoaded = true
         } finally {
             extracting = false
         }
@@ -638,14 +1066,14 @@ private fun ReaderScreen(article: Article, backdrop: PrismalBackdrop, glassAlpha
             IconButton(onClick = { fontSize = (fontSize - 1).coerceIn(16, 28) }) { Icon(Icons.Outlined.TextDecrease, contentDescription = "Smaller text") }
             IconButton(onClick = { fontSize = (fontSize + 1).coerceIn(16, 28) }) { Icon(Icons.Outlined.TextIncrease, contentDescription = "Larger text") }
         }
-        if (extracting || !pageLoaded) androidx.compose.material3.LinearProgressIndicator(Modifier.fillMaxWidth())
+        if (extracting || (!pageLoaded && (extractedHtml != null || fallbackToPublisher))) androidx.compose.material3.LinearProgressIndicator(Modifier.fillMaxWidth())
         Box(Modifier.weight(1f).fillMaxWidth()) {
             AndroidView(
                 modifier = Modifier.fillMaxSize(),
                 factory = { ctx ->
                     ReaderWebView(ctx).apply {
-                        settings.javaScriptEnabled = true
-                        settings.domStorageEnabled = true
+                        settings.javaScriptEnabled = false
+                        settings.domStorageEnabled = false
                         settings.loadsImagesAutomatically = true
                         settings.javaScriptCanOpenWindowsAutomatically = false
                         settings.allowFileAccess = false
@@ -670,13 +1098,16 @@ private fun ReaderScreen(article: Article, backdrop: PrismalBackdrop, glassAlpha
                     webView.onDefineWord = { activeWord = it }
                     webView.onReaderPageFinished = {
                         pageLoaded = true
+                        publisherLoadFailed = false
                         if (extractedHtml == null) {
                             val size = fontSize
                             webView.evaluateJavascript("(function(){document.body.style.fontSize='" + size + "px';document.body.style.lineHeight='1.7';})();", null)
                         }
                     }
-                    webView.onReaderMainFrameError = { pageLoaded = true }
+                    webView.onReaderMainFrameError = { pageLoaded = true; publisherLoadFailed = true }
                     webView.allowReaderNavigation = { target -> PublisherHostPolicy.allows(article.source, target) }
+                    webView.settings.javaScriptEnabled = extractedHtml == null && fallbackToPublisher
+                    webView.settings.domStorageEnabled = extractedHtml == null && fallbackToPublisher
                     if (webView.beginArticle(article.url)) {
                         reachedBottom = false
                         activeWord = null
@@ -699,6 +1130,34 @@ private fun ReaderScreen(article: Article, backdrop: PrismalBackdrop, glassAlpha
                     }
                 }
             )
+
+            if (!extracting && extractedHtml == null && !fallbackToPublisher) {
+                Column(
+                    Modifier.align(Alignment.Center).padding(28.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    Text("A readable public article is unavailable", style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.SemiBold, textAlign = TextAlign.Center)
+                    Text("CurrentLens could not verify a publisher page for this link. The RSS headline and excerpt remain available in the feed; no paywall or access restriction is bypassed.",
+                        style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.secondary,
+                        textAlign = TextAlign.Center)
+                }
+            }
+            if (!extracting && fallbackToPublisher && publisherLoadFailed) {
+                Column(
+                    Modifier.align(Alignment.Center).padding(28.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    Text("Publisher page could not be loaded", style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.SemiBold, textAlign = TextAlign.Center)
+                    Text("Check your connection or return to the feed. Subscription restrictions remain unchanged.",
+                        style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.secondary,
+                        textAlign = TextAlign.Center)
+                }
+            }
+
             if (extracting) {
                 Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background.copy(alpha = 0.90f)), contentAlignment = Alignment.Center) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -911,7 +1370,11 @@ private fun GlassSettingsScreen(backdrop: PrismalBackdrop, glassAlpha: Float, on
 }
 
 @Composable
-private fun QuizScreen(article: Article, onBack: () -> Unit) {
+private fun QuizScreen(
+    article: Article,
+    onBack: () -> Unit,
+    onSubmit: (Map<Int, Int>, List<QuizQuestion>) -> Unit
+) {
     val relevance = remember(article.id) { UpscEngine.classify(article) }
     val questions = remember(article.id) { UpscEngine.questions(article, relevance) }
     var selected by remember(article.id) { mutableStateOf<Map<Int, Int>>(emptyMap()) }
@@ -923,7 +1386,8 @@ private fun QuizScreen(article: Article, onBack: () -> Unit) {
             IconButton(onClick = onBack) { Icon(Icons.Outlined.ArrowBack, contentDescription = "Back to article") }
             Text("Your reading check", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
         }
-        Text("Five questions · Basic to application", color = MaterialTheme.colorScheme.secondary, modifier = Modifier.padding(horizontal = 20.dp))
+        Text("Five questions · Basic to application", color = MaterialTheme.colorScheme.secondary,
+            modifier = Modifier.padding(horizontal = 20.dp))
         Card(
             modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer),
@@ -941,7 +1405,8 @@ private fun QuizScreen(article: Article, onBack: () -> Unit) {
                 )
             }
         }
-        LazyColumn(Modifier.weight(1f), contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+        LazyColumn(Modifier.weight(1f), contentPadding = PaddingValues(16.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp)) {
             item {
                 Text(article.title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
                 Text(relevance.gsPaper + " · " + relevance.subject + " · " + relevance.signalLabel,
@@ -951,27 +1416,38 @@ private fun QuizScreen(article: Article, onBack: () -> Unit) {
                     else "Matched terms: " + relevance.matchedTerms.joinToString(", "),
                     color = MaterialTheme.colorScheme.secondary, fontSize = 11.sp
                 )
+                Text("Answered: " + selected.size + "/" + questions.size,
+                    style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.secondary)
             }
             items(questions.size) { index ->
                 val question = questions[index]
-                Card(shape = RoundedCornerShape(18.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
+                Card(shape = RoundedCornerShape(18.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
                     Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(9.dp)) {
-                        Text(question.level + " / " + question.type.uppercase(), color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold, fontSize = 11.sp)
+                        Text(question.level + " / " + question.type.uppercase(),
+                            color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold, fontSize = 11.sp)
                         Text(question.prompt, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
                         question.options.forEachIndexed { optionIndex, option ->
                             val chosen = selected[index] == optionIndex
                             val correct = submitted && optionIndex == question.correctIndex
-                            OutlinedButton(onClick = { if (!submitted) selected = selected + (index to optionIndex) },
-                                modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(13.dp), enabled = !submitted) {
-                                Text((if (chosen) "●  " else "○  ") + option, modifier = Modifier.fillMaxWidth(),
+                            OutlinedButton(
+                                onClick = { if (!submitted) selected = selected + (index to optionIndex) },
+                                modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(13.dp),
+                                enabled = !submitted
+                            ) {
+                                Text((if (chosen) "●  " else "○  ") + option,
+                                    modifier = Modifier.fillMaxWidth(),
                                     color = if (correct) Color(0xFF168653) else MaterialTheme.colorScheme.onSurface)
                             }
                         }
-                        Text(question.provenance, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.secondary)
+                        Text(question.provenance, style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.secondary)
                         if (submitted) {
-                            Text(if (selected[index] == question.correctIndex) "Correct" else "Review this concept",
+                            Text(if (selected[index] == question.correctIndex) "Correct" else
+                                if (selected.containsKey(index)) "Incorrect" else "Not answered",
                                 fontWeight = FontWeight.Bold,
-                                color = if (selected[index] == question.correctIndex) Color(0xFF168653) else MaterialTheme.colorScheme.error)
+                                color = if (selected[index] == question.correctIndex) Color(0xFF168653)
+                                else MaterialTheme.colorScheme.error)
                             Text(question.explanation, style = MaterialTheme.typography.bodyMedium)
                         }
                     }
@@ -980,15 +1456,27 @@ private fun QuizScreen(article: Article, onBack: () -> Unit) {
             if (submitted) item {
                 Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)) {
                     Column(Modifier.padding(17.dp)) {
-                        Text("Your result: " + score + "/5", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
-                        Text("Use the explanations to revise the syllabus connection. These are practice questions, not predictions of future UPSC papers.")
+                        Text("Your result: " + score + "/" + questions.size,
+                            style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+                        Text(selected.size.toString() + " answered · " + score + " correct · " +
+                            (selected.size - score).coerceAtLeast(0) + " incorrect")
+                        Text("Only this submitted attempt is included in your practice statistics. These are practice questions, not predictions of future UPSC papers.")
                     }
                 }
             }
         }
         Row(Modifier.fillMaxWidth().padding(14.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             OutlinedButton(onClick = onBack, modifier = Modifier.weight(1f)) { Text("Done") }
-            Button(onClick = { submitted = true }, modifier = Modifier.weight(1f), enabled = selected.size == questions.size && !submitted) { Text("Check answers") }
+            Button(
+                onClick = {
+                    if (!submitted) {
+                        submitted = true
+                        onSubmit(selected.toMap(), questions)
+                    }
+                },
+                modifier = Modifier.weight(1f),
+                enabled = selected.isNotEmpty() && !submitted
+            ) { Text("Submit answers") }
         }
     }
 }
