@@ -39,13 +39,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.text.BasicTextField
-import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.ui.text.input.ImeAction
-import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusRequester
-import androidx.compose.ui.platform.LocalSoftwareKeyboardController
-import androidx.compose.foundation.layout.imePadding
-import androidx.compose.animation.animateContentSize
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Archive
 import androidx.compose.material.icons.outlined.ArrowBack
@@ -226,13 +219,9 @@ private fun CurrentLensApp() {
         if (selectedArticle == null && !showSettings) {
             Box(
                 Modifier.align(Alignment.BottomCenter).fillMaxWidth()
-                    .imePadding().navigationBarsPadding().padding(horizontal = 10.dp, vertical = 6.dp)
+                    .navigationBarsPadding().padding(horizontal = 10.dp, vertical = 6.dp)
             ) {
-                AnimatedContent(targetState = selectedTab == 2,
-                    transitionSpec = { fadeIn(tween(180)) togetherWith fadeOut(tween(120)) }, label = "Navigation morph") { searching ->
-                    if (searching) SearchGlassBar(backdrop, searchQuery, { searchQuery = it }, glassAlpha)
-                    else GlassTabBar(backdrop, selectedTab, glassAlpha) { selectedTab = it }
-                }
+                GlassTabBar(backdrop, selectedTab, glassAlpha) { selectedTab = it }
             }
         }
     }
@@ -267,7 +256,7 @@ private fun HomeScreen(
         ) {
             Column(Modifier.weight(1f)) {
                 Text(
-                    when (selectedTab) { 0 -> "Today"; 1 -> "Explore"; 2 -> "Search"; else -> "Saved" },
+                    when (selectedTab) { 0 -> "Today"; 1 -> "Explore"; 2 -> "Archive"; else -> "Saved" },
                     style = MaterialTheme.typography.headlineMedium,
                     fontWeight = FontWeight.Bold
                 )
@@ -285,8 +274,8 @@ private fun HomeScreen(
         ) { tab ->
             when (tab) {
                 0 -> TodayFeed(todaysArticles, allCachedArticles, loading, loadError, refreshing, bookmarks, onOpenArticle, onToggleBookmark)
-                1 -> ExploreFeed(ArticleFilters.explore(allCachedArticles), exploreCategory, { exploreCategory = it }, bookmarks, onOpenArticle, onToggleBookmark)
-                2 -> SearchFeed(allCachedArticles, searchQuery, bookmarks, onOpenArticle, onToggleBookmark)
+                1 -> ExploreFeed(ArticleFilters.explore(allCachedArticles), exploreCategory, { exploreCategory = it }, searchQuery, onSearchQueryChange, bookmarks, onOpenArticle, onToggleBookmark)
+                2 -> ArchiveFeed(allCachedArticles, archiveWindow, { archiveWindow = it }, bookmarks, onOpenArticle, onToggleBookmark)
                 else -> SavedFeed(allCachedArticles, bookmarks, readHistory, onOpenArticle, onToggleBookmark)
             }
         }
@@ -366,18 +355,47 @@ private fun ExploreFeed(
     articles: List<Article>,
     selectedCategory: String,
     onCategory: (String) -> Unit,
+    searchQuery: String,
+    onSearchQueryChange: (String) -> Unit,
     bookmarks: Set<String>,
     onOpenArticle: (Article) -> Unit,
     onToggleBookmark: (Article) -> Unit
 ) {
     val categories = listOf("All", "India", "World", "Politics", "Economy", "Explained", "Science", "UPSC", "Opinion")
     val filtered = articles.filter { article ->
-        selectedCategory == "All" ||
+        (selectedCategory == "All" ||
             article.section.contains(selectedCategory, ignoreCase = true) ||
             (selectedCategory == "Politics" && article.title.contains("government", true)) ||
-            (selectedCategory == "Opinion" && (article.section.contains("editorial", true) || article.section.contains("opinion", true)))
+            (selectedCategory == "Opinion" && (article.section.contains("editorial", true) || article.section.contains("opinion", true)))) &&
+            matchesSearchTerms(article, searchQuery)
     }
     Column(Modifier.fillMaxSize()) {
+        Row(
+            Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp)
+                .clip(RoundedCornerShape(18.dp)).background(MaterialTheme.colorScheme.surfaceVariant)
+                .padding(horizontal = 12.dp, vertical = 9.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(Icons.Outlined.Search, contentDescription = "Search Explore", tint = MaterialTheme.colorScheme.primary)
+            BasicTextField(
+                value = searchQuery,
+                onValueChange = onSearchQueryChange,
+                modifier = Modifier.weight(1f).padding(horizontal = 10.dp),
+                singleLine = true,
+                textStyle = MaterialTheme.typography.bodyLarge.copy(color = MaterialTheme.colorScheme.onSurface),
+                decorationBox = { inner ->
+                    Box {
+                        if (searchQuery.isBlank()) Text("Search stories or GS topics…", color = MaterialTheme.colorScheme.secondary)
+                        inner()
+                    }
+                }
+            )
+            if (searchQuery.isNotBlank()) {
+                IconButton(onClick = { onSearchQueryChange("") }) {
+                    Icon(Icons.Outlined.Close, contentDescription = "Clear search")
+                }
+            }
+        }
         Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(horizontal = 14.dp, vertical = 5.dp),
             horizontalArrangement = Arrangement.spacedBy(7.dp)) {
             categories.forEach { category ->
@@ -537,7 +555,7 @@ private fun GlassTabBar(backdrop: PrismalBackdrop, selectedTab: Int, glassAlpha:
         Row(Modifier.fillMaxSize().padding(5.dp), verticalAlignment = Alignment.CenterVertically) {
             GlassTabItem(0, "Today", Icons.Outlined.Today, selectedTab, onSelect)
             GlassTabItem(1, "Explore", Icons.Outlined.Explore, selectedTab, onSelect)
-            GlassTabItem(2, "Search", Icons.Outlined.Search, selectedTab, onSelect)
+            GlassTabItem(2, "Archive", Icons.Outlined.Archive, selectedTab, onSelect)
             GlassTabItem(3, "Saved", Icons.Outlined.BookmarkBorder, selectedTab, onSelect)
         }
     }
@@ -554,51 +572,23 @@ private fun RowScope.GlassTabItem(index: Int, label: String, icon: ImageVector, 
         }
     }
 }
-@Composable
-private fun SearchGlassBar(backdrop: PrismalBackdrop, query: String, onQueryChange: (String) -> Unit, glassAlpha: Float) {
-    val focusRequester = remember { FocusRequester() }
-    val keyboard = LocalSoftwareKeyboardController.current
-    LaunchedEffect(Unit) { focusRequester.requestFocus(); keyboard?.show() }
-    PrismalGlassSurface(backdrop = backdrop, modifier = Modifier.fillMaxWidth().height(62.dp).animateContentSize(),
-        shape = { PrismalRoundedRectangle(31.dp) }, blurRadius = 18.dp,
-        tint = if (isSystemInDarkTheme()) Color(0xFF252B38) else Color(0xFFF5F7FC),
-        tintAlpha = (glassAlpha * 0.58f).coerceIn(0.10f, 0.34f)) {
-        Row(Modifier.fillMaxSize().padding(horizontal = 17.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            Icon(Icons.Outlined.Search, contentDescription = "Search articles", tint = MaterialTheme.colorScheme.primary)
-            BasicTextField(value = query, onValueChange = onQueryChange, modifier = Modifier.weight(1f).focusRequester(focusRequester),
-                singleLine = true, textStyle = MaterialTheme.typography.bodyLarge.copy(color = MaterialTheme.colorScheme.onSurface),
-                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
-                decorationBox = { inner -> Box { if (query.isBlank()) Text("Search · India, GS1…", color = MaterialTheme.colorScheme.secondary); inner() } })
-            if (query.isNotBlank()) IconButton(onClick = { onQueryChange("") }) { Icon(Icons.Outlined.Close, contentDescription = "Clear search") }
+
+private fun matchesSearchTerms(article: Article, query: String): Boolean {
+    val terms = query.split(",").map { it.trim() }.filter { it.isNotBlank() }
+    if (terms.isEmpty()) return true
+    val text = (article.title + " " + article.description + " " + article.section + " " + article.source).lowercase()
+    return terms.all { raw ->
+        when (raw.lowercase().replace(" ", "")) {
+            "gs1", "gsi", "gs-i" -> UpscEngine.classify(article).gsPaper == "GS I"
+            "gs2", "gsii", "gs-ii" -> UpscEngine.classify(article).gsPaper == "GS II"
+            "gs3", "gsiii", "gs-iii" -> UpscEngine.classify(article).gsPaper == "GS III"
+            "gs4", "gsiv", "gs-iv" -> UpscEngine.classify(article).gsPaper == "GS IV"
+            "india", "indian" -> text.contains("india") || text.contains("indian") || text.contains("new delhi")
+            "world", "global", "international" -> article.section.contains("world", true) || article.section.contains("international", true) || text.contains("global")
+            "economy", "economic" -> text.contains("econom") || text.contains("rbi") || text.contains("inflation")
+            "environment", "climate" -> text.contains("environment") || text.contains("climate") || text.contains("biodiversity")
+            else -> text.contains(raw.lowercase())
         }
-    }
-}
-@Composable
-private fun SearchFeed(articles: List<Article>, query: String, bookmarks: Set<String>, onOpenArticle: (Article) -> Unit, onToggleBookmark: (Article) -> Unit) {
-    val terms = remember(query) { query.split(",").map { it.trim() }.filter { it.isNotBlank() } }
-    val results = remember(articles, terms) {
-        if (terms.isEmpty()) emptyList() else articles.filter { article ->
-            val text = (article.title + " " + article.description + " " + article.section + " " + article.source).lowercase()
-            terms.all { raw ->
-                when (raw.lowercase().replace(" ", "")) {
-                    "gs1", "gsi", "gs-i" -> UpscEngine.classify(article).gsPaper == "GS I"
-                    "gs2", "gsii", "gs-ii" -> UpscEngine.classify(article).gsPaper == "GS II"
-                    "gs3", "gsiii", "gs-iii" -> UpscEngine.classify(article).gsPaper == "GS III"
-                    "gs4", "gsiv", "gs-iv" -> UpscEngine.classify(article).gsPaper == "GS IV"
-                    "india", "indian" -> text.contains("india") || text.contains("indian") || text.contains("new delhi")
-                    "world", "global", "international" -> article.section.contains("world", true) || article.section.contains("international", true) || text.contains("global")
-                    "economy", "economic" -> text.contains("econom") || text.contains("rbi") || text.contains("inflation")
-                    "environment", "climate" -> text.contains("environment") || text.contains("climate") || text.contains("biodiversity")
-                    else -> text.contains(raw.lowercase())
-                }
-            }
-        }
-    }
-    LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 10.dp, bottom = 110.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        if (terms.isEmpty()) item { EmptyPanel("Search your current-affairs library", "Try India, GS1 · Economy, GS3 · World · climate, GS3") }
-        else item { Text("${results.size} matching stories", color = MaterialTheme.colorScheme.secondary, style = MaterialTheme.typography.labelLarge) }
-        if (terms.isNotEmpty() && results.isEmpty()) item { EmptyPanel("No matching stories", "Try broader words or remove one comma-separated filter.") }
-        items(results, key = { it.id }) { article -> NewsCard(article, bookmarks.contains(article.url), onOpenArticle, onToggleBookmark) }
     }
 }
 
