@@ -556,12 +556,6 @@ private fun GlassTabBar(backdrop: PrismalBackdrop, selectedTab: Int, glassAlpha:
         tintDropletContent = false,
         adaptiveLuminance = true,
         specular = { PrismalSpecular.Default.copy(alpha = glassAlpha) },
-        blurRadius = 12.dp,
-        refractionHeight = 18.dp,
-        refractionAmount = 14.dp,
-        dropletChromaticAberration = 0.2f,
-        pressGlow = 0.24f,
-        renderWithLowOverhead = true,
         modifier = Modifier.fillMaxWidth().height(72.dp)
             .graphicsLayer { alpha = (0.78f + glassAlpha * 0.36f).coerceIn(0.82f, 0.98f) }
     ) {
@@ -575,7 +569,7 @@ private fun GlassTabBar(backdrop: PrismalBackdrop, selectedTab: Int, glassAlpha:
 @Composable
 private fun RowScope.GlassTab(index: Int, label: String, icon: ImageVector, onSelect: (Int) -> Unit) {
     val highlighted = LocalPrismalBottomTabHighlightedIndex.current()
-    val selected = highlighted() == index
+    val selected = highlighted == index
     val tint = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
     PrismalGlassBottomTab(onClick = { onSelect(index) }) {
         Icon(icon, contentDescription = label, tint = tint, modifier = Modifier.size(21.dp))
