@@ -85,7 +85,7 @@ object UpscEngine {
             QuizQuestion("05 · PYQ-style", "Application", "Which approach best turns this current-affairs issue into a UPSC-style analytical question?",
                 listOf("Examine the " + relevance.subject.lowercase() + " dimensions, implications and institutional response", "Memorise the headline without understanding it", "Discuss an unrelated subject", "Predict the exact wording of a future UPSC question"),
                 0, "This is an original PYQ-style prompt, not a verbatim previous-year question. An actual PYQ will only be labelled as such when its year, paper and official reference have been verified.",
-                "PYQ-style practice from syllabus mapping; not an official PYQ.")
+                "PYQ-style practice from syllabus mapping; not an official UPSC question or PYQ.")
         )
     }
 }
