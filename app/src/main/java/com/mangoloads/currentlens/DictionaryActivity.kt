@@ -60,9 +60,11 @@ object DictionaryRepository {
     private const val ASSET_NAME = "wordnet.db"
     private const val DATABASE_NAME = "currentlens_wordnet_2025_plus.db"
     private val databaseLock = Any()
+    private val lookupCache = DictionaryDefinitionCache()
 
     suspend fun lookup(context: Context, word: String): Definition? = withContext(Dispatchers.IO) {
         val normalized = DictionaryWordPolicy.singleSelectedWord(word) ?: return@withContext null
+        lookupCache.get(normalized)?.let { return@withContext it }
         val database = openDatabase(context.applicationContext)
             ?: return@withContext Definition(word.trim(), "", emptyList(), dictionaryAvailable = false)
         try {
@@ -74,15 +76,21 @@ object DictionaryRepository {
             for (candidate in candidates) {
                 val result = queryEntries(database, candidate)
                 if (result.meanings.isNotEmpty()) {
-                    return@withContext Definition(
-                        word = word.trim(),
+                    val definition = Definition(
+                        word = normalized,
                         phonetic = "",
                         meanings = result.meanings,
                         synonyms = result.synonyms
                     )
+                    lookupCache.put(normalized, definition)
+                    return@withContext definition
                 }
             }
-            null
+            // A genuine dictionary miss is distinct from a database/open/query failure.
+            // Cache it so repeatedly selecting an unknown token does not reopen SQLite.
+            Definition(word = normalized, phonetic = "", meanings = emptyList()).also {
+                lookupCache.put(normalized, it)
+            }
         } catch (_: Exception) {
             null
         } finally {
