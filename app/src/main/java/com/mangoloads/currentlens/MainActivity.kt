@@ -573,7 +573,7 @@ private fun ReaderScreen(article: Article, backdrop: PrismalBackdrop, glassAlpha
             AndroidView(
                 modifier = Modifier.fillMaxSize(),
                 factory = { ctx ->
-                    ReaderWebView(ctx, { reachedBottom = true }, { activeWord = it }).apply {
+                    ReaderWebView(ctx).apply {
                         settings.javaScriptEnabled = true
                         settings.domStorageEnabled = true
                         settings.loadsImagesAutomatically = true
@@ -594,6 +594,12 @@ private fun ReaderScreen(article: Article, backdrop: PrismalBackdrop, glassAlpha
                     }
                 },
                 update = { webView ->
+                    webView.onReachedBottom = { reachedBottom = true }
+                    webView.onDefineWord = { activeWord = it }
+                    if (webView.beginArticle(article.url)) {
+                        reachedBottom = false
+                        activeWord = null
+                    }
                     val cleanHtml = extractedHtml
                     if (cleanHtml != null) {
                         val key = "reader:" + article.url + ":" + fontSize + ":" + dark
@@ -659,13 +665,13 @@ private fun readerDocument(article: Article, content: String, fontSize: Int, dar
         "</style></head><body><div class=\"cl-source\">" + source + " · CurrentLens Reader</div><h1>" + title + "</h1><main>" + content + "</main></body></html>"
 }
 
-private class ReaderWebView(
-    context: android.content.Context,
-    private val onReachedBottom: () -> Unit,
-    private val onDefineWord: (String) -> Unit
-) : WebView(context) {
+private class ReaderWebView(context: android.content.Context) : WebView(context) {
     var loadedKey: String? = null
-    private var endNotified = false
+    var onReachedBottom: () -> Unit = {}
+    var onDefineWord: (String) -> Unit = {}
+    private val progressGate = ReaderProgressGate()
+
+    fun beginArticle(url: String): Boolean = progressGate.beginArticle(url)
 
     @Suppress("DEPRECATION")
     override fun startActionMode(callback: ActionMode.Callback, type: Int): ActionMode? =
@@ -704,8 +710,7 @@ private class ReaderWebView(
     override fun onScrollChanged(scrollX: Int, scrollY: Int, oldScrollX: Int, oldScrollY: Int) {
         super.onScrollChanged(scrollX, scrollY, oldScrollX, oldScrollY)
         val fullHeight = (contentHeight * scale).toInt()
-        if (!endNotified && fullHeight > height + 120 && scrollY + height >= fullHeight - 100) {
-            endNotified = true
+        if (fullHeight > height + 120 && scrollY + height >= fullHeight - 100 && progressGate.markEndReached()) {
             onReachedBottom()
         }
     }
