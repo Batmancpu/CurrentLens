@@ -1,25 +1,25 @@
 # Third-party notices
 
-CurrentLens is an independent Android news reader. It does not bundle complete third-party applications.
+CurrentLens is a new Android application and does not bundle or copy whole third-party applications.
 
-## Liquid Glass
+## Open-source projects reviewed
 
-- PrismalAGSL v1.0.4 — MIT License. https://github.com/styropyr0/PrismalAGSL
-  Used for Compose liquid-glass surfaces, draggable four-tab bar, slider, blur and refraction.
+- FeedFlow — Apache License 2.0. https://github.com/prof18/feed-flow. Studied for RSS reading, reader mode and local-first interaction patterns. No source files are bundled in this initial version.
+- QuickWord — MIT License. https://github.com/jtrv/quickword. Studied for Android text-selection dictionary integration. No QuickWord source files or dictionary corpus are bundled in this initial version.
+- Read You — GNU GPL v3. https://github.com/ReadYouApp/ReadYou. Visual/reference project only; no GPL source is bundled.
+- Feeder — GNU GPL v3. https://github.com/spacecowboy/Feeder. Feed reliability/reference project only; no GPL source is bundled.
 
-## Article reader
+## Runtime dependencies
 
-- Klead 1.0.0 — Apache License 2.0. https://github.com/prof18/klead
-  Used to extract readable article content from HTML normally returned by a publisher. It does not execute JavaScript or access paywalled content.
+Runtime dependencies are declared in app/build.gradle.kts and retain their respective licences:
+- AndroidX Jetpack Compose and AndroidX Browser.
+- Coil for image loading.
+- Kotlin and Kotlin Coroutines.
 
-## Dictionary
+## Dictionary content
 
-- Definitions are requested from https://dictionaryapi.dev/ and cached locally. The service's terms and upstream content apply.
+Definitions are requested from https://dictionaryapi.dev/ and cached locally. No dictionary database is redistributed by this project.
 
-## Other dependencies
+## Publisher feeds
 
-AndroidX Jetpack Compose, Material 3, AndroidX Activity, Lifecycle, Kotlin Coroutines and Coil retain their respective licences.
-
-## Publisher content
-
-News discovery uses publisher RSS feeds. Headlines, excerpts, images and original links are attributed to publishers. CurrentLens does not bypass subscription restrictions or republish entire publisher articles. The app is intended for personal use.
+Headlines, excerpts and article URLs are supplied by publisher RSS feeds. CurrentLens attributes the source and links to the original article. Publisher terms apply; some RSS feeds are for personal, non-commercial use only.
