@@ -1,6 +1,7 @@
 package com.mangoloads.currentlens
 
 import android.graphics.Rect
+import android.graphics.RectF
 import android.view.ActionMode
 import android.view.HapticFeedbackConstants
 import android.view.Menu
@@ -30,6 +31,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -39,8 +41,11 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
@@ -84,6 +89,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
@@ -91,12 +97,17 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.positionInWindow
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.LifecycleOwner
@@ -113,6 +124,7 @@ import com.styropyr0.prismal.sources.prismalGlassLayer
 import com.styropyr0.prismal.sources.rememberPrismalGlassLayer
 import com.styropyr0.prismal.specular.PrismalSpecular
 import org.json.JSONTokener
+import org.json.JSONObject
 import java.time.DayOfWeek
 import java.time.Instant
 import java.time.LocalDate
@@ -994,6 +1006,7 @@ private fun matchesSearchTerms(article: Article, query: String): Boolean =
 @Composable
 private fun ReaderScreen(article: Article, backdrop: PrismalBackdrop, glassAlpha: Float, dark: Boolean, onBack: () -> Unit, onQuiz: () -> Unit, onSessionRecorded: () -> Unit) {
     val context = LocalContext.current
+    val composeRootView = LocalView.current
 
     var contentLoaded by remember(article.url) { mutableStateOf(false) }
     val lifecycleOwner = context as? LifecycleOwner
@@ -1037,6 +1050,8 @@ private fun ReaderScreen(article: Article, backdrop: PrismalBackdrop, glassAlpha
     var publisherLoadFailed by remember(article.url) { mutableStateOf(false) }
     var reachedBottom by remember(article.url) { mutableStateOf(false) }
     var activeWord by remember(article.url) { mutableStateOf<String?>(null) }
+    var activeWordAnchor by remember(article.url) { mutableStateOf<Offset?>(null) }
+    var readerViewportScreenOrigin by remember(article.url) { mutableStateOf(Offset.Zero) }
     var fontSize by remember(article.url) { mutableIntStateOf(20) }
 
     LaunchedEffect(article.url) {
@@ -1080,7 +1095,15 @@ private fun ReaderScreen(article: Article, backdrop: PrismalBackdrop, glassAlpha
             IconButton(onClick = { fontSize = (fontSize + 1).coerceIn(16, 28) }) { Icon(Icons.Outlined.TextIncrease, contentDescription = "Larger text") }
         }
         if (extracting || (!pageLoaded && (extractedHtml != null || fallbackToPublisher))) androidx.compose.material3.LinearProgressIndicator(Modifier.fillMaxWidth())
-        Box(Modifier.weight(1f).fillMaxWidth()) {
+        Box(Modifier.weight(1f).fillMaxWidth().onGloballyPositioned { coordinates ->
+            val rootLocation = IntArray(2)
+            composeRootView.getLocationOnScreen(rootLocation)
+            val positionInWindow = coordinates.positionInWindow()
+            readerViewportScreenOrigin = Offset(
+                rootLocation[0] + positionInWindow.x,
+                rootLocation[1] + positionInWindow.y
+            )
+        }) {
             AndroidView(
                 modifier = Modifier.fillMaxSize(),
                 factory = { ctx ->
@@ -1108,7 +1131,18 @@ private fun ReaderScreen(article: Article, backdrop: PrismalBackdrop, glassAlpha
                 },
                 update = { webView ->
                     webView.onReachedBottom = { reachedBottom = true }
-                    webView.onDefineWord = { activeWord = it }
+                    webView.onDefineWord = { word, selectionRect ->
+                        val webViewLocation = IntArray(2)
+                        webView.getLocationOnScreen(webViewLocation)
+                        val cssToScreenScale = webView.resources.displayMetrics.density * webView.scale
+                        activeWordAnchor = selectionRect?.let { rect ->
+                            Offset(
+                                webViewLocation[0] + rect.centerX() * cssToScreenScale - readerViewportScreenOrigin.x,
+                                webViewLocation[1] + rect.centerY() * cssToScreenScale - readerViewportScreenOrigin.y
+                            )
+                        }
+                        activeWord = word
+                    }
                     webView.onReaderPageFinished = {
                         pageLoaded = true
                         contentLoaded = true
@@ -1129,6 +1163,7 @@ private fun ReaderScreen(article: Article, backdrop: PrismalBackdrop, glassAlpha
                     if (webView.beginArticle(article.url)) {
                         reachedBottom = false
                         activeWord = null
+                        activeWordAnchor = null
                     }
                     val cleanHtml = extractedHtml
                     if (cleanHtml != null) {
@@ -1205,7 +1240,12 @@ private fun ReaderScreen(article: Article, backdrop: PrismalBackdrop, glassAlpha
                 }
             }
         }
-        if (activeWord != null) DefinitionGlassOverlay(activeWord!!, backdrop, glassAlpha) { activeWord = null }
+        if (activeWord != null) {
+            DefinitionGlassOverlay(activeWord!!, activeWordAnchor, backdrop, glassAlpha) {
+                activeWord = null
+                activeWordAnchor = null
+            }
+        }
     }
 }
 
@@ -1228,7 +1268,7 @@ private fun readerDocument(article: Article, content: String, fontSize: Int, dar
 private class ReaderWebView(context: android.content.Context) : WebView(context) {
     var loadedKey: String? = null
     var onReachedBottom: () -> Unit = {}
-    var onDefineWord: (String) -> Unit = {}
+    var onDefineWord: (String, RectF?) -> Unit = {}
     var onReaderPageFinished: () -> Unit = {}
     var onReaderMainFrameError: () -> Unit = {}
     var allowReaderNavigation: (String) -> Boolean = { false }
@@ -1244,6 +1284,33 @@ private class ReaderWebView(context: android.content.Context) : WebView(context)
     override fun startActionMode(callback: ActionMode.Callback): ActionMode? =
         super.startActionMode(wrapSelectionCallback(callback))
 
+    private fun evaluateSelection(onResult: (String, RectF?) -> Unit) {
+        val script = "(function(){" +
+            "var s=window.getSelection();" +
+            "if(!s||!s.rangeCount)return JSON.stringify({text:''});" +
+            "var r=s.getRangeAt(0).getBoundingClientRect();" +
+            "return JSON.stringify({text:s.toString(),left:r.left,top:r.top,width:r.width,height:r.height});" +
+            "})()"
+        evaluateJavascript(script) { encoded ->
+            val raw = runCatching {
+                JSONTokener(encoded ?: "null").nextValue() as? String
+            }.getOrNull()
+            val payload = raw?.let { runCatching { JSONObject(it) }.getOrNull() }
+            val selected = payload?.optString("text").orEmpty()
+            val rect = payload?.let {
+                val left = it.optDouble("left", Double.NaN)
+                val top = it.optDouble("top", Double.NaN)
+                val width = it.optDouble("width", Double.NaN)
+                val height = it.optDouble("height", Double.NaN)
+                if (listOf(left, top, width, height).all { value -> value.isFinite() } &&
+                    width > 0.0 && height > 0.0
+                ) RectF(left.toFloat(), top.toFloat(), (left + width).toFloat(), (top + height).toFloat())
+                else null
+            }
+            onResult(selected, rect)
+        }
+    }
+
     private fun wrapSelectionCallback(original: ActionMode.Callback): ActionMode.Callback2 =
         object : ActionMode.Callback2() {
             override fun onCreateActionMode(mode: ActionMode, menu: Menu): Boolean {
@@ -1254,14 +1321,11 @@ private class ReaderWebView(context: android.content.Context) : WebView(context)
                     // A native long-press on exactly one word opens its meaning immediately.
                     // Multi-word selections retain Android's normal Copy/Select/Define actions.
                     post {
-                        evaluateJavascript("(function(){return JSON.stringify(window.getSelection().toString());})()") { encoded ->
-                            val selected = runCatching {
-                                JSONTokener(encoded ?: "null").nextValue() as? String
-                            }.getOrNull().orEmpty()
+                        evaluateSelection { selected, selectionRect ->
                             val word = DictionaryWordPolicy.singleSelectedWord(selected)
                             if (word != null) {
                                 performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK)
-                                onDefineWord(word)
+                                onDefineWord(word, selectionRect)
                                 mode.finish()
                             }
                         }
@@ -1272,12 +1336,11 @@ private class ReaderWebView(context: android.content.Context) : WebView(context)
             override fun onPrepareActionMode(mode: ActionMode, menu: Menu): Boolean = original.onPrepareActionMode(mode, menu)
             override fun onActionItemClicked(mode: ActionMode, item: MenuItem): Boolean {
                 if (item.itemId == MENU_DEFINE_WORD) {
-                    evaluateJavascript("(function(){return JSON.stringify(window.getSelection().toString());})()") { encoded ->
-                        val selected = runCatching { JSONTokener(encoded ?: "\"\"").nextValue() as? String }.getOrNull().orEmpty()
+                    evaluateSelection { selected, selectionRect ->
                         val word = DictionaryWordPolicy.singleSelectedWord(selected)
                         if (word != null) {
                             performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK)
-                            onDefineWord(word)
+                            onDefineWord(word, selectionRect)
                         }
                     }
                     mode.finish()
@@ -1285,6 +1348,7 @@ private class ReaderWebView(context: android.content.Context) : WebView(context)
                 }
                 return original.onActionItemClicked(mode, item)
             }
+
             override fun onDestroyActionMode(mode: ActionMode) = original.onDestroyActionMode(mode)
             override fun onGetContentRect(mode: ActionMode, view: View, outRect: Rect) {
                 if (original is ActionMode.Callback2) original.onGetContentRect(mode, view, outRect) else super.onGetContentRect(mode, view, outRect)
@@ -1341,7 +1405,7 @@ private class ReaderWebView(context: android.content.Context) : WebView(context)
 }
 
 @Composable
-private fun DefinitionGlassOverlay(word: String, backdrop: PrismalBackdrop, glassAlpha: Float, onClose: () -> Unit) {
+private fun DefinitionGlassOverlay(word: String, anchor: Offset?, backdrop: PrismalBackdrop, glassAlpha: Float, onClose: () -> Unit) {
     val context = LocalContext.current
     var result by remember(word) { mutableStateOf<Definition?>(null) }
     var loading by remember(word) { mutableStateOf(true) }
@@ -1361,14 +1425,33 @@ private fun DefinitionGlassOverlay(word: String, backdrop: PrismalBackdrop, glas
             onClose()
         }
     }
-    Box(Modifier.fillMaxSize()) {
+    BoxWithConstraints(Modifier.fillMaxSize()) {
+        val density = LocalDensity.current
+        val marginPx = with(density) { 12.dp.roundToPx() }
+        val maxWidthPx = constraints.maxWidth
+        val maxHeightPx = constraints.maxHeight
+        val popupWidthPx = (maxWidthPx - marginPx * 2).coerceAtLeast(1)
+        val estimatedHeightPx = with(density) { 300.dp.roundToPx() }
+        val fallbackAnchor = Offset(maxWidthPx / 2f, maxHeightPx * 0.72f)
+        val placement = DefinitionPopupPlacementPolicy.calculate(
+            parentWidthPx = maxWidthPx,
+            parentHeightPx = maxHeightPx,
+            anchor = anchor ?: fallbackAnchor,
+            popupWidthPx = popupWidthPx,
+            estimatedHeightPx = estimatedHeightPx,
+            marginPx = marginPx,
+            gapPx = with(density) { 14.dp.roundToPx() }
+        )
         AnimatedVisibility(
             visibleState = visibilityState,
-            modifier = Modifier.align(Alignment.BottomCenter).fillMaxWidth(),
+            modifier = Modifier
+                .offset { IntOffset(placement.leftPx, placement.topPx) }
+                .width(with(density) { placement.widthPx.toDp() })
+                .heightIn(max = 300.dp),
             enter = fadeIn(tween(150)) +
                 scaleIn(
                     initialScale = 0.88f,
-                    transformOrigin = TransformOrigin(0.5f, 1f),
+                    transformOrigin = TransformOrigin(placement.originX, placement.originY),
                     animationSpec = spring(dampingRatio = 0.74f, stiffness = 480f)
                 ) +
                 slideInVertically(
@@ -1378,14 +1461,14 @@ private fun DefinitionGlassOverlay(word: String, backdrop: PrismalBackdrop, glas
             exit = fadeOut(tween(110)) +
                 scaleOut(
                     targetScale = 0.94f,
-                    transformOrigin = TransformOrigin(0.5f, 1f),
+                    transformOrigin = TransformOrigin(placement.originX, placement.originY),
                     animationSpec = spring(dampingRatio = 0.82f, stiffness = 520f)
                 ) +
                 slideOutVertically(targetOffsetY = { it / 9 }, animationSpec = spring())
         ) {
             PrismalGlassSurface(
                 backdrop = backdrop,
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 13.dp, vertical = 10.dp),
+                modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
                 shape = { PrismalRoundedRectangle(25.dp) },
                 blurRadius = 17.dp,
                 refractionHeightPx = 22f,
@@ -1395,8 +1478,11 @@ private fun DefinitionGlassOverlay(word: String, backdrop: PrismalBackdrop, glas
                 tint = if (isSystemInDarkTheme()) Color(0xFF263247) else Color(0xFFEAF0FA),
                 tintAlpha = (glassAlpha * 0.82f).coerceIn(0.10f, 0.48f)
             ) {
-                Column(Modifier.padding(horizontal = 19.dp, vertical = 16.dp),
-                    verticalArrangement = Arrangement.spacedBy(9.dp)) {
+                Column(
+                    Modifier.padding(horizontal = 19.dp, vertical = 16.dp)
+                        .verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.spacedBy(9.dp)
+                ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Column(Modifier.weight(1f)) {
                             Text(word, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
