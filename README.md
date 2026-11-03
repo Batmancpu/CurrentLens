@@ -27,6 +27,8 @@ There is no Archive destination and no Saved bottom tab. **Saved** is a section 
 - CurrentLens attempts best-effort extraction only from publicly accessible publisher pages, without logged-in cookies, subscription tokens, proxying or paywall circumvention. If extraction is blocked, paywalled or incomplete, the original publisher page is offered in the in-app WebView when its HTTPS host matches the publisher allow-list.
 - If neither a public article body nor a verified publisher page can be shown, the reader explains that only the RSS headline/excerpt remains available in the feed.
 - RSS metadata is cached locally with a 30-day retention window and a 500-article soft limit; saved stories are retained. Extracted public article bodies use a separate cache capped at 30 entries and 24 MB, with a 2 MB per-entry limit and 30-day expiry.
+- Newly fetched stories retain the configured originating RSS feed URL in the local metadata cache. Duplicate article URLs keep the first feed match; section-specific feeds are intentionally listed before broad feeds.
+- Explicit RSS timezone offsets are preserved. Timezone-less ISO date/time values and date-only values use Asia/Kolkata; unparseable dates remain undated rather than being silently interpreted as UTC.
 - Feed URLs and availability can change. The Indian Express publishes an official RSS directory and limits feed consumption to personal, non-commercial use. Publisher terms apply.
 
 ## UPSC practice

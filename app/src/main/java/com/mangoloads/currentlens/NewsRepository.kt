@@ -10,13 +10,6 @@ import org.xmlpull.v1.XmlPullParser
 import org.xmlpull.v1.XmlPullParserFactory
 import java.net.HttpURLConnection
 import java.net.URL
-import java.time.Instant
-import java.time.LocalDate
-import java.time.LocalDateTime
-import java.time.OffsetDateTime
-import java.time.ZoneOffset
-import java.time.ZonedDateTime
-import java.time.format.DateTimeFormatter
 import java.util.Locale
 
 data class Article(
@@ -28,11 +21,12 @@ data class Article(
     val section: String,
     val published: String,
     val imageUrl: String? = null,
-    val weekendRead: Boolean = false
+    val weekendRead: Boolean = false,
+    /** Configured RSS endpoint that supplied this story; blank only for legacy cached entries. */
+    val feedUrl: String = ""
 ) {
     val publishedAtMillis: Long?
-        get() = parsePublishedAtMillis(published)
-}
+        get() = FeedDateParser.parse(published)
 
 data class FeedSource(
     val name: String,
@@ -40,21 +34,6 @@ data class FeedSource(
     val url: String,
     val weekendRead: Boolean = false
 )
-
-private fun parsePublishedAtMillis(value: String): Long? {
-    val raw = value.trim()
-    if (raw.isBlank()) return null
-    val normalized = raw.replace(Regex("([+-]\\d{2})(\\d{2})$")) { match ->
-        match.groupValues[1] + ":" + match.groupValues[2]
-    }
-    return runCatching {
-        ZonedDateTime.parse(normalized, DateTimeFormatter.RFC_1123_DATE_TIME).toInstant().toEpochMilli()
-    }.getOrNull()
-        ?: runCatching { OffsetDateTime.parse(normalized, DateTimeFormatter.ISO_OFFSET_DATE_TIME).toInstant().toEpochMilli() }.getOrNull()
-        ?: runCatching { Instant.parse(normalized).toEpochMilli() }.getOrNull()
-        ?: runCatching { LocalDateTime.parse(normalized, DateTimeFormatter.ISO_LOCAL_DATE_TIME).toInstant(ZoneOffset.UTC).toEpochMilli() }.getOrNull()
-        ?: runCatching { LocalDate.parse(normalized, DateTimeFormatter.ISO_LOCAL_DATE).atStartOfDay(ZoneOffset.UTC).toInstant().toEpochMilli() }.getOrNull()
-}
 
 object NewsRepository {
     private val feeds = listOf(
@@ -170,7 +149,8 @@ object NewsRepository {
                                     section = source.section,
                                     published = published,
                                     imageUrl = image,
-                                    weekendRead = source.weekendRead
+                                    weekendRead = source.weekendRead,
+                                    feedUrl = source.url
                                 )
                             )
                         }

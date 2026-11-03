@@ -35,6 +35,25 @@ class ArticleCachePolicyTest {
     }
 
     @Test
+    fun duplicateStoryKeepsTheFirstSectionFeedProvenance() {
+        val sectionFeed = article("story", "2026-11-03T10:00:00Z").copy(
+            url = "https://example.test/story",
+            feedUrl = "https://example.test/economy/feed.xml"
+        )
+        val broadFeed = sectionFeed.copy(feedUrl = "https://example.test/all/feed.xml")
+
+        val retained = ArticleCachePolicy.retain(
+            listOf(sectionFeed, broadFeed),
+            bookmarkedUrls = emptySet(),
+            cutoffMillis = 0L,
+            maxArticles = 10
+        )
+
+        assertEquals(1, retained.size)
+        assertEquals(sectionFeed.feedUrl, retained.single().feedUrl)
+    }
+
+    @Test
     fun allBookmarkedStoriesRemainEvenWhenTheyExceedTheSoftLimit() {
         val first = article("first", "2026-09-01T10:00:00Z")
         val second = article("second", "2026-09-02T10:00:00Z")

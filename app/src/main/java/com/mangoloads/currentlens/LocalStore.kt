@@ -74,7 +74,8 @@ object LocalStore {
                             section = item.optString("section"),
                             published = item.optString("published"),
                             imageUrl = item.optString("imageUrl").takeIf { it.isNotBlank() },
-                            weekendRead = item.optBoolean("weekendRead", false)
+                            weekendRead = item.optBoolean("weekendRead", false),
+                            feedUrl = item.optString("feedUrl")
                         )
                     )
                 }
@@ -107,6 +108,7 @@ object LocalStore {
                     .put("published", article.published)
                     .put("imageUrl", article.imageUrl ?: JSONObject.NULL)
                     .put("weekendRead", article.weekendRead)
+                    .put("feedUrl", article.feedUrl)
             )
         }
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
