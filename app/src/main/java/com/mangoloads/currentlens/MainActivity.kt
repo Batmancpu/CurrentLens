@@ -746,26 +746,28 @@ private class ReaderWebView(context: android.content.Context) : WebView(context)
     private fun wrapSelectionCallback(original: ActionMode.Callback): ActionMode.Callback2 =
         object : ActionMode.Callback2() {
             override fun onCreateActionMode(mode: ActionMode, menu: Menu): Boolean {
-                menu.clear()
-                return true
+                val created = original.onCreateActionMode(mode, menu)
+                if (created) menu.add(0, MENU_DEFINE_WORD, menu.size(), "Define").setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS)
+                return created
             }
-            override fun onPrepareActionMode(mode: ActionMode, menu: Menu): Boolean {
-                menu.clear()
-                evaluateJavascript("(function(){return JSON.stringify(window.getSelection().toString());})()") { encoded ->
-                    val selected = runCatching { JSONTokener(encoded ?: "\"\\"").nextValue() as? String }.getOrNull().orEmpty()
-                    val word = selected.trim().take(100)
-                    if (word.isNotBlank()) onDefineWord(word)
+            override fun onPrepareActionMode(mode: ActionMode, menu: Menu): Boolean = original.onPrepareActionMode(mode, menu)
+            override fun onActionItemClicked(mode: ActionMode, item: MenuItem): Boolean {
+                if (item.itemId == MENU_DEFINE_WORD) {
+                    evaluateJavascript("(function(){return JSON.stringify(window.getSelection().toString());})()") { encoded ->
+                        val selected = runCatching { JSONTokener(encoded ?: "\"\"").nextValue() as? String }.getOrNull().orEmpty()
+                        val word = selected.trim().take(100)
+                        if (word.isNotBlank()) onDefineWord(word)
+                    }
                     mode.finish()
+                    return true
                 }
-                return true
+                return original.onActionItemClicked(mode, item)
             }
-            override fun onActionItemClicked(mode: ActionMode, item: MenuItem): Boolean = true
             override fun onDestroyActionMode(mode: ActionMode) = original.onDestroyActionMode(mode)
             override fun onGetContentRect(mode: ActionMode, view: View, outRect: Rect) {
                 if (original is ActionMode.Callback2) original.onGetContentRect(mode, view, outRect) else super.onGetContentRect(mode, view, outRect)
             }
         }
-
     override fun onScrollChanged(scrollX: Int, scrollY: Int, oldScrollX: Int, oldScrollY: Int) {
         super.onScrollChanged(scrollX, scrollY, oldScrollX, oldScrollY)
         val fullHeight = (contentHeight * scale).toInt()
