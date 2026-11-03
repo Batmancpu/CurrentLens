@@ -4,6 +4,7 @@ import android.graphics.Rect
 import android.view.ActionMode
 import android.view.Menu
 import android.view.MenuItem
+import android.view.MotionEvent
 import android.view.View
 import android.webkit.WebResourceRequest
 import android.webkit.WebView
@@ -789,10 +790,49 @@ private class ReaderWebView(context: android.content.Context) : WebView(context)
                 if (original is ActionMode.Callback2) original.onGetContentRect(mode, view, outRect) else super.onGetContentRect(mode, view, outRect)
             }
         }
+    private var touchDownY: Float? = null
+    private var upwardSwipeDetected = false
+
+    override fun onTouchEvent(event: MotionEvent): Boolean {
+        when (event.actionMasked) {
+            MotionEvent.ACTION_DOWN -> {
+                touchDownY = event.y
+                upwardSwipeDetected = false
+            }
+            MotionEvent.ACTION_MOVE -> {
+                val startY = touchDownY
+                if (startY != null && startY - event.y > 24f) upwardSwipeDetected = true
+            }
+            MotionEvent.ACTION_UP -> {
+                val attemptedToReadDown = upwardSwipeDetected
+                if (attemptedToReadDown) {
+                    post {
+                        val fullHeight = (contentHeight * scale).toInt()
+                        if (ReaderEndDetector.isAtEnd(fullHeight, height, scrollY) &&
+                            progressGate.markEndReached()
+                        ) {
+                            onReachedBottom()
+                        }
+                    }
+                }
+                touchDownY = null
+                upwardSwipeDetected = false
+            }
+            MotionEvent.ACTION_CANCEL -> {
+                touchDownY = null
+                upwardSwipeDetected = false
+            }
+        }
+        return super.onTouchEvent(event)
+    }
+
     override fun onScrollChanged(scrollX: Int, scrollY: Int, oldScrollX: Int, oldScrollY: Int) {
         super.onScrollChanged(scrollX, scrollY, oldScrollX, oldScrollY)
         val fullHeight = (contentHeight * scale).toInt()
-        if (fullHeight > height + 120 && scrollY + height >= fullHeight - 100 && progressGate.markEndReached()) {
+        if (fullHeight > height + 120 &&
+            ReaderEndDetector.isAtEnd(fullHeight, height, scrollY) &&
+            progressGate.markEndReached()
+        ) {
             onReachedBottom()
         }
     }
