@@ -42,11 +42,9 @@ internal fun sanitizeArticleHtml(bodyHtml: String, baseUri: String): String? = r
 
 
 object ArticleReaderRepository {
-    suspend fun extractAccessibleArticle(url: String): String? = withContext(Dispatchers.IO) {
+    suspend fun extractAccessibleArticle(url: String, source: String): String? = withContext(Dispatchers.IO) {
         try {
-            val uri = URI(url)
-            val scheme = uri.scheme?.lowercase(Locale.ROOT)
-            if (scheme !in setOf("http", "https") || uri.host.isNullOrBlank()) {
+            if (!PublisherHostPolicy.allows(source, url)) {
                 null
             } else {
                 val response = Jsoup.connect(url)
@@ -57,7 +55,9 @@ object ArticleReaderRepository {
                     .maxBodySize(2 * 1024 * 1024)
                     .execute()
 
-                if (response.statusCode() !in 200..299) {
+                if (response.statusCode() !in 200..299 ||
+                    !PublisherHostPolicy.allows(source, response.url().toExternalForm())
+                ) {
                     null
                 } else {
                     val document = response.parse()

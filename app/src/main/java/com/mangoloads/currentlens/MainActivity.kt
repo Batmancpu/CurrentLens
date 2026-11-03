@@ -607,13 +607,13 @@ private fun ReaderScreen(article: Article, backdrop: PrismalBackdrop, glassAlpha
                 extractedHtml = cached
                 loadedFromCache = true
             } else {
-                val publicContent = ArticleReaderRepository.extractAccessibleArticle(article.url)
+                val publicContent = ArticleReaderRepository.extractAccessibleArticle(article.url, article.source)
                 extractedHtml = publicContent
                 if (publicContent != null) {
                     ArticleReaderContentCache.write(context, article.url, publicContent)
                 }
             }
-            fallbackToPublisher = extractedHtml == null
+            fallbackToPublisher = extractedHtml == null && PublisherHostPolicy.allows(article.source, article.url)
         } finally {
             extracting = false
         }
@@ -648,16 +648,18 @@ private fun ReaderScreen(article: Article, backdrop: PrismalBackdrop, glassAlpha
                         settings.loadsImagesAutomatically = true
                         settings.javaScriptCanOpenWindowsAutomatically = false
                         settings.allowFileAccess = false
+                        settings.allowContentAccess = false
+                        settings.mixedContentMode = android.webkit.WebSettings.MIXED_CONTENT_NEVER_ALLOW
+                        settings.safeBrowsingEnabled = true
                         webViewClient = object : WebViewClient() {
                             override fun onPageFinished(view: WebView?, url: String?) {
-                                pageLoaded = true
-                                if (extractedHtml == null) {
-                                    val size = fontSize
-                                    evaluateJavascript("(function(){document.body.style.fontSize='" + size + "px';document.body.style.lineHeight='1.7';})();", null)
-                                }
+                                onReaderPageFinished()
                             }
                             override fun onReceivedError(view: WebView?, request: WebResourceRequest?, error: android.webkit.WebResourceError?) {
-                                if (request?.isForMainFrame == true) pageLoaded = true
+                                if (request?.isForMainFrame == true) onReaderMainFrameError()
+                            }
+                            override fun shouldOverrideUrlLoading(view: WebView?, request: WebResourceRequest): Boolean {
+                                return request.isForMainFrame && !allowReaderNavigation(request.url.toString())
                             }
                         }
                     }
@@ -665,6 +667,15 @@ private fun ReaderScreen(article: Article, backdrop: PrismalBackdrop, glassAlpha
                 update = { webView ->
                     webView.onReachedBottom = { reachedBottom = true }
                     webView.onDefineWord = { activeWord = it }
+                    webView.onReaderPageFinished = {
+                        pageLoaded = true
+                        if (extractedHtml == null) {
+                            val size = fontSize
+                            webView.evaluateJavascript("(function(){document.body.style.fontSize='" + size + "px';document.body.style.lineHeight='1.7';})();", null)
+                        }
+                    }
+                    webView.onReaderMainFrameError = { pageLoaded = true }
+                    webView.allowReaderNavigation = { target -> PublisherHostPolicy.allows(article.source, target) }
                     if (webView.beginArticle(article.url)) {
                         reachedBottom = false
                         activeWord = null
@@ -697,7 +708,7 @@ private fun ReaderScreen(article: Article, backdrop: PrismalBackdrop, glassAlpha
             }
         }
         if (fallbackToPublisher && !extracting) {
-            Text("This publisher requires its own page for this story. It remains inside CurrentLens; subscription limits are unchanged.",
+            Text("A readable public version was unavailable. The verified publisher page remains inside CurrentLens; subscription limits are unchanged.",
                 style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.secondary,
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 5.dp))
         }
@@ -738,6 +749,9 @@ private class ReaderWebView(context: android.content.Context) : WebView(context)
     var loadedKey: String? = null
     var onReachedBottom: () -> Unit = {}
     var onDefineWord: (String) -> Unit = {}
+    var onReaderPageFinished: () -> Unit = {}
+    var onReaderMainFrameError: () -> Unit = {}
+    var allowReaderNavigation: (String) -> Boolean = { false }
     private val progressGate = ReaderProgressGate()
 
     fun beginArticle(url: String): Boolean = progressGate.beginArticle(url)
