@@ -57,8 +57,14 @@ private fun parsePublishedAtMillis(value: String): Long? {
 
 object NewsRepository {
     private val feeds = listOf(
-        FeedSource("The Hindu", "India", "https://www.thehindu.com/feeder/default.rss"),
+        // Section feeds precede broad feeds so duplicate URLs keep useful labels.
+        FeedSource("The Hindu", "Economy", "https://www.thehindu.com/business/Economy/feeder/default.rss"),
+        FeedSource("The Hindu", "Science", "https://www.thehindu.com/sci-tech/science/feeder/default.rss"),
+        FeedSource("The Hindu", "Environment", "https://www.thehindu.com/sci-tech/energy-and-environment/feeder/default.rss"),
+        FeedSource("The Hindu", "Editorial", "https://www.thehindu.com/opinion/editorial/feeder/default.rss"),
+        FeedSource("The Hindu", "India", "https://www.thehindu.com/news/national/feeder/default.rss"),
         FeedSource("The Hindu", "World", "https://www.thehindu.com/news/international/feeder/default.rss"),
+        FeedSource("The Hindu", "Latest", "https://www.thehindu.com/feeder/default.rss"),
         FeedSource("Indian Express", "India", "https://indianexpress.com/section/india/feed/"),
         FeedSource("Indian Express", "Explained", "https://indianexpress.com/section/explained/feed/"),
         FeedSource("Indian Express", "UPSC", "https://indianexpress.com/section/upsc-current-affairs/feed/"),

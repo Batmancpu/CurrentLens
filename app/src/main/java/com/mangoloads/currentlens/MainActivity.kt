@@ -298,9 +298,10 @@ private fun TodayFeed(
 ) {
     val today = LocalDate.now(ZoneId.of(INDIA_ZONE))
     val weekend = today.dayOfWeek == DayOfWeek.SATURDAY || today.dayOfWeek == DayOfWeek.SUNDAY
+    val weekendStart = today.minusDays(if (today.dayOfWeek == DayOfWeek.SATURDAY) 1 else 2)
     val weekendStories = if (weekend) {
         weekendArticles.filter { article ->
-            article.weekendRead && ArticleFilters.publishedDate(article)?.let { it >= today.minusDays(2) && it <= today } == true
+            article.weekendRead && ArticleFilters.publishedDate(article)?.let { it >= weekendStart && it <= today } == true
         }.sortedByDescending { it.publishedAtMillis ?: 0L }.take(5)
     } else emptyList()
 
@@ -364,13 +365,9 @@ private fun ExploreFeed(
     onOpenArticle: (Article) -> Unit,
     onToggleBookmark: (Article) -> Unit
 ) {
-    val categories = listOf("All", "India", "World", "Politics", "Economy", "Explained", "Science", "UPSC", "Opinion")
+    val categories = listOf("All", "India", "World", "Politics", "Economy", "Environment", "Science", "Explained", "UPSC", "Opinion")
     val filtered = articles.filter { article ->
-        (selectedCategory == "All" ||
-            article.section.contains(selectedCategory, ignoreCase = true) ||
-            (selectedCategory == "Politics" && article.title.contains("government", true)) ||
-            (selectedCategory == "Opinion" && (article.section.contains("editorial", true) || article.section.contains("opinion", true)))) &&
-            matchesSearchTerms(article, searchQuery)
+        ExploreFilters.matches(article, selectedCategory, searchQuery)
     }
     Column(Modifier.fillMaxSize()) {
         Row(
@@ -576,24 +573,8 @@ private fun RowScope.GlassTabItem(index: Int, label: String, icon: ImageVector, 
     }
 }
 
-private fun matchesSearchTerms(article: Article, query: String): Boolean {
-    val terms = query.split(",").map { it.trim() }.filter { it.isNotBlank() }
-    if (terms.isEmpty()) return true
-    val text = (article.title + " " + article.description + " " + article.section + " " + article.source).lowercase()
-    return terms.all { raw ->
-        when (raw.lowercase().replace(" ", "")) {
-            "gs1", "gsi", "gs-i" -> UpscEngine.classify(article).gsPaper == "GS I"
-            "gs2", "gsii", "gs-ii" -> UpscEngine.classify(article).gsPaper == "GS II"
-            "gs3", "gsiii", "gs-iii" -> UpscEngine.classify(article).gsPaper == "GS III"
-            "gs4", "gsiv", "gs-iv" -> UpscEngine.classify(article).gsPaper == "GS IV"
-            "india", "indian" -> text.contains("india") || text.contains("indian") || text.contains("new delhi")
-            "world", "global", "international" -> article.section.contains("world", true) || article.section.contains("international", true) || text.contains("global")
-            "economy", "economic" -> text.contains("econom") || text.contains("rbi") || text.contains("inflation")
-            "environment", "climate" -> text.contains("environment") || text.contains("climate") || text.contains("biodiversity")
-            else -> text.contains(raw.lowercase())
-        }
-    }
-}
+private fun matchesSearchTerms(article: Article, query: String): Boolean =
+    ExploreFilters.matchesSearchTerms(article, query)
 
 @Composable
 private fun ReaderScreen(article: Article, backdrop: PrismalBackdrop, glassAlpha: Float, dark: Boolean, onBack: () -> Unit, onQuiz: () -> Unit) {
