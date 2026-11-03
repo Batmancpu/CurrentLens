@@ -59,7 +59,8 @@ object DictionaryRepository {
         } catch (_: Exception) { null }
     }
 
-    private fun parse(raw: String, displayWord: String): Definition? = try {
+    private fun parse(raw: String, displayWord: String): Definition? {
+        return try {
         val entry = JSONArray(raw).optJSONObject(0) ?: return null
         val phonetics = entry.optJSONArray("phonetics")
         var phonetic = ""
@@ -83,14 +84,15 @@ object DictionaryRepository {
             }
         }
         Definition(displayWord, phonetic, meanings.take(5))
-    } catch (_: Exception) { null }
+        } catch (_: Exception) { null }
+    }
 }
 
 class DictionaryActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val word = intent.getCharSequenceExtra("android.intent.extra.PROCESS_TEXT")
-            .toString().trim().split(Regex("\\\\s+")).firstOrNull().orEmpty().trim { !it.isLetter() }
+            ?.toString().orEmpty().trim().split(Regex(" +")).firstOrNull().orEmpty().trim { !it.isLetter() }
         window?.setBackgroundDrawableResource(android.R.color.transparent)
         window?.setLayout(WindowManager.LayoutParams.MATCH_PARENT, WindowManager.LayoutParams.WRAP_CONTENT)
         window?.setGravity(Gravity.BOTTOM)

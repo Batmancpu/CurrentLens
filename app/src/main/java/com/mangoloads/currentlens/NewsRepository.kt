@@ -59,7 +59,7 @@ object NewsRepository {
 
     private fun clean(value: String): String =
         Html.fromHtml(value, Html.FROM_HTML_MODE_LEGACY).toString()
-            .replace(Regex("\\\\s+"), " ").trim()
+            .replace(Regex(" +"), " ").trim()
 
     private fun parse(source: FeedSource, xml: String): List<Article> {
         val result = mutableListOf<Article>()
