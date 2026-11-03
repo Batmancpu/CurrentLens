@@ -140,6 +140,8 @@ private fun CurrentLensApp() {
     val backdrop = rememberPrismalGlassLayer()
     val dark = isSystemInDarkTheme()
     var articles by remember { mutableStateOf(LocalStore.cachedArticles(context)) }
+    var bookmarks by remember { mutableStateOf(LocalStore.bookmarks(context)) }
+    var readHistory by remember { mutableStateOf(LocalStore.readHistory(context)) }
     var loading by remember { mutableStateOf(articles.isEmpty()) }
     var refreshing by remember { mutableStateOf(false) }
     var loadError by remember { mutableStateOf(false) }
@@ -199,18 +201,19 @@ private fun CurrentLensApp() {
                     loadError = loadError,
                     todaysArticles = ArticleFilters.today(articles, LocalDate.now(ZoneId.of(INDIA_ZONE))),
                     allCachedArticles = articles,
-                    bookmarks = LocalStore.bookmarks(context),
-                    readHistory = LocalStore.readHistory(context),
+                    bookmarks = bookmarks,
+                    readHistory = readHistory,
                     searchQuery = searchQuery,
                     onSearchQueryChange = { searchQuery = it },
                     onSettings = { showSettings = true },
                     onOpenArticle = {
                         LocalStore.markRead(context, it.url)
+                        readHistory = LocalStore.readHistory(context)
                         selectedArticle = it
                     },
                     onToggleBookmark = {
                         LocalStore.toggleBookmark(context, it.url)
-                        refreshKey++
+                        bookmarks = LocalStore.bookmarks(context)
                     }
                 )
             }
