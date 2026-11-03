@@ -397,7 +397,7 @@ private fun ArchiveFeed(
             contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 110.dp),
             verticalArrangement = Arrangement.spacedBy(11.dp)) {
             if (filtered.isEmpty()) item { EmptyPanel("Your archive is empty", "CurrentLens keeps recently fetched headlines on this device for up to 30 days.") }
-            else filtered.groupBy { articleDate(it) }.entries.sortedByDescending { it.key }.forEach { (date, group) ->
+            else filtered.groupBy { ArticleFilters.publishedDate(it) }.entries.sortedByDescending { it.key }.forEach { (date, group) ->
                 item {
                     Text(date?.format(DateTimeFormatter.ofPattern("EEEE, d MMMM", Locale.ENGLISH)) ?: "Earlier",
                         style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold,
