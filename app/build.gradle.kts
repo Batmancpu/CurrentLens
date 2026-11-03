@@ -36,7 +36,7 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.9.0")
     implementation("org.jsoup:jsoup:1.23.2")
 
-    implementation("com.github.styropyr0.PrismalAGSL:Prismal:v1.0.4")
+    implementation("com.github.styropyr0:PrismalAGSL:v1.0.4")
 
     debugImplementation("androidx.compose.ui:ui-tooling")
 }
