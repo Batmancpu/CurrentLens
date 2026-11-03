@@ -1276,6 +1276,8 @@ private class ReaderWebView(context: android.content.Context) : WebView(context)
     var onReaderMainFrameError: () -> Unit = {}
     var allowReaderNavigation: (String) -> Boolean = { false }
     private val progressGate = ReaderProgressGate()
+    private var selectionModeGeneration = 0
+    private var pendingAutoDefine: Runnable? = null
 
     fun beginArticle(url: String): Boolean = progressGate.beginArticle(url)
 
@@ -1314,6 +1316,12 @@ private class ReaderWebView(context: android.content.Context) : WebView(context)
         }
     }
 
+    private fun cancelPendingAutoDefine() {
+        selectionModeGeneration += 1
+        pendingAutoDefine?.let { removeCallbacks(it) }
+        pendingAutoDefine = null
+    }
+
     private fun wrapSelectionCallback(original: ActionMode.Callback): ActionMode.Callback2 =
         object : ActionMode.Callback2() {
             override fun onCreateActionMode(mode: ActionMode, menu: Menu): Boolean {
@@ -1321,24 +1329,40 @@ private class ReaderWebView(context: android.content.Context) : WebView(context)
                 if (created) {
                     menu.add(0, MENU_DEFINE_WORD, menu.size(), "Define")
                         .setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS)
-                    // A native long-press on exactly one word opens its meaning immediately.
-                    // Multi-word selections retain Android's normal Copy/Select/Define actions.
-                    post {
-                        evaluateSelection { selected, selectionRect ->
-                            val word = DictionaryWordPolicy.singleSelectedWord(selected)
-                            if (word != null) {
-                                performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK)
-                                onDefineWord(word, selectionRect)
-                                mode.finish()
+
+                    // Give the user time to extend the native selection before auto-defining.
+                    // Copy/Select and other native actions remain available during this grace period.
+                    cancelPendingAutoDefine()
+                    val generation = selectionModeGeneration
+                    val startedAt = SystemClock.uptimeMillis()
+                    val autoDefine = Runnable {
+                        if (generation == selectionModeGeneration) {
+                            pendingAutoDefine = null
+                            evaluateSelection { selected, selectionRect ->
+                                if (generation == selectionModeGeneration) {
+                                    val elapsed = SystemClock.uptimeMillis() - startedAt
+                                    val word = DictionarySelectionPolicy.autoDefineWord(selected, elapsed)
+                                    if (word != null) {
+                                        performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK)
+                                        onDefineWord(word, selectionRect)
+                                        mode.finish()
+                                    }
+                                }
                             }
                         }
                     }
+                    pendingAutoDefine = autoDefine
+                    postDelayed(autoDefine, DictionarySelectionPolicy.AUTO_DEFINE_DELAY_MS)
                 }
                 return created
             }
-            override fun onPrepareActionMode(mode: ActionMode, menu: Menu): Boolean = original.onPrepareActionMode(mode, menu)
+
+            override fun onPrepareActionMode(mode: ActionMode, menu: Menu): Boolean =
+                original.onPrepareActionMode(mode, menu)
+
             override fun onActionItemClicked(mode: ActionMode, item: MenuItem): Boolean {
                 if (item.itemId == MENU_DEFINE_WORD) {
+                    cancelPendingAutoDefine()
                     evaluateSelection { selected, selectionRect ->
                         val word = DictionaryWordPolicy.singleSelectedWord(selected)
                         if (word != null) {
@@ -1349,12 +1373,19 @@ private class ReaderWebView(context: android.content.Context) : WebView(context)
                     mode.finish()
                     return true
                 }
-                return original.onActionItemClicked(mode, item)
+                val handled = original.onActionItemClicked(mode, item)
+                if (handled) cancelPendingAutoDefine()
+                return handled
             }
 
-            override fun onDestroyActionMode(mode: ActionMode) = original.onDestroyActionMode(mode)
+            override fun onDestroyActionMode(mode: ActionMode) {
+                cancelPendingAutoDefine()
+                original.onDestroyActionMode(mode)
+            }
+
             override fun onGetContentRect(mode: ActionMode, view: View, outRect: Rect) {
-                if (original is ActionMode.Callback2) original.onGetContentRect(mode, view, outRect) else super.onGetContentRect(mode, view, outRect)
+                if (original is ActionMode.Callback2) original.onGetContentRect(mode, view, outRect)
+                else super.onGetContentRect(mode, view, outRect)
             }
         }
     private var touchDownY: Float? = null
