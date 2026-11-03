@@ -111,9 +111,6 @@ def build_database(
                         if 2 <= len(tokens) <= 16:
                             exceptions.append((tokens[0], pos, " ".join(tokens[1:])))
                     database.executemany("INSERT OR REPLACE INTO exceptions VALUES (?, ?, ?)", exceptions)
-                database.execute("CREATE INDEX entries_word_idx ON entries(word COLLATE NOCASE)")
-                database.execute("CREATE INDEX exceptions_word_idx ON exceptions(inflected COLLATE NOCASE)")
-                database.execute("CREATE INDEX entries_pos_idx ON entries(pos, word)")
                 unique_words = database.execute("SELECT COUNT(DISTINCT word) FROM entries").fetchone()[0]
                 sense_count = database.execute("SELECT COUNT(*) FROM entries").fetchone()[0]
                 if unique_words < min_unique_words or sense_count < min_unique_words:

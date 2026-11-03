@@ -1350,9 +1350,20 @@ private fun DefinitionGlassOverlay(word: String, backdrop: PrismalBackdrop, glas
         loading = false
     }
     val definition = result
+    val visibilityState = remember(word) {
+        androidx.compose.animation.core.MutableTransitionState(true)
+    }
+    BackHandler(enabled = visibilityState.targetState) {
+        visibilityState.targetState = false
+    }
+    LaunchedEffect(visibilityState.isIdle, visibilityState.currentState, visibilityState.targetState) {
+        if (visibilityState.isIdle && !visibilityState.currentState && !visibilityState.targetState) {
+            onClose()
+        }
+    }
     Box(Modifier.fillMaxSize()) {
         AnimatedVisibility(
-            visible = true,
+            visibleState = visibilityState,
             modifier = Modifier.align(Alignment.BottomCenter).fillMaxWidth(),
             enter = fadeIn(tween(150)) +
                 scaleIn(
@@ -1392,7 +1403,26 @@ private fun DefinitionGlassOverlay(word: String, backdrop: PrismalBackdrop, glas
                             Text("OFFLINE DICTIONARY", style = MaterialTheme.typography.labelSmall,
                                 color = MaterialTheme.colorScheme.secondary, letterSpacing = 1.1.sp)
                         }
-                        TextButton(onClick = onClose) { Text("Done") }
+                        if (definition != null && definition.dictionaryAvailable && definition.meanings.isNotEmpty()) {
+                            TextButton(onClick = {
+                                val copiedText = buildString {
+                                    append(word)
+                                    append("\n\n")
+                                    append(definition.meanings.joinToString("\n\n"))
+                                    if (definition.synonyms.isNotEmpty()) {
+                                        append("\n\nRelated: ")
+                                        append(definition.synonyms.joinToString(" · "))
+                                    }
+                                }
+                                val clipboard = context.getSystemService(android.content.Context.CLIPBOARD_SERVICE)
+                                    as? android.content.ClipboardManager
+                                clipboard?.setPrimaryClip(
+                                    android.content.ClipData.newPlainText("Definition of $word", copiedText)
+                                )
+                                android.widget.Toast.makeText(context, "Definition copied", android.widget.Toast.LENGTH_SHORT).show()
+                            }) { Text("Copy") }
+                        }
+                        TextButton(onClick = { visibilityState.targetState = false }) { Text("Done") }
                     }
                     when {
                         loading -> CircularProgressIndicator()

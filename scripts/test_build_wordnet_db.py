@@ -39,8 +39,14 @@ class WordNetParserTests(unittest.TestCase):
                 self.assertEqual(row, ("that which is perceived or known", "being"))
                 exception = database.execute("SELECT base_forms FROM exceptions WHERE inflected='children'").fetchone()
                 self.assertEqual(exception[0], "child")
-                indexes = {row[1] for row in database.execute("PRAGMA index_list(entries)")}
-                self.assertIn("entries_word_idx", indexes)
+                entries_plan = database.execute(
+                    "EXPLAIN QUERY PLAN SELECT definition FROM entries WHERE word = ?", ("entity",)
+                ).fetchall()
+                exceptions_plan = database.execute(
+                    "EXPLAIN QUERY PLAN SELECT base_forms FROM exceptions WHERE inflected = ?", ("children",)
+                ).fetchall()
+                self.assertTrue(any("sqlite_autoindex_entries_1" in row[-1] for row in entries_plan))
+                self.assertTrue(any("sqlite_autoindex_exceptions_1" in row[-1] for row in exceptions_plan))
                 metadata = dict(database.execute("SELECT key, value FROM metadata"))
                 self.assertEqual(metadata["dataset"], "Open English WordNet 2025+")
             finally:
