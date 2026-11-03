@@ -588,7 +588,9 @@ private fun matchesSearchTerms(article: Article, query: String): Boolean =
 
 @Composable
 private fun ReaderScreen(article: Article, backdrop: PrismalBackdrop, glassAlpha: Float, dark: Boolean, onBack: () -> Unit, onQuiz: () -> Unit) {
+    val context = LocalContext.current
     var extractedHtml by remember(article.url) { mutableStateOf<String?>(null) }
+    var loadedFromCache by remember(article.url) { mutableStateOf(false) }
     var extracting by remember(article.url) { mutableStateOf(true) }
     var fallbackToPublisher by remember(article.url) { mutableStateOf(false) }
     var pageLoaded by remember(article.url) { mutableStateOf(false) }
@@ -598,9 +600,23 @@ private fun ReaderScreen(article: Article, backdrop: PrismalBackdrop, glassAlpha
 
     LaunchedEffect(article.url) {
         extracting = true
-        extractedHtml = ArticleReaderRepository.extractAccessibleArticle(article.url)
-        fallbackToPublisher = extractedHtml == null
-        extracting = false
+        loadedFromCache = false
+        try {
+            val cached = ArticleReaderContentCache.read(context, article.url)
+            if (cached != null) {
+                extractedHtml = cached
+                loadedFromCache = true
+            } else {
+                val publicContent = ArticleReaderRepository.extractAccessibleArticle(article.url)
+                extractedHtml = publicContent
+                if (publicContent != null) {
+                    ArticleReaderContentCache.write(context, article.url, publicContent)
+                }
+            }
+            fallbackToPublisher = extractedHtml == null
+        } finally {
+            extracting = false
+        }
     }
 
     Column(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
@@ -608,8 +624,15 @@ private fun ReaderScreen(article: Article, backdrop: PrismalBackdrop, glassAlpha
             IconButton(onClick = onBack) { Icon(Icons.Outlined.ArrowBack, contentDescription = "Back") }
             Column(Modifier.weight(1f)) {
                 Text(article.source, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
-                Text(if (extractedHtml != null) "Public publisher content · attributed" else "In-app publisher view",
-                    style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.secondary)
+                Text(
+                    when {
+                        extractedHtml == null -> "In-app publisher view"
+                        loadedFromCache -> "Saved public content · on this device"
+                        else -> "Public publisher content · attributed"
+                    },
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.secondary
+                )
             }
             IconButton(onClick = { fontSize = (fontSize - 1).coerceIn(16, 28) }) { Icon(Icons.Outlined.TextDecrease, contentDescription = "Smaller text") }
             IconButton(onClick = { fontSize = (fontSize + 1).coerceIn(16, 28) }) { Icon(Icons.Outlined.TextIncrease, contentDescription = "Larger text") }
@@ -685,7 +708,7 @@ private fun ReaderScreen(article: Article, backdrop: PrismalBackdrop, glassAlpha
                 Row(Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
                     Column(Modifier.weight(1f)) {
                         Text("Finished reading?", fontWeight = FontWeight.Bold)
-                        Text("Review the story with five UPSC-oriented questions.", fontSize = 12.sp)
+                        Text("Five practice questions based on the RSS headline/excerpt and indicative syllabus mapping.", fontSize = 12.sp)
                     }
                     Button(onClick = onQuiz) { Text("Test") }
                 }
@@ -847,6 +870,23 @@ private fun QuizScreen(article: Article, onBack: () -> Unit) {
             Text("Your reading check", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
         }
         Text("Five questions · Basic to application", color = MaterialTheme.colorScheme.secondary, modifier = Modifier.padding(horizontal = 20.dp))
+        Card(
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer),
+            shape = RoundedCornerShape(16.dp)
+        ) {
+            Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) {
+                Text("Question-source note", fontWeight = FontWeight.Bold)
+                Text(
+                    "This quiz uses the publisher's RSS headline and excerpt only. Extracted full-text reader content is not yet used to generate questions.",
+                    style = MaterialTheme.typography.bodySmall
+                )
+                Text(
+                    "Q1: headline comprehension · Q2: indicative syllabus keyword mapping · Q3–Q5: original general UPSC skill practice. No official PYQ is included.",
+                    style = MaterialTheme.typography.bodySmall
+                )
+            }
+        }
         LazyColumn(Modifier.weight(1f), contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
             item {
                 Text(article.title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
@@ -873,12 +913,12 @@ private fun QuizScreen(article: Article, onBack: () -> Unit) {
                                     color = if (correct) Color(0xFF168653) else MaterialTheme.colorScheme.onSurface)
                             }
                         }
+                        Text(question.provenance, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.secondary)
                         if (submitted) {
                             Text(if (selected[index] == question.correctIndex) "Correct" else "Review this concept",
                                 fontWeight = FontWeight.Bold,
                                 color = if (selected[index] == question.correctIndex) Color(0xFF168653) else MaterialTheme.colorScheme.error)
                             Text(question.explanation, style = MaterialTheme.typography.bodyMedium)
-                            Text(question.provenance, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.secondary)
                         }
                     }
                 }

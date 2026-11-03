@@ -63,5 +63,10 @@ class UpscEngineTest {
         assertEquals(5, questions.size)
         assertTrue(questions[2].provenance.contains("not an official UPSC question"))
         assertTrue(questions[4].provenance.contains("not an official UPSC question"))
+        assertTrue(questions[0].provenance.contains("RSS headline only"))
+        assertTrue(questions[1].provenance.contains("Rule-based headline and excerpt"))
+        assertTrue(questions[2].provenance.contains("Original practice question"))
+        assertTrue(questions[3].provenance.contains("Original practice question"))
+        assertTrue(questions[4].provenance.contains("PYQ-style practice"))
     }
 }

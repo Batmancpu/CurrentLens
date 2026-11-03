@@ -70,9 +70,9 @@ object UpscEngine {
         val gs = listOf("GS I", "GS II", "GS III", "GS IV", "No clear match")
         val gsIndex = gs.indexOf(relevance.gsPaper).let { if (it < 0) gs.lastIndex else it }
         return listOf(
-            QuizQuestion("01 · Basic", "Comprehension", "Which development is the report primarily about?",
-                listOf(article.title.take(100), "A separate event not mentioned in the report", "A general definition unrelated to the report", "A historical episode unrelated to the report"),
-                0, "Identify the precise development, institution or policy described by the headline and publisher-provided excerpt.", "Based on RSS headline and excerpt; not a claim about the entire article."),
+            QuizQuestion("01 · Basic", "Headline comprehension", "Which development is named in the publisher's RSS headline?",
+                listOf(article.title.take(100), "A separate event not mentioned in the headline", "A general definition unrelated to the headline", "A historical episode unrelated to the headline"),
+                0, "The selected option repeats the publisher-supplied headline. It identifies the story topic but does not establish every detail in the full article.", "RSS headline only; not full-article comprehension."),
             QuizQuestion("02 · Concept", "Syllabus mapping", "Which GS paper is the strongest initial syllabus match?",
                 gs, gsIndex, "The initial mapping is " + relevance.gsPaper + " — " + relevance.subject + ". Syllabus connection: " + relevance.syllabusLink,
                 "Rule-based headline and excerpt classification."),
