@@ -1,6 +1,7 @@
 package com.mangoloads.currentlens
 
 import android.text.Html
+import java.io.IOException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
@@ -92,7 +93,12 @@ object NewsRepository {
             setRequestProperty("Accept", "application/rss+xml, application/atom+xml, application/xml, text/xml")
         }
         try {
-            connection.inputStream.bufferedReader().use { parse(source, it.readText()) }
+            val tooLarge = connection.contentLengthLong > NetworkLimits.MAX_RSS_BYTES
+            val status = if (tooLarge) -1 else connection.responseCode
+            if (tooLarge || status !in 200..299) emptyList()
+            else connection.inputStream.use { input ->
+                parse(source, NetworkLimits.readUtf8Limited(input, NetworkLimits.MAX_RSS_BYTES))
+            }
         } finally {
             connection.disconnect()
         }
@@ -106,7 +112,9 @@ object NewsRepository {
 
     private fun parse(source: FeedSource, xml: String): List<Article> {
         val result = mutableListOf<Article>()
-        val parser = XmlPullParserFactory.newInstance().newPullParser()
+        val factory = XmlPullParserFactory.newInstance().apply { setNamespaceAware(true) }
+        val parser = factory.newPullParser()
+        runCatching { parser.setFeature(XmlPullParser.FEATURE_PROCESS_DOCDECL, false) }
         parser.setInput(xml.reader())
         var event = parser.eventType
         var inItem = false
@@ -118,7 +126,7 @@ object NewsRepository {
         while (event != XmlPullParser.END_DOCUMENT) {
             when (event) {
                 XmlPullParser.START_TAG -> {
-                    val tag = parser.name?.lowercase(Locale.ROOT).orEmpty()
+                    val tag = parser.name?.substringAfter(':')?.lowercase(Locale.ROOT).orEmpty()
                     if (tag == "item" || tag == "entry") {
                         inItem = true
                         title = ""

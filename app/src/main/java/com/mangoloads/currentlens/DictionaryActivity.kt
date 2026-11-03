@@ -39,24 +39,53 @@ import java.net.URLEncoder
 data class Definition(val word: String, val phonetic: String, val meanings: List<String>)
 
 object DictionaryRepository {
+    private const val CACHE_INDEX = "__cache_index"
+    private const val MAX_CACHE_ENTRIES = 500
+
+    private fun updateCache(prefs: android.content.SharedPreferences, key: String, value: String?) {
+        val existing = prefs.all.keys.filterNot { it == CACHE_INDEX }.toSet() + if (value != null) setOf(key) else emptySet()
+        val previous = runCatching {
+            val array = JSONArray(prefs.getString(CACHE_INDEX, "[]"))
+            buildList { for (i in 0 until array.length()) add(array.optString(i)) }
+        }.getOrDefault(emptyList())
+        val ordered = (previous.filter { it in existing } + existing.filterNot { it in previous }.sorted()).distinct()
+        val next = DictionaryCachePolicy.touch(ordered, key, MAX_CACHE_ENTRIES)
+        val index = JSONArray().apply { next.forEach { put(it) } }
+        val editor = prefs.edit().putString(CACHE_INDEX, index.toString())
+        if (value != null) editor.putString(key, value)
+        existing.filterNot { it in next }.forEach { editor.remove(it) }
+        editor.apply()
+    }
+
     suspend fun lookup(context: Context, word: String): Definition? = withContext(Dispatchers.IO) {
         val key = word.trim().lowercase()
         if (key.isBlank() || key.length > 60) return@withContext null
         val prefs = context.getSharedPreferences("currentlens_dictionary", Context.MODE_PRIVATE)
         val cached = prefs.getString(key, null)
-        if (cached != null) return@withContext parse(cached, word)
+        if (cached != null) {
+            updateCache(prefs, key, null)
+            return@withContext parse(cached, word)
+        }
+        val encoded = URLEncoder.encode(key, "UTF-8")
+        val connection = (URL("https://api.dictionaryapi.dev/api/v2/entries/en/" + encoded).openConnection() as HttpURLConnection)
         try {
-            val encoded = URLEncoder.encode(key, "UTF-8")
-            val connection = (URL("https://api.dictionaryapi.dev/api/v2/entries/en/" + encoded).openConnection() as HttpURLConnection).apply {
-                connectTimeout = 5000
-                readTimeout = 7000
-                setRequestProperty("User-Agent", "CurrentLens/0.1")
+            connection.connectTimeout = 5000
+            connection.readTimeout = 7000
+            connection.setRequestProperty("User-Agent", "CurrentLens/0.2")
+            val status = connection.responseCode
+            if (status !in 200..299 || connection.contentLengthLong > NetworkLimits.MAX_DICTIONARY_BYTES) null
+            else {
+                val json = connection.inputStream.use { input ->
+                    NetworkLimits.readUtf8Limited(input, NetworkLimits.MAX_DICTIONARY_BYTES)
+                }
+                updateCache(prefs, key, json)
+                parse(json, word)
             }
-            val json = connection.inputStream.bufferedReader().use { it.readText() }
+        } catch (_: Exception) {
+            null
+        } finally {
             connection.disconnect()
-            prefs.edit().putString(key, json).apply()
-            parse(json, word)
-        } catch (_: Exception) { null }
+        }
     }
 
     private fun parse(raw: String, displayWord: String): Definition? = try {
