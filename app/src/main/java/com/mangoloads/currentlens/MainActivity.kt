@@ -5,7 +5,6 @@ import android.view.ActionMode
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
-import android.webkit.CookieManager
 import android.webkit.WebResourceRequest
 import android.webkit.WebView
 import android.webkit.WebViewClient
@@ -75,6 +74,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -270,7 +270,7 @@ private fun HomeScreen(
             label = "CurrentLens tab transition"
         ) { tab ->
             when (tab) {
-                0 -> TodayFeed(todaysArticles, loading, loadError, refreshing, bookmarks, onOpenArticle, onToggleBookmark)
+                0 -> TodayFeed(todaysArticles, allCachedArticles, loading, loadError, refreshing, bookmarks, onOpenArticle, onToggleBookmark)
                 1 -> ExploreFeed(todaysArticles, exploreCategory, { exploreCategory = it }, bookmarks, onOpenArticle, onToggleBookmark)
                 2 -> ArchiveFeed(allCachedArticles, archiveWindow, { archiveWindow = it }, bookmarks, onOpenArticle, onToggleBookmark)
                 else -> SavedFeed(allCachedArticles, bookmarks, readHistory, onOpenArticle, onToggleBookmark)
@@ -282,6 +282,7 @@ private fun HomeScreen(
 @Composable
 private fun TodayFeed(
     articles: List<Article>,
+    weekendArticles: List<Article>,
     loading: Boolean,
     loadError: Boolean,
     refreshing: Boolean,
@@ -291,7 +292,11 @@ private fun TodayFeed(
 ) {
     val today = LocalDate.now(ZoneId.of(INDIA_ZONE))
     val weekend = today.dayOfWeek == DayOfWeek.SATURDAY || today.dayOfWeek == DayOfWeek.SUNDAY
-    val weekendStories = if (weekend) articles.filter { it.weekendRead }.take(5) else emptyList()
+    val weekendStories = if (weekend) {
+        weekendArticles.filter { article ->
+            article.weekendRead && articleDate(article)?.let { it >= today.minusDays(2) && it <= today } == true
+        }.sortedByDescending { it.publishedAtMillis ?: 0L }.take(5)
+    } else emptyList()
 
     LazyColumn(
         Modifier.fillMaxSize(),
@@ -330,7 +335,7 @@ private fun WeekendPanel(articles: List<Article>, onOpenArticle: (Article) -> Un
         Card(shape = RoundedCornerShape(24.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)) {
             Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(9.dp)) {
                 Text("The best of the weekend", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-                Text("Sunday Eye, long reads, books, culture and selected opinion pieces.",
+                Text("Express Sunday Eye stories published in the latest weekend window.",
                     style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.secondary)
                 articles.forEach { article ->
                     Text(article.title,
@@ -582,8 +587,7 @@ private fun ReaderScreen(article: Article, backdrop: PrismalBackdrop, glassAlpha
 
     LaunchedEffect(article.url) {
         extracting = true
-        val cookies = runCatching { CookieManager.getInstance().getCookie(article.url) }.getOrNull()
-        extractedHtml = ArticleReaderRepository.extractAccessibleArticle(article.url, cookies)
+        extractedHtml = ArticleReaderRepository.extractAccessibleArticle(article.url)
         fallbackToPublisher = extractedHtml == null
         extracting = false
     }
@@ -593,7 +597,7 @@ private fun ReaderScreen(article: Article, backdrop: PrismalBackdrop, glassAlpha
             IconButton(onClick = onBack) { Icon(Icons.Outlined.ArrowBack, contentDescription = "Back") }
             Column(Modifier.weight(1f)) {
                 Text(article.source, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
-                Text(if (extractedHtml != null) "Reader view · Publisher attributed" else "In-app publisher view",
+                Text(if (extractedHtml != null) "Public publisher content · attributed" else "In-app publisher view",
                     style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.secondary)
             }
             IconButton(onClick = { fontSize = (fontSize - 1).coerceIn(16, 28) }) { Icon(Icons.Outlined.TextDecrease, contentDescription = "Smaller text") }
@@ -647,7 +651,7 @@ private fun ReaderScreen(article: Article, backdrop: PrismalBackdrop, glassAlpha
                 Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background.copy(alpha = 0.90f)), contentAlignment = Alignment.Center) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
                         CircularProgressIndicator()
-                        Text("Preparing a clean reading view", color = MaterialTheme.colorScheme.secondary)
+                        Text("Checking for publicly accessible article content", color = MaterialTheme.colorScheme.secondary)
                     }
                 }
             }

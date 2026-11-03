@@ -5,7 +5,7 @@ plugins {
 
 android {
     namespace = "com.mangoloads.currentlens"
-    compileSdk = 36
+    compileSdk = 37
 
     defaultConfig {
         applicationId = "com.mangoloads.currentlens"
@@ -34,9 +34,9 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.9.4")
     implementation("io.coil-kt:coil-compose:2.7.0")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.9.0")
+    implementation("org.jsoup:jsoup:1.23.2")
 
-    implementation("com.github.styropyr0:Prismal:v1.0.4")
-    implementation("com.prof18:klead:1.0.0")
+    implementation("com.github.styropyr0.PrismalAGSL:Prismal:v1.0.4")
 
     debugImplementation("androidx.compose.ui:ui-tooling")
 }

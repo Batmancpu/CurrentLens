@@ -35,7 +35,7 @@ jobs:
       - name: Install Android platform
         run: |
           yes | sdkmanager --licenses
-          sdkmanager "platforms;android-36" "build-tools;36.0.0"
+          sdkmanager "platforms;android-37" "build-tools;37.0.0"
 
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
@@ -61,8 +61,8 @@ jobs:
           body: |
             CurrentLens v0.2.0 testing build.
             Package: com.mangoloads.currentlens
-            Includes four-tab editorial redesign, Liquid Glass controls, date archive,
-            weekend feeds, article extraction and in-app dictionary action.
+            Includes the four-tab editorial redesign, Prismal AGSL glass controls, a 30-day local article metadata cache,
+            Express Sunday Eye RSS, best-effort public-page extraction with in-app publisher fallback, and dictionary selection.
             Debug-signed APK for testing; not a production or Play Store release.
           files: app/build/outputs/apk/debug/app-debug.apk
           prerelease: true
