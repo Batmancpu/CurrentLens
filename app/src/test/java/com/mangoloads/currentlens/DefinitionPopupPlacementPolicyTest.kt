@@ -86,4 +86,22 @@ class DefinitionPopupPlacementPolicyTest {
         assertTrue(result.topPx >= 20)
         assertTrue(result.originX in 0f..1f)
     }
+    @Test
+    fun clampsPopoverWhenSelectionAnchorFallsAboveReaderViewport() {
+        val result = DefinitionPopupPlacementPolicy.calculate(
+            parentWidthPx = 1080,
+            parentHeightPx = 900,
+            anchor = Offset(540f, -80f),
+            popupWidthPx = 800,
+            estimatedHeightPx = 300,
+            marginPx = 24,
+            gapPx = 18
+        )
+        assertEquals(24, result.topPx)
+        assertEquals(140, result.leftPx)
+        assertEquals(0f, result.originY)
+        assertTrue(result.leftPx + result.widthPx <= 1056)
+        assertTrue(result.topPx + 300 <= 876)
+    }
+
 }

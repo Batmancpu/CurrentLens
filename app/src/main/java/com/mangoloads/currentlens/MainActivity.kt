@@ -1222,6 +1222,14 @@ private fun ReaderScreen(article: Article, backdrop: PrismalBackdrop, glassAlpha
                     }
                 }
             }
+            // The selection anchor is relative to this reader viewport. Keep the glass
+            // surface in the same Box so it overlays the WebView without consuming layout height.
+            if (activeWord != null) {
+                DefinitionGlassOverlay(activeWord!!, activeWordAnchor, backdrop, glassAlpha) {
+                    activeWord = null
+                    activeWordAnchor = null
+                }
+            }
         }
         if (fallbackToPublisher && !extracting) {
             Text("A readable public version was unavailable. The verified publisher page remains inside CurrentLens; subscription limits are unchanged.",
@@ -1239,12 +1247,6 @@ private fun ReaderScreen(article: Article, backdrop: PrismalBackdrop, glassAlpha
                     }
                     Button(onClick = onQuiz) { Text("Test") }
                 }
-            }
-        }
-        if (activeWord != null) {
-            DefinitionGlassOverlay(activeWord!!, activeWordAnchor, backdrop, glassAlpha) {
-                activeWord = null
-                activeWordAnchor = null
             }
         }
     }
