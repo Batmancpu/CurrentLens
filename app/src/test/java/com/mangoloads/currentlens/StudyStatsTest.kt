@@ -100,6 +100,58 @@ class StudyStatsTest {
     }
 
     @Test
+    fun legacyReadMarkersCountAsUniqueStatusButNeverCreateTimedHistory() {
+        val records = listOf(session("new", "shared-url", today, 60_000L))
+        val legacyMarkers = setOf("legacy-url", "shared-url", "")
+
+        assertEquals(2, StudyStatsPolicy.totalUniqueReadCount(legacyMarkers, records))
+        val summary = StudyStatsPolicy.readingSummary(
+            emptyList(), StatsDateRange.ALL_TIME, "All", "All", today, zone
+        )
+        assertEquals(0, summary.uniqueArticleCount)
+        assertEquals(0L, summary.totalDurationMillis)
+    }
+
+    @Test
+    fun submittedAnswerSnapshotRetainsSelectedAndCorrectAnswersWithProvenance() {
+        val questions = listOf(
+            QuizQuestion(
+                "Basic", "Comprehension", "Which option is correct?",
+                listOf("Wrong option", "Correct option"), 1,
+                "The second option is supported.", "Original practice question."
+            ),
+            QuizQuestion(
+                "Application", "Analysis", "Which source should be checked?",
+                listOf("Official Gazette", "Social post"), 0,
+                "Use the primary document.", "UPSC-style practice; not an official PYQ."
+            )
+        )
+
+        val snapshot = QuizAttemptPolicy.snapshot(
+            selectedAnswers = mapOf(1 to 0, 0 to 0, 9 to 1),
+            questions = questions
+        )
+
+        assertEquals(2, snapshot.size)
+        assertEquals(0, snapshot[0].questionIndex)
+        assertEquals("Which option is correct?", snapshot[0].prompt)
+        assertEquals("Wrong option", snapshot[0].selectedAnswer)
+        assertEquals("Correct option", snapshot[0].correctAnswer)
+        assertEquals(false, snapshot[0].isCorrect)
+        assertEquals("Original practice question.", snapshot[0].provenance)
+        assertEquals(true, snapshot[1].isCorrect)
+    }
+
+    @Test
+    fun quizAttemptRetentionIsBoundedAndKeepsNewestSubmissions() {
+        val older = QuizAttempt("old", "old-url", "Old", "Polity", "GS II", 100L, 5, 1, 1)
+        val newer = QuizAttempt("new", "new-url", "New", "Economy", "GS III", 200L, 5, 1, 0)
+
+        assertEquals(listOf(newer), QuizAttemptPolicy.retain(listOf(older, newer), 1))
+        assertEquals(emptyList<QuizAttempt>(), QuizAttemptPolicy.retain(listOf(older), 0))
+    }
+
+    @Test
     fun quizSummaryCountsOnlySubmittedAnswersAndHonoursFilters() {
         val records = listOf(
             QuizAttempt("a", "url-a", "A", "Polity", "GS II", epoch(today), 5, 5, 3),

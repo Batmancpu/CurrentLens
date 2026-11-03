@@ -20,6 +20,7 @@ object LocalStore {
     private const val QUIZ_ATTEMPTS = "quiz_attempts"
     private const val MAX_READING_SESSIONS = 5_000
     private const val MAX_QUIZ_ATTEMPTS = 5_000
+    private const val MAX_DETAILED_QUIZ_ATTEMPTS = 500
 
     fun bookmarks(context: Context): Set<String> =
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
@@ -203,6 +204,36 @@ object LocalStore {
                     if (url.isBlank() || submitted <= 0L || total <= 0 ||
                         answered !in 1..total || correct !in 0..answered
                     ) continue
+                    val answerArray = item.optJSONArray("answers")
+                    val answerRecords = buildList {
+                        if (answerArray != null) {
+                            for (answerIndex in 0 until answerArray.length()) {
+                                val answer = answerArray.optJSONObject(answerIndex) ?: continue
+                                val questionIndex = answer.optInt("questionIndex", -1)
+                                val prompt = answer.optString("prompt")
+                                val selectedAnswer = answer.optString("selectedAnswer")
+                                val correctAnswer = answer.optString("correctAnswer")
+                                val selectedOptionIndex = answer.optInt("selectedOptionIndex", -1)
+                                val correctOptionIndex = answer.optInt("correctOptionIndex", -1)
+                                if (questionIndex < 0 || prompt.isBlank() || selectedAnswer.isBlank() ||
+                                    correctAnswer.isBlank() || selectedOptionIndex !in 0..7 ||
+                                    correctOptionIndex !in 0..7
+                                ) continue
+                                add(
+                                    QuizAnswerRecord(
+                                        questionIndex = questionIndex,
+                                        prompt = prompt.take(500),
+                                        selectedAnswer = selectedAnswer.take(300),
+                                        correctAnswer = correctAnswer.take(300),
+                                        selectedOptionIndex = selectedOptionIndex,
+                                        correctOptionIndex = correctOptionIndex,
+                                        explanation = answer.optString("explanation").take(600),
+                                        provenance = answer.optString("provenance").take(250)
+                                    )
+                                )
+                            }
+                        }
+                    }
                     add(
                         QuizAttempt(
                             id = item.optString("id"),
@@ -213,7 +244,8 @@ object LocalStore {
                             submittedAtMillis = submitted,
                             totalQuestions = total,
                             answeredCount = answered,
-                            correctCount = correct
+                            correctCount = correct,
+                            answers = answerRecords
                         )
                     )
                 }
@@ -229,13 +261,9 @@ object LocalStore {
         submittedAtMillis: Long = System.currentTimeMillis()
     ): QuizAttempt? {
         if (article.url.isBlank() || submittedAtMillis <= 0L || questions.isEmpty()) return null
-        val validAnswers = answers.filter { (questionIndex, optionIndex) ->
-            questionIndex in questions.indices && optionIndex in questions[questionIndex].options.indices
-        }
-        if (validAnswers.isEmpty()) return null
-        val correct = validAnswers.count { (questionIndex, optionIndex) ->
-            questions[questionIndex].correctIndex == optionIndex
-        }
+        val answerRecords = QuizAttemptPolicy.snapshot(answers, questions)
+        if (answerRecords.isEmpty()) return null
+        val correct = answerRecords.count { it.isCorrect }
         val relevance = UpscEngine.classify(article)
         val attempt = QuizAttempt(
             id = UUID.randomUUID().toString(),
@@ -245,14 +273,29 @@ object LocalStore {
             gsPaper = relevance.gsPaper,
             submittedAtMillis = submittedAtMillis,
             totalQuestions = questions.size,
-            answeredCount = validAnswers.size,
-            correctCount = correct
+            answeredCount = answerRecords.size,
+            correctCount = correct,
+            answers = answerRecords
         )
-        val retained = (quizAttempts(context) + attempt)
-            .sortedByDescending { it.submittedAtMillis }
-            .take(MAX_QUIZ_ATTEMPTS)
+        val retained = QuizAttemptPolicy.retain(quizAttempts(context) + attempt, MAX_QUIZ_ATTEMPTS)
         val array = JSONArray()
-        retained.forEach { record ->
+        retained.forEachIndexed { index, record ->
+            val answerArray = JSONArray()
+            if (index < MAX_DETAILED_QUIZ_ATTEMPTS) {
+                record.answers.forEach { answer ->
+                    answerArray.put(
+                        JSONObject()
+                            .put("questionIndex", answer.questionIndex)
+                            .put("prompt", answer.prompt)
+                            .put("selectedAnswer", answer.selectedAnswer)
+                            .put("correctAnswer", answer.correctAnswer)
+                            .put("selectedOptionIndex", answer.selectedOptionIndex)
+                            .put("correctOptionIndex", answer.correctOptionIndex)
+                            .put("explanation", answer.explanation)
+                            .put("provenance", answer.provenance)
+                    )
+                }
+            }
             array.put(
                 JSONObject()
                     .put("id", record.id)
@@ -264,6 +307,7 @@ object LocalStore {
                     .put("totalQuestions", record.totalQuestions)
                     .put("answeredCount", record.answeredCount)
                     .put("correctCount", record.correctCount)
+                    .put("answers", answerArray)
             )
         }
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)

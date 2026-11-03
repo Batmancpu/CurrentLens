@@ -21,15 +21,4 @@ object ArticleFilters {
     fun explore(articles: List<Article>): List<Article> =
         articles.sortedByDescending { it.publishedAtMillis ?: Long.MIN_VALUE }
 
-    fun archive(
-        articles: List<Article>,
-        today: LocalDate,
-        days: Int,
-        zone: ZoneId = indiaZone
-    ): List<Article> {
-        val firstIncludedDate = today.minusDays(days.coerceAtLeast(1).toLong())
-        return articles.filter { article ->
-            publishedDate(article, zone)?.let { it.isBefore(today) && !it.isBefore(firstIncludedDate) } == true
-        }.sortedByDescending { it.publishedAtMillis ?: Long.MIN_VALUE }
-    }
 }

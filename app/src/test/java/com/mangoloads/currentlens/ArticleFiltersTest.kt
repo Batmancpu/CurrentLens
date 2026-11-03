@@ -41,20 +41,4 @@ class ArticleFiltersTest {
         )
     }
 
-    @Test
-    fun archiveContainsOnlyEarlierDatesInsideSelectedWindow() {
-        val tooOld = article("too-old", "2026-10-26T10:00:00Z")
-        val firstIncluded = article("first-included", "2026-10-27T10:00:00Z")
-        val yesterday = article("yesterday", "2026-11-02T10:00:00Z")
-        val today = article("today", "2026-11-03T10:00:00Z")
-
-        assertEquals(
-            listOf(yesterday, firstIncluded),
-            ArticleFilters.archive(
-                listOf(tooOld, firstIncluded, yesterday, today),
-                LocalDate.of(2026, 11, 3),
-                7
-            )
-        )
-    }
 }

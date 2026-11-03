@@ -29,6 +29,20 @@ internal data class ReadingSession(
     val durationMillis: Long
 )
 
+internal data class QuizAnswerRecord(
+    val questionIndex: Int,
+    val prompt: String,
+    val selectedAnswer: String,
+    val correctAnswer: String,
+    val selectedOptionIndex: Int,
+    val correctOptionIndex: Int,
+    val explanation: String,
+    val provenance: String
+) {
+    val isCorrect: Boolean
+        get() = selectedOptionIndex == correctOptionIndex
+}
+
 internal data class QuizAttempt(
     val id: String,
     val articleUrl: String,
@@ -38,10 +52,44 @@ internal data class QuizAttempt(
     val submittedAtMillis: Long,
     val totalQuestions: Int,
     val answeredCount: Int,
-    val correctCount: Int
+    val correctCount: Int,
+    val answers: List<QuizAnswerRecord> = emptyList()
 ) {
     val wrongCount: Int
         get() = (answeredCount - correctCount).coerceAtLeast(0)
+}
+
+internal object QuizAttemptPolicy {
+    private const val MAX_ANSWERS_PER_ATTEMPT = 10
+
+    fun snapshot(
+        selectedAnswers: Map<Int, Int>,
+        questions: List<QuizQuestion>
+    ): List<QuizAnswerRecord> = selectedAnswers.entries.asSequence()
+        .filter { (questionIndex, optionIndex) ->
+            questionIndex in questions.indices &&
+                optionIndex in questions[questionIndex].options.indices &&
+                questions[questionIndex].correctIndex in questions[questionIndex].options.indices
+        }
+        .sortedBy { it.key }
+        .take(MAX_ANSWERS_PER_ATTEMPT)
+        .map { (questionIndex, selectedOptionIndex) ->
+            val question = questions[questionIndex]
+            QuizAnswerRecord(
+                questionIndex = questionIndex,
+                prompt = question.prompt.take(500),
+                selectedAnswer = question.options[selectedOptionIndex].take(300),
+                correctAnswer = question.options[question.correctIndex].take(300),
+                selectedOptionIndex = selectedOptionIndex,
+                correctOptionIndex = question.correctIndex,
+                explanation = question.explanation.take(600),
+                provenance = question.provenance.take(250)
+            )
+        }
+        .toList()
+
+    fun retain(attempts: List<QuizAttempt>, maxAttempts: Int): List<QuizAttempt> =
+        attempts.sortedByDescending { it.submittedAtMillis }.take(maxAttempts.coerceAtLeast(0))
 }
 
 internal data class ReadingSessionWindow(
@@ -180,6 +228,13 @@ internal object StudyStatsPolicy {
     ): Int = readingSummary(
         sessions, StatsDateRange.TODAY, "All", "All", date, zone
     ).uniqueArticleCount
+
+    /** Legacy URL markers count as unique read status, but never create dated sessions or time. */
+    fun totalUniqueReadCount(readHistoryUrls: Set<String>, sessions: List<ReadingSession>): Int =
+        (readHistoryUrls.asSequence().filter { it.isNotBlank() } +
+            sessions.asSequence().map { it.articleUrl }.filter { it.isNotBlank() })
+            .distinct()
+            .count()
 
     fun filterArticles(
         articles: List<Article>,

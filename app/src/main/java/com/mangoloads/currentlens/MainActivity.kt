@@ -228,7 +228,7 @@ private fun CurrentLensApp() {
                     readHistory = readHistory,
                     readingSessions = readingSessions,
                     quizAttempts = quizAttempts,
-                    totalUniqueRead = readingSessions.map { it.articleUrl }.distinct().size,
+                    totalUniqueRead = StudyStatsPolicy.totalUniqueReadCount(readHistory, readingSessions),
                     articlesReadToday = StudyStatsPolicy.articlesReadOn(
                         readingSessions, LocalDate.now(ZoneId.of(INDIA_ZONE))
                     ),
@@ -669,7 +669,7 @@ private fun YouDashboard(
         item { DestinationRow("Quiz & Practice Stats", "Submitted answers, correct and incorrect", "›", onQuizStats) }
         item { DestinationRow("Settings", "Liquid Glass appearance", "›", onSettings) }
         item {
-            Text("Previously opened stories remain in your saved/history list. They are not counted as confirmed reads; tracked reading totals begin only after an article loads and remains open in the foreground for at least five seconds.",
+            Text("Legacy read markers remain available as history and contribute only to the unique-article count; their original dates and durations are unknown. Timed reading begins when an article loads and stays in the foreground for at least five seconds.",
                 style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.secondary,
                 modifier = Modifier.padding(top = 5.dp))
         }
