@@ -5,7 +5,7 @@ plugins {
 
 android {
     namespace = "com.mangoloads.currentlens"
-    compileSdk = 36
+    compileSdk = 37
 
     defaultConfig {
         applicationId = "com.mangoloads.currentlens"
