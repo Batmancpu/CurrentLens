@@ -4,6 +4,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
+import org.jsoup.safety.Safelist
 import java.net.URI
 import java.util.Locale
 
@@ -14,6 +15,32 @@ import java.util.Locale
  * If a page is blocked, paywalled, or too incomplete to form a useful article body,
  * the caller must keep the original publisher page as its in-app fallback.
  */
+/**
+ * Keeps readable editorial markup while stripping scripts, inline event handlers,
+ * unsafe URL schemes, embedded documents and all attributes outside the allow-list.
+ */
+internal fun sanitizeArticleHtml(bodyHtml: String, baseUri: String): String? = runCatching {
+    val policy = Safelist.none()
+        .addTags(
+            "p", "div", "span", "br", "hr",
+            "h1", "h2", "h3", "h4", "h5", "h6",
+            "blockquote", "ul", "ol", "li",
+            "strong", "b", "em", "i", "u", "s", "sup", "sub",
+            "figure", "figcaption", "img", "a",
+            "table", "thead", "tbody", "tfoot", "tr", "th", "td", "caption",
+            "dl", "dt", "dd", "pre", "code"
+        )
+        .addAttributes("a", "href", "title")
+        .addAttributes("img", "src", "alt", "title")
+        .addAttributes("td", "colspan", "rowspan")
+        .addAttributes("th", "colspan", "rowspan", "scope")
+        .addProtocols("a", "href", "https", "http")
+        .addProtocols("img", "src", "https", "http")
+    val cleaned = Jsoup.clean(bodyHtml, baseUri, policy)
+    cleaned.takeIf { it.isNotBlank() && Jsoup.parseBodyFragment(it).text().length >= 600 }
+}.getOrNull()
+
+
 object ArticleReaderRepository {
     suspend fun extractAccessibleArticle(url: String): String? = withContext(Dispatchers.IO) {
         try {
@@ -73,7 +100,7 @@ object ArticleReaderRepository {
                                         image.remove()
                                     }
                                 }
-                                safe.html().takeIf { safe.text().length >= 600 && it.isNotBlank() }
+                                sanitizeArticleHtml(safe.html(), safe.baseUri())
                             }
                         }
                     }
