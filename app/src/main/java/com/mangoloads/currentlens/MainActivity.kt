@@ -548,28 +548,44 @@ private fun EmptyPanel(title: String, description: String) {
 
 @Composable
 private fun GlassTabBar(backdrop: PrismalBackdrop, selectedTab: Int, glassAlpha: Float, onSelect: (Int) -> Unit) {
-    PrismalGlassSurface(backdrop = backdrop, modifier = Modifier.fillMaxWidth().height(76.dp),
-        shape = { PrismalRoundedRectangle(34.dp) }, blurRadius = 16.dp,
-        tint = if (isSystemInDarkTheme()) Color(0xFF252B38) else Color(0xFFF5F7FC),
-        tintAlpha = (glassAlpha * 0.62f).coerceIn(0.10f, 0.36f)) {
-        Row(Modifier.fillMaxSize().padding(5.dp), verticalAlignment = Alignment.CenterVertically) {
-            GlassTabItem(0, "Today", Icons.Outlined.Today, selectedTab, onSelect)
-            GlassTabItem(1, "Explore", Icons.Outlined.Explore, selectedTab, onSelect)
-            GlassTabItem(2, "Archive", Icons.Outlined.Archive, selectedTab, onSelect)
-            GlassTabItem(3, "Saved", Icons.Outlined.BookmarkBorder, selectedTab, onSelect)
-        }
+    PrismalGlassBottomTabs(
+        selectedTabIndex = { selectedTab },
+        onTabSelected = onSelect,
+        backdrop = backdrop,
+        tabsCount = 4,
+        tintDropletContent = false,
+        adaptiveLuminance = true,
+        specular = { PrismalSpecular.Default.copy(alpha = glassAlpha) },
+        blurRadius = 12.dp,
+        refractionHeight = 18.dp,
+        refractionAmount = 14.dp,
+        dropletChromaticAberration = 0.2f,
+        pressGlow = 0.24f,
+        renderWithLowOverhead = true,
+        modifier = Modifier.fillMaxWidth().height(72.dp)
+            .graphicsLayer { alpha = (0.78f + glassAlpha * 0.36f).coerceIn(0.82f, 0.98f) }
+    ) {
+        GlassTab(0, "Today", Icons.Outlined.Today, onSelect)
+        GlassTab(1, "Explore", Icons.Outlined.Explore, onSelect)
+        GlassTab(2, "Archive", Icons.Outlined.Archive, onSelect)
+        GlassTab(3, "Saved", Icons.Outlined.BookmarkBorder, onSelect)
     }
 }
+
 @Composable
-private fun RowScope.GlassTabItem(index: Int, label: String, icon: ImageVector, selectedTab: Int, onSelect: (Int) -> Unit) {
-    val selected = selectedTab == index
+private fun RowScope.GlassTab(index: Int, label: String, icon: ImageVector, onSelect: (Int) -> Unit) {
+    val highlighted = LocalPrismalBottomTabHighlightedIndex.current()
+    val selected = highlighted() == index
     val tint = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
-    Box(Modifier.weight(1f).fillMaxSize().clip(RoundedCornerShape(28.dp)).clickable { onSelect(index) }, contentAlignment = Alignment.Center) {
-        if (selected) Box(Modifier.fillMaxSize().padding(2.dp).clip(RoundedCornerShape(26.dp)).background(MaterialTheme.colorScheme.primary.copy(alpha = 0.13f)))
-        Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(3.dp)) {
-            Icon(icon, contentDescription = label, tint = tint, modifier = Modifier.size(21.dp))
-            Text(label, fontSize = 10.sp, lineHeight = 12.sp, fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal, color = tint)
-        }
+    PrismalGlassBottomTab(onClick = { onSelect(index) }) {
+        Icon(icon, contentDescription = label, tint = tint, modifier = Modifier.size(21.dp))
+        Text(
+            label,
+            fontSize = 10.sp,
+            lineHeight = 12.sp,
+            fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
+            color = tint
+        )
     }
 }
 
