@@ -66,4 +66,5 @@ jobs:
             Version: 0.1.0
             This is a test build. Do not use as a production release.
           files: app/build/outputs/apk/debug/app-debug.apk
-          make_latest: true
+          prerelease: true
+          make_latest: false

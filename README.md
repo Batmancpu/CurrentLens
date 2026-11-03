@@ -22,9 +22,11 @@ A free, open-source Android news reader built around Indian and international jo
 
 Feed availability and publisher terms can change. CurrentLens links to publisher pages and does not republish full articles.
 
-## Build
+## Build and download
 
-Open the repository's **Actions** tab and run the single **Build Android APK** workflow. It creates a debug APK artifact for direct testing.
+The single concurrency-protected **Build Android APK** workflow runs on pushes to `main` and publishes a debug-signed installable APK as a GitHub Release asset. Download the APK from [Releases](https://github.com/Batmancpu/CurrentLens/releases). The Actions artifact is also retained for 14 days.
+
+These are testing builds, not production or Play Store releases. Android may ask you to allow installation from your browser or file manager.
 
 ## Privacy
 
