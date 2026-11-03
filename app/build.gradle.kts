@@ -35,7 +35,7 @@ dependencies {
     implementation("io.coil-kt:coil-compose:2.7.0")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.9.0")
 
-    implementation("com.github.styropyr0:PrismalAGSL:Prismal:v1.0.4")
+    implementation("com.github.styropyr0:Prismal:v1.0.4")
     implementation("com.prof18:klead:1.0.0")
 
     debugImplementation("androidx.compose.ui:ui-tooling")
