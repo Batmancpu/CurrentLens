@@ -25,7 +25,7 @@ internal object FeedDateParser {
         }
 
         return runCatching {
-            ZonedDateTime.parse(normalized, DateTimeFormatter.RFC_1123_DATE_TIME)
+            ZonedDateTime.parse(raw, DateTimeFormatter.RFC_1123_DATE_TIME)
                 .toInstant().toEpochMilli()
         }.getOrNull()
             ?: runCatching {
