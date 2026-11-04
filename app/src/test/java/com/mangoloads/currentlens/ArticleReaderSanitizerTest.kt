@@ -19,6 +19,7 @@ class ArticleReaderSanitizerTest {
         val cleaned = sanitizeArticleHtml(html, "https://publisher.example/story")
 
         assertNotNull(cleaned)
+        assertTrue(cleaned.orEmpty().contains("<div class=\"cl-table-scroll\">"))
         assertTrue(cleaned.orEmpty().contains("<table>"))
         assertTrue(cleaned.orEmpty().contains("<th>Train No.</th>"))
         assertTrue(cleaned.orEmpty().contains("<td>26655/656</td>"))
@@ -43,5 +44,31 @@ class ArticleReaderSanitizerTest {
         assertFalse(html.contains("onclick"))
         assertFalse(html.contains("onerror"))
         assertFalse(html.contains("javascript:"))
+
+    @Test
+    fun wrapsThreeColumnTablesAfterSanitizingPublisherMarkup() {
+        val readable = "A public article table row describing train services and the route distance. ".repeat(10)
+        val html = """
+            <table>
+              <thead><tr>
+                <th scope="col">Train No.</th>
+                <th scope="col">From - To</th>
+                <th scope="col">Distance (Km)</th>
+              </tr></thead>
+              <tbody><tr>
+                <td>26655/656</td><td>$readable</td><td>670</td>
+              </tr></tbody>
+            </table>
+        """.trimIndent()
+
+        val cleaned = sanitizeArticleHtml(html, "https://publisher.example/story")
+
+        assertNotNull(cleaned)
+        assertTrue(cleaned.orEmpty().contains("<div class=\"cl-table-scroll\">"))
+        assertTrue(cleaned.orEmpty().contains("<th scope=\"col\">Train No.</th>"))
+        assertTrue(cleaned.orEmpty().contains("<th scope=\"col\">From - To</th>"))
+        assertTrue(cleaned.orEmpty().contains("<th scope=\"col\">Distance (Km)</th>"))
+        assertTrue(cleaned.orEmpty().contains("<td>26655/656</td>"))
+    }
     }
 }

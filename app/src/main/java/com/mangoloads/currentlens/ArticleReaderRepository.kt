@@ -37,7 +37,20 @@ internal fun sanitizeArticleHtml(bodyHtml: String, baseUri: String): String? = r
         .addProtocols("a", "href", "https", "http")
         .addProtocols("img", "src", "https", "http")
     val cleaned = Jsoup.clean(bodyHtml, baseUri, policy)
-    cleaned.takeIf { it.isNotBlank() && Jsoup.parseBodyFragment(it).text().length >= 600 }
+    if (cleaned.isBlank()) return@runCatching null
+
+    // Publisher markup remains allow-list sanitised. Add this wrapper only after cleaning,
+    // so the horizontal-scrolling hook is app-owned and cannot be supplied by page HTML.
+    val fragment = Jsoup.parseBodyFragment(cleaned, baseUri)
+    fragment.select("table").forEach { table ->
+        if (table.parent()?.hasClass("cl-table-scroll") != true) {
+            table.wrap("<div class=\"cl-table-scroll\"></div>")
+        }
+    }
+    val readableHtml = fragment.body().html()
+    readableHtml.takeIf {
+        it.isNotBlank() && Jsoup.parseBodyFragment(it).text().length >= 600
+    }
 }.getOrNull()
 
 

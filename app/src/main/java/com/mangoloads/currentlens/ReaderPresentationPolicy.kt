@@ -8,6 +8,30 @@ internal object ReaderPresentationPolicy {
         val alternate = if (dark) "#151C27" else "#F7F9FC"
         val muted = if (dark) "#AAB4C5" else "#667181"
         return """
+            /* Wide publisher tables scroll as a single semantic table instead of
+               compressing every column into an unreadably narrow mobile layout. */
+            .cl-table-scroll {
+                width: 100%;
+                max-width: 100%;
+                overflow-x: auto;
+                overflow-y: hidden;
+                overscroll-behavior-x: contain;
+                -webkit-overflow-scrolling: touch;
+                margin: 1.35em 0;
+                border-radius: 13px;
+            }
+            .cl-table-scroll table {
+                width: max-content;
+                min-width: 100%;
+                max-width: none;
+                table-layout: auto;
+                margin: 0;
+            }
+            .cl-table-scroll th,
+            .cl-table-scroll td {
+                min-width: 96px;
+                max-width: min(68vw, 320px);
+            }
             table {
                 display: table;
                 width: 100%;
