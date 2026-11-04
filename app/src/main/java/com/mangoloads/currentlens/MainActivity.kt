@@ -8,6 +8,7 @@ import android.view.Menu
 import android.view.MenuItem
 import android.view.MotionEvent
 import android.view.View
+import android.view.ViewConfiguration
 import android.os.SystemClock
 import android.webkit.WebResourceRequest
 import android.webkit.WebView
@@ -1707,17 +1708,31 @@ private class ReaderWebView(context: android.content.Context) : WebView(context)
                 else super.onGetContentRect(mode, view, outRect)
             }
         }
+    private var touchDownX: Float? = null
     private var touchDownY: Float? = null
     private var upwardSwipeDetected = false
 
     override fun onTouchEvent(event: MotionEvent): Boolean {
         when (event.actionMasked) {
             MotionEvent.ACTION_DOWN -> {
+                touchDownX = event.x
                 touchDownY = event.y
                 upwardSwipeDetected = false
             }
             MotionEvent.ACTION_MOVE -> {
+                val startX = touchDownX
                 val startY = touchDownY
+                if (startX != null && startY != null && pendingAutoDefine != null) {
+                    val touchSlop = ViewConfiguration.get(getContext()).scaledTouchSlop.toFloat()
+                    if (DictionarySelectionPolicy.shouldCancelAutoDefineForMovement(
+                            deltaX = event.x - startX,
+                            deltaY = event.y - startY,
+                            touchSlopPx = touchSlop
+                        )
+                    ) {
+                        cancelPendingAutoDefine()
+                    }
+                }
                 if (startY != null && startY - event.y > 24f) upwardSwipeDetected = true
             }
             MotionEvent.ACTION_UP -> {
@@ -1732,10 +1747,12 @@ private class ReaderWebView(context: android.content.Context) : WebView(context)
                         }
                     }
                 }
+                touchDownX = null
                 touchDownY = null
                 upwardSwipeDetected = false
             }
             MotionEvent.ACTION_CANCEL -> {
+                touchDownX = null
                 touchDownY = null
                 upwardSwipeDetected = false
             }

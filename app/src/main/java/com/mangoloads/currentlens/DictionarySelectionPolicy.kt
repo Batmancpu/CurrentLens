@@ -1,8 +1,24 @@
 package com.mangoloads.currentlens
 
-/** Defers automatic word lookup long enough to preserve native multi-word selection. */
+/** Keeps automatic word definition subordinate to native text-selection gestures. */
 internal object DictionarySelectionPolicy {
-    const val AUTO_DEFINE_DELAY_MS = 400L
+    const val AUTO_DEFINE_DELAY_MS = 650L
+
+    /**
+     * Cancels automatic definition when the user moves beyond the platform touch slop.
+     * Dragging to refine a native selection or beginning a scroll must win over auto-define.
+     */
+    fun shouldCancelAutoDefineForMovement(
+        deltaX: Float,
+        deltaY: Float,
+        touchSlopPx: Float
+    ): Boolean {
+        if (!deltaX.isFinite() || !deltaY.isFinite() ||
+            !touchSlopPx.isFinite() || touchSlopPx < 0f
+        ) return false
+
+        return deltaX * deltaX + deltaY * deltaY > touchSlopPx * touchSlopPx
+    }
 
     fun autoDefineWord(rawSelection: String, elapsedMillis: Long): String? {
         if (elapsedMillis < AUTO_DEFINE_DELAY_MS) return null
