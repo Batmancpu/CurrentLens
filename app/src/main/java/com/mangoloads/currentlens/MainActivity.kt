@@ -1481,7 +1481,7 @@ private fun DefinitionGlassOverlay(word: String, anchor: Offset?, backdrop: Pris
             modifier = Modifier
                 .offset { IntOffset(placement.leftPx, placement.topPx) }
                 .width(with(density) { placement.widthPx.toDp() })
-                .heightIn(max = 300.dp),
+                .heightIn(max = with(density) { placement.maxHeightPx.toDp() }),
             enter = fadeIn(tween(150)) +
                 scaleIn(
                     initialScale = 0.88f,

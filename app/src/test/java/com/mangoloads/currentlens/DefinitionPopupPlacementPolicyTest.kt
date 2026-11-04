@@ -104,4 +104,21 @@ class DefinitionPopupPlacementPolicyTest {
         assertTrue(result.topPx + 300 <= 876)
     }
 
+    @Test
+    fun capsPopoverHeightToCompactReaderViewport() {
+        val result = DefinitionPopupPlacementPolicy.calculate(
+            parentWidthPx = 360,
+            parentHeightPx = 260,
+            anchor = Offset(180f, 220f),
+            popupWidthPx = 320,
+            estimatedHeightPx = 300,
+            marginPx = 12,
+            gapPx = 8
+        )
+
+        assertEquals(236, result.maxHeightPx)
+        assertEquals(12, result.topPx)
+        assertTrue(result.topPx + result.maxHeightPx <= 248)
+    }
+
 }

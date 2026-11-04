@@ -7,6 +7,7 @@ internal data class DefinitionPopupPlacement(
     val leftPx: Int,
     val topPx: Int,
     val widthPx: Int,
+    val maxHeightPx: Int,
     val originX: Float,
     val originY: Float
 )
@@ -31,7 +32,11 @@ internal object DefinitionPopupPlacementPolicy {
         val left = (anchorX - width / 2f).roundToInt().coerceIn(safeMargin, maxLeft)
 
         val safeGap = gapPx.coerceAtLeast(0)
-        val safeHeight = estimatedHeightPx.coerceAtLeast(1)
+        // In landscape, split-screen or a compact window, a fixed 300 dp cap can
+        // exceed the reader viewport and clip the definition. Bound the surface to
+        // the actual available height; its content remains vertically scrollable.
+        val availableHeight = (parentHeightPx - safeMargin * 2).coerceAtLeast(1)
+        val safeHeight = estimatedHeightPx.coerceAtLeast(1).coerceAtMost(availableHeight)
         val showAbove = anchorY + safeGap + safeHeight > parentHeightPx - safeMargin
         val desiredTop = if (showAbove) anchorY - safeGap - safeHeight else anchorY + safeGap
         val maxTop = (parentHeightPx - safeHeight - safeMargin).coerceAtLeast(safeMargin)
@@ -39,6 +44,6 @@ internal object DefinitionPopupPlacementPolicy {
         val originX = ((anchorX - left) / width.toFloat()).coerceIn(0f, 1f)
         val originY = if (showAbove) 1f else 0f
 
-        return DefinitionPopupPlacement(left, top, width, originX, originY)
+        return DefinitionPopupPlacement(left, top, width, safeHeight, originX, originY)
     }
 }
