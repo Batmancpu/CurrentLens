@@ -1541,6 +1541,7 @@ private class ReaderWebView(context: android.content.Context) : WebView(context)
     private val progressGate = ReaderProgressGate()
     private var selectionModeGeneration = 0
     private var pendingAutoDefine: Runnable? = null
+    private var autoDefineEvaluationPending = false
 
     fun beginArticle(url: String): Boolean {
         val changed = progressGate.beginArticle(url)
@@ -1631,6 +1632,7 @@ private class ReaderWebView(context: android.content.Context) : WebView(context)
         selectionModeGeneration += 1
         pendingAutoDefine?.let { removeCallbacks(it) }
         pendingAutoDefine = null
+        autoDefineEvaluationPending = false
     }
 
     private fun wrapSelectionCallback(original: ActionMode.Callback): ActionMode.Callback2 =
@@ -1649,8 +1651,10 @@ private class ReaderWebView(context: android.content.Context) : WebView(context)
                     val autoDefine = Runnable {
                         if (generation == selectionModeGeneration) {
                             pendingAutoDefine = null
+                            autoDefineEvaluationPending = true
                             evaluateSelection { selected, selectionRect ->
                                 if (generation == selectionModeGeneration) {
+                                    autoDefineEvaluationPending = false
                                     val elapsed = SystemClock.uptimeMillis() - startedAt
                                     val word = DictionarySelectionPolicy.autoDefineWord(selected, elapsed)
                                     if (word != null) {
@@ -1712,6 +1716,25 @@ private class ReaderWebView(context: android.content.Context) : WebView(context)
     private var touchDownY: Float? = null
     private var upwardSwipeDetected = false
 
+    private fun cancelPendingAutoDefineIfGestureInvalidated(
+        event: MotionEvent,
+        gestureCancelled: Boolean = false
+    ) {
+        if (pendingAutoDefine == null && !autoDefineEvaluationPending) return
+        val startX = touchDownX
+        val startY = touchDownY
+        val touchSlop = ViewConfiguration.get(context).scaledTouchSlop.toFloat()
+        if (DictionarySelectionPolicy.shouldCancelAutoDefineForGesture(
+                gestureCancelled = gestureCancelled,
+                deltaX = startX?.let { event.x - it } ?: 0f,
+                deltaY = startY?.let { event.y - it } ?: 0f,
+                touchSlopPx = touchSlop
+            )
+        ) {
+            cancelPendingAutoDefine()
+        }
+    }
+
     override fun onTouchEvent(event: MotionEvent): Boolean {
         when (event.actionMasked) {
             MotionEvent.ACTION_DOWN -> {
@@ -1720,22 +1743,13 @@ private class ReaderWebView(context: android.content.Context) : WebView(context)
                 upwardSwipeDetected = false
             }
             MotionEvent.ACTION_MOVE -> {
-                val startX = touchDownX
                 val startY = touchDownY
-                if (startX != null && startY != null && pendingAutoDefine != null) {
-                    val touchSlop = ViewConfiguration.get(getContext()).scaledTouchSlop.toFloat()
-                    if (DictionarySelectionPolicy.shouldCancelAutoDefineForMovement(
-                            deltaX = event.x - startX,
-                            deltaY = event.y - startY,
-                            touchSlopPx = touchSlop
-                        )
-                    ) {
-                        cancelPendingAutoDefine()
-                    }
-                }
+                cancelPendingAutoDefineIfGestureInvalidated(event)
                 if (startY != null && startY - event.y > 24f) upwardSwipeDetected = true
             }
             MotionEvent.ACTION_UP -> {
+                // ACTION_UP is the final safety net if the platform omitted a MOVE sample.
+                cancelPendingAutoDefineIfGestureInvalidated(event)
                 val attemptedToReadDown = upwardSwipeDetected
                 if (attemptedToReadDown) {
                     post {
@@ -1752,6 +1766,8 @@ private class ReaderWebView(context: android.content.Context) : WebView(context)
                 upwardSwipeDetected = false
             }
             MotionEvent.ACTION_CANCEL -> {
+                // A cancelled stream must never leave a delayed or in-flight definition behind.
+                cancelPendingAutoDefineIfGestureInvalidated(event, gestureCancelled = true)
                 touchDownX = null
                 touchDownY = null
                 upwardSwipeDetected = false

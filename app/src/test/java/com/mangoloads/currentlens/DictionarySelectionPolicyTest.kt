@@ -92,6 +92,38 @@ class DictionarySelectionPolicyTest {
     }
 
     @Test
+    fun cancelsAutoDefineWhenTheTouchStreamIsCancelledWithoutMovement() {
+        assertTrue(
+            DictionarySelectionPolicy.shouldCancelAutoDefineForGesture(
+                gestureCancelled = true,
+                deltaX = 0f,
+                deltaY = 0f,
+                touchSlopPx = 10f
+            )
+        )
+    }
+
+    @Test
+    fun usesTheFinalGesturePositionToDetectMovementBeyondTouchSlop() {
+        assertTrue(
+            DictionarySelectionPolicy.shouldCancelAutoDefineForGesture(
+                gestureCancelled = false,
+                deltaX = 0f,
+                deltaY = 11f,
+                touchSlopPx = 10f
+            )
+        )
+        assertFalse(
+            DictionarySelectionPolicy.shouldCancelAutoDefineForGesture(
+                gestureCancelled = false,
+                deltaX = 6f,
+                deltaY = 8f,
+                touchSlopPx = 10f
+            )
+        )
+    }
+
+    @Test
     fun manualDefineNormalizesOneWordForTheCurrentSelectionRequest() {
         assertEquals(
             "commonwealth",

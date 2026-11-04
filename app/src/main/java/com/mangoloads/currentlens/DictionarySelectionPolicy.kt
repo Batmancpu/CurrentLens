@@ -20,6 +20,15 @@ internal object DictionarySelectionPolicy {
         return deltaX * deltaX + deltaY * deltaY > touchSlopPx * touchSlopPx
     }
 
+    /** A system-cancelled touch stream invalidates auto-definition even without movement. */
+    fun shouldCancelAutoDefineForGesture(
+        gestureCancelled: Boolean,
+        deltaX: Float,
+        deltaY: Float,
+        touchSlopPx: Float
+    ): Boolean = gestureCancelled ||
+        shouldCancelAutoDefineForMovement(deltaX, deltaY, touchSlopPx)
+
     fun autoDefineWord(rawSelection: String, elapsedMillis: Long): String? {
         if (elapsedMillis < AUTO_DEFINE_DELAY_MS) return null
         return DictionaryWordPolicy.singleSelectedWord(rawSelection)
