@@ -79,13 +79,25 @@ object DictionaryRepository {
                 exceptionForms(database, normalized)
             )
 
-            var pronunciation = queryPronunciation(database, normalized)
+            val exactPronunciation = queryPronunciation(database, normalized)
+            var firstCandidatePronunciation: String? = null
             for (candidate in candidates) {
-                if (pronunciation.isNullOrBlank()) {
-                    pronunciation = queryPronunciation(database, candidate)
+                val candidatePronunciation = if (candidate == normalized) {
+                    exactPronunciation
+                } else {
+                    queryPronunciation(database, candidate)
+                }
+                if (firstCandidatePronunciation.isNullOrBlank() && !candidatePronunciation.isNullOrBlank()) {
+                    firstCandidatePronunciation = candidatePronunciation
                 }
                 val result = queryEntries(database, candidate)
                 if (result.meanings.isNotEmpty()) {
+                    // Prefer the selected form's pronunciation; otherwise use the same
+                    // lemma that supplied the definition, never an unrelated earlier guess.
+                    val pronunciation = DictionaryPronunciationPolicy.forDefinition(
+                        exactPronunciation,
+                        candidatePronunciation
+                    )
                     val definition = Definition(
                         word = normalized,
                         phonetic = pronunciation.orEmpty(),
@@ -98,6 +110,10 @@ object DictionaryRepository {
             }
             // A pronunciation may exist even when WordNet has no gloss for the token.
             // Keep that useful offline result distinct from a database/open/query failure.
+            val pronunciation = DictionaryPronunciationPolicy.forPronunciationOnly(
+                exactPronunciation,
+                firstCandidatePronunciation
+            )
             Definition(word = normalized, phonetic = pronunciation.orEmpty(), meanings = emptyList()).also {
                 lookupCache.put(normalized, it)
             }

@@ -59,3 +59,15 @@ internal object DictionaryMeaningPolicy {
         }
     }
 }
+
+
+/** Keeps a pronunciation aligned with the exact token or the lemma that supplied its gloss. */
+internal object DictionaryPronunciationPolicy {
+    fun forDefinition(exactForm: String?, matchedLemma: String?): String? =
+        clean(exactForm) ?: clean(matchedLemma)
+
+    fun forPronunciationOnly(exactForm: String?, firstCandidate: String?): String? =
+        clean(exactForm) ?: clean(firstCandidate)
+
+    private fun clean(value: String?): String? = value?.trim()?.takeIf { it.isNotEmpty() }
+}

@@ -93,4 +93,34 @@ class DictionaryMeaningPolicyTest {
             )
         )
     }
+
+    @Test
+    fun definitionUsesExactFormPronunciationBeforeLemmaPronunciation() {
+        assertEquals(
+            "/ˈriːd/",
+            DictionaryPronunciationPolicy.forDefinition("/ˈriːd/", "/ˈrɛd/")
+        )
+    }
+
+    @Test
+    fun definitionUsesTheMatchingLemmaWhenExactFormHasNoPronunciation() {
+        assertEquals(
+            "/ˈæksɪs/",
+            DictionaryPronunciationPolicy.forDefinition(null, "/ˈæksɪs/")
+        )
+    }
+
+    @Test
+    fun pronunciationOnlyFallbackUsesFirstAvailableCandidate() {
+        assertEquals(
+            "/ˈtʃɪldrən/",
+            DictionaryPronunciationPolicy.forPronunciationOnly(null, " /ˈtʃɪldrən/ ")
+        )
+    }
+
+    @Test
+    fun blankPronunciationsAreTreatedAsUnavailable() {
+        assertEquals(null, DictionaryPronunciationPolicy.forDefinition("  ", ""))
+        assertEquals(null, DictionaryPronunciationPolicy.forPronunciationOnly(null, " "))
+    }
 }
