@@ -7,9 +7,9 @@ internal object DictionaryWordPolicy {
     fun singleSelectedWord(raw: String): String? {
         val selected = raw.trim()
         if (selected.isEmpty() || selected.any { it.isWhitespace() }) return null
-        val word = selected.trim { char ->
-            !char.isLetter() && char != '\'' && char != '’' && char != '-'
-        }
+        // Strip punctuation around a selection, but preserve apostrophes and hyphens
+        // inside real words such as "can't" and "state-of-the-art".
+        val word = selected.trim { char -> !char.isLetter() }
         if (word.isEmpty() || word.length > 60) return null
         if (word.any { !it.isLetter() && it != '\'' && it != '’' && it != '-' }) return null
         return word.lowercase(Locale.ROOT)

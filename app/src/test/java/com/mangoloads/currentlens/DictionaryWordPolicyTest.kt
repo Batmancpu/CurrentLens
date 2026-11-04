@@ -11,6 +11,20 @@ class DictionaryWordPolicyTest {
     }
 
     @Test
+    fun stripsWrappingApostrophesAndEdgeHyphensButPreservesInternalWordPunctuation() {
+        assertEquals("commonwealth", DictionaryWordPolicy.singleSelectedWord("'Commonwealth'"))
+        assertEquals("state-of-the-art", DictionaryWordPolicy.singleSelectedWord("-State-of-the-Art-"))
+        assertEquals("can't", DictionaryWordPolicy.singleSelectedWord("can't"))
+    }
+
+    @Test
+    fun rejectsPunctuationOnlySelections() {
+        listOf("-", "--", "'", "’", "—").forEach { selection ->
+            assertNull(DictionaryWordPolicy.singleSelectedWord(selection))
+        }
+    }
+
+    @Test
     fun rejectsMultiWordAndEmptySelections() {
         assertNull(DictionaryWordPolicy.singleSelectedWord("rule of law"))
         assertNull(DictionaryWordPolicy.singleSelectedWord("   "))
