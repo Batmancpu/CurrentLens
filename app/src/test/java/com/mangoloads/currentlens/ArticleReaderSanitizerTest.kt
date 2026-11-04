@@ -44,6 +44,7 @@ class ArticleReaderSanitizerTest {
         assertFalse(html.contains("onclick"))
         assertFalse(html.contains("onerror"))
         assertFalse(html.contains("javascript:"))
+    }
 
     @Test
     fun wrapsThreeColumnTablesAfterSanitizingPublisherMarkup() {
@@ -69,6 +70,5 @@ class ArticleReaderSanitizerTest {
         assertTrue(cleaned.orEmpty().contains("<th scope=\"col\">From - To</th>"))
         assertTrue(cleaned.orEmpty().contains("<th scope=\"col\">Distance (Km)</th>"))
         assertTrue(cleaned.orEmpty().contains("<td>26655/656</td>"))
-    }
     }
 }
