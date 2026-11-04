@@ -21,11 +21,13 @@ internal object DefinitionPopupPlacementPolicy {
         popupWidthPx: Int,
         estimatedHeightPx: Int,
         marginPx: Int,
-        gapPx: Int
+        gapPx: Int,
+        maxPopupWidthPx: Int = Int.MAX_VALUE
     ): DefinitionPopupPlacement {
         val safeMargin = marginPx.coerceAtLeast(0)
         val widthLimit = (parentWidthPx - safeMargin * 2).coerceAtLeast(1)
-        val width = popupWidthPx.coerceIn(1, widthLimit)
+        val preferredWidth = popupWidthPx.coerceAtMost(maxPopupWidthPx.coerceAtLeast(1))
+        val width = preferredWidth.coerceIn(1, widthLimit)
         val maxLeft = (parentWidthPx - width - safeMargin).coerceAtLeast(safeMargin)
         val anchorX = anchor.x.takeIf { it.isFinite() } ?: parentWidthPx / 2f
         val anchorY = anchor.y.takeIf { it.isFinite() } ?: parentHeightPx / 2f

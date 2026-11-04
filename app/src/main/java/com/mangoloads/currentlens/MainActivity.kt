@@ -1695,6 +1695,9 @@ private fun DefinitionGlassOverlay(word: String, anchor: Offset?, backdrop: Pris
         val maxWidthPx = constraints.maxWidth
         val maxHeightPx = constraints.maxHeight
         val popupWidthPx = (maxWidthPx - marginPx * 2).coerceAtLeast(1)
+        // Keep the definition surface compact on tablets and wide split-screen layouts;
+        // narrow phone windows still use their full safe width.
+        val maxPopupWidthPx = with(density) { 420.dp.roundToPx() }
         val estimatedHeightPx = with(density) { 300.dp.roundToPx() }
         val fallbackAnchor = Offset(maxWidthPx / 2f, maxHeightPx * 0.72f)
         val placement = DefinitionPopupPlacementPolicy.calculate(
@@ -1704,7 +1707,8 @@ private fun DefinitionGlassOverlay(word: String, anchor: Offset?, backdrop: Pris
             popupWidthPx = popupWidthPx,
             estimatedHeightPx = estimatedHeightPx,
             marginPx = marginPx,
-            gapPx = with(density) { 14.dp.roundToPx() }
+            gapPx = with(density) { 14.dp.roundToPx() },
+            maxPopupWidthPx = maxPopupWidthPx
         )
         AnimatedVisibility(
             visibleState = visibilityState,
