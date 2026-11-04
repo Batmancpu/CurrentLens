@@ -8,4 +8,14 @@ internal object DictionarySelectionPolicy {
         if (elapsedMillis < AUTO_DEFINE_DELAY_MS) return null
         return DictionaryWordPolicy.singleSelectedWord(rawSelection)
     }
+
+    /** Rejects a delayed JavaScript selection result after its native ActionMode has ended. */
+    fun manualDefineWord(
+        rawSelection: String,
+        requestGeneration: Int,
+        currentGeneration: Int
+    ): String? {
+        if (requestGeneration != currentGeneration) return null
+        return DictionaryWordPolicy.singleSelectedWord(rawSelection)
+    }
 }

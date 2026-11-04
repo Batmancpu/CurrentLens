@@ -1363,14 +1363,23 @@ private class ReaderWebView(context: android.content.Context) : WebView(context)
             override fun onActionItemClicked(mode: ActionMode, item: MenuItem): Boolean {
                 if (item.itemId == MENU_DEFINE_WORD) {
                     cancelPendingAutoDefine()
+                    val requestGeneration = selectionModeGeneration
                     evaluateSelection { selected, selectionRect ->
-                        val word = DictionaryWordPolicy.singleSelectedWord(selected)
-                        if (word != null) {
-                            performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK)
-                            onDefineWord(word, selectionRect)
+                        if (requestGeneration == selectionModeGeneration) {
+                            val word = DictionarySelectionPolicy.manualDefineWord(
+                                selected,
+                                requestGeneration,
+                                selectionModeGeneration
+                            )
+                            if (word != null) {
+                                performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK)
+                                onDefineWord(word, selectionRect)
+                            }
+                            // WebView selection can be cleared when ActionMode finishes.
+                            // Keep native selection alive until evaluateJavascript returns.
+                            mode.finish()
                         }
                     }
-                    mode.finish()
                     return true
                 }
                 val handled = original.onActionItemClicked(mode, item)

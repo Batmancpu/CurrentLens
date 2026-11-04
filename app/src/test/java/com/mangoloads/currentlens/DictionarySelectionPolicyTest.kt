@@ -37,6 +37,24 @@ class DictionarySelectionPolicyTest {
     }
 
     @Test
+    fun manualDefineNormalizesOneWordForTheCurrentSelectionRequest() {
+        assertEquals(
+            "commonwealth",
+            DictionarySelectionPolicy.manualDefineWord("Commonwealth", 4, 4)
+        )
+    }
+
+    @Test
+    fun manualDefineRejectsAResultFromAnEndedSelectionMode() {
+        assertNull(DictionarySelectionPolicy.manualDefineWord("Commonwealth", 4, 5))
+    }
+
+    @Test
+    fun manualDefineLeavesMultiWordSelectionToNativeActions() {
+        assertNull(DictionarySelectionPolicy.manualDefineWord("rule of law", 4, 4))
+    }
+
+    @Test
     fun ignoresEmptyOrPunctuationOnlySelection() {
         assertNull(
             DictionarySelectionPolicy.autoDefineWord(
