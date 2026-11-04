@@ -7,6 +7,24 @@ import org.junit.Test
 
 class ArticleReaderSanitizerTest {
     @Test
+    fun preservesArticleTablesAndTheirSemanticHeaders() {
+        val readable = "A public article table row describing the route, service and travel distance. ".repeat(10)
+        val html = """
+            <table>
+              <thead><tr><th>Train No.</th><th>From - To</th><th>Distance (Km)</th></tr></thead>
+              <tbody><tr><td>26655/656</td><td>$readable</td><td>670</td></tr></tbody>
+            </table>
+        """.trimIndent()
+
+        val cleaned = sanitizeArticleHtml(html, "https://publisher.example/story")
+
+        assertNotNull(cleaned)
+        assertTrue(cleaned.orEmpty().contains("<table>"))
+        assertTrue(cleaned.orEmpty().contains("<th>Train No.</th>"))
+        assertTrue(cleaned.orEmpty().contains("<td>26655/656</td>"))
+    }
+
+    @Test
     fun stripsExecutableMarkupAndUnsafeAttributesWhileKeepingArticleText() {
         val readable = "This is a publicly accessible article paragraph about institutions, policy and public administration. ".repeat(9)
         val hostile = """

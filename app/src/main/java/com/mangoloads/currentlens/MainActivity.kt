@@ -88,6 +88,7 @@ import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.geometry.Offset
@@ -966,15 +967,28 @@ private fun EmptyPanel(title: String, description: String) {
 
 @Composable
 private fun GlassTabBar(backdrop: PrismalBackdrop, selectedTab: Int, glassAlpha: Float, onSelect: (Int) -> Unit) {
+    // Keep the callback identity stable. Prismal observes this callback with snapshotFlow;
+    // replacing the closure on each recomposition can reset its internal tab index instead
+    // of animating the droplet from the previous tab to the new one.
+    val selectedTabState = rememberUpdatedState(selectedTab)
+    val selectedTabIndex = remember { { selectedTabState.value } }
     PrismalGlassBottomTabs(
-        selectedTabIndex = { selectedTab },
+        selectedTabIndex = selectedTabIndex,
         onTabSelected = onSelect,
         backdrop = backdrop,
         tabsCount = 4,
         tintDropletContent = false,
         adaptiveLuminance = true,
         specular = { PrismalSpecular.Default.copy(alpha = glassAlpha) },
-        modifier = Modifier.fillMaxWidth().height(66.dp)
+        blurRadius = 11.dp,
+        refractionHeight = 23.dp,
+        refractionAmount = 20.dp,
+        dropletBlurRadius = 13.dp,
+        dropletChromaticAberration = 0.42f,
+        dropletRefractionHeight = 24.dp,
+        dropletRefractionAmount = 18.dp,
+        pressGlow = 0.48f,
+        modifier = Modifier.fillMaxWidth().height(62.dp)
             .graphicsLayer { alpha = (0.78f + glassAlpha * 0.36f).coerceIn(0.82f, 0.98f) }
     ) {
         GlassTab(0, "Today", Icons.Outlined.Today, onSelect)
@@ -1159,7 +1173,15 @@ private fun ReaderScreen(article: Article, backdrop: PrismalBackdrop, glassAlpha
                         publisherLoadFailed = true
                     }
                     webView.allowReaderNavigation = { target -> PublisherHostPolicy.allows(article.source, target) }
-                    webView.settings.javaScriptEnabled = extractedHtml == null && fallbackToPublisher
+                    // evaluateJavascript is used only for native text selection and its anchor.
+                    // Extracted HTML has already passed Jsoup's allow-list sanitizer (scripts,
+                    // event handlers, unsafe URL schemes and embedded documents are removed).
+                    // Keep JS off for non-readable/unverified pages; publisher fallback remains
+                    // gated by PublisherHostPolicy.
+                    webView.settings.javaScriptEnabled = ReaderExecutionPolicy.javascriptEnabled(
+                        hasSanitizedArticle = extractedHtml != null,
+                        hasAllowlistedPublisherFallback = fallbackToPublisher
+                    )
                     webView.settings.domStorageEnabled = extractedHtml == null && fallbackToPublisher
                     if (webView.beginArticle(article.url)) {
                         reachedBottom = false
@@ -1263,8 +1285,9 @@ private fun readerDocument(article: Article, content: String, fontSize: Int, dar
         ".cl-source{font:700 11px/1.4 system-ui,sans-serif;letter-spacing:1.2px;text-transform:uppercase;color:" + muted + ";margin:4px 0 14px;}" +
         "h1{font:700 1.72em/1.12 -apple-system,BlinkMacSystemFont,'SF Pro Display',system-ui,sans-serif;letter-spacing:-.045em;margin:0 0 18px;color:" + foreground + ";}" +
         "h2,h3{font-family:system-ui,sans-serif;line-height:1.25;margin:1.55em 0 .55em;}p,li{margin:0 0 1.1em;}img,figure,video{max-width:100%;height:auto;border-radius:14px;}figure{margin:1.4em 0;}figcaption{font:12px/1.5 system-ui,sans-serif;color:" + muted + ";}" +
-        "a{color:" + (if (dark) "#9CB9FF" else "#2859A8") + ";text-decoration:none;}blockquote{margin:1.4em 0;padding-left:1em;border-left:3px solid " + (if (dark) "#52658D" else "#A9BCE0") + ";color:" + muted + ";}" +
-        "table{display:block;max-width:100%;overflow-x:auto;border-collapse:collapse;font:14px/1.5 system-ui,sans-serif;}td,th{padding:8px;border:1px solid " + muted + ";}iframe{max-width:100%;}pre{white-space:pre-wrap;overflow-wrap:anywhere;}" +
+        "a{color:" + (if (dark) "#9CB9FF" else "#2859A8") + ";text-decoration:none;}blockquote{margin:1.4em 0;padding:14px 16px;border-left:3px solid " + (if (dark) "#52658D" else "#A9BCE0") + ";border-radius:0 12px 12px 0;background:" + (if (dark) "#171D27" else "#F2F5F9") + ";color:" + muted + ";}" +
+        ReaderPresentationPolicy.responsiveTableCss(dark) +
+        "iframe{max-width:100%;}pre{white-space:pre-wrap;overflow-wrap:anywhere;border-radius:12px;padding:12px;background:" + (if (dark) "#171D27" else "#F2F5F9") + ";}code{overflow-wrap:anywhere;}" +
         "</style></head><body><div class=\"cl-source\">" + source + " · CurrentLens Reader</div><h1>" + title + "</h1><main>" + content + "</main></body></html>"
 }
 

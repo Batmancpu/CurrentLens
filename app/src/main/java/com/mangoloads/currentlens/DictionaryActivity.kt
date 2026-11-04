@@ -2,8 +2,10 @@ package com.mangoloads.currentlens
 
 import android.content.Context
 import android.database.sqlite.SQLiteDatabase
+import android.os.Build
 import android.os.Bundle
 import android.view.Gravity
+import android.view.HapticFeedbackConstants
 import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -172,10 +174,34 @@ class DictionaryActivity : ComponentActivity() {
             intent.getCharSequenceExtra("android.intent.extra.PROCESS_TEXT")?.toString().orEmpty()
         ).orEmpty()
         window?.setBackgroundDrawableResource(android.R.color.transparent)
+        window?.addFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND)
+        window?.attributes = window?.attributes?.apply { dimAmount = 0.11f }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            // Blur-behind samples the whole app window, unlike a blur confined to this popup.
+            window?.addFlags(WindowManager.LayoutParams.FLAG_BLUR_BEHIND)
+            window?.attributes = window?.attributes?.apply {
+                blurBehindRadius = (resources.displayMetrics.density * 30f).toInt()
+            }
+        }
         window?.setLayout(WindowManager.LayoutParams.MATCH_PARENT, WindowManager.LayoutParams.WRAP_CONTENT)
+        window?.decorView?.performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK)
         window?.setGravity(Gravity.BOTTOM)
         setContent {
-            MaterialTheme {
+            val dark = androidx.compose.foundation.isSystemInDarkTheme()
+            MaterialTheme(
+                colorScheme = if (dark) {
+                    androidx.compose.material3.darkColorScheme(
+                        primary = androidx.compose.ui.graphics.Color(0xFFB9CAFF),
+                        background = androidx.compose.ui.graphics.Color(0xFF0D1118),
+                        surface = androidx.compose.ui.graphics.Color(0xFF1B2636)
+                    )
+                } else {
+                    androidx.compose.material3.lightColorScheme(
+                        primary = androidx.compose.ui.graphics.Color(0xFF2859A8),
+                        surface = androidx.compose.ui.graphics.Color(0xFFF7F9FC)
+                    )
+                }
+            ) {
                 DictionaryPopup(word.ifBlank { "Select one word" }) { finish() }
             }
         }
@@ -207,9 +233,11 @@ private fun DictionaryPopup(word: String, onClose: () -> Unit) {
         Surface(
             modifier = Modifier.fillMaxWidth().padding(12.dp),
             shape = RoundedCornerShape(26.dp),
-            color = MaterialTheme.colorScheme.surface.copy(alpha = 0.96f),
-            tonalElevation = 8.dp,
-            shadowElevation = 18.dp
+            color = MaterialTheme.colorScheme.surface.copy(
+                alpha = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) 0.76f else 0.90f
+            ),
+            tonalElevation = 0.dp,
+            shadowElevation = 22.dp
         ) {
             Column(
                 Modifier.padding(20.dp).verticalScroll(rememberScrollState()),
