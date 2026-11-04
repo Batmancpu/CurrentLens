@@ -980,14 +980,6 @@ private fun GlassTabBar(backdrop: PrismalBackdrop, selectedTab: Int, glassAlpha:
         tintDropletContent = false,
         adaptiveLuminance = true,
         specular = { PrismalSpecular.Default.copy(alpha = glassAlpha) },
-        blurRadius = 11.dp,
-        refractionHeight = 23.dp,
-        refractionAmount = 20.dp,
-        dropletBlurRadius = 13.dp,
-        dropletChromaticAberration = 0.42f,
-        dropletRefractionHeight = 24.dp,
-        dropletRefractionAmount = 18.dp,
-        pressGlow = 0.48f,
         modifier = Modifier.fillMaxWidth().height(62.dp)
             .graphicsLayer { alpha = (0.78f + glassAlpha * 0.36f).coerceIn(0.82f, 0.98f) }
     ) {
