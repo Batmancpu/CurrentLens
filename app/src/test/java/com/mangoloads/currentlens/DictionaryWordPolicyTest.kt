@@ -28,10 +28,16 @@ class DictionaryWordPolicyTest {
         assertEquals("can't", DictionaryWordPolicy.singleSelectedWord("can't"))
         assertEquals("state-of-the-art", DictionaryWordPolicy.singleSelectedWord("State-of-the-Art"))
     }
+
     @Test
     fun prefersWordNetExceptionLemmasBeforeAmbiguousSuffixGuesses() {
         assertEquals(
-            listOf("axes", "axis", "axe", "ax"),
+            listOf("indices", "index", "indic", "indice"),
+            DictionaryWordPolicy.lookupCandidates("indices", listOf("index", ""))
+        )
+        // Short ambiguous forms intentionally skip generic suffix guesses.
+        assertEquals(
+            listOf("axes", "axis", "axe"),
             DictionaryWordPolicy.lookupCandidates("axes", listOf("axis", "axe", ""))
         )
     }
@@ -43,5 +49,4 @@ class DictionaryWordPolicyTest {
             DictionaryWordPolicy.lookupCandidates("running", listOf("run", "RUN", " "))
         )
     }
-
 }
