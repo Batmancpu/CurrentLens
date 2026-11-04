@@ -61,11 +61,14 @@ object DictionaryRepository {
     private const val DATABASE_NAME = "currentlens_wordnet_2025_plus.db"
     private val databaseLock = Any()
     private val lookupCache = DictionaryDefinitionCache()
+    private val databaseSession = DictionaryDatabaseSession<SQLiteDatabase> { it.isOpen }
 
     suspend fun lookup(context: Context, word: String): Definition? = withContext(Dispatchers.IO) {
         val normalized = DictionaryWordPolicy.singleSelectedWord(word) ?: return@withContext null
         lookupCache.get(normalized)?.let { return@withContext it }
-        val database = openDatabase(context.applicationContext)
+        // Reuse the read-only SQLite connection across word selections. Opening a 50 MB
+        // database for every uncached word adds avoidable latency to the selection experience.
+        val database = databaseSession.getOrOpen { openDatabase(context.applicationContext) }
             ?: return@withContext Definition(word.trim(), "", emptyList(), dictionaryAvailable = false)
         try {
             val candidates = buildList {
@@ -93,8 +96,6 @@ object DictionaryRepository {
             }
         } catch (_: Exception) {
             null
-        } finally {
-            database.close()
         }
     }
 
