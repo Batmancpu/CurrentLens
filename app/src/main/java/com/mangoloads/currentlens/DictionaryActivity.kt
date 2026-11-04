@@ -73,10 +73,10 @@ object DictionaryRepository {
         val database = databaseSession.getOrOpen { openDatabase(context.applicationContext) }
             ?: return@withContext Definition(word.trim(), "", emptyList(), dictionaryAvailable = false)
         try {
-            val candidates = buildList {
-                addAll(DictionaryWordPolicy.candidates(normalized))
-                addAll(exceptionForms(database, normalized))
-            }.distinct().take(10)
+            val candidates = DictionaryWordPolicy.lookupCandidates(
+                normalized,
+                exceptionForms(database, normalized)
+            )
 
             for (candidate in candidates) {
                 val result = queryEntries(database, candidate)
@@ -148,7 +148,8 @@ object DictionaryRepository {
     private fun exceptionForms(database: SQLiteDatabase, word: String): List<String> {
         val bases = linkedSetOf<String>()
         database.rawQuery(
-            "SELECT base_forms FROM exceptions WHERE inflected = ? LIMIT 4",
+            "SELECT base_forms FROM exceptions WHERE inflected = ? " +
+                "ORDER BY CASE pos WHEN 'noun' THEN 0 WHEN 'verb' THEN 1 WHEN 'adjective' THEN 2 ELSE 3 END LIMIT 4",
             arrayOf(word)
         ).use { cursor ->
             while (cursor.moveToNext()) {

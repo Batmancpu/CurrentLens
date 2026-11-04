@@ -49,4 +49,19 @@ internal object DictionaryWordPolicy {
         }
         return candidates.filter { it.isNotBlank() }.take(6)
     }
+
+    /**
+     * Tries the exact token first, then dataset-authored WordNet exceptions, then
+     * conservative suffix guesses. Exception lemmas are more reliable for ambiguous
+     * forms such as "axes" and must not lose to a generic stem guess.
+     */
+    fun lookupCandidates(word: String, exceptionForms: List<String>): List<String> {
+        val normalized = word.lowercase(Locale.ROOT)
+        val exceptions = exceptionForms
+            .map { it.trim().lowercase(Locale.ROOT) }
+            .filter { it.isNotBlank() }
+        return (listOf(normalized) + exceptions + candidates(normalized).drop(1))
+            .distinct()
+            .take(10)
+    }
 }
