@@ -141,4 +141,21 @@ class DefinitionPopupPlacementPolicyTest {
         assertTrue(result.topPx + result.maxHeightPx <= 248)
     }
 
+    @Test
+    fun keepsMorphOriginAtSelectionWhenCompactViewportClampsPopoverPosition() {
+        val result = DefinitionPopupPlacementPolicy.calculate(
+            parentWidthPx = 360,
+            parentHeightPx = 260,
+            anchor = Offset(180f, 220f),
+            popupWidthPx = 320,
+            estimatedHeightPx = 300,
+            marginPx = 12,
+            gapPx = 8
+        )
+
+        assertEquals(12, result.topPx)
+        assertEquals(236, result.maxHeightPx)
+        assertEquals(208f / 236f, result.originY, 0.0001f)
+    }
+
 }

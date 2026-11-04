@@ -44,7 +44,10 @@ internal object DefinitionPopupPlacementPolicy {
         val maxTop = (parentHeightPx - safeHeight - safeMargin).coerceAtLeast(safeMargin)
         val top = desiredTop.roundToInt().coerceIn(safeMargin, maxTop)
         val originX = ((anchorX - left) / width.toFloat()).coerceIn(0f, 1f)
-        val originY = if (showAbove) 1f else 0f
+        // Anchor the entrance transform to the selection's actual position inside the
+        // final clamped popup. Compact windows can force the surface away from its
+        // preferred edge, so a fixed top/bottom pivot no longer matches the selection.
+        val originY = ((anchorY - top) / safeHeight.toFloat()).coerceIn(0f, 1f)
 
         return DefinitionPopupPlacement(left, top, width, safeHeight, originX, originY)
     }
