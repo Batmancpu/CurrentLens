@@ -1751,6 +1751,16 @@ private class ReaderWebView(context: android.content.Context) : WebView(context)
                 touchDownY = event.y
                 upwardSwipeDetected = false
             }
+            MotionEvent.ACTION_POINTER_DOWN -> {
+                if (DictionarySelectionPolicy.shouldCancelAutoDefineForMultiTouch(event.pointerCount)) {
+                    // A second pointer changes selection into a multi-touch gesture (for example,
+                    // pinch zoom). Keep WebView's native gesture, but stop definition/end tracking.
+                    cancelPendingAutoDefine()
+                    touchDownX = null
+                    touchDownY = null
+                    upwardSwipeDetected = false
+                }
+            }
             MotionEvent.ACTION_MOVE -> {
                 val startY = touchDownY
                 cancelPendingAutoDefineIfGestureInvalidated(event)

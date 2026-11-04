@@ -154,6 +154,22 @@ class DictionarySelectionPolicyTest {
     }
 
     @Test
+    fun keepsSinglePointerGestureEligibleForAutomaticDefinition() {
+        assertFalse(DictionarySelectionPolicy.shouldCancelAutoDefineForMultiTouch(1))
+    }
+
+    @Test
+    fun cancelsAutomaticDefinitionWhenASecondPointerJoins() {
+        assertTrue(DictionarySelectionPolicy.shouldCancelAutoDefineForMultiTouch(2))
+        assertTrue(DictionarySelectionPolicy.shouldCancelAutoDefineForMultiTouch(3))
+    }
+
+    @Test
+    fun doesNotTreatAnInvalidZeroPointerCountAsMultiTouch() {
+        assertFalse(DictionarySelectionPolicy.shouldCancelAutoDefineForMultiTouch(0))
+    }
+
+    @Test
     fun manualDefineNormalizesOneWordForTheCurrentSelectionRequest() {
         assertEquals(
             "commonwealth",

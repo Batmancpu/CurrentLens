@@ -35,6 +35,9 @@ internal object DictionarySelectionPolicy {
         evaluationPending: Boolean
     ): Boolean = hasPendingRunnable || evaluationPending
 
+    /** A second pointer changes word selection into a multi-touch gesture such as pinch zoom. */
+    fun shouldCancelAutoDefineForMultiTouch(pointerCount: Int): Boolean = pointerCount > 1
+
     fun autoDefineWord(rawSelection: String, elapsedMillis: Long): String? {
         if (elapsedMillis < AUTO_DEFINE_DELAY_MS) return null
         return DictionaryWordPolicy.singleSelectedWord(rawSelection)
