@@ -1330,8 +1330,18 @@ private fun ReaderScreen(article: Article, backdrop: PrismalBackdrop, glassAlpha
                         settings.mixedContentMode = android.webkit.WebSettings.MIXED_CONTENT_NEVER_ALLOW
                         settings.safeBrowsingEnabled = true
                         webViewClient = object : WebViewClient() {
+                            override fun onPageStarted(
+                                view: WebView?,
+                                url: String?,
+                                favicon: android.graphics.Bitmap?
+                            ) {
+                                (view as? ReaderWebView)?.cancelShortPageEndCheck()
+                            }
                             override fun onPageFinished(view: WebView?, url: String?) {
                                 onReaderPageFinished()
+                                // A page that fits entirely in the viewport never scrolls, so
+                                // onScrollChanged cannot expose its end-of-reading state.
+                                (view as? ReaderWebView)?.scheduleShortPageEndCheck()
                             }
                             override fun onReceivedError(view: WebView?, request: WebResourceRequest?, error: android.webkit.WebResourceError?) {
                                 if (request?.isForMainFrame == true) onReaderMainFrameError()
@@ -1500,7 +1510,39 @@ private class ReaderWebView(context: android.content.Context) : WebView(context)
     private var selectionModeGeneration = 0
     private var pendingAutoDefine: Runnable? = null
 
-    fun beginArticle(url: String): Boolean = progressGate.beginArticle(url)
+    fun beginArticle(url: String): Boolean {
+        val changed = progressGate.beginArticle(url)
+        if (changed) cancelShortPageEndCheck()
+        return changed
+    }
+
+    private var shortPageEndCheck: Runnable? = null
+
+    fun cancelShortPageEndCheck() {
+        shortPageEndCheck?.let { removeCallbacks(it) }
+        shortPageEndCheck = null
+    }
+
+    fun scheduleShortPageEndCheck() {
+        cancelShortPageEndCheck()
+        val check = Runnable {
+            shortPageEndCheck = null
+            val fullHeight = (contentHeight * scale).toInt()
+            if (ReaderEndDetector.isShortPageFullyVisible(fullHeight, height) &&
+                progressGate.markEndReached()
+            ) {
+                onReachedBottom()
+            }
+        }
+        shortPageEndCheck = check
+        postDelayed(check, 180L)
+    }
+
+    override fun onDetachedFromWindow() {
+        cancelShortPageEndCheck()
+        cancelPendingAutoDefine()
+        super.onDetachedFromWindow()
+    }
 
     @Suppress("DEPRECATION")
     override fun startActionMode(callback: ActionMode.Callback, type: Int): ActionMode? =

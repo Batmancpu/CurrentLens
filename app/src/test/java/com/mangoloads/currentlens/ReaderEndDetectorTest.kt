@@ -17,6 +17,21 @@ class ReaderEndDetectorTest {
     }
 
     @Test
+    fun shortPageIsAutomaticallyCompleteOnlyWhenItsWholeContentFits() {
+        assertTrue(ReaderEndDetector.isShortPageFullyVisible(650, 900))
+        assertFalse(ReaderEndDetector.isShortPageFullyVisible(901, 900))
+        // A page just below the fold is near the end, but is not fully visible yet.
+        assertFalse(ReaderEndDetector.isShortPageFullyVisible(950, 900))
+    }
+
+    @Test
+    fun fullyVisibleCheckRejectsInvalidGeometry() {
+        assertFalse(ReaderEndDetector.isShortPageFullyVisible(0, 900))
+        assertFalse(ReaderEndDetector.isShortPageFullyVisible(650, 0))
+        assertFalse(ReaderEndDetector.isShortPageFullyVisible(-1, 900))
+    }
+
+    @Test
     fun refusesInvalidGeometry() {
         assertFalse(ReaderEndDetector.isAtEnd(fullContentHeight = 0, viewportHeight = 900, scrollY = 0))
         assertFalse(ReaderEndDetector.isAtEnd(fullContentHeight = 500, viewportHeight = 0, scrollY = 0))
