@@ -1738,6 +1738,15 @@ private class ReaderWebView(context: android.content.Context) : WebView(context)
     override fun onTouchEvent(event: MotionEvent): Boolean {
         when (event.actionMasked) {
             MotionEvent.ACTION_DOWN -> {
+                // A fresh touch is a new interaction. Do not let an earlier long-press
+                // open its definition while the user is tapping or refining the selection.
+                if (DictionarySelectionPolicy.shouldCancelAutoDefineForNewTouch(
+                        hasPendingRunnable = pendingAutoDefine != null,
+                        evaluationPending = autoDefineEvaluationPending
+                    )
+                ) {
+                    cancelPendingAutoDefine()
+                }
                 touchDownX = event.x
                 touchDownY = event.y
                 upwardSwipeDetected = false

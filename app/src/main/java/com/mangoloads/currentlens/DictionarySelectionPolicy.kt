@@ -29,6 +29,12 @@ internal object DictionarySelectionPolicy {
     ): Boolean = gestureCancelled ||
         shouldCancelAutoDefineForMovement(deltaX, deltaY, touchSlopPx)
 
+    /** A new touch must not inherit a delayed definition from the previous gesture. */
+    fun shouldCancelAutoDefineForNewTouch(
+        hasPendingRunnable: Boolean,
+        evaluationPending: Boolean
+    ): Boolean = hasPendingRunnable || evaluationPending
+
     fun autoDefineWord(rawSelection: String, elapsedMillis: Long): String? {
         if (elapsedMillis < AUTO_DEFINE_DELAY_MS) return null
         return DictionaryWordPolicy.singleSelectedWord(rawSelection)

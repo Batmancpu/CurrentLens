@@ -124,6 +124,36 @@ class DictionarySelectionPolicyTest {
     }
 
     @Test
+    fun cancelsDelayedDefinitionWhenANewTouchStartsDuringGracePeriod() {
+        assertTrue(
+            DictionarySelectionPolicy.shouldCancelAutoDefineForNewTouch(
+                hasPendingRunnable = true,
+                evaluationPending = false
+            )
+        )
+    }
+
+    @Test
+    fun cancelsDefinitionLookupWhenANewTouchStarts() {
+        assertTrue(
+            DictionarySelectionPolicy.shouldCancelAutoDefineForNewTouch(
+                hasPendingRunnable = false,
+                evaluationPending = true
+            )
+        )
+    }
+
+    @Test
+    fun leavesNewTouchUnaffectedWhenNoDefinitionIsPending() {
+        assertFalse(
+            DictionarySelectionPolicy.shouldCancelAutoDefineForNewTouch(
+                hasPendingRunnable = false,
+                evaluationPending = false
+            )
+        )
+    }
+
+    @Test
     fun manualDefineNormalizesOneWordForTheCurrentSelectionRequest() {
         assertEquals(
             "commonwealth",
