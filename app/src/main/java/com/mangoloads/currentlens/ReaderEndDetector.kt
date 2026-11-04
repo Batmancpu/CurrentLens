@@ -13,3 +13,42 @@ internal object ReaderEndDetector {
         return fullContentHeight <= viewportHeight
     }
 }
+
+
+/**
+ * Avoids declaring a short article complete while WebView is still reporting transient
+ * content/viewport geometry during the first layout and resource reflow.
+ */
+internal class ReaderShortPageStabilityGate(
+    private val requiredStableSamples: Int = 3
+) {
+    init {
+        require(requiredStableSamples >= 2) { "At least two stable samples are required" }
+    }
+
+    private var lastFullContentHeight: Int? = null
+    private var lastViewportHeight: Int? = null
+    private var stableSamples = 0
+
+    fun record(fullContentHeight: Int, viewportHeight: Int): Boolean {
+        if (!ReaderEndDetector.isShortPageFullyVisible(fullContentHeight, viewportHeight)) {
+            reset()
+            return false
+        }
+
+        if (lastFullContentHeight == fullContentHeight && lastViewportHeight == viewportHeight) {
+            stableSamples += 1
+        } else {
+            lastFullContentHeight = fullContentHeight
+            lastViewportHeight = viewportHeight
+            stableSamples = 1
+        }
+        return stableSamples >= requiredStableSamples
+    }
+
+    fun reset() {
+        lastFullContentHeight = null
+        lastViewportHeight = null
+        stableSamples = 0
+    }
+}

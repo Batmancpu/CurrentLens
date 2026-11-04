@@ -1335,7 +1335,7 @@ private fun ReaderScreen(article: Article, backdrop: PrismalBackdrop, glassAlpha
                                 url: String?,
                                 favicon: android.graphics.Bitmap?
                             ) {
-                                (view as? ReaderWebView)?.cancelShortPageEndCheck()
+                                (view as? ReaderWebView)?.cancelShortPageEndCheck(resetStability = true)
                             }
                             override fun onPageFinished(view: WebView?, url: String?) {
                                 onReaderPageFinished()
@@ -1512,34 +1512,47 @@ private class ReaderWebView(context: android.content.Context) : WebView(context)
 
     fun beginArticle(url: String): Boolean {
         val changed = progressGate.beginArticle(url)
-        if (changed) cancelShortPageEndCheck()
+        if (changed) cancelShortPageEndCheck(resetStability = true)
         return changed
     }
 
+    private val shortPageStabilityGate = ReaderShortPageStabilityGate()
     private var shortPageEndCheck: Runnable? = null
 
-    fun cancelShortPageEndCheck() {
+    fun cancelShortPageEndCheck(resetStability: Boolean = false) {
         shortPageEndCheck?.let { removeCallbacks(it) }
         shortPageEndCheck = null
+        if (resetStability) shortPageStabilityGate.reset()
     }
 
-    fun scheduleShortPageEndCheck() {
+    fun scheduleShortPageEndCheck(attempt: Int = 0) {
         cancelShortPageEndCheck()
         val check = Runnable {
             shortPageEndCheck = null
             val fullHeight = (contentHeight * scale).toInt()
-            if (ReaderEndDetector.isShortPageFullyVisible(fullHeight, height) &&
-                progressGate.markEndReached()
-            ) {
-                onReachedBottom()
+            val viewportHeight = height
+            when {
+                fullHeight <= 0 || viewportHeight <= 0 -> {
+                    shortPageStabilityGate.reset()
+                    if (attempt < MAX_SHORT_PAGE_END_CHECK_ATTEMPTS) {
+                        scheduleShortPageEndCheck(attempt + 1)
+                    }
+                }
+                fullHeight > viewportHeight -> shortPageStabilityGate.reset()
+                shortPageStabilityGate.record(fullHeight, viewportHeight) -> {
+                    if (progressGate.markEndReached()) onReachedBottom()
+                }
+                attempt < MAX_SHORT_PAGE_END_CHECK_ATTEMPTS ->
+                    scheduleShortPageEndCheck(attempt + 1)
+                else -> shortPageStabilityGate.reset()
             }
         }
         shortPageEndCheck = check
-        postDelayed(check, 180L)
+        postDelayed(check, SHORT_PAGE_END_CHECK_DELAY_MS)
     }
 
     override fun onDetachedFromWindow() {
-        cancelShortPageEndCheck()
+        cancelShortPageEndCheck(resetStability = true)
         cancelPendingAutoDefine()
         super.onDetachedFromWindow()
     }
@@ -1707,7 +1720,11 @@ private class ReaderWebView(context: android.content.Context) : WebView(context)
         }
     }
 
-    companion object { private const val MENU_DEFINE_WORD = 0x43555252 }
+    companion object {
+        private const val MENU_DEFINE_WORD = 0x43555252
+        private const val SHORT_PAGE_END_CHECK_DELAY_MS = 180L
+        private const val MAX_SHORT_PAGE_END_CHECK_ATTEMPTS = 5
+    }
 }
 
 @Composable
