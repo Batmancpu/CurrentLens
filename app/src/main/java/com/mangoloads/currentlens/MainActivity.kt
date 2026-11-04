@@ -353,13 +353,10 @@ private fun CurrentLensApp() {
                     glassAlpha = glassAlpha,
                     onSearchAnchor = { searchTabAnchor = it },
                     onSelect = { tab ->
-                        if (tab == 2 && selectedTab == 2) {
-                            searchExpanded = true
-                        } else {
-                            searchExpanded = false
-                            selectedTab = tab
-                            if (tab == 3) youPage = YouPage.DASHBOARD
-                        }
+                        val destination = SearchNavigationPolicy.selectTab(tab)
+                        selectedTab = destination.selectedTab
+                        searchExpanded = destination.searchExpanded
+                        if (tab == 3) youPage = YouPage.DASHBOARD
                     }
                 )
             }
