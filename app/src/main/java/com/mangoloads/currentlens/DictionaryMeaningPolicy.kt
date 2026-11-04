@@ -25,8 +25,17 @@ internal object DictionaryMeaningPolicy {
         return DictionaryMeaningPresentation(partOfSpeech, definition)
     }
 
-    fun copyText(word: String, meanings: List<String>, synonyms: List<String>): String = buildString {
+    fun copyText(
+        word: String,
+        meanings: List<String>,
+        synonyms: List<String>,
+        pronunciation: String? = null
+    ): String = buildString {
         append(word.trim())
+        pronunciation?.trim()?.takeIf { it.isNotEmpty() }?.let {
+            append("\n\nUS pronunciation: ")
+            append(it)
+        }
         val formattedMeanings = meanings.map(::present).filter { it.definition.isNotBlank() }
         if (formattedMeanings.isNotEmpty()) {
             append("\n\n")

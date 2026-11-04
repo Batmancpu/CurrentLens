@@ -61,6 +61,7 @@ data class Definition(
 object DictionaryRepository {
     private const val ASSET_NAME = "wordnet.db"
     private const val DATABASE_NAME = "currentlens_wordnet_2025_plus.db"
+    private const val DATABASE_VERSION = 2026
     private val databaseLock = Any()
     private val lookupCache = DictionaryDefinitionCache()
     private val databaseSession = DictionaryDatabaseSession<SQLiteDatabase> { it.isOpen }
@@ -78,12 +79,16 @@ object DictionaryRepository {
                 exceptionForms(database, normalized)
             )
 
+            var pronunciation = queryPronunciation(database, normalized)
             for (candidate in candidates) {
+                if (pronunciation.isNullOrBlank()) {
+                    pronunciation = queryPronunciation(database, candidate)
+                }
                 val result = queryEntries(database, candidate)
                 if (result.meanings.isNotEmpty()) {
                     val definition = Definition(
                         word = normalized,
-                        phonetic = "",
+                        phonetic = pronunciation.orEmpty(),
                         meanings = result.meanings,
                         synonyms = result.synonyms
                     )
@@ -91,9 +96,9 @@ object DictionaryRepository {
                     return@withContext definition
                 }
             }
-            // A genuine dictionary miss is distinct from a database/open/query failure.
-            // Cache it so repeatedly selecting an unknown token does not reopen SQLite.
-            Definition(word = normalized, phonetic = "", meanings = emptyList()).also {
+            // A pronunciation may exist even when WordNet has no gloss for the token.
+            // Keep that useful offline result distinct from a database/open/query failure.
+            Definition(word = normalized, phonetic = pronunciation.orEmpty(), meanings = emptyList()).also {
                 lookupCache.put(normalized, it)
             }
         } catch (_: Exception) {
@@ -103,9 +108,23 @@ object DictionaryRepository {
 
     private fun openDatabase(context: Context): SQLiteDatabase? = try {
         val destination = File(context.noBackupFilesDir, DATABASE_NAME)
-        if (!destination.isFile || destination.length() < 1_000_000L) {
+        fun needsInstall(): Boolean {
+            val installedVersion = if (destination.isFile && destination.length() >= 1_000_000L) {
+                readDatabaseVersion(destination)
+            } else {
+                null
+            }
+            return DictionaryDatabaseInstallPolicy.shouldInstall(
+                fileExists = destination.isFile,
+                fileLength = destination.length(),
+                installedVersion = installedVersion,
+                expectedVersion = DATABASE_VERSION
+            )
+        }
+
+        if (needsInstall()) {
             synchronized(databaseLock) {
-                if (!destination.isFile || destination.length() < 1_000_000L) {
+                if (needsInstall()) {
                     val temporary = File(destination.parentFile, "$DATABASE_NAME.tmp")
                     temporary.delete()
                     context.assets.open(ASSET_NAME).use { input ->
@@ -116,10 +135,37 @@ object DictionaryRepository {
                 }
             }
         }
-        SQLiteDatabase.openDatabase(destination.absolutePath, null, SQLiteDatabase.OPEN_READONLY)
+        val database = SQLiteDatabase.openDatabase(
+            destination.absolutePath,
+            null,
+            SQLiteDatabase.OPEN_READONLY
+        )
+        if (readDatabaseVersion(database) != DATABASE_VERSION) {
+            database.close()
+            throw IllegalStateException("Installed offline dictionary has an unsupported schema")
+        }
+        database
     } catch (_: Exception) {
         null
     }
+
+    private fun readDatabaseVersion(file: File): Int? {
+        val database = try {
+            SQLiteDatabase.openDatabase(file.absolutePath, null, SQLiteDatabase.OPEN_READONLY)
+        } catch (_: Exception) {
+            return null
+        }
+        return try {
+            readDatabaseVersion(database)
+        } finally {
+            database.close()
+        }
+    }
+
+    private fun readDatabaseVersion(database: SQLiteDatabase): Int? =
+        database.rawQuery("PRAGMA user_version", null).use { cursor ->
+            if (cursor.moveToFirst()) cursor.getInt(0) else null
+        }
 
     private data class LookupRows(val meanings: List<String>, val synonyms: List<String>)
 
@@ -158,6 +204,18 @@ object DictionaryRepository {
         }
         return bases.toList()
     }
+
+    private fun queryPronunciation(database: SQLiteDatabase, word: String): String? =
+        database.rawQuery(
+            "SELECT ipa FROM pronunciations WHERE word = ?",
+            arrayOf(word)
+        ).use { cursor ->
+            if (cursor.moveToFirst()) {
+                cursor.getString(0)?.takeIf { it.isNotBlank() }
+            } else {
+                null
+            }
+        }
 
     private fun posLabel(value: String): String = when (value.lowercase(Locale.ROOT)) {
         "noun" -> "noun"
@@ -253,7 +311,9 @@ private fun DictionaryPopup(word: String, onClose: () -> Unit) {
                             color = MaterialTheme.colorScheme.secondary
                         )
                     }
-                    if (result?.let { it.dictionaryAvailable && it.meanings.isNotEmpty() } == true) {
+                    if (result?.let {
+                            it.dictionaryAvailable && (it.meanings.isNotEmpty() || it.phonetic.isNotBlank())
+                        } == true) {
                         TextButton(onClick = {
                             val current = result ?: return@TextButton
                             val clipboard = context.getSystemService(android.content.Context.CLIPBOARD_SERVICE)
@@ -261,7 +321,12 @@ private fun DictionaryPopup(word: String, onClose: () -> Unit) {
                             clipboard?.setPrimaryClip(
                                 android.content.ClipData.newPlainText(
                                     "Definition of $word",
-                                    DictionaryMeaningPolicy.copyText(word, current.meanings, current.synonyms)
+                                    DictionaryMeaningPolicy.copyText(
+                                        word,
+                                        current.meanings,
+                                        current.synonyms,
+                                        current.phonetic
+                                    )
                                 )
                             )
                         }) { Text("Copy") }
@@ -269,6 +334,16 @@ private fun DictionaryPopup(word: String, onClose: () -> Unit) {
                     TextButton(onClick = onClose) { Text("Close") }
                 }
                 val definition = result
+                definition?.phonetic?.takeIf { it.isNotBlank() }?.let { pronunciation ->
+                    Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                        Text(
+                            "US PRONUNCIATION · CMUDICT",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.secondary
+                        )
+                        Text(pronunciation, style = MaterialTheme.typography.titleMedium)
+                    }
+                }
                 when {
                     loading -> CircularProgressIndicator()
                     definition == null ->
@@ -304,6 +379,13 @@ private fun DictionaryPopup(word: String, onClose: () -> Unit) {
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.secondary
                 )
+                if (definition?.phonetic?.isNotBlank() == true) {
+                    Text(
+                        "US pronunciation · CMUdict · Carnegie Mellon University",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.secondary
+                    )
+                }
             }
         }
     }

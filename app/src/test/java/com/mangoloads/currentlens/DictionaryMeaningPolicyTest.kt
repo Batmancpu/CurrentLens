@@ -37,6 +37,19 @@ class DictionaryMeaningPolicyTest {
     }
 
     @Test
+    fun copyTextIncludesUSPronunciationWhenAvailable() {
+        assertEquals(
+            "cat\n\nUS pronunciation: /ˈkæt/\n\nnoun · a small domesticated feline",
+            DictionaryMeaningPolicy.copyText(
+                word = "cat",
+                meanings = listOf("noun · a small domesticated feline"),
+                synonyms = emptyList(),
+                pronunciation = "/ˈkæt/"
+            )
+        )
+    }
+
+    @Test
     fun copyTextIncludesHeadwordMeaningsAndDistinctRelatedWords() {
         assertEquals(
             "run\n\nverb · move quickly\n\nRelated: sprint · jog",

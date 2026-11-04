@@ -25,3 +25,16 @@ internal class DictionaryDatabaseSession<T>(
         return opened
     }
 }
+
+
+/** Decides whether a persisted dictionary file must be replaced by the bundled schema. */
+internal object DictionaryDatabaseInstallPolicy {
+    fun shouldInstall(
+        fileExists: Boolean,
+        fileLength: Long,
+        installedVersion: Int?,
+        expectedVersion: Int,
+        minimumBytes: Long = 1_000_000L
+    ): Boolean =
+        !fileExists || fileLength < minimumBytes || installedVersion != expectedVersion
+}

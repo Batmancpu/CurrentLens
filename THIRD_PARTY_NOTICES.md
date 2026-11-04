@@ -28,6 +28,9 @@ No database library was added for the dictionary; the Android platform SQLite en
 - The dataset is downloaded from the official Open English WordNet downloads page during CI. It is not fetched by the app at runtime. The app performs dictionary lookup against its local SQLite copy.
 - Dataset source: https://en-word.net/downloads
 - Dataset project and licence: https://github.com/globalwordnet/english-wordnet
+- CMU Pronouncing Dictionary (CMUdict), pinned to commit 74790861f652b15e4ac49015a90074ad62a27690 (24 October 2025), supplies offline US English ARPABET pronunciations. CurrentLens converts those phonemes to stress-marked IPA using a small build-time mapping; syllable stress placement is approximate. CMUdict itself warns that errors and omissions may remain.
+- CMUdict is Copyright (C) 1993-2015 Carnegie Mellon University and is distributed under its custom permissive source/binary redistribution terms. The complete required notice and disclaimer are bundled at app/src/main/assets/licenses/CMUDICT-LICENSE.txt. The pronunciation file is downloaded only during CI; the app never fetches pronunciation data at runtime.
+- CMUdict source: https://github.com/cmusphinx/cmudict/tree/74790861f652b15e4ac49015a90074ad62a27690
 
 ## Publisher feeds
 
