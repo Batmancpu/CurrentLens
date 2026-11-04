@@ -1347,7 +1347,14 @@ private fun ReaderScreen(article: Article, backdrop: PrismalBackdrop, glassAlpha
                                 if (request?.isForMainFrame == true) onReaderMainFrameError()
                             }
                             override fun shouldOverrideUrlLoading(view: WebView?, request: WebResourceRequest): Boolean {
-                                return request.isForMainFrame && !allowReaderNavigation(request.url.toString())
+                                if (!request.isForMainFrame) return false
+                                val target = request.url.toString()
+                                if (!allowReaderNavigation(target)) return true
+                                // Preserve server redirects during initial loading, but send
+                                // user-initiated publisher links to the system browser.
+                                if (!request.hasGesture()) return false
+                                (view as? ReaderWebView)?.onOpenPublisherLink?.invoke(target)
+                                return true
                             }
                         }
                     }
@@ -1370,10 +1377,7 @@ private fun ReaderScreen(article: Article, backdrop: PrismalBackdrop, glassAlpha
                         pageLoaded = true
                         contentLoaded = true
                         publisherLoadFailed = false
-                        if (extractedHtml == null) {
-                            val size = fontSize
-                            webView.evaluateJavascript("(function(){document.body.style.fontSize='" + size + "px';document.body.style.lineHeight='1.7';})();", null)
-                        }
+                        // Publisher fallback uses WebSettings.textZoom; no publisher script is injected.
                     }
                     webView.onReaderMainFrameError = {
                         pageLoaded = true
@@ -1381,16 +1385,16 @@ private fun ReaderScreen(article: Article, backdrop: PrismalBackdrop, glassAlpha
                         publisherLoadFailed = true
                     }
                     webView.allowReaderNavigation = { target -> PublisherHostPolicy.allows(article.source, target) }
-                    // evaluateJavascript is used only for native text selection and its anchor.
-                    // Extracted HTML has already passed Jsoup's allow-list sanitizer (scripts,
-                    // event handlers, unsafe URL schemes and embedded documents are removed).
-                    // Keep JS off for non-readable/unverified pages; publisher fallback remains
-                    // gated by PublisherHostPolicy.
-                    webView.settings.javaScriptEnabled = ReaderExecutionPolicy.javascriptEnabled(
+                    webView.onOpenPublisherLink = { target -> openPublisherPage(context, article.source, target) }
+                    val selectionBridgeEnabled = ReaderExecutionPolicy.javascriptEnabled(
                         hasSanitizedArticle = extractedHtml != null,
                         hasAllowlistedPublisherFallback = fallbackToPublisher
                     )
-                    webView.settings.domStorageEnabled = extractedHtml == null && fallbackToPublisher
+                    webView.selectionBridgeEnabled = selectionBridgeEnabled
+                    webView.settings.javaScriptEnabled = selectionBridgeEnabled
+                    // Neither the app-owned document nor publisher fallback needs DOM storage.
+                    webView.settings.domStorageEnabled = false
+                    webView.settings.textZoom = if (fallbackToPublisher) (fontSize * 100 / 16) else 100
                     if (webView.beginArticle(article.url)) {
                         reachedBottom = false
                         activeWord = null
@@ -1462,9 +1466,20 @@ private fun ReaderScreen(article: Article, backdrop: PrismalBackdrop, glassAlpha
             }
         }
         if (fallbackToPublisher && !extracting) {
-            Text("A readable public version was unavailable. The verified publisher page remains inside CurrentLens; subscription limits are unchanged.",
-                style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.secondary,
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 5.dp))
+            Row(
+                Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 5.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    "Publisher fallback · scripts disabled; subscription limits unchanged.",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.secondary,
+                    modifier = Modifier.weight(1f)
+                )
+                TextButton(onClick = { openPublisherPage(context, article.source, article.url) }) {
+                    Text("Browser")
+                }
+            }
         }
         if (reachedBottom) {
             Card(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp),
@@ -1479,6 +1494,14 @@ private fun ReaderScreen(article: Article, backdrop: PrismalBackdrop, glassAlpha
                 }
             }
         }
+    }
+}
+
+private fun openPublisherPage(context: android.content.Context, source: String, url: String) {
+    if (!PublisherHostPolicy.allows(source, url)) return
+    val intent = android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(url))
+    runCatching { context.startActivity(intent) }.onFailure {
+        android.widget.Toast.makeText(context, "No browser available", android.widget.Toast.LENGTH_SHORT).show()
     }
 }
 
@@ -1506,13 +1529,24 @@ private class ReaderWebView(context: android.content.Context) : WebView(context)
     var onReaderPageFinished: () -> Unit = {}
     var onReaderMainFrameError: () -> Unit = {}
     var allowReaderNavigation: (String) -> Boolean = { false }
+    var onOpenPublisherLink: (String) -> Unit = {}
+    var selectionBridgeEnabled: Boolean = false
+        set(value) {
+            if (field != value) {
+                field = value
+                if (!value) cancelPendingAutoDefine()
+            }
+        }
     private val progressGate = ReaderProgressGate()
     private var selectionModeGeneration = 0
     private var pendingAutoDefine: Runnable? = null
 
     fun beginArticle(url: String): Boolean {
         val changed = progressGate.beginArticle(url)
-        if (changed) cancelShortPageEndCheck(resetStability = true)
+        if (changed) {
+            cancelShortPageEndCheck(resetStability = true)
+            cancelPendingAutoDefine()
+        }
         return changed
     }
 
@@ -1602,7 +1636,7 @@ private class ReaderWebView(context: android.content.Context) : WebView(context)
         object : ActionMode.Callback2() {
             override fun onCreateActionMode(mode: ActionMode, menu: Menu): Boolean {
                 val created = original.onCreateActionMode(mode, menu)
-                if (created) {
+                if (created && selectionBridgeEnabled) {
                     menu.add(0, MENU_DEFINE_WORD, menu.size(), "Define")
                         .setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS)
 
@@ -1637,7 +1671,7 @@ private class ReaderWebView(context: android.content.Context) : WebView(context)
                 original.onPrepareActionMode(mode, menu)
 
             override fun onActionItemClicked(mode: ActionMode, item: MenuItem): Boolean {
-                if (item.itemId == MENU_DEFINE_WORD) {
+                if (item.itemId == MENU_DEFINE_WORD && selectionBridgeEnabled) {
                     cancelPendingAutoDefine()
                     val requestGeneration = selectionModeGeneration
                     evaluateSelection { selected, selectionRect ->

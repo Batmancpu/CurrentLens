@@ -7,25 +7,41 @@ import org.junit.Test
 class ReaderExecutionPolicyTest {
     @Test
     fun enablesSelectionScriptForSanitisedAppOwnedArticleOnly() {
-        assertTrue(ReaderExecutionPolicy.javascriptEnabled(
-            hasSanitizedArticle = true,
-            hasAllowlistedPublisherFallback = false
-        ))
+        assertTrue(
+            ReaderExecutionPolicy.javascriptEnabled(
+                hasSanitizedArticle = true,
+                hasAllowlistedPublisherFallback = false
+            )
+        )
     }
 
     @Test
-    fun enablesPublisherFallbackOnlyWhenSeparatelyAllowlisted() {
-        assertTrue(ReaderExecutionPolicy.javascriptEnabled(
-            hasSanitizedArticle = false,
-            hasAllowlistedPublisherFallback = true
-        ))
+    fun disablesPublisherSuppliedScriptsEvenForAnAllowlistedFallback() {
+        assertFalse(
+            ReaderExecutionPolicy.javascriptEnabled(
+                hasSanitizedArticle = false,
+                hasAllowlistedPublisherFallback = true
+            )
+        )
+    }
+
+    @Test
+    fun refusesScriptsIfBothDocumentModesAreReported() {
+        assertFalse(
+            ReaderExecutionPolicy.javascriptEnabled(
+                hasSanitizedArticle = true,
+                hasAllowlistedPublisherFallback = true
+            )
+        )
     }
 
     @Test
     fun disablesScriptWhenNoTrustedReaderContentExists() {
-        assertFalse(ReaderExecutionPolicy.javascriptEnabled(
-            hasSanitizedArticle = false,
-            hasAllowlistedPublisherFallback = false
-        ))
+        assertFalse(
+            ReaderExecutionPolicy.javascriptEnabled(
+                hasSanitizedArticle = false,
+                hasAllowlistedPublisherFallback = false
+            )
+        )
     }
 }
