@@ -26,8 +26,13 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.animateDp
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.updateTransition
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -54,6 +59,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.Bookmark
@@ -90,16 +96,25 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -107,9 +122,12 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardOptions
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInWindow
+import androidx.compose.ui.layout.positionInRoot
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.LifecycleOwner
@@ -185,6 +203,22 @@ private fun CurrentLensApp() {
     var showSettings by remember { mutableStateOf(false) }
     var glassAlpha by remember { mutableFloatStateOf(LocalStore.glassAlpha(context)) }
     var searchQuery by remember { mutableStateOf("") }
+    var searchExpanded by remember { mutableStateOf(false) }
+    var searchTabAnchor by remember { mutableStateOf(Offset.Zero) }
+    val searchFocusRequester = remember { FocusRequester() }
+    val keyboardController = LocalSoftwareKeyboardController.current
+    val focusManager = LocalFocusManager.current
+
+    LaunchedEffect(searchExpanded, selectedTab) {
+        if (searchExpanded && selectedTab == 2) {
+            withFrameNanos { }
+            searchFocusRequester.requestFocus()
+            keyboardController?.show()
+        } else {
+            focusManager.clearFocus()
+            keyboardController?.hide()
+        }
+    }
 
     LaunchedEffect(refreshKey) {
         loading = articles.isEmpty()
@@ -197,8 +231,9 @@ private fun CurrentLensApp() {
         refreshing = false
     }
 
-    BackHandler(enabled = selectedArticle != null || showSettings || selectedTab != 0) {
+    BackHandler(enabled = searchExpanded || selectedArticle != null || showSettings || selectedTab != 0) {
         when {
+            searchExpanded -> searchExpanded = false
             quizMode -> quizMode = false
             selectedArticle != null -> selectedArticle = null
             showSettings -> showSettings = false
@@ -207,8 +242,41 @@ private fun CurrentLensApp() {
         }
     }
 
-    Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
-        Column(Modifier.fillMaxSize().prismalGlassLayer(backdrop)) {
+    BoxWithConstraints(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
+        val density = LocalDensity.current
+        val imeBottom = with(density) { WindowInsets.ime.getBottom(this).toDp() }
+        val searchTransition = updateTransition(targetState = searchExpanded, label = "Search tab morph")
+        val sourceWidth = 48.dp
+        val searchHeight = 52.dp
+        val targetWidth = (maxWidth - 32.dp).coerceAtLeast(180.dp)
+        val sourceCenterX = if (searchTabAnchor != Offset.Zero) {
+            with(density) { searchTabAnchor.x.toDp() }
+        } else maxWidth * 0.625f
+        val sourceCenterY = if (searchTabAnchor != Offset.Zero) {
+            with(density) { searchTabAnchor.y.toDp() }
+        } else maxHeight - 35.dp
+        val sourceX = sourceCenterX - sourceWidth / 2
+        val sourceY = sourceCenterY - searchHeight / 2
+        val targetY = (maxHeight - imeBottom - searchHeight - 8.dp).coerceAtLeast(0.dp)
+        val morphX by searchTransition.animateDp(label = "Search bar horizontal morph") {
+            if (it) 16.dp else sourceX
+        }
+        val morphY by searchTransition.animateDp(label = "Search bar vertical morph") {
+            if (it) targetY else sourceY
+        }
+        val morphWidth by searchTransition.animateDp(label = "Search bar width morph") {
+            if (it) targetWidth else sourceWidth
+        }
+        val morphAlpha by searchTransition.animateFloat(label = "Search bar opacity") {
+            if (it) 1f else 0f
+        }
+        val searchMorphActive = searchTransition.currentState || searchTransition.targetState
+
+        Column(
+            Modifier.fillMaxSize()
+                .then(if (searchExpanded) Modifier.imePadding() else Modifier)
+                .prismalGlassLayer(backdrop)
+        ) {
             when {
                 selectedArticle != null && quizMode -> QuizScreen(
                     article = selectedArticle!!,
@@ -255,9 +323,10 @@ private fun CurrentLensApp() {
                         readingSessions, LocalDate.now(ZoneId.of(INDIA_ZONE))
                     ),
                     searchQuery = searchQuery,
-                    onSearchQueryChange = { searchQuery = it },
+                    searchExpanded = searchExpanded,
                     onSettings = { showSettings = true },
                     onOpenArticle = {
+                        searchExpanded = false
                         LocalStore.markRead(context, it.url)
                         readHistory = LocalStore.readHistory(context)
                         selectedArticle = it
@@ -270,16 +339,52 @@ private fun CurrentLensApp() {
             }
         }
 
-        if (selectedArticle == null && !showSettings) {
+        if (selectedArticle == null && !showSettings &&
+            !(selectedTab == 2 && searchMorphActive)
+        ) {
             Box(
                 Modifier.align(Alignment.BottomCenter).fillMaxWidth()
                     .navigationBarsPadding().padding(horizontal = 10.dp, vertical = 6.dp)
             ) {
-                GlassTabBar(backdrop, selectedTab, glassAlpha) {
-                    selectedTab = it
-                    if (it == 3) youPage = YouPage.DASHBOARD
-                }
+                GlassTabBar(
+                    backdrop = backdrop,
+                    selectedTab = selectedTab,
+                    glassAlpha = glassAlpha,
+                    onSearchAnchor = { searchTabAnchor = it },
+                    onSelect = { tab ->
+                        if (tab == 2 && selectedTab == 2) {
+                            searchExpanded = true
+                        } else {
+                            searchExpanded = false
+                            selectedTab = tab
+                            if (tab == 3) youPage = YouPage.DASHBOARD
+                        }
+                    }
+                )
             }
+        }
+
+        if (selectedArticle == null && !showSettings && selectedTab == 2 && searchMorphActive) {
+            SearchMorphField(
+                modifier = Modifier
+                    .offset {
+                        IntOffset(
+                            with(density) { morphX.roundToPx() },
+                            with(density) { morphY.roundToPx() }
+                        )
+                    }
+                    .width(morphWidth)
+                    .height(searchHeight)
+                    .graphicsLayer { alpha = morphAlpha },
+                backdrop = backdrop,
+                glassAlpha = glassAlpha,
+                query = searchQuery,
+                onQueryChange = { searchQuery = it },
+                focusRequester = searchFocusRequester,
+                enabled = searchExpanded,
+                onSubmit = { searchExpanded = false },
+                onClear = { searchQuery = "" }
+            )
         }
     }
 }
@@ -302,7 +407,7 @@ private fun HomeScreen(
     totalUniqueRead: Int,
     articlesReadToday: Int,
     searchQuery: String,
-    onSearchQueryChange: (String) -> Unit,
+    searchExpanded: Boolean,
     onSettings: () -> Unit,
     onOpenArticle: (Article) -> Unit,
     onToggleBookmark: (Article) -> Unit
@@ -371,7 +476,7 @@ private fun HomeScreen(
                     { exploreCategory = it }, bookmarks, onOpenArticle, onToggleBookmark
                 )
                 2 -> SearchFeed(
-                    allCachedArticles, searchQuery, onSearchQueryChange,
+                    allCachedArticles, searchQuery, searchExpanded,
                     bookmarks, onOpenArticle, onToggleBookmark
                 )
                 else -> when (page) {
@@ -504,7 +609,7 @@ private fun ExploreFeed(
 private fun SearchFeed(
     articles: List<Article>,
     query: String,
-    onQueryChange: (String) -> Unit,
+    searchExpanded: Boolean,
     bookmarks: Set<String>,
     onOpenArticle: (Article) -> Unit,
     onToggleBookmark: (Article) -> Unit
@@ -524,44 +629,125 @@ private fun SearchFeed(
             (selectedGsPaper == "All" || relevance.gsPaper == selectedGsPaper)
     }
     Column(Modifier.fillMaxSize()) {
-        Row(
-            Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 7.dp)
-                .clip(RoundedCornerShape(18.dp)).background(MaterialTheme.colorScheme.surfaceVariant)
-                .padding(horizontal = 12.dp, vertical = 8.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Icon(Icons.Outlined.Search, contentDescription = "Search stories", tint = MaterialTheme.colorScheme.primary)
-            BasicTextField(
-                value = query,
-                onValueChange = onQueryChange,
-                modifier = Modifier.weight(1f).padding(horizontal = 10.dp),
-                singleLine = true,
-                textStyle = MaterialTheme.typography.bodyLarge.copy(color = MaterialTheme.colorScheme.onSurface),
-                decorationBox = { inner ->
-                    Box {
-                        if (query.isBlank()) Text("Search headlines, publishers or topics…", color = MaterialTheme.colorScheme.secondary)
-                        inner()
-                    }
-                }
-            )
-            if (query.isNotBlank()) {
-                IconButton(onClick = { onQueryChange("") }) {
-                    Icon(Icons.Outlined.Close, contentDescription = "Clear search")
-                }
-            }
-        }
         FilterChipRow("Topic", categories, selectedCategory, { selectedCategory = it })
         FilterChipRow("GS paper", gsPapers, selectedGsPaper, { selectedGsPaper = it })
         FilterChipRow("Subject", subjects, selectedSubject, { selectedSubject = it })
         LazyColumn(
             Modifier.weight(1f),
-            contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 7.dp, bottom = 110.dp),
+            contentPadding = PaddingValues(
+                start = 16.dp, end = 16.dp, top = 7.dp,
+                bottom = if (searchExpanded) 76.dp else 110.dp
+            ),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             if (filtered.isEmpty()) item {
                 EmptyPanel("No matching articles", "Change your search or remove one of the filters.")
             } else items(filtered, key = { it.id }) { article ->
                 NewsCard(article, bookmarks.contains(article.url), onOpenArticle, onToggleBookmark)
+            }
+        }
+    }
+}
+
+
+@Composable
+private fun SearchMorphField(
+    modifier: Modifier,
+    backdrop: PrismalBackdrop,
+    glassAlpha: Float,
+    query: String,
+    onQueryChange: (String) -> Unit,
+    focusRequester: FocusRequester,
+    enabled: Boolean,
+    onSubmit: () -> Unit,
+    onClear: () -> Unit
+) {
+    val dark = isSystemInDarkTheme()
+    val textColor = MaterialTheme.colorScheme.onSurface
+    val glowAlpha by androidx.compose.animation.core.animateFloatAsState(
+        targetValue = if (query.isBlank()) 0.20f else 0.82f,
+        animationSpec = tween(420),
+        label = "Search edge glow"
+    )
+    val glow = Brush.sweepGradient(
+        listOf(
+            Color(0xFF7CE5FF),
+            Color(0xFF8D91FF),
+            Color(0xFFE28BFF),
+            Color(0xFF83C8FF),
+            Color(0xFF7CE5FF)
+        )
+    )
+
+    Box(
+        modifier.drawWithContent {
+            drawContent()
+            drawRoundRect(
+                brush = glow,
+                alpha = glowAlpha,
+                cornerRadius = CornerRadius(size.height / 2f),
+                style = Stroke(width = 1.15.dp.toPx())
+            )
+        }
+    ) {
+        PrismalGlassSurface(
+            backdrop = backdrop,
+            modifier = Modifier.fillMaxSize(),
+            shape = { PrismalRoundedRectangle(30.dp) },
+            blurRadius = 15.dp,
+            refractionHeightPx = 18f,
+            refractionAmountPx = 14f,
+            depthEffect = true,
+            chromaticAberration = 0.16f,
+            tint = if (dark) Color(0xFF202B3A) else Color(0xFFF5F8FC),
+            tintAlpha = (glassAlpha * 0.34f).coerceIn(0.07f, 0.20f)
+        ) {
+            Row(
+                Modifier.fillMaxSize().padding(start = 15.dp, end = 7.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(9.dp)
+            ) {
+                Icon(
+                    Icons.Outlined.Search,
+                    contentDescription = "Search",
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(21.dp)
+                )
+                BasicTextField(
+                    value = query,
+                    onValueChange = onQueryChange,
+                    modifier = Modifier.weight(1f).focusRequester(focusRequester),
+                    enabled = enabled,
+                    singleLine = true,
+                    textStyle = MaterialTheme.typography.bodyLarge.copy(color = textColor),
+                    cursorBrush = Brush.linearGradient(
+                        listOf(Color(0xFF7CE5FF), Color(0xFFAE8BFF), Color(0xFFE28BFF))
+                    ),
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+                    keyboardActions = KeyboardActions(onSearch = { onSubmit() }),
+                    decorationBox = { inner ->
+                        Box(contentAlignment = Alignment.CenterStart) {
+                            if (query.isBlank()) {
+                                Text(
+                                    "Search headlines, topics…",
+                                    color = MaterialTheme.colorScheme.secondary,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                            }
+                            inner()
+                        }
+                    }
+                )
+                if (query.isNotBlank()) {
+                    IconButton(
+                        onClick = onClear,
+                        enabled = enabled,
+                        modifier = Modifier.size(38.dp)
+                    ) {
+                        Icon(Icons.Outlined.Close, contentDescription = "Clear search")
+                    }
+                }
             }
         }
     }
@@ -966,7 +1152,13 @@ private fun EmptyPanel(title: String, description: String) {
 }
 
 @Composable
-private fun GlassTabBar(backdrop: PrismalBackdrop, selectedTab: Int, glassAlpha: Float, onSelect: (Int) -> Unit) {
+private fun GlassTabBar(
+    backdrop: PrismalBackdrop,
+    selectedTab: Int,
+    glassAlpha: Float,
+    onSearchAnchor: (Offset) -> Unit,
+    onSelect: (Int) -> Unit
+) {
     // Keep the callback identity stable. Prismal observes this callback with snapshotFlow;
     // replacing the closure on each recomposition can reset its internal tab index instead
     // of animating the droplet from the previous tab to the new one.
@@ -985,17 +1177,33 @@ private fun GlassTabBar(backdrop: PrismalBackdrop, selectedTab: Int, glassAlpha:
     ) {
         GlassTab(0, "Today", Icons.Outlined.Today, onSelect)
         GlassTab(1, "Explore", Icons.Outlined.Explore, onSelect)
-        GlassTab(2, "Search", Icons.Outlined.Search, onSelect)
+        GlassTab(2, "Search", Icons.Outlined.Search, onSelect, onSearchAnchor)
         GlassTab(3, "You", Icons.Outlined.Person, onSelect)
     }
 }
 
 @Composable
-private fun RowScope.GlassTab(index: Int, label: String, icon: ImageVector, onSelect: (Int) -> Unit) {
+private fun RowScope.GlassTab(
+    index: Int,
+    label: String,
+    icon: ImageVector,
+    onSelect: (Int) -> Unit,
+    onPositioned: ((Offset) -> Unit)? = null
+) {
     val highlighted = LocalPrismalBottomTabHighlightedIndex.current()
     val selected = highlighted == index
     val tint = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
-    PrismalGlassBottomTab(onClick = { onSelect(index) }) {
+    val tabModifier = if (onPositioned != null) {
+        Modifier.onGloballyPositioned { coordinates ->
+            onPositioned(
+                coordinates.positionInRoot() + Offset(
+                    coordinates.size.width / 2f,
+                    coordinates.size.height / 2f
+                )
+            )
+        }
+    } else Modifier
+    PrismalGlassBottomTab(onClick = { onSelect(index) }, modifier = tabModifier) {
         Icon(icon, contentDescription = label, tint = tint, modifier = Modifier.size(20.dp))
         Text(
             label,
