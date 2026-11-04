@@ -31,7 +31,7 @@ class DictionaryMeaningPolicyTest {
     @Test
     fun malformedPrefixIsNotDiscarded() {
         assertEquals(
-            DictionaryMeaningPresentation(null, "noun · "),
+            DictionaryMeaningPresentation(null, "noun ·"),
             DictionaryMeaningPolicy.present("noun · ")
         )
     }
