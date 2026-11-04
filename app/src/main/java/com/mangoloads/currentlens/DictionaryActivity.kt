@@ -312,7 +312,9 @@ private fun DictionaryPopup(word: String, onClose: () -> Unit) {
                         )
                     }
                     if (result?.let {
-                            it.dictionaryAvailable && (it.meanings.isNotEmpty() || it.phonetic.isNotBlank())
+                            it.dictionaryAvailable && DictionaryMeaningPolicy.hasCopyableContent(
+                                it.meanings, it.synonyms, it.phonetic
+                            )
                         } == true) {
                         TextButton(onClick = {
                             val current = result ?: return@TextButton

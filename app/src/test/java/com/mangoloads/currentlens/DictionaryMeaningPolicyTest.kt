@@ -1,6 +1,8 @@
 package com.mangoloads.currentlens
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class DictionaryMeaningPolicyTest {
@@ -45,6 +47,37 @@ class DictionaryMeaningPolicyTest {
                 meanings = listOf("noun · a small domesticated feline"),
                 synonyms = emptyList(),
                 pronunciation = "/ˈkæt/"
+            )
+        )
+    }
+
+    @Test
+    fun pronunciationOnlyResultRemainsCopyableWithoutInventingADefinition() {
+        assertTrue(
+            DictionaryMeaningPolicy.hasCopyableContent(
+                meanings = emptyList(),
+                synonyms = emptyList(),
+                pronunciation = "/ˈkæt/"
+            )
+        )
+        assertEquals(
+            "cat\n\nUS pronunciation: /ˈkæt/",
+            DictionaryMeaningPolicy.copyText(
+                word = "cat",
+                meanings = emptyList(),
+                synonyms = emptyList(),
+                pronunciation = "/ˈkæt/"
+            )
+        )
+    }
+
+    @Test
+    fun emptyDictionaryResultDoesNotOfferCopy() {
+        assertFalse(
+            DictionaryMeaningPolicy.hasCopyableContent(
+                meanings = emptyList(),
+                synonyms = emptyList(),
+                pronunciation = " "
             )
         )
     }

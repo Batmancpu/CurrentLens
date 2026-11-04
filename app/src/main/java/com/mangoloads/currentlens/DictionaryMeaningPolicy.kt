@@ -25,6 +25,15 @@ internal object DictionaryMeaningPolicy {
         return DictionaryMeaningPresentation(partOfSpeech, definition)
     }
 
+    fun hasCopyableContent(
+        meanings: List<String>,
+        synonyms: List<String>,
+        pronunciation: String?
+    ): Boolean =
+        pronunciation?.isNotBlank() == true ||
+            meanings.any { present(it).definition.isNotBlank() } ||
+            synonyms.any { it.isNotBlank() }
+
     fun copyText(
         word: String,
         meanings: List<String>,
