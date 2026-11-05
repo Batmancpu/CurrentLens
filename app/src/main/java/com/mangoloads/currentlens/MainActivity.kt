@@ -224,6 +224,8 @@ private fun CurrentLensApp() {
     val keyboardController = LocalSoftwareKeyboardController.current
     val focusManager = LocalFocusManager.current
     val density = LocalDensity.current
+    // WindowInsets.ime is a composable local; capture it here before entering an effect.
+    val imeInsets = WindowInsets.ime
 
     // Keep the composer IME-docked while the keyboard dismisses. Only after the
     // keyboard reaches zero inset does the capsule travel back into its tab anchor.
@@ -235,7 +237,7 @@ private fun CurrentLensApp() {
 
     LaunchedEffect(searchCollapseRequested) {
         if (searchCollapseRequested) {
-            snapshotFlow { WindowInsets.ime.getBottom(density) }.first { it == 0 }
+            snapshotFlow { imeInsets.getBottom(density) }.first { it == 0 }
             searchExpanded = false
             searchCollapseRequested = false
         }
