@@ -18,6 +18,16 @@ class DictionaryWordPolicyTest {
     }
 
     @Test
+    fun normalizesDecomposedAccentsAndPublisherTypography() {
+        assertEquals("café", DictionaryWordPolicy.singleSelectedWord("cafe\u0301"))
+        assertEquals("can't", DictionaryWordPolicy.singleSelectedWord("can\u2019t"))
+        assertEquals(
+            "state-of-the-art",
+            DictionaryWordPolicy.singleSelectedWord("state\u2013of\u2011the\u2014art")
+        )
+    }
+
+    @Test
     fun rejectsPunctuationOnlySelections() {
         listOf("-", "--", "'", "’", "—").forEach { selection ->
             assertNull(DictionaryWordPolicy.singleSelectedWord(selection))

@@ -13,6 +13,25 @@ class WordNetParserTests(unittest.TestCase):
             ["entity", "being"], "noun", "that which is perceived or known"
         ))
 
+    def test_normalizes_unicode_lemmas_and_typographic_punctuation(self):
+        line = (
+            "00001740 03 n 03 cafe\u0301 0 can’t 0 state–of–the–art 0 000 "
+            "| words with accents and publisher punctuation\n"
+        )
+        self.assertEqual(
+            parse_data_line(line, "noun"),
+            (["café", "can't", "state-of-the-art"], "noun",
+             "words with accents and publisher punctuation"),
+        )
+        self.assertEqual(
+            parse_cmudict_line("CAFE\u0301 K AE1 F EY0"),
+            ("café", "/ˈkæfeɪ/", "K AE1 F EY0"),
+        )
+        self.assertEqual(
+            parse_cmudict_line("CAN’T K AE1 N T"),
+            ("can't", "/ˈkænt/", "K AE1 N T"),
+        )
+
     def test_skips_malformed_and_header_lines(self):
         self.assertIsNone(parse_data_line("  index.vrb 2 0\n", "verb"))
         self.assertIsNone(parse_data_line("broken line | gloss\n", "noun"))
@@ -42,7 +61,8 @@ class WordNetParserTests(unittest.TestCase):
             with zipfile.ZipFile(archive_path, "w") as archive:
                 archive.writestr(
                     "dict/data.noun",
-                    "00001740 03 n 02 entity 0 being 0 000 | that which is perceived or known\n",
+                    "00001740 03 n 02 entity 0 being 0 000 | that which is perceived or known\n"
+                    "00001741 03 n 01 cafe\u0301 0 000 | a small coffeehouse\n",
                 )
                 archive.writestr(
                     "dict/data.verb",
@@ -56,7 +76,7 @@ class WordNetParserTests(unittest.TestCase):
                     "dict/data.adv",
                     "00004000 03 r 01 quickly 0 000 | with rapid movements\n",
                 )
-                archive.writestr("dict/noun.exc", "children child\n")
+                archive.writestr("dict/noun.exc", "children child\ncafe\u0301s café\n")
                 archive.writestr("dict/verb.exc", "ran run\n")
                 archive.writestr("dict/adj.exc", "better good\n")
                 archive.writestr("dict/adv.exc", "")
@@ -77,7 +97,7 @@ class WordNetParserTests(unittest.TestCase):
                     min_pronunciation_words=2,
                     min_pronunciation_bytes=0,
                 ),
-                5,
+                6,
             )
             database = sqlite3.connect(output_path)
             try:
@@ -89,6 +109,14 @@ class WordNetParserTests(unittest.TestCase):
                     "SELECT base_forms FROM exceptions WHERE inflected='children'"
                 ).fetchone()
                 self.assertEqual(exception[0], "child")
+                unicode_entry = database.execute(
+                    "SELECT definition FROM entries WHERE word='café'"
+                ).fetchone()
+                self.assertEqual(unicode_entry[0], "a small coffeehouse")
+                unicode_exception = database.execute(
+                    "SELECT base_forms FROM exceptions WHERE inflected='cafés'"
+                ).fetchone()
+                self.assertEqual(unicode_exception[0], "café")
                 pronunciation = database.execute(
                     "SELECT ipa, arpabet FROM pronunciations WHERE word='cat'"
                 ).fetchone()

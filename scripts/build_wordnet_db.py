@@ -8,6 +8,7 @@ import os
 import re
 import sqlite3
 import tempfile
+import unicodedata
 import zipfile
 from pathlib import Path
 from typing import Iterable
@@ -25,6 +26,18 @@ EXCEPTION_FILES = {
     "adv.exc": "adverb",
 }
 CMUDICT_REVISION = "74790861f652b15e4ac49015a90074ad62a27690"
+WORD_PUNCTUATION_TRANSLATION = str.maketrans({
+    "\u2018": "'", "\u2019": "'", "\u02bc": "'", "\uff07": "'",
+    "\u2010": "-", "\u2011": "-", "\u2012": "-", "\u2013": "-",
+    "\u2014": "-", "\u2015": "-", "\u2212": "-", "\ufe63": "-", "\uff0d": "-",
+})
+
+
+def normalize_lemma(value: str) -> str:
+    """Match Unicode-normalised publisher selections to canonical offline dictionary keys."""
+    translated = value.strip().lower().translate(WORD_PUNCTUATION_TRANSLATION)
+    return unicodedata.normalize("NFC", translated)
+
 
 ARPABET_TO_IPA = {
     "AA": "ɑ", "AE": "æ", "AH": "ʌ", "AO": "ɔ", "AW": "aʊ", "AY": "aɪ",
@@ -106,7 +119,7 @@ def parse_cmudict_line(line: str) -> tuple[str, str, str] | None:
     tokens = stripped.split()
     if len(tokens) < 2:
         return None
-    word = re.sub(r"\(\d+\)$", "", tokens[0]).lower()
+    word = normalize_lemma(re.sub(r"\(\d+\)$", "", tokens[0]))
     if not word or not all(char.isalpha() or char in "'-" for char in word):
         return None
     phones = tokens[1:]
@@ -135,7 +148,7 @@ def parse_data_line(line: str, part_of_speech: str) -> tuple[list[str], str, str
         return None
     lemmas = []
     for index in range(word_count):
-        lemma = tokens[first_lemma + index * 2].strip().lower()
+        lemma = normalize_lemma(tokens[first_lemma + index * 2])
         if lemma and all(char.isalnum() or char in "_'-" for char in lemma):
             lemmas.append(lemma)
     gloss = " ".join(gloss.strip().split())[:1800]
@@ -241,8 +254,12 @@ def build_database(
                         continue
                     exceptions = []
                     for line in iter_text_lines(archive, member):
-                        tokens = line.strip().lower().split()
-                        if 2 <= len(tokens) <= 16:
+                        tokens = [normalize_lemma(token) for token in line.strip().split()]
+                        valid = all(
+                            token and all(char.isalnum() or char in "_'-" for char in token)
+                            for token in tokens
+                        )
+                        if 2 <= len(tokens) <= 16 and valid:
                             exceptions.append((tokens[0], pos, " ".join(tokens[1:])))
                     database.executemany(
                         "INSERT OR REPLACE INTO exceptions VALUES (?, ?, ?)", exceptions
