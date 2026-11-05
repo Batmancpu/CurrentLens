@@ -96,6 +96,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -104,6 +105,7 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.withFrameNanos
@@ -127,6 +129,8 @@ import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -149,12 +153,13 @@ import com.styropyr0.prismal.PrismalBackdrop
 import com.styropyr0.prismal.PrismalGlassSurface
 import com.styropyr0.prismal.components.LocalPrismalBottomTabHighlightedIndex
 import com.styropyr0.prismal.components.PrismalGlassBottomTab
-import com.styropyr0.prismal.components.PrismalGlassBottomTabs
 import com.styropyr0.prismal.components.PrismalGlassSlider
+import com.styropyr0.prismal.interactive.PrismalSpringMotion
+import com.styropyr0.prismal.shapes.PrismalCapsule
 import com.styropyr0.prismal.shapes.PrismalRoundedRectangle
 import com.styropyr0.prismal.sources.prismalGlassLayer
 import com.styropyr0.prismal.sources.rememberPrismalGlassLayer
-import com.styropyr0.prismal.specular.PrismalSpecular
+import com.styropyr0.prismal.sources.rememberPrismalMergedSource
 import org.json.JSONTokener
 import org.json.JSONObject
 import java.time.DayOfWeek
@@ -163,6 +168,7 @@ import java.time.LocalDate
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.Locale
+import kotlin.math.roundToInt
 import kotlinx.coroutines.flow.first
 
 private const val INDIA_ZONE = "Asia/Kolkata"
@@ -279,7 +285,7 @@ private fun CurrentLensApp() {
     BoxWithConstraints(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
         val searchTransition = updateTransition(targetState = searchExpanded, label = "Search tab morph")
         val searchMorphProgressState = searchTransition.animateFloat(
-            transitionSpec = { spring(dampingRatio = 0.84f, stiffness = 430f) },
+            transitionSpec = { spring(dampingRatio = 0.84f, stiffness = 320f) },
             label = "Liquid search morph progress"
         ) { expanded -> if (expanded) 1f else 0f }
         val searchMorphProgress = searchMorphProgressState.value
@@ -370,16 +376,14 @@ private fun CurrentLensApp() {
             Box(
                 Modifier.align(Alignment.BottomCenter).fillMaxWidth()
                     .navigationBarsPadding().padding(horizontal = 10.dp, vertical = 6.dp)
-                    .graphicsLayer {
-                        alpha = if (selectedTab == SearchNavigationPolicy.SEARCH_TAB && searchMorphActive) {
-                            SearchMorphGeometryPolicy.tabBarAlpha(searchMorphProgressState.value)
-                        } else 1f
-                    }
             ) {
                 GlassTabBar(
                     backdrop = backdrop,
                     selectedTab = selectedTab,
                     glassAlpha = glassAlpha,
+                    morphProgress = if (selectedTab == SearchNavigationPolicy.SEARCH_TAB && searchMorphActive) {
+                        searchMorphProgressState.value
+                    } else 0f,
                     onSearchAnchor = { searchTabAnchorState.value = it },
                     onSelect = { tab ->
                         val destination = SearchNavigationPolicy.selectTab(tab)
@@ -400,7 +404,7 @@ private fun CurrentLensApp() {
             Box(
                 Modifier.align(Alignment.BottomCenter)
                     .imePadding()
-                    .padding(bottom = 8.dp)
+                    .padding(bottom = 2.dp)
                     .width(targetWidth)
                     .height(searchHeight)
                     .onGloballyPositioned { coordinates ->
@@ -1295,29 +1299,174 @@ private fun GlassTabBar(
     backdrop: PrismalBackdrop,
     selectedTab: Int,
     glassAlpha: Float,
+    morphProgress: Float,
     onSearchAnchor: (Offset) -> Unit,
     onSelect: (Int) -> Unit
 ) {
-    // Keep the callback identity stable. Prismal observes this callback with snapshotFlow;
-    // replacing the closure on each recomposition can reset its internal tab index instead
-    // of animating the droplet from the previous tab to the new one.
-    val selectedTabState = rememberUpdatedState(selectedTab)
-    val selectedTabIndex = remember { { selectedTabState.value } }
-    PrismalGlassBottomTabs(
-        selectedTabIndex = selectedTabIndex,
-        onTabSelected = onSelect,
-        backdrop = backdrop,
-        tabsCount = 4,
-        tintDropletContent = false,
-        adaptiveLuminance = true,
-        specular = { PrismalSpecular.Default.copy(alpha = glassAlpha) },
-        modifier = Modifier.fillMaxWidth().height(62.dp)
-            .graphicsLayer { alpha = (0.78f + glassAlpha * 0.36f).coerceIn(0.82f, 0.98f) }
+    val density = LocalDensity.current
+    val isLtr = LocalLayoutDirection.current == LayoutDirection.Ltr
+    val animationScope = rememberCoroutineScope()
+    val latestOnSelect = rememberUpdatedState(onSelect)
+    val tabsBackdrop = rememberPrismalGlassLayer()
+    val dropletBackdrop = rememberPrismalMergedSource(backdrop, tabsBackdrop)
+    tabsBackdrop.readSamplingState()
+    val barAlpha = GlassTabGeometryPolicy.barAlpha(morphProgress)
+
+    BoxWithConstraints(
+        modifier = Modifier.fillMaxWidth().height(62.dp),
+        contentAlignment = Alignment.CenterStart
     ) {
-        GlassTab(0, "Today", Icons.Outlined.Today, onSelect)
-        GlassTab(1, "Explore", Icons.Outlined.Explore, onSelect)
-        GlassTab(2, "Search", Icons.Outlined.Search, onSelect, onSearchAnchor)
-        GlassTab(3, "You", Icons.Outlined.Person, onSelect)
+        val tabWidthPx = (
+            constraints.maxWidth.toFloat() - with(density) { 8.dp.toPx() }
+        ).div(4f).coerceAtLeast(1f)
+        val tabWidth = with(density) { tabWidthPx.toDp() }
+        val contentStartPx = with(density) { 4.dp.toPx() }
+        val contentHeight = 56.dp
+        val contentHeightPx = with(density) { contentHeight.toPx() }
+        val barHeightPx = with(density) { 62.dp.toPx() }
+        val dropletWidth = with(density) {
+            GlassTabGeometryPolicy.expandedDimension(tabWidthPx, 12.dp.toPx()).toDp()
+        }
+        val dropletHeight = with(density) {
+            GlassTabGeometryPolicy.expandedDimension(contentHeightPx, 8.dp.toPx()).toDp()
+        }
+        val dropletWidthPx = with(density) { dropletWidth.toPx() }
+        val dropletHeightPx = with(density) { dropletHeight.toPx() }
+        val restingScaleX = GlassTabGeometryPolicy.restingScale(tabWidthPx, dropletWidthPx)
+        val restingScaleY = GlassTabGeometryPolicy.restingScale(contentHeightPx, dropletHeightPx)
+        var dragHighlightIndex by remember { mutableStateOf<Int?>(null) }
+        val motion = remember(animationScope, tabWidthPx, isLtr) {
+            PrismalSpringMotion(
+                animationScope = animationScope,
+                initialValue = selectedTab.toFloat(),
+                valueRange = 0f..3f,
+                visibilityThreshold = 0.001f,
+                initialScale = 1f,
+                pressedScale = 78f / 56f,
+                onDragStarted = {
+                    dragHighlightIndex = value.roundToInt().coerceIn(0, 3)
+                },
+                onDragStopped = {
+                    val target = targetValue.roundToInt().coerceIn(0, 3)
+                    dragHighlightIndex = target
+                    latestOnSelect.value(target)
+                },
+                onDrag = { _, delta ->
+                    val direction = if (isLtr) 1f else -1f
+                    val next = (targetValue + delta.x / tabWidthPx * direction)
+                        .coerceIn(0f, 3f)
+                    updateValue(next)
+                    dragHighlightIndex = next.roundToInt().coerceIn(0, 3)
+                }
+            )
+        }
+
+        LaunchedEffect(selectedTab) {
+            dragHighlightIndex = null
+            motion.animateToValue(selectedTab.toFloat())
+        }
+
+        val highlightedIndex = dragHighlightIndex ?: selectedTab
+        val pillPress = motion.pressProgress
+        val pillVelocity = motion.velocity.coerceIn(-2f, 2f)
+        val contentTopPx = (barHeightPx - contentHeightPx) / 2f
+
+        // Base navigation glass: the effect remains on the control, while the full-screen
+        // captured content remains available to the sampled glass behind and around it.
+        PrismalGlassSurface(
+            backdrop = backdrop,
+            modifier = Modifier.fillMaxSize().graphicsLayer { alpha = barAlpha },
+            shape = { PrismalCapsule() },
+            blurRadius = 10.dp,
+            refractionHeightPx = with(density) { 20.dp.toPx() },
+            refractionAmountPx = with(density) { 26.dp.toPx() },
+            depthEffect = true,
+            chromaticAberration = 0.08f,
+            tint = if (isSystemInDarkTheme()) Color(0xFF263247) else Color(0xFFEAF0FA),
+            tintAlpha = (glassAlpha * 0.16f).coerceIn(0.04f, 0.13f)
+        ) {}
+
+        CompositionLocalProvider(
+            LocalPrismalBottomTabHighlightedIndex provides { highlightedIndex }
+        ) {
+            // Invisible capture row supplies the icons and labels as a second refractive
+            // source. This is how the selected droplet samples the tab content, not a fake blur.
+            Row(
+                Modifier.graphicsLayer { alpha = 0f }
+                    .prismalGlassLayer(tabsBackdrop)
+                    .fillMaxSize()
+                    .padding(horizontal = 4.dp, vertical = 3.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                GlassTab(0, "Today", Icons.Outlined.Today, onSelect)
+                GlassTab(1, "Explore", Icons.Outlined.Explore, onSelect)
+                GlassTab(2, "Search", Icons.Outlined.Search, onSelect)
+                GlassTab(3, "You", Icons.Outlined.Person, onSelect)
+            }
+
+            Row(
+                Modifier.fillMaxSize()
+                    .padding(horizontal = 4.dp, vertical = 3.dp)
+                    .graphicsLayer { alpha = barAlpha },
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                GlassTab(0, "Today", Icons.Outlined.Today, onSelect)
+                GlassTab(1, "Explore", Icons.Outlined.Explore, onSelect)
+                GlassTab(2, "Search", Icons.Outlined.Search, onSelect, onSearchAnchor)
+                GlassTab(3, "You", Icons.Outlined.Person, onSelect)
+            }
+        }
+
+        // Gesture hit-target stays at one tab wide; the rendered droplet has a larger
+        // sampling area so its lens can stretch outside the navigation capsule while pulled.
+        Box(
+            Modifier.offset {
+                IntOffset(
+                    (contentStartPx + motion.value * tabWidthPx).roundToInt(),
+                    contentTopPx.roundToInt()
+                )
+            }
+                .size(tabWidth, contentHeight)
+                .then(motion.modifier)
+        )
+
+        // Resting scale matches the tab cell exactly. As the finger presses and pulls,
+        // Prismal's spring and tracked velocity expand and shear this larger optical lens.
+        Box(
+            Modifier.offset {
+                val center = GlassTabGeometryPolicy.tabCenterPx(
+                    contentStartPx, motion.value, tabWidthPx
+                )
+                IntOffset(
+                    GlassTabGeometryPolicy.leftPx(center, dropletWidthPx).roundToInt(),
+                    GlassTabGeometryPolicy.topPx(barHeightPx, dropletHeightPx).roundToInt()
+                )
+            }
+                .size(dropletWidth, dropletHeight)
+                .graphicsLayer {
+                    val velocity = (pillVelocity / 10f).coerceIn(-0.2f, 0.2f)
+                    scaleX = GlassTabGeometryPolicy.horizontalScale(restingScaleX, motion.scaleX, velocity)
+                    scaleY = GlassTabGeometryPolicy.verticalScale(restingScaleY, motion.scaleY, velocity)
+                    clip = false
+                }
+        ) {
+            PrismalGlassSurface(
+                backdrop = dropletBackdrop,
+                modifier = Modifier.fillMaxSize(),
+                shape = { PrismalCapsule() },
+                blurRadius = 12.dp,
+                refractionHeightPx = with(density) {
+                    (12.dp + 20.dp * pillPress).toPx()
+                },
+                refractionAmountPx = with(density) {
+                    (25.dp + 42.dp * pillPress).toPx()
+                },
+                depthEffect = true,
+                chromaticAberration = 0.18f + pillPress * 0.48f,
+                tint = if (isSystemInDarkTheme()) Color(0xFF1C2E49) else Color(0xFFE8F1FF),
+                tintAlpha = (glassAlpha * 0.22f).coerceIn(0.05f, 0.15f)
+            ) {}
+        }
     }
 }
 
