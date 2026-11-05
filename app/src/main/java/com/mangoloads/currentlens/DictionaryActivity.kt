@@ -16,6 +16,7 @@ import androidx.compose.animation.scaleIn
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -23,6 +24,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -273,136 +275,57 @@ private fun DictionaryPopup(word: String, onClose: () -> Unit) {
         result = DictionaryRepository.lookup(context, word)
         loading = false
     }
+    val definition = result
     AnimatedVisibility(
         visible = true,
-        enter = fadeIn() +
-            scaleIn(
-                initialScale = 0.92f,
-                transformOrigin = TransformOrigin(0.5f, 1f),
-                animationSpec = spring(dampingRatio = 0.78f, stiffness = 520f)
-            ) +
-            slideInVertically(
-                initialOffsetY = { it / 7 },
-                animationSpec = spring(dampingRatio = 0.78f, stiffness = 520f)
-            )
+        enter = fadeIn() + scaleIn(
+            initialScale = 0.92f,
+            transformOrigin = TransformOrigin(0.5f, 1f),
+            animationSpec = spring(dampingRatio = 0.78f, stiffness = 520f)
+        ) + slideInVertically(
+            initialOffsetY = { it / 7 },
+            animationSpec = spring(dampingRatio = 0.78f, stiffness = 520f)
+        )
     ) {
-        Surface(
-            modifier = Modifier.fillMaxWidth().padding(12.dp)
-                .animateContentSize(spring(dampingRatio = 0.82f, stiffness = 480f)),
-            shape = RoundedCornerShape(26.dp),
-            color = MaterialTheme.colorScheme.surface.copy(
-                alpha = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) 0.86f else 0.94f
-            ),
-            contentColor = MaterialTheme.colorScheme.onSurface,
-            tonalElevation = 0.dp,
-            shadowElevation = 18.dp
-        ) {
-            Column(
-                Modifier.padding(20.dp)
-                    .heightIn(max = if (expanded) 360.dp else 176.dp)
-                    .verticalScroll(scrollState),
-                verticalArrangement = Arrangement.spacedBy(9.dp)
+        Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+            Surface(
+                modifier = Modifier.widthIn(max = DictionaryOverlayPolicy.MAX_WIDTH_DP.dp)
+                    .fillMaxWidth()
+                    .padding(horizontal = 12.dp, vertical = 8.dp)
+                    .animateContentSize(spring(dampingRatio = 0.82f, stiffness = 480f)),
+                shape = RoundedCornerShape(26.dp),
+                color = MaterialTheme.colorScheme.surface.copy(
+                    alpha = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) 0.86f else 0.94f
+                ),
+                contentColor = MaterialTheme.colorScheme.onSurface,
+                tonalElevation = 0.dp,
+                shadowElevation = 18.dp
             ) {
-                if (result?.dictionaryAvailable == true && result?.meanings?.isNotEmpty() == true) {
-                    DefinitionExpansionHandle(
-                        expanded = expanded,
-                        scrollAtTop = scrollState.value == 0,
-                        onExpandedChange = { expanded = it }
-                    )
-                }
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Column(Modifier.weight(1f)) {
-                        Text(
-                            word,
-                            style = MaterialTheme.typography.headlineSmall,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                        Text(
-                            "OFFLINE DICTIONARY",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.secondary
-                        )
-                    }
-                    if (expanded && result?.let {
-                            it.dictionaryAvailable && DictionaryMeaningPolicy.hasCopyableContent(
-                                it.meanings, it.synonyms
-                            )
-                        } == true) {
-                        TextButton(onClick = {
-                            val current = result ?: return@TextButton
-                            val clipboard = context.getSystemService(android.content.Context.CLIPBOARD_SERVICE)
+                DefinitionPopoverContent(
+                    word = word,
+                    definition = definition,
+                    loading = loading,
+                    expanded = expanded,
+                    scrollAtTop = scrollState.value == 0,
+                    onExpandedChange = { expanded = it },
+                    onCopy = {
+                        definition?.let { current ->
+                            val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE)
                                 as? android.content.ClipboardManager
                             clipboard?.setPrimaryClip(
                                 android.content.ClipData.newPlainText(
                                     "Definition of $word",
-                                    DictionaryMeaningPolicy.copyText(
-                                        word,
-                                        current.meanings,
-                                        current.synonyms
-                                    )
+                                    DictionaryMeaningPolicy.copyText(word, current.meanings, current.synonyms)
                                 )
                             )
-                        }) { Text("Copy") }
-                    }
-                    if (result?.dictionaryAvailable == true && result?.meanings?.isNotEmpty() == true) {
-                        TextButton(onClick = { expanded = !expanded }) {
-                            Text(if (expanded) "Less" else "More")
                         }
-                    }
-                    TextButton(onClick = onClose) { Text("Close") }
-                }
-                val definition = result
-                when {
-                    loading -> CircularProgressIndicator()
-                    definition == null ->
-                        Text("The offline dictionary lookup could not be completed.")
-                    !definition.dictionaryAvailable ->
-                        Text("The offline dictionary is not bundled in this build.")
-                    definition.meanings.isEmpty() ->
-                        Text("No entry found in the offline English dictionary.")
-                    else -> {
-                        val visibleMeaningCount = DictionaryOverlayPolicy.visibleMeanings(
-                            definition.meanings.size, expanded
-                        )
-                        definition.meanings.take(visibleMeaningCount).forEach { meaning ->
-                            val presentation = DictionaryMeaningPolicy.present(meaning)
-                            Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
-                                if (expanded) {
-                                    presentation.partOfSpeech?.let { partOfSpeech ->
-                                        Text(
-                                            partOfSpeech.uppercase(Locale.ROOT),
-                                            style = MaterialTheme.typography.labelSmall,
-                                            color = MaterialTheme.colorScheme.primary
-                                        )
-                                    }
-                                }
-                                Text(
-                                    presentation.definition,
-                                    style = MaterialTheme.typography.bodyLarge,
-                                    maxLines = if (expanded) Int.MAX_VALUE else 2,
-                                    overflow = TextOverflow.Ellipsis
-                                )
-                            }
-                        }
-                        val visibleSynonymCount = DictionaryOverlayPolicy.visibleSynonyms(
-                            definition.synonyms.size, expanded
-                        )
-                        if (visibleSynonymCount > 0) {
-                            Spacer(Modifier.height(2.dp))
-                            Text("RELATED WORDS", style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.secondary)
-                            Text(
-                                definition.synonyms.take(visibleSynonymCount).joinToString(" · "),
-                                style = MaterialTheme.typography.bodyMedium
-                            )
-                        }
-                    }
-                }
-                Text(
-                    "Open English WordNet 2025+ · CC BY 4.0 · Princeton WordNet attribution",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.secondary
+                    },
+                    onClose = onClose,
+                    closeLabel = "Close",
+                    modifier = Modifier
+                        .heightIn(max = if (expanded) DictionaryOverlayPolicy.EXPANDED_MAX_HEIGHT_DP.dp else DictionaryOverlayPolicy.COMPACT_MAX_HEIGHT_DP.dp)
+                        .padding(horizontal = 14.dp, vertical = 6.dp)
+                        .verticalScroll(scrollState)
                 )
             }
         }

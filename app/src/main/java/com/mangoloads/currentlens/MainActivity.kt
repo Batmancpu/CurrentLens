@@ -1793,7 +1793,9 @@ private fun ReaderScreen(article: Article, backdrop: PrismalBackdrop, glassAlpha
     var reachedBottom by remember(article.url) { mutableStateOf(false) }
     var activeWord by remember(article.url) { mutableStateOf<String?>(null) }
     var activeWordAnchor by remember(article.url) { mutableStateOf<DefinitionSelectionAnchor?>(null) }
+    var activeWordPreferAbove by remember(article.url) { mutableStateOf(false) }
     var readerViewportWindowOrigin by remember(article.url) { mutableStateOf(Offset.Zero) }
+    var readerViewportHeightPx by remember(article.url) { mutableIntStateOf(0) }
     var fontSize by remember(article.url) { mutableIntStateOf(20) }
 
     LaunchedEffect(article.url) {
@@ -1849,6 +1851,7 @@ private fun ReaderScreen(article: Article, backdrop: PrismalBackdrop, glassAlpha
             // in window coordinates; mixing screen and window origins double-counts
             // edge-to-edge/status-bar offsets on some Android window configurations.
             readerViewportWindowOrigin = coordinates.positionInWindow()
+            readerViewportHeightPx = coordinates.size.height
         }) {
             AndroidView(
                 modifier = Modifier.fillMaxSize(),
@@ -1909,8 +1912,9 @@ private fun ReaderScreen(article: Article, backdrop: PrismalBackdrop, glassAlpha
                     webView.onDefineWord = { word, selectionRect ->
                         val webViewLocation = IntArray(2)
                         webView.getLocationInWindow(webViewLocation)
-                        val cssToWindowScale = webView.resources.displayMetrics.density * webView.scale
-                        activeWordAnchor = selectionRect?.let { rect ->
+                        val displayDensity = webView.resources.displayMetrics.density
+                        val cssToWindowScale = displayDensity * webView.scale
+                        val selectionAnchor = selectionRect?.let { rect ->
                             DefinitionSelectionAnchorPolicy.fromCssRect(
                                 leftCssPx = rect.left,
                                 topCssPx = rect.top,
@@ -1923,6 +1927,16 @@ private fun ReaderScreen(article: Article, backdrop: PrismalBackdrop, glassAlpha
                                 cssToWindowScale = cssToWindowScale
                             )
                         }
+                        activeWordAnchor = selectionAnchor
+                        // Resolve the side from the compact footprint once per word.
+                        // Expansion scrolls in place instead of jumping across selection.
+                        activeWordPreferAbove = DefinitionPopupPlacementPolicy.preferAbove(
+                            parentHeightPx = readerViewportHeightPx,
+                            anchorY = selectionAnchor?.center?.y ?: readerViewportHeightPx * 0.72f,
+                            compactHeightPx = (DictionaryOverlayPolicy.COMPACT_MAX_HEIGHT_DP * displayDensity).roundToInt(),
+                            marginPx = (12f * displayDensity).roundToInt(),
+                            gapPx = (14f * displayDensity).roundToInt()
+                        )
                         activeWord = word
                     }
                     webView.onReaderPageFinished = {
@@ -1951,6 +1965,7 @@ private fun ReaderScreen(article: Article, backdrop: PrismalBackdrop, glassAlpha
                         reachedBottom = false
                         activeWord = null
                         activeWordAnchor = null
+                        activeWordPreferAbove = false
                     }
                     val cleanHtml = extractedHtml
                     if (cleanHtml != null) {
@@ -2015,7 +2030,13 @@ private fun ReaderScreen(article: Article, backdrop: PrismalBackdrop, glassAlpha
             // The selection anchor is relative to this reader viewport. Keep the glass
             // surface in the same Box so it overlays the WebView without consuming layout height.
             if (activeWord != null) {
-                DefinitionGlassOverlay(activeWord!!, activeWordAnchor, backdrop, glassAlpha) {
+                DefinitionGlassOverlay(
+                    word = activeWord!!,
+                    anchor = activeWordAnchor,
+                    preferAbove = activeWordPreferAbove,
+                    backdrop = backdrop,
+                    glassAlpha = glassAlpha
+                ) {
                     activeWord = null
                     activeWordAnchor = null
                 }
@@ -2495,6 +2516,7 @@ private class ReaderWebView(context: android.content.Context) : WebView(context)
 private fun DefinitionGlassOverlay(
     word: String,
     anchor: DefinitionSelectionAnchor?,
+    preferAbove: Boolean,
     backdrop: PrismalBackdrop,
     glassAlpha: Float,
     onClose: () -> Unit
@@ -2510,12 +2532,8 @@ private fun DefinitionGlassOverlay(
         loading = false
     }
     val definition = result
-    // Visibility drives the word-anchored entrance and reverse dismissal.
-    // Compact/expanded content keeps that same selected-word transform origin.
     val visibilityState = remember(word) {
-        androidx.compose.animation.core.MutableTransitionState(false).apply {
-            targetState = true
-        }
+        androidx.compose.animation.core.MutableTransitionState(false).apply { targetState = true }
     }
     val transition = updateTransition(visibilityState, label = "Definition glass morph")
     val expansion by transition.animateFloat(
@@ -2527,24 +2545,21 @@ private fun DefinitionGlassOverlay(
         label = "Definition opacity"
     ) { visible -> if (visible) 1f else 0f }
 
-    BackHandler(enabled = visibilityState.targetState) {
-        visibilityState.targetState = false
-    }
+    BackHandler(enabled = visibilityState.targetState) { visibilityState.targetState = false }
     LaunchedEffect(visibilityState.isIdle, visibilityState.currentState, visibilityState.targetState) {
-        if (visibilityState.isIdle && !visibilityState.currentState && !visibilityState.targetState) {
-            onClose()
-        }
+        if (visibilityState.isIdle && !visibilityState.currentState && !visibilityState.targetState) onClose()
     }
 
     val density = LocalDensity.current
     val marginPx = with(density) { 12.dp.roundToPx() }
-    val maxPopupWidthPx = with(density) { 420.dp.roundToPx() }
+    val gapPx = with(density) { 14.dp.roundToPx() }
+    val maxPopupWidthPx = with(density) { DictionaryOverlayPolicy.MAX_WIDTH_DP.dp.roundToPx() }
     Layout(
         modifier = Modifier.fillMaxSize(),
         content = {
             PrismalGlassSurface(
                 backdrop = backdrop,
-                modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)
+                modifier = Modifier.fillMaxWidth()
                     .animateContentSize(spring(dampingRatio = 0.82f, stiffness = 480f)),
                 shape = { PrismalRoundedRectangle(25.dp) },
                 blurRadius = 12.dp,
@@ -2555,155 +2570,55 @@ private fun DefinitionGlassOverlay(
                 tint = if (isSystemInDarkTheme()) Color(0xFF263247) else Color(0xFFEAF0FA),
                 tintAlpha = (glassAlpha * 0.62f).coerceIn(0.08f, 0.34f)
             ) {
-                Column(
-                    Modifier.padding(horizontal = 19.dp, vertical = 16.dp)
-                        .heightIn(max = if (expanded) 420.dp else 184.dp)
-                        .verticalScroll(scrollState),
-                    verticalArrangement = Arrangement.spacedBy(9.dp)
-                ) {
-                    if (definition?.let { it.dictionaryAvailable && it.meanings.isNotEmpty() } == true) {
-                        DefinitionExpansionHandle(
-                            expanded = expanded,
-                            scrollAtTop = scrollState.value == 0,
-                            onExpandedChange = { expanded = it }
-                        )
-                    }
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Column(Modifier.weight(1f)) {
-                            Text(
-                                word,
-                                style = MaterialTheme.typography.titleLarge,
-                                fontWeight = FontWeight.Bold,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
-                            )
-                            Text(
-                                "OFFLINE DICTIONARY",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.secondary,
-                                letterSpacing = 1.1.sp
-                            )
+                DefinitionPopoverContent(
+                    word = word,
+                    definition = definition,
+                    loading = loading,
+                    expanded = expanded,
+                    scrollAtTop = scrollState.value == 0,
+                    onExpandedChange = { expanded = it },
+                    onCopy = {
+                        definition?.let { current ->
+                            val copiedText = DictionaryMeaningPolicy.copyText(word, current.meanings, current.synonyms)
+                            val clipboard = context.getSystemService(android.content.Context.CLIPBOARD_SERVICE)
+                                as? android.content.ClipboardManager
+                            clipboard?.setPrimaryClip(android.content.ClipData.newPlainText("Definition of $word", copiedText))
+                            android.widget.Toast.makeText(context, "Definition copied", android.widget.Toast.LENGTH_SHORT).show()
                         }
-                        if (expanded && definition != null && definition.dictionaryAvailable &&
-                            DictionaryMeaningPolicy.hasCopyableContent(
-                                definition.meanings, definition.synonyms
-                            )
-                        ) {
-                            TextButton(onClick = {
-                                val copiedText = DictionaryMeaningPolicy.copyText(
-                                    word = word,
-                                    meanings = definition.meanings,
-                                    synonyms = definition.synonyms
-                                )
-                                val clipboard = context.getSystemService(android.content.Context.CLIPBOARD_SERVICE)
-                                    as? android.content.ClipboardManager
-                                clipboard?.setPrimaryClip(
-                                    android.content.ClipData.newPlainText("Definition of $word", copiedText)
-                                )
-                                android.widget.Toast.makeText(
-                                    context, "Definition copied", android.widget.Toast.LENGTH_SHORT
-                                ).show()
-                            }) { Text("Copy") }
-                        }
-                        if (definition?.let { it.dictionaryAvailable && it.meanings.isNotEmpty() } == true) {
-                            TextButton(onClick = { expanded = !expanded }) {
-                                Text(if (expanded) "Less" else "More")
-                            }
-                        }
-                        TextButton(onClick = { visibilityState.targetState = false }) { Text("Done") }
-                    }
-                    when {
-                        loading -> CircularProgressIndicator()
-                        definition == null ->
-                            Text(
-                                "The offline dictionary lookup could not be completed.",
-                                style = MaterialTheme.typography.bodyMedium
-                            )
-                        !definition.dictionaryAvailable ->
-                            Text(
-                                "The offline word database is not included in this build.",
-                                style = MaterialTheme.typography.bodyMedium
-                            )
-                        definition.meanings.isEmpty() ->
-                            Text(
-                                "No entry found in the offline English dictionary. Try the base form of the word.",
-                                style = MaterialTheme.typography.bodyMedium
-                            )
-                        else -> {
-                            val visibleMeaningCount = DictionaryOverlayPolicy.visibleMeanings(
-                                definition.meanings.size, expanded
-                            )
-                            definition.meanings.take(visibleMeaningCount).forEach { meaning ->
-                                val presentation = DictionaryMeaningPolicy.present(meaning)
-                                Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
-                                    if (expanded) {
-                                        presentation.partOfSpeech?.let { partOfSpeech ->
-                                            Text(
-                                                partOfSpeech.uppercase(Locale.ROOT),
-                                                style = MaterialTheme.typography.labelSmall,
-                                                color = MaterialTheme.colorScheme.primary,
-                                                letterSpacing = 1.sp
-                                            )
-                                        }
-                                    }
-                                    Text(
-                                        presentation.definition,
-                                        style = MaterialTheme.typography.bodyLarge,
-                                        lineHeight = 23.sp,
-                                        maxLines = if (expanded) Int.MAX_VALUE else 2,
-                                        overflow = TextOverflow.Ellipsis
-                                    )
-                                }
-                            }
-                            val visibleSynonymCount = DictionaryOverlayPolicy.visibleSynonyms(
-                                definition.synonyms.size, expanded
-                            )
-                            if (visibleSynonymCount > 0) {
-                                Text(
-                                    "RELATED WORDS",
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = MaterialTheme.colorScheme.secondary,
-                                    letterSpacing = 1.sp
-                                )
-                                Text(
-                                    definition.synonyms.take(visibleSynonymCount).joinToString(" · "),
-                                    style = MaterialTheme.typography.bodyMedium
-                                )
-                            }
-                        }
-                    }
-                    Text(
-                        "Open English WordNet 2025+ · CC BY 4.0",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.secondary
-                    )
-                }
+                    },
+                    onClose = { visibilityState.targetState = false },
+                    closeLabel = "Done",
+                    modifier = Modifier
+                        .heightIn(max = if (expanded) DictionaryOverlayPolicy.EXPANDED_MAX_HEIGHT_DP.dp else DictionaryOverlayPolicy.COMPACT_MAX_HEIGHT_DP.dp)
+                        .padding(horizontal = 14.dp, vertical = 6.dp)
+                        .verticalScroll(scrollState)
+                )
             }
         }
     ) { measurables, constraints ->
         val parentWidthPx = constraints.maxWidth
         val parentHeightPx = constraints.maxHeight
-        val popupWidthLimitPx = (parentWidthPx - marginPx * 2)
-            .coerceAtLeast(1)
-            .coerceAtMost(maxPopupWidthPx)
-        val popupHeightLimitPx = (parentHeightPx - marginPx * 2).coerceAtLeast(1)
-        val popup = measurables.single().measure(
-            Constraints(maxWidth = popupWidthLimitPx, maxHeight = popupHeightLimitPx)
-        )
+        val widthLimitPx = (parentWidthPx - marginPx * 2).coerceAtLeast(1).coerceAtMost(maxPopupWidthPx)
         val fallbackAnchor = Offset(parentWidthPx / 2f, parentHeightPx * 0.72f)
+        val resolvedAnchor = anchor?.center ?: fallbackAnchor
+        val availableHeightPx = DefinitionPopupPlacementPolicy.availableHeightOnSide(
+            parentHeightPx, resolvedAnchor.y, marginPx, gapPx, preferAbove
+        )
+        val popup = measurables.single().measure(
+            Constraints(maxWidth = widthLimitPx, maxHeight = availableHeightPx)
+        )
         val placement = DefinitionPopupPlacementPolicy.calculate(
             parentWidthPx = parentWidthPx,
             parentHeightPx = parentHeightPx,
-            anchor = anchor?.center ?: fallbackAnchor,
+            anchor = resolvedAnchor,
             popupWidthPx = popup.width,
-            // Use the measured, scroll-constrained surface height. An estimated 300 dp
-            // height left short definitions floating far from words near the bottom.
             estimatedHeightPx = popup.height,
             marginPx = marginPx,
-            gapPx = with(density) { 14.dp.roundToPx() },
+            gapPx = gapPx,
             maxPopupWidthPx = maxPopupWidthPx,
             anchorWidthPx = anchor?.widthPx ?: 0f,
-            anchorHeightPx = anchor?.heightPx ?: 0f
+            anchorHeightPx = anchor?.heightPx ?: 0f,
+            preferAbove = preferAbove
         )
         layout(parentWidthPx, parentHeightPx) {
             popup.placeWithLayer(placement.leftPx, placement.topPx) {

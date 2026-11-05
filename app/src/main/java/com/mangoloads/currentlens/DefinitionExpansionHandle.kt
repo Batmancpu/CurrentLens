@@ -25,7 +25,7 @@ internal fun DefinitionExpansionHandle(
 ) {
     val density = LocalDensity.current
     Box(
-        modifier = Modifier.fillMaxWidth().height(24.dp).pointerInput(expanded, scrollAtTop) {
+        modifier = Modifier.fillMaxWidth().height(12.dp).pointerInput(expanded, scrollAtTop) {
             var dragDistance = 0f
             val thresholdPx = with(density) { 32.dp.toPx() }
             detectVerticalDragGestures(

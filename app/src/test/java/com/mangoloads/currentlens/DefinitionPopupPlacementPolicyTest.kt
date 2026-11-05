@@ -197,4 +197,34 @@ class DefinitionPopupPlacementPolicyTest {
         assertEquals(0.12f, result.initialScaleY)
     }
 
+
+    @Test
+    fun choosesAboveNearBottomAndBelowNearTopFromCompactFootprint() {
+        assertTrue(DefinitionPopupPlacementPolicy.preferAbove(1000, 850f, 116, 12, 14))
+        assertFalse(DefinitionPopupPlacementPolicy.preferAbove(1000, 150f, 116, 12, 14))
+    }
+
+    @Test
+    fun keepsExpandedPopoverOnTheChosenSideAndCapsItsScrollViewport() {
+        val result = DefinitionPopupPlacementPolicy.calculate(
+            parentWidthPx = 400, parentHeightPx = 500, anchor = Offset(200f, 220f),
+            popupWidthPx = 320, estimatedHeightPx = 420, marginPx = 12, gapPx = 14,
+            maxPopupWidthPx = 320, preferAbove = true
+        )
+        assertEquals(320, result.widthPx)
+        assertEquals(194, result.maxHeightPx)
+        assertEquals(12, result.topPx)
+        assertTrue(result.topPx + result.maxHeightPx <= 208)
+    }
+
+    @Test
+    fun availableHeightNeverExceedsTheLockedSideOfTheViewport() {
+        val above = DefinitionPopupPlacementPolicy.availableHeightOnSide(600, 250f, 12, 14, true)
+        val below = DefinitionPopupPlacementPolicy.availableHeightOnSide(600, 250f, 12, 14, false)
+        assertEquals(224, above)
+        assertEquals(324, below)
+        assertTrue(above > 0)
+        assertTrue(below > 0)
+    }
+
 }
