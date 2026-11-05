@@ -160,9 +160,11 @@ import com.styropyr0.prismal.depth.PrismalDepthShadow
 import com.styropyr0.prismal.effects.PrismalAdaptiveTuning
 import com.styropyr0.prismal.effects.applyPrismalGlassEffects
 import com.styropyr0.prismal.specular.PrismalSpecular
+import com.styropyr0.prismal.specular.PrismalSpecularStyle
 import com.styropyr0.prismal.components.LocalPrismalBottomTabHighlightedIndex
 import com.styropyr0.prismal.components.PrismalGlassBottomTab
 import com.styropyr0.prismal.components.PrismalGlassSlider
+import com.styropyr0.prismal.interactive.PrismalPressRipple
 import com.styropyr0.prismal.interactive.PrismalSpringMotion
 import com.styropyr0.prismal.shapes.PrismalCapsule
 import com.styropyr0.prismal.shapes.PrismalRoundedRectangle
@@ -1526,6 +1528,22 @@ private fun GlassTabBar(
             maxAlpha = 0.14f
         )
 
+        // Reuse Prismal's touch ripple and keep it on the expanded optical droplet.
+        // The ripple is drawn over the base material; its centre follows the selected tab.
+        val tabRipple = remember(animationScope, tabWidthPx, contentStartPx) {
+            PrismalPressRipple(animationScope) { size, _ ->
+                val center = GlassTabGeometryPolicy.tabCenterPx(
+                    contentStartPx, motion.value, tabWidthPx
+                )
+                Offset(center, size.height / 2f)
+            }
+        }
+        // Prismal's pre-33 fallback is a flat white flash, not a shader ripple.
+        // Keep spring/lens feedback on those devices without that visual regression.
+        val rippleEnabled = GlassOpticsPolicy.rippleEnabled(Build.VERSION.SDK_INT, reduceMotion)
+        val rippleDrawModifier = if (rippleEnabled) tabRipple.modifier else Modifier
+        val rippleGestureModifier = if (rippleEnabled) tabRipple.gestureModifier else Modifier
+
         // The sampled root includes the page background and content, but excludes this
         // overlay bar; the tab-content layer is merged only for the selected droplet.
         Box(
@@ -1573,6 +1591,7 @@ private fun GlassTabBar(
                 }
             )
         )
+        Box(Modifier.fillMaxSize().clip(PrismalCapsule()).then(rippleDrawModifier)) {}
 
         CompositionLocalProvider(
             LocalPrismalBottomTabHighlightedIndex provides { highlightedIndex }
@@ -1606,18 +1625,8 @@ private fun GlassTabBar(
             }
         }
 
-        // Gesture target remains one tab wide; the optical surface has extra sampling
-        // area so its lens can flex beyond the resting tab footprint without parent clipping.
-        Box(
-            Modifier.offset {
-                IntOffset(
-                    (contentStartPx + motion.value * tabWidthPx).roundToInt(),
-                    contentTopPx.roundToInt()
-                )
-            }
-                .size(tabWidth, contentHeight)
-                .then(motion.modifier)
-        )
+        // The expanded droplet itself is the drag target. Its touch bounds now match
+        // the refracted rim rather than a narrower, visually detached tab-cell target.
 
         Box(
             Modifier.offset {
@@ -1637,6 +1646,8 @@ private fun GlassTabBar(
                     scaleY = GlassTabGeometryPolicy.verticalScale(restingScaleY, motion.scaleY, velocity)
                     clip = false
                 }
+                .then(rippleGestureModifier)
+                .then(motion.modifier)
         ) {
             Box(
                 Modifier.fillMaxSize().drawPrismalGlass(
@@ -1659,7 +1670,10 @@ private fun GlassTabBar(
                         PrismalSpecular.Default.copy(
                             width = 0.7.dp,
                             blurRadius = 0.4.dp,
-                            alpha = dropletOptics.specularAlpha
+                            alpha = dropletOptics.specularAlpha,
+                            style = PrismalSpecularStyle.Default(
+                                angle = GlassOpticsPolicy.specularAngle(pillVelocity, reduceMotion)
+                            )
                         )
                     },
                     depthShadow = {

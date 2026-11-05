@@ -22,6 +22,16 @@ internal object GlassOpticsPolicy {
 
     fun pressedScale(reduceMotion: Boolean): Float = if (reduceMotion) 1f else 1.12f
 
+    /** Use the AGSL touch ripple only where the shader exists and motion is permitted. */
+    fun rippleEnabled(sdkInt: Int, reduceMotion: Boolean): Boolean =
+        sdkInt >= 33 && !reduceMotion
+
+    /** Moves the directional edge highlight with horizontal drag velocity. */
+    fun specularAngle(horizontalVelocity: Float, reduceMotion: Boolean): Float {
+        if (reduceMotion || !horizontalVelocity.isFinite()) return 45f
+        return (45f + horizontalVelocity.coerceIn(-2f, 2f) * 12f).coerceIn(21f, 69f)
+    }
+
     fun droplet(
         pressProgress: Float,
         reduceMotion: Boolean = false

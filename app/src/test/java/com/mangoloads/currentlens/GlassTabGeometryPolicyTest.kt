@@ -26,6 +26,19 @@ class GlassTabGeometryPolicyTest {
     }
 
     @Test
+    fun expandedDragTargetMatchesTheOpticalDropletBounds() {
+        val tabWidth = 80f
+        val tabCenter = GlassTabGeometryPolicy.tabCenterPx(4f, 2f, tabWidth)
+        val dropletWidth = GlassTabGeometryPolicy.expandedDimension(tabWidth, 12f)
+        val dropletHeight = GlassTabGeometryPolicy.expandedDimension(56f, 8f)
+
+        assertEquals(104f, dropletWidth, 0.001f)
+        assertEquals(72f, dropletHeight, 0.001f)
+        assertEquals(152f, GlassTabGeometryPolicy.leftPx(tabCenter, dropletWidth), 0.001f)
+        assertEquals(-5f, GlassTabGeometryPolicy.topPx(62f, dropletHeight), 0.001f)
+    }
+
+    @Test
     fun dragVelocityShearsTheLensWithinSafeBounds() {
         val base = 0.8f
         assertEquals(

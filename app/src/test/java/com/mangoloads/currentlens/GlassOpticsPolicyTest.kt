@@ -70,6 +70,23 @@ class GlassOpticsPolicyTest {
     }
 
     @Test
+    fun shaderRippleUsesTheAgslPipelineAndRespectsReduceMotion() {
+        assertTrue(GlassOpticsPolicy.rippleEnabled(33, reduceMotion = false))
+        assertTrue(GlassOpticsPolicy.rippleEnabled(35, reduceMotion = false))
+        assertTrue(!GlassOpticsPolicy.rippleEnabled(32, reduceMotion = false))
+        assertTrue(!GlassOpticsPolicy.rippleEnabled(35, reduceMotion = true))
+    }
+
+    @Test
+    fun directionalSpecularFollowsDragVelocityAndStaysStableWithReduceMotion() {
+        assertEquals(45f, GlassOpticsPolicy.specularAngle(0f, reduceMotion = false), 0.0001f)
+        assertEquals(21f, GlassOpticsPolicy.specularAngle(-2f, reduceMotion = false), 0.0001f)
+        assertEquals(69f, GlassOpticsPolicy.specularAngle(2f, reduceMotion = false), 0.0001f)
+        assertEquals(45f, GlassOpticsPolicy.specularAngle(2f, reduceMotion = true), 0.0001f)
+        assertEquals(45f, GlassOpticsPolicy.specularAngle(Float.NaN, reduceMotion = false), 0.0001f)
+    }
+
+    @Test
     fun adaptiveTintAddsOnlyABoundedReserveAtLuminanceExtremes() {
         val middle = GlassOpticsPolicy.adaptiveTintAlpha(0.08f, 0.5f, 0.04f, 0.14f)
         val bright = GlassOpticsPolicy.adaptiveTintAlpha(0.08f, 1f, 0.04f, 0.14f)

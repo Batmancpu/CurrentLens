@@ -27,8 +27,9 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 
 /*
- * The 8x8 readback, cadence, luminance weighting and quantisation adapt the
- * PrismalAGSL v1.0.4 adaptive-luminance helper.
+ * The 8x8 readback and cadence adapt the PrismalAGSL v1.0.4 adaptive-luminance
+ * helper. Relative luminance is linearized before weighting, and foreground
+ * selection uses the black/white contrast crossover rather than a 0.5 midpoint.
  * Copyright (c) 2026 Saurav Sajeev; MIT License.
  * Full notice: app/src/main/assets/licenses/PRISMAL_AGSL_MIT_LICENSE.txt
  */
@@ -77,6 +78,7 @@ internal fun rememberBottomBandGlassLuminance(
         }
 
         val probeSizePx = 8
+        state.contentColor = if (isLightTheme) Color.Black else Color.White
         val pixelBuffer = IntArray(probeSizePx * probeSizePx)
         val probeSize = IntSize(probeSizePx, probeSizePx)
         val requestedBandHeightPx = with(density) { bandHeight.toPx().roundToInt() }
@@ -115,11 +117,16 @@ internal fun rememberBottomBandGlassLuminance(
                         height = probeSizePx
                     )
 
-                    val averageLuminance = averageLuminanceFromArgb(pixelBuffer)
+                    val averageLuminance = GlassLuminancePolicy.averageRelativeLuminance(pixelBuffer)
                     val quantized = (averageLuminance / 0.05f).roundToInt() * 0.05f
+                    val nextContentColor = if (
+                        GlassLuminancePolicy.prefersDarkForeground(quantized)
+                    ) Color.Black else Color.White
+                    if (nextContentColor != state.contentColor) {
+                        state.contentColor = nextContentColor
+                    }
                     if (abs(quantized - state.luminance) >= 0.04f) {
                         state.luminance = quantized
-                        state.contentColor = if (quantized > 0.5f) Color.Black else Color.White
                     }
                 }
             } catch (_: Exception) {
@@ -132,13 +139,3 @@ internal fun rememberBottomBandGlassLuminance(
     return state
 }
 
-private fun averageLuminanceFromArgb(pixels: IntArray): Float {
-    if (pixels.isEmpty()) return 0.5f
-    val sum = pixels.sumOf { argb ->
-        val red = (argb shr 16 and 0xFF) / 255.0
-        val green = (argb shr 8 and 0xFF) / 255.0
-        val blue = (argb and 0xFF) / 255.0
-        0.2126 * red + 0.7152 * green + 0.0722 * blue
-    }
-    return (sum / pixels.size).toFloat().coerceIn(0f, 1f)
-}
