@@ -152,7 +152,6 @@ import com.styropyr0.prismal.depth.PrismalDepthInset
 import com.styropyr0.prismal.depth.PrismalDepthShadow
 import com.styropyr0.prismal.effects.PrismalAdaptiveTuning
 import com.styropyr0.prismal.effects.applyPrismalGlassEffects
-import com.styropyr0.prismal.effects.rememberPrismalAdaptiveLuminance
 import com.styropyr0.prismal.specular.PrismalSpecular
 import com.styropyr0.prismal.components.LocalPrismalBottomTabHighlightedIndex
 import com.styropyr0.prismal.components.PrismalGlassBottomTab
@@ -255,13 +254,16 @@ private fun CurrentLensApp() {
         onDispose { lifecycleOwner?.lifecycle?.removeObserver(observer) }
     }
 
-    // Prismal v1.0.4's shared 8x8 probe samples the whole root source (600ms on
-    // RenderEffect devices, 1500ms on legacy devices), not a local toolbar strip.
-    // Keep one sampler for navigation and Search; stop it when the app is backgrounded or the controls are hidden.
-    val glassLuminance = rememberPrismalAdaptiveLuminance(
+    // One shared 8x8 probe samples the full-width bottom 104dp of the live root backdrop.
+    // This bounded band follows the IME-resized root, staying behind both navigation
+    // glass and the keyboard-docked Search composer instead of averaging unrelated
+    // content across the full screen. Cadence remains 600ms on API 31+ and 1500ms
+    // on legacy devices; sampling is foreground-only and shared by both surfaces.
+    val glassLuminance = rememberBottomBandGlassLuminance(
         enabled = appResumed && selectedArticle == null && !showSettings,
         source = backdrop,
-        isLightTheme = !dark
+        isLightTheme = !dark,
+        bandHeight = 104.dp
     )
 
     // Keep the composer IME-docked while the keyboard dismisses. Only after the

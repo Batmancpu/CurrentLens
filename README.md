@@ -13,6 +13,10 @@ The bottom bar has **exactly four destinations**:
 
 There is no Archive destination and no Saved bottom tab. **Saved** is a section inside **You**. Existing appearance settings remain available from You.
 
+## Liquid Glass rendering
+
+Navigation and Search share one foreground-only 8×8 luminance probe over a full-width 104 dp band at the bottom of the captured page. The region follows the root content height when the IME opens, so adaptive contrast reflects the scene immediately behind the floating controls rather than averaging unrelated content across the whole screen. Sampling retains PrismalAGSL v1.0.4's 600 ms RenderEffect / 1500 ms legacy cadence and adds no dependency.
+
 ## Personal data and study statistics
 
 - The You dashboard shows unique read markers, articles read today, saved articles, submitted quiz attempts, and correct/incorrect answers.

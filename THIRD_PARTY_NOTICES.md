@@ -4,7 +4,7 @@ CurrentLens is an original Android application. It does not bundle or copy whole
 
 ## Open-source projects reviewed
 
-- PrismalAGSL — MIT License. https://github.com/styropyr0/PrismalAGSL. Used for Compose glass surfaces, four-tab glass bar and adaptive AGSL effects.
+- PrismalAGSL — MIT License. https://github.com/styropyr0/PrismalAGSL. Used for Compose glass surfaces, four-tab glass bar and adaptive AGSL effects. The app's bounded 8×8 bottom-band luminance probe adapts the v1.0.4 sampling cadence and luminance calculation; the full MIT notice is retained at app/src/main/assets/licenses/PRISMAL_AGSL_MIT_LICENSE.txt.
 - Jsoup — MIT License. https://github.com/jhy/jsoup. Used to parse publicly accessible publisher HTML; it does not bypass paywalls or use logged-in cookies.
 - FeedFlow — Apache License 2.0. https://github.com/prof18/feed-flow. Studied for RSS reading, reader mode and local-first interaction patterns; no source files are bundled.
 - QuickWord — MIT License. https://github.com/jtrv/quickword. Studied for Android text-selection dictionary integration; no QuickWord source files or dictionary corpus are bundled.
