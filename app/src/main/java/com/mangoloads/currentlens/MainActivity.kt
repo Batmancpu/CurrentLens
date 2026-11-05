@@ -1,5 +1,6 @@
 package com.mangoloads.currentlens
 
+import android.animation.ValueAnimator
 import android.graphics.Rect
 import android.graphics.RectF
 import android.os.Build
@@ -28,14 +29,9 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
-import androidx.compose.animation.core.LinearEasing
-import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.animateDp
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.updateTransition
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.WindowInsets
@@ -111,19 +107,18 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawWithContent
-import androidx.compose.ui.graphics.BlurEffect
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.focus.FocusRequester
@@ -136,6 +131,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.text.input.ImeAction
@@ -151,6 +147,13 @@ import androidx.compose.foundation.isSystemInDarkTheme
 import coil.compose.AsyncImage
 import com.styropyr0.prismal.PrismalBackdrop
 import com.styropyr0.prismal.PrismalGlassSurface
+import com.styropyr0.prismal.drawPrismalGlass
+import com.styropyr0.prismal.depth.PrismalDepthInset
+import com.styropyr0.prismal.depth.PrismalDepthShadow
+import com.styropyr0.prismal.effects.PrismalAdaptiveTuning
+import com.styropyr0.prismal.effects.applyPrismalGlassEffects
+import com.styropyr0.prismal.effects.rememberPrismalAdaptiveLuminance
+import com.styropyr0.prismal.specular.PrismalSpecular
 import com.styropyr0.prismal.components.LocalPrismalBottomTabHighlightedIndex
 import com.styropyr0.prismal.components.PrismalGlassBottomTab
 import com.styropyr0.prismal.components.PrismalGlassSlider
@@ -232,6 +235,34 @@ private fun CurrentLensApp() {
     val density = LocalDensity.current
     // WindowInsets.ime is a composable local; capture it here before entering an effect.
     val imeInsets = WindowInsets.ime
+    val lifecycleOwner = context as? LifecycleOwner
+    var appResumed by remember {
+        mutableStateOf(lifecycleOwner?.lifecycle?.currentState?.isAtLeast(Lifecycle.State.RESUMED) == true)
+    }
+    var reduceMotion by remember { mutableStateOf(!ValueAnimator.areAnimatorsEnabled()) }
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            when (event) {
+                Lifecycle.Event.ON_RESUME -> {
+                    appResumed = true
+                    reduceMotion = !ValueAnimator.areAnimatorsEnabled()
+                }
+                Lifecycle.Event.ON_PAUSE, Lifecycle.Event.ON_STOP -> appResumed = false
+                else -> Unit
+            }
+        }
+        lifecycleOwner?.lifecycle?.addObserver(observer)
+        onDispose { lifecycleOwner?.lifecycle?.removeObserver(observer) }
+    }
+
+    // Prismal v1.0.4's shared 8x8 probe samples the whole root source (600ms on
+    // RenderEffect devices, 1500ms on legacy devices), not a local toolbar strip.
+    // Keep one sampler for navigation and Search; stop it when the app is backgrounded or the controls are hidden.
+    val glassLuminance = rememberPrismalAdaptiveLuminance(
+        enabled = appResumed && selectedArticle == null && !showSettings,
+        source = backdrop,
+        isLightTheme = !dark
+    )
 
     // Keep the composer IME-docked while the keyboard dismisses. Only after the
     // keyboard reaches zero inset does the capsule travel back into its tab anchor.
@@ -309,6 +340,7 @@ private fun CurrentLensApp() {
             Modifier.fillMaxSize()
                 .then(if (searchExpanded) Modifier.imePadding() else Modifier)
                 .prismalGlassLayer(backdrop)
+                .background(MaterialTheme.colorScheme.background)
         ) {
             when {
                 selectedArticle != null && quizMode -> QuizScreen(
@@ -381,6 +413,9 @@ private fun CurrentLensApp() {
                     backdrop = backdrop,
                     selectedTab = selectedTab,
                     glassAlpha = glassAlpha,
+                    luminance = glassLuminance.luminance,
+                    adaptiveContentColor = glassLuminance.contentColor,
+                    reduceMotion = reduceMotion,
                     morphProgress = if (selectedTab == SearchNavigationPolicy.SEARCH_TAB && searchMorphActive) {
                         searchMorphProgressState.value
                     } else 0f,
@@ -432,6 +467,8 @@ private fun CurrentLensApp() {
                     },
                     backdrop = backdrop,
                     glassAlpha = glassAlpha,
+                    luminance = glassLuminance.luminance,
+                    adaptiveContentColor = glassLuminance.contentColor,
                     query = searchQuery,
                     onQueryChange = { searchQuery = it },
                     focusRequester = searchFocusRequester,
@@ -711,6 +748,8 @@ private fun SearchMorphField(
     modifier: Modifier,
     backdrop: PrismalBackdrop,
     glassAlpha: Float,
+    luminance: Float,
+    adaptiveContentColor: Color,
     query: String,
     onQueryChange: (String) -> Unit,
     focusRequester: FocusRequester,
@@ -719,127 +758,63 @@ private fun SearchMorphField(
     onSubmit: () -> Unit,
     onClear: () -> Unit
 ) {
-    val dark = isSystemInDarkTheme()
     val density = LocalDensity.current
-    val textColor = MaterialTheme.colorScheme.onSurface
     val progress = morphProgress.coerceIn(0f, 1f)
-    val collapsedFactor = SearchMorphGeometryPolicy.collapsedRefractionFactor(progress)
-    val glowIntensity by androidx.compose.animation.core.animateFloatAsState(
-        targetValue = if (query.isBlank()) 0.58f else 1f,
-        animationSpec = tween(360),
-        label = "Search glow intensity"
+    val optics = GlassOpticsPolicy.search(progress)
+    val glassTint = if (adaptiveContentColor == Color.Black) Color(0xFFF5F8FC) else Color(0xFF202B3A)
+    val tintAlpha = GlassOpticsPolicy.adaptiveTintAlpha(
+        baseAlpha = glassAlpha * optics.tintAlpha,
+        luminance = luminance,
+        minAlpha = 0.04f,
+        maxAlpha = 0.12f
     )
-    val glowMotion = rememberInfiniteTransition(label = "Search Siri glow")
-    val glowRotation by glowMotion.animateFloat(
-        initialValue = 0f,
-        targetValue = 360f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(7600, easing = LinearEasing),
-            repeatMode = RepeatMode.Restart
-        ),
-        label = "Search glow rotation"
-    )
-    val glowPulse by glowMotion.animateFloat(
-        initialValue = 0.76f,
-        targetValue = 1f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(1900),
-            repeatMode = RepeatMode.Reverse
-        ),
-        label = "Search glow pulse"
-    )
-    val glowColors = listOf(
-        Color(0xFF70E7FF),
-        Color(0xFF719DFF),
-        Color(0xFFA184FF),
-        Color(0xFFE08BFF),
-        Color(0xFFFFA5C9),
-        Color(0xFF70E7FF)
-    )
-    val glowBrush = Brush.sweepGradient(glowColors)
-    val blurRadiusPx = with(density) { 12.dp.toPx() }
 
-    BoxWithConstraints(modifier) {
-        val fieldWidth = maxWidth
-        val fieldHeight = maxHeight
-
-        // The halo is drawn on a slightly oversized off-screen layer so its blur can bloom
-        // beyond the capsule. Pre-Android-12 devices use two soft gradient strokes instead.
-        Canvas(
-            Modifier.offset(x = (-12).dp, y = (-12).dp)
-                .size(width = fieldWidth + 24.dp, height = fieldHeight + 24.dp)
-                .graphicsLayer {
-                    clip = false
-                    renderEffect = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                        BlurEffect(radiusX = blurRadiusPx, radiusY = blurRadiusPx)
-                    } else null
+    Box(modifier) {
+        Box(
+            Modifier.fillMaxSize().drawPrismalGlass(
+                backdrop = backdrop,
+                shape = { PrismalRoundedRectangle(24.dp) },
+                effects = {
+                    applyPrismalGlassEffects(
+                        density = density,
+                        adaptiveLuminance = true,
+                        luminance = luminance,
+                        blurRadiusPx = with(density) { optics.blurDp.dp.toPx() },
+                        refractionHeightPx = with(density) { optics.refractionHeightDp.dp.toPx() },
+                        refractionAmountPx = with(density) { optics.refractionAmountDp.dp.toPx() },
+                        depthEffect = true,
+                        chromaticAberration = optics.chromaticAberration,
+                        adaptiveTuning = PrismalAdaptiveTuning.Subtle
+                    )
+                },
+                specular = {
+                    PrismalSpecular.Default.copy(
+                        width = 0.65.dp,
+                        blurRadius = 0.35.dp,
+                        alpha = optics.specularAlpha
+                    )
+                },
+                depthShadow = {
+                    PrismalDepthShadow(
+                        radius = 14.dp,
+                        offset = DpOffset(0.dp, 2.dp),
+                        color = Color.Black.copy(alpha = 0.12f),
+                        alpha = optics.shadowAlpha
+                    )
+                },
+                depthInset = {
+                    PrismalDepthInset(
+                        radius = 5.dp,
+                        offset = DpOffset(0.dp, 1.dp),
+                        color = Color.Black.copy(alpha = 0.07f),
+                        alpha = optics.insetAlpha
+                    )
+                },
+                onDrawSurface = {
+                    drawRect(glassTint.copy(alpha = tintAlpha))
                 }
-        ) {
-            val inset = 12.dp.toPx()
-            val haloSize = androidx.compose.ui.geometry.Size(
-                (size.width - inset * 2f).coerceAtLeast(1f),
-                (size.height - inset * 2f).coerceAtLeast(1f)
             )
-            val haloCorner = CornerRadius(haloSize.height / 2f)
-            rotate(
-                degrees = glowRotation,
-                pivot = Offset(size.width / 2f, size.height / 2f)
-            ) {
-                if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) {
-                    drawRoundRect(
-                        brush = glowBrush,
-                        topLeft = Offset(inset, inset),
-                        size = haloSize,
-                        cornerRadius = haloCorner,
-                        alpha = 0.10f * glowIntensity * glowPulse,
-                        style = Stroke(width = 18.dp.toPx())
-                    )
-                    drawRoundRect(
-                        brush = glowBrush,
-                        topLeft = Offset(inset, inset),
-                        size = haloSize,
-                        cornerRadius = haloCorner,
-                        alpha = 0.18f * glowIntensity * glowPulse,
-                        style = Stroke(width = 10.dp.toPx())
-                    )
-                }
-                drawRoundRect(
-                    brush = glowBrush,
-                    topLeft = Offset(inset, inset),
-                    size = haloSize,
-                    cornerRadius = haloCorner,
-                    alpha = 0.30f * glowIntensity * glowPulse,
-                    style = Stroke(width = 6.dp.toPx())
-                )
-            }
-        }
-
-        PrismalGlassSurface(
-            backdrop = backdrop,
-            modifier = Modifier.fillMaxSize(),
-            shape = { PrismalRoundedRectangle(24.dp) },
-            blurRadius = (13f + collapsedFactor * 5f).dp,
-            refractionHeightPx = 18f + collapsedFactor * 25f,
-            refractionAmountPx = 15f + collapsedFactor * 42f,
-            depthEffect = true,
-            chromaticAberration = 0.14f + collapsedFactor * 0.46f,
-            tint = if (dark) Color(0xFF202B3A) else Color(0xFFF5F8FC),
-            tintAlpha = (glassAlpha * 0.30f).coerceIn(0.06f, 0.18f)
-        ) {}
-
-        Canvas(Modifier.matchParentSize()) {
-            rotate(
-                degrees = glowRotation,
-                pivot = Offset(size.width / 2f, size.height / 2f)
-            ) {
-                drawRoundRect(
-                    brush = glowBrush,
-                    cornerRadius = CornerRadius(size.height / 2f),
-                    alpha = 0.42f * glowIntensity * glowPulse,
-                    style = Stroke(width = 1.15.dp.toPx())
-                )
-            }
-        }
+        )
 
         Row(
             Modifier.fillMaxSize().padding(start = 13.dp, end = 6.dp),
@@ -849,25 +824,19 @@ private fun SearchMorphField(
             Icon(
                 Icons.Outlined.Search,
                 contentDescription = "Search",
-                tint = MaterialTheme.colorScheme.primary,
+                tint = adaptiveContentColor,
                 modifier = Modifier.offset(x = 6.dp * (1f - progress)).size(20.dp)
             )
             BasicTextField(
                 value = query,
                 onValueChange = onQueryChange,
-                modifier = Modifier.weight(1f).graphicsLayer { alpha = progress },
+                modifier = Modifier.weight(1f)
+                    .focusRequester(focusRequester)
+                    .graphicsLayer { alpha = progress },
                 enabled = enabled,
                 singleLine = true,
-                textStyle = MaterialTheme.typography.bodyLarge.copy(
-                    color = textColor,
-                    shadow = androidx.compose.ui.graphics.Shadow(
-                        color = Color(0xFF8EDFFF).copy(alpha = 0.24f * glowIntensity),
-                        blurRadius = with(density) { 5.dp.toPx() }
-                    )
-                ),
-                cursorBrush = Brush.linearGradient(
-                    listOf(Color(0xFF7CE5FF), Color(0xFFAE8BFF), Color(0xFFE28BFF))
-                ),
+                textStyle = MaterialTheme.typography.bodyLarge.copy(color = adaptiveContentColor),
+                cursorBrush = SolidColor(adaptiveContentColor),
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
                 keyboardActions = KeyboardActions(onSearch = { onSubmit() }),
                 decorationBox = { inner ->
@@ -875,7 +844,7 @@ private fun SearchMorphField(
                         if (query.isBlank()) {
                             Text(
                                 "Search headlines, publishers or topics…",
-                                color = MaterialTheme.colorScheme.secondary,
+                                color = adaptiveContentColor.copy(alpha = 0.64f),
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis
                             )
@@ -890,7 +859,11 @@ private fun SearchMorphField(
                     enabled = enabled,
                     modifier = Modifier.size(38.dp).graphicsLayer { alpha = progress }
                 ) {
-                    Icon(Icons.Outlined.Close, contentDescription = "Clear search")
+                    Icon(
+                        Icons.Outlined.Close,
+                        contentDescription = "Clear search",
+                        tint = adaptiveContentColor
+                    )
                 }
             }
         }
@@ -1299,6 +1272,9 @@ private fun GlassTabBar(
     backdrop: PrismalBackdrop,
     selectedTab: Int,
     glassAlpha: Float,
+    luminance: Float,
+    adaptiveContentColor: Color,
+    reduceMotion: Boolean,
     morphProgress: Float,
     onSearchAnchor: (Offset) -> Unit,
     onSelect: (Int) -> Unit
@@ -1311,6 +1287,13 @@ private fun GlassTabBar(
     val dropletBackdrop = rememberPrismalMergedSource(backdrop, tabsBackdrop)
     tabsBackdrop.readSamplingState()
     val barAlpha = GlassTabGeometryPolicy.barAlpha(morphProgress)
+    val glassTint = if (adaptiveContentColor == Color.Black) Color(0xFFEAF0FA) else Color(0xFF1C2E49)
+    val baseTintAlpha = GlassOpticsPolicy.adaptiveTintAlpha(
+        baseAlpha = glassAlpha * 0.12f,
+        luminance = luminance,
+        minAlpha = 0.035f,
+        maxAlpha = 0.13f
+    )
 
     BoxWithConstraints(
         modifier = Modifier.fillMaxWidth().height(62.dp),
@@ -1335,14 +1318,14 @@ private fun GlassTabBar(
         val restingScaleX = GlassTabGeometryPolicy.restingScale(tabWidthPx, dropletWidthPx)
         val restingScaleY = GlassTabGeometryPolicy.restingScale(contentHeightPx, dropletHeightPx)
         var dragHighlightIndex by remember { mutableStateOf<Int?>(null) }
-        val motion = remember(animationScope, tabWidthPx, isLtr) {
+        val motion = remember(animationScope, tabWidthPx, isLtr, reduceMotion) {
             PrismalSpringMotion(
                 animationScope = animationScope,
                 initialValue = selectedTab.toFloat(),
                 valueRange = 0f..3f,
                 visibilityThreshold = 0.001f,
                 initialScale = 1f,
-                pressedScale = 78f / 56f,
+                pressedScale = GlassOpticsPolicy.pressedScale(reduceMotion),
                 onDragStarted = {
                     dragHighlightIndex = value.roundToInt().coerceIn(0, 3)
                 },
@@ -1355,53 +1338,96 @@ private fun GlassTabBar(
                     val direction = if (isLtr) 1f else -1f
                     val next = (targetValue + delta.x / tabWidthPx * direction)
                         .coerceIn(0f, 3f)
-                    updateValue(next)
+                    if (reduceMotion) snapToValue(next) else updateValue(next)
                     dragHighlightIndex = next.roundToInt().coerceIn(0, 3)
                 }
             )
         }
 
-        LaunchedEffect(selectedTab) {
+        LaunchedEffect(selectedTab, reduceMotion) {
             dragHighlightIndex = null
-            motion.animateToValue(selectedTab.toFloat())
+            if (reduceMotion) motion.snapToValue(selectedTab.toFloat())
+            else motion.animateToValue(selectedTab.toFloat())
         }
 
         val highlightedIndex = dragHighlightIndex ?: selectedTab
-        val pillPress = motion.pressProgress
-        val pillVelocity = motion.velocity.coerceIn(-2f, 2f)
+        val pillPress = GlassOpticsPolicy.interactionProgress(motion.pressProgress, reduceMotion)
+        val pillVelocity = if (reduceMotion) 0f else motion.velocity.coerceIn(-2f, 2f)
         val contentTopPx = (barHeightPx - contentHeightPx) / 2f
+        val dropletOptics = GlassOpticsPolicy.droplet(pillPress, reduceMotion)
+        val dropletTint = if (adaptiveContentColor == Color.Black) Color(0xFFE8F1FF) else Color(0xFF1C2E49)
+        val dropletTintAlpha = GlassOpticsPolicy.adaptiveTintAlpha(
+            baseAlpha = glassAlpha * dropletOptics.tintAlpha,
+            luminance = luminance,
+            minAlpha = 0.045f,
+            maxAlpha = 0.14f
+        )
 
-        // Base navigation glass: the effect remains on the control, while the full-screen
-        // captured content remains available to the sampled glass behind and around it.
-        PrismalGlassSurface(
-            backdrop = backdrop,
-            modifier = Modifier.fillMaxSize().graphicsLayer { alpha = barAlpha },
-            shape = { PrismalCapsule() },
-            blurRadius = 10.dp,
-            refractionHeightPx = with(density) { 20.dp.toPx() },
-            refractionAmountPx = with(density) { 26.dp.toPx() },
-            depthEffect = true,
-            chromaticAberration = 0.08f,
-            tint = if (isSystemInDarkTheme()) Color(0xFF263247) else Color(0xFFEAF0FA),
-            tintAlpha = (glassAlpha * 0.16f).coerceIn(0.04f, 0.13f)
-        ) {}
+        // The sampled root includes the page background and content, but excludes this
+        // overlay bar; the tab-content layer is merged only for the selected droplet.
+        Box(
+            Modifier.fillMaxSize().graphicsLayer { alpha = barAlpha }.drawPrismalGlass(
+                backdrop = backdrop,
+                shape = { PrismalCapsule() },
+                effects = {
+                    applyPrismalGlassEffects(
+                        density = density,
+                        adaptiveLuminance = true,
+                        luminance = luminance,
+                        blurRadiusPx = with(density) { 6.dp.toPx() },
+                        refractionHeightPx = with(density) { 14.dp.toPx() },
+                        refractionAmountPx = with(density) { 20.dp.toPx() },
+                        depthEffect = true,
+                        chromaticAberration = 0.015f,
+                        adaptiveTuning = PrismalAdaptiveTuning.Subtle
+                    )
+                },
+                specular = {
+                    PrismalSpecular.Default.copy(
+                        width = 0.6.dp,
+                        blurRadius = 0.4.dp,
+                        alpha = 0.48f
+                    )
+                },
+                depthShadow = {
+                    PrismalDepthShadow(
+                        radius = 18.dp,
+                        offset = DpOffset(0.dp, 3.dp),
+                        color = Color.Black.copy(alpha = 0.10f),
+                        alpha = 0.28f
+                    )
+                },
+                depthInset = {
+                    PrismalDepthInset(
+                        radius = 4.dp,
+                        offset = DpOffset(0.dp, 1.dp),
+                        color = Color.Black.copy(alpha = 0.06f),
+                        alpha = 0.06f
+                    )
+                },
+                onDrawSurface = {
+                    drawRect(glassTint.copy(alpha = baseTintAlpha))
+                }
+            )
+        )
 
         CompositionLocalProvider(
             LocalPrismalBottomTabHighlightedIndex provides { highlightedIndex }
         ) {
-            // Invisible capture row supplies the icons and labels as a second refractive
-            // source. This is how the selected droplet samples the tab content, not a fake blur.
+            // Capture the tab glyphs once as a second source; keep this hidden layer
+            // out of the accessibility tree so each destination is announced only once.
             Row(
                 Modifier.graphicsLayer { alpha = 0f }
+                    .clearAndSetSemantics {}
                     .prismalGlassLayer(tabsBackdrop)
                     .fillMaxSize()
                     .padding(horizontal = 4.dp, vertical = 3.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                GlassTab(0, "Today", Icons.Outlined.Today, onSelect)
-                GlassTab(1, "Explore", Icons.Outlined.Explore, onSelect)
-                GlassTab(2, "Search", Icons.Outlined.Search, onSelect)
-                GlassTab(3, "You", Icons.Outlined.Person, onSelect)
+                GlassTab(0, "Today", Icons.Outlined.Today, onSelect, adaptiveContentColor)
+                GlassTab(1, "Explore", Icons.Outlined.Explore, onSelect, adaptiveContentColor)
+                GlassTab(2, "Search", Icons.Outlined.Search, onSelect, adaptiveContentColor)
+                GlassTab(3, "You", Icons.Outlined.Person, onSelect, adaptiveContentColor)
             }
 
             Row(
@@ -1410,15 +1436,15 @@ private fun GlassTabBar(
                     .graphicsLayer { alpha = barAlpha },
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                GlassTab(0, "Today", Icons.Outlined.Today, onSelect)
-                GlassTab(1, "Explore", Icons.Outlined.Explore, onSelect)
-                GlassTab(2, "Search", Icons.Outlined.Search, onSelect, onSearchAnchor)
-                GlassTab(3, "You", Icons.Outlined.Person, onSelect)
+                GlassTab(0, "Today", Icons.Outlined.Today, onSelect, adaptiveContentColor)
+                GlassTab(1, "Explore", Icons.Outlined.Explore, onSelect, adaptiveContentColor)
+                GlassTab(2, "Search", Icons.Outlined.Search, onSelect, adaptiveContentColor, onSearchAnchor)
+                GlassTab(3, "You", Icons.Outlined.Person, onSelect, adaptiveContentColor)
             }
         }
 
-        // Gesture hit-target stays at one tab wide; the rendered droplet has a larger
-        // sampling area so its lens can stretch outside the navigation capsule while pulled.
+        // Gesture target remains one tab wide; the optical surface has extra sampling
+        // area so its lens can flex beyond the resting tab footprint without parent clipping.
         Box(
             Modifier.offset {
                 IntOffset(
@@ -1430,8 +1456,6 @@ private fun GlassTabBar(
                 .then(motion.modifier)
         )
 
-        // Resting scale matches the tab cell exactly. As the finger presses and pulls,
-        // Prismal's spring and tracked velocity expand and shear this larger optical lens.
         Box(
             Modifier.offset {
                 val center = GlassTabGeometryPolicy.tabCenterPx(
@@ -1450,22 +1474,51 @@ private fun GlassTabBar(
                     clip = false
                 }
         ) {
-            PrismalGlassSurface(
-                backdrop = dropletBackdrop,
-                modifier = Modifier.fillMaxSize(),
-                shape = { PrismalCapsule() },
-                blurRadius = 12.dp,
-                refractionHeightPx = with(density) {
-                    (12.dp + 20.dp * pillPress).toPx()
-                },
-                refractionAmountPx = with(density) {
-                    (25.dp + 42.dp * pillPress).toPx()
-                },
-                depthEffect = true,
-                chromaticAberration = 0.18f + pillPress * 0.48f,
-                tint = if (isSystemInDarkTheme()) Color(0xFF1C2E49) else Color(0xFFE8F1FF),
-                tintAlpha = (glassAlpha * 0.22f).coerceIn(0.05f, 0.15f)
-            ) {}
+            Box(
+                Modifier.fillMaxSize().drawPrismalGlass(
+                    backdrop = dropletBackdrop,
+                    shape = { PrismalCapsule() },
+                    effects = {
+                        applyPrismalGlassEffects(
+                            density = density,
+                            adaptiveLuminance = true,
+                            luminance = luminance,
+                            blurRadiusPx = with(density) { dropletOptics.blurDp.dp.toPx() },
+                            refractionHeightPx = with(density) { dropletOptics.refractionHeightDp.dp.toPx() },
+                            refractionAmountPx = with(density) { dropletOptics.refractionAmountDp.dp.toPx() },
+                            depthEffect = true,
+                            chromaticAberration = dropletOptics.chromaticAberration,
+                            adaptiveTuning = PrismalAdaptiveTuning.Subtle
+                        )
+                    },
+                    specular = {
+                        PrismalSpecular.Default.copy(
+                            width = 0.7.dp,
+                            blurRadius = 0.4.dp,
+                            alpha = dropletOptics.specularAlpha
+                        )
+                    },
+                    depthShadow = {
+                        PrismalDepthShadow(
+                            radius = 12.dp,
+                            offset = DpOffset(0.dp, 2.dp),
+                            color = Color.Black.copy(alpha = 0.12f),
+                            alpha = dropletOptics.shadowAlpha
+                        )
+                    },
+                    depthInset = {
+                        PrismalDepthInset(
+                            radius = 5.dp,
+                            offset = DpOffset(0.dp, 1.dp),
+                            color = Color.Black.copy(alpha = 0.08f),
+                            alpha = dropletOptics.insetAlpha
+                        )
+                    },
+                    onDrawSurface = {
+                        drawRect(dropletTint.copy(alpha = dropletTintAlpha))
+                    }
+                )
+            )
         }
     }
 }
@@ -1476,12 +1529,13 @@ private fun RowScope.GlassTab(
     label: String,
     icon: ImageVector,
     onSelect: (Int) -> Unit,
+    adaptiveContentColor: Color,
     onPositioned: ((Offset) -> Unit)? = null
 ) {
     val highlighted = LocalPrismalBottomTabHighlightedIndex.current()
-    val selected = highlighted == index
-    val tint = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
-    val tabModifier = if (onPositioned != null) {
+    val isSelected = highlighted == index
+    val tint = if (isSelected) adaptiveContentColor else adaptiveContentColor.copy(alpha = 0.66f)
+    val positionModifier = if (onPositioned != null) {
         Modifier.onGloballyPositioned { coordinates ->
             onPositioned(
                 coordinates.positionInRoot() + Offset(
@@ -1491,13 +1545,14 @@ private fun RowScope.GlassTab(
             )
         }
     } else Modifier
+    val tabModifier = positionModifier.semantics(mergeDescendants = true) { selected = isSelected }
     PrismalGlassBottomTab(onClick = { onSelect(index) }, modifier = tabModifier) {
         Icon(icon, contentDescription = label, tint = tint, modifier = Modifier.size(20.dp))
         Text(
             label,
             fontSize = 9.sp,
             lineHeight = 11.sp,
-            fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
+            fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
             color = tint
         )
     }
