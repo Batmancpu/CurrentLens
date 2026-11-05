@@ -56,6 +56,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.requiredHeight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
@@ -338,7 +339,6 @@ private fun CurrentLensApp() {
         val targetWidth = (maxWidth - 32.dp).coerceAtLeast(180.dp)
         val sourceWidthPx = with(density) { sourceWidth.toPx() }
         val sourceHeightPx = with(density) { sourceHeight.toPx() }
-        val searchHeightPx = with(density) { searchHeight.toPx() }
         val targetWidthPx = with(density) { targetWidth.toPx() }
         val collapsedIconOffsetPx = SearchMorphGeometryPolicy.collapsedIconOffsetPx(
             sourceWidthPx = sourceWidthPx,
@@ -464,31 +464,32 @@ private fun CurrentLensApp() {
                         searchDockPositionState.value = coordinates.positionInRoot()
                     }
             ) {
+                val anchor = searchTabAnchorState.value.takeIf { it != Offset.Zero } ?: fallbackAnchor
+                val dock = searchDockPositionState.value.takeIf { it != Offset.Zero } ?: fallbackDock
+                // Interpolate real layout bounds instead of non-uniformly scaling a
+                // full-width capsule. PrismalCapsule derives its radius from the live
+                // dimensions, so its end caps stay circular throughout the morph.
+                val morphFrame = SearchMorphGeometryPolicy.frame(
+                    sourceLeftPx = anchor.x - sourceWidthPx / 2f,
+                    sourceTopPx = anchor.y - sourceHeightPx / 2f,
+                    sourceWidthPx = sourceWidthPx,
+                    sourceHeightPx = sourceHeightPx,
+                    dockLeftPx = dock.x,
+                    dockTopPx = dock.y,
+                    dockWidthPx = targetWidthPx,
+                    dockHeightPx = with(density) { searchHeight.toPx() },
+                    progress = searchMorphProgress
+                )
                 SearchMorphField(
-                    modifier = Modifier.fillMaxSize().graphicsLayer {
-                        val progress = searchMorphProgress.coerceIn(0f, 1f)
-                        val anchor = searchTabAnchorState.value.takeIf { it != Offset.Zero } ?: fallbackAnchor
-                        val dock = searchDockPositionState.value.takeIf { it != Offset.Zero } ?: fallbackDock
-                        val sourceLeft = anchor.x - sourceWidthPx / 2f
-                        val sourceTop = anchor.y - sourceHeightPx / 2f
-                        // The dock follows imePadding() frame-by-frame. One spring interpolates
-                        // between the fixed tab anchor and the moving dock without retargeting
-                        // several animateDp values on every inset frame.
-                        translationX = (sourceLeft - dock.x) * (1f - progress)
-                        translationY = (sourceTop - dock.y) * (1f - progress)
-                        scaleX = SearchMorphGeometryPolicy.scaleFromAnchor(
-                            sourceDimensionPx = sourceWidthPx,
-                            targetDimensionPx = targetWidthPx,
-                            progress = progress
-                        )
-                        scaleY = SearchMorphGeometryPolicy.scaleFromAnchor(
-                            sourceDimensionPx = sourceHeightPx,
-                            targetDimensionPx = searchHeightPx,
-                            progress = progress
-                        )
-                        transformOrigin = TransformOrigin(0f, 0f)
-                        alpha = SearchMorphGeometryPolicy.fieldAlpha(progress)
-                    },
+                    modifier = Modifier
+                        .offset {
+                            IntOffset(
+                                morphFrame.offsetXPx.roundToInt(),
+                                morphFrame.offsetYPx.roundToInt()
+                            )
+                        }
+                        .width(with(density) { morphFrame.widthPx.toDp() })
+                        .requiredHeight(with(density) { morphFrame.heightPx.toDp() }),
                     backdrop = backdrop,
                     glassAlpha = glassAlpha,
                     luminance = glassLuminance.luminance,
@@ -800,7 +801,9 @@ private fun SearchMorphField(
 
     Box(modifier) {
         Box(
-            Modifier.fillMaxSize().drawPrismalGlass(
+            Modifier.fillMaxSize()
+                .graphicsLayer { alpha = SearchMorphGeometryPolicy.fieldAlpha(progress) }
+                .drawPrismalGlass(
                 backdrop = backdrop,
                 shape = { PrismalCapsule() },
                 effects = {
@@ -818,22 +821,22 @@ private fun SearchMorphField(
                 },
                 specular = {
                     PrismalSpecular.Default.copy(
-                        width = 0.65.dp,
-                        blurRadius = 0.35.dp,
+                        width = (0.55f + 0.20f * progress).dp,
+                        blurRadius = (0.30f + 0.15f * progress).dp,
                         alpha = optics.specularAlpha
                     )
                 },
                 depthShadow = {
                     PrismalDepthShadow(
-                        radius = 14.dp,
-                        offset = DpOffset(0.dp, 2.dp),
+                        radius = (12f + 6f * progress).dp,
+                        offset = DpOffset(0.dp, (2f + progress).dp),
                         color = Color.Black.copy(alpha = 0.12f),
                         alpha = optics.shadowAlpha
                     )
                 },
                 depthInset = {
                     PrismalDepthInset(
-                        radius = 5.dp,
+                        radius = (4f + progress).dp,
                         offset = DpOffset(0.dp, 1.dp),
                         color = Color.Black.copy(alpha = 0.07f),
                         alpha = optics.insetAlpha
@@ -846,7 +849,9 @@ private fun SearchMorphField(
         )
 
         Row(
-            Modifier.fillMaxSize().padding(start = 13.dp, end = 6.dp),
+            Modifier.fillMaxSize()
+                .padding(start = 13.dp, end = 6.dp)
+                .graphicsLayer { alpha = SearchMorphGeometryPolicy.fieldAlpha(progress) },
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {

@@ -41,16 +41,17 @@ internal object GlassOpticsPolicy {
 
     fun search(morphProgress: Float): GlassOpticsProfile {
         val progress = if (morphProgress.isFinite()) morphProgress.coerceIn(0f, 1f) else 0f
-        val collapsed = 1f - progress
+        // A larger morph represents a thicker control: increase lensing, edge light
+        // and separation with area instead of making the expanded field optically flatter.
         return GlassOpticsProfile(
-            blurDp = 5.5f,
-            refractionHeightDp = 9f + 3f * collapsed,
-            refractionAmountDp = 14f + 8f * collapsed,
-            chromaticAberration = 0.012f + 0.028f * collapsed,
-            specularAlpha = 0.42f,
-            shadowAlpha = 0.20f,
-            insetAlpha = 0.04f,
-            tintAlpha = 0.16f
+            blurDp = 5.5f + 1.0f * progress,
+            refractionHeightDp = 9f + 4f * progress,
+            refractionAmountDp = 14f + 8f * progress,
+            chromaticAberration = 0.012f + 0.012f * progress,
+            specularAlpha = 0.34f + 0.12f * progress,
+            shadowAlpha = 0.16f + 0.16f * progress,
+            insetAlpha = 0.03f + 0.04f * progress,
+            tintAlpha = 0.13f + 0.02f * progress
         )
     }
 

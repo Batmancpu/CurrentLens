@@ -37,16 +37,25 @@ class GlassOpticsPolicyTest {
     }
 
     @Test
-    fun searchGlassStaysRestrainedThroughoutItsMorph() {
+    fun searchGlassGainsOpticalDepthAsItsCapsuleExpands() {
         val collapsed = GlassOpticsPolicy.search(0f)
         val expanded = GlassOpticsPolicy.search(1f)
 
-        assertTrue(collapsed.refractionHeightDp > 0f)
-        assertTrue(expanded.refractionHeightDp > 0f)
-        assertTrue(collapsed.chromaticAberration <= 0.04f)
-        assertTrue(expanded.chromaticAberration <= 0.04f)
-        assertTrue(collapsed.blurDp <= 6f)
-        assertEquals(collapsed.specularAlpha, expanded.specularAlpha, 0.0001f)
+        assertTrue(expanded.blurDp > collapsed.blurDp)
+        assertTrue(expanded.refractionHeightDp > collapsed.refractionHeightDp)
+        assertTrue(expanded.refractionAmountDp > collapsed.refractionAmountDp)
+        assertTrue(expanded.specularAlpha > collapsed.specularAlpha)
+        assertTrue(expanded.shadowAlpha > collapsed.shadowAlpha)
+        assertTrue(expanded.insetAlpha > collapsed.insetAlpha)
+        assertTrue(collapsed.chromaticAberration <= 0.03f)
+        assertTrue(expanded.chromaticAberration <= 0.03f)
+    }
+
+    @Test
+    fun searchOpticsClampAndRejectNonFiniteMorphProgress() {
+        assertEquals(GlassOpticsPolicy.search(0f), GlassOpticsPolicy.search(-4f))
+        assertEquals(GlassOpticsPolicy.search(1f), GlassOpticsPolicy.search(4f))
+        assertEquals(GlassOpticsPolicy.search(0f), GlassOpticsPolicy.search(Float.NaN))
     }
 
     @Test
