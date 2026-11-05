@@ -78,6 +78,7 @@ import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material.icons.outlined.Today
+import androidx.compose.material.icons.outlined.Tune
 import androidx.compose.material.icons.outlined.TextDecrease
 import androidx.compose.material.icons.outlined.TextIncrease
 import androidx.compose.material3.Button
@@ -85,14 +86,18 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.Surface
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
@@ -182,23 +187,48 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent {
             val dark = isSystemInDarkTheme()
-            MaterialTheme(
-                colorScheme = if (dark) {
-                    darkColorScheme(
-                        primary = Color(0xFFB9CAFF),
-                        background = Color(0xFF0D1118),
-                        surface = Color(0xFF171D27),
-                        surfaceVariant = Color(0xFF252D3A)
-                    )
-                } else {
-                    lightColorScheme(
-                        primary = Color(0xFF2859A8),
-                        background = Color(0xFFF5F6F8),
-                        surface = Color.White,
-                        surfaceVariant = Color(0xFFE9EDF3)
-                    )
-                }
-            ) { CurrentLensApp() }
+            val colors = if (dark) {
+                darkColorScheme(
+                    primary = Color(0xFFB9CAFF),
+                    onPrimary = Color(0xFF15233B),
+                    primaryContainer = Color(0xFF293D5C),
+                    onPrimaryContainer = Color(0xFFE2EAFF),
+                    secondary = Color(0xFFBBC8DA),
+                    onSecondary = Color(0xFF253244),
+                    background = Color(0xFF0D1118),
+                    onBackground = Color(0xFFF1F4F8),
+                    surface = Color(0xFF171D27),
+                    onSurface = Color(0xFFF1F4F8),
+                    surfaceVariant = Color(0xFF252D3A),
+                    onSurfaceVariant = Color(0xFFC2CBD7),
+                    outline = Color(0xFF4A586B),
+                    error = Color(0xFFFFB4AB)
+                )
+            } else {
+                lightColorScheme(
+                    primary = Color(0xFF315F9F),
+                    onPrimary = Color.White,
+                    primaryContainer = Color(0xFFDCE8FF),
+                    onPrimaryContainer = Color(0xFF142A49),
+                    secondary = Color(0xFF52657D),
+                    onSecondary = Color.White,
+                    background = Color(0xFFF5F7FA),
+                    onBackground = Color(0xFF18212D),
+                    surface = Color.White,
+                    onSurface = Color(0xFF1A2431),
+                    surfaceVariant = Color(0xFFE9EEF5),
+                    onSurfaceVariant = Color(0xFF526176),
+                    outline = Color(0xFF8291A5),
+                    error = Color(0xFFBA1A1A)
+                )
+            }
+            MaterialTheme(colorScheme = colors) {
+                Surface(
+                    modifier = Modifier.fillMaxSize(),
+                    color = colors.background,
+                    contentColor = colors.onBackground
+                ) { CurrentLensApp() }
+            }
         }
     }
 }
@@ -724,6 +754,7 @@ private fun ExploreFeed(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun SearchFeed(
     articles: List<Article>,
@@ -736,11 +767,24 @@ private fun SearchFeed(
     var selectedCategory by remember { mutableStateOf("All") }
     var selectedSubject by remember { mutableStateOf("All") }
     var selectedGsPaper by remember { mutableStateOf("All") }
+    var showFilters by remember { mutableStateOf(false) }
+    val filterSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val keyboardController = LocalSoftwareKeyboardController.current
     val categories = listOf("All", "India", "World", "Politics", "Economy", "Environment", "Science", "Explained", "UPSC", "Opinion")
     val subjects = remember(articles) {
         listOf("All") + articles.map { UpscEngine.classify(it).subject }.distinct().sorted()
     }
     val gsPapers = listOf("All", "GS I", "GS II", "GS III", "GS IV", "Unmapped")
+    val activeFilterCount = listOf(
+        selectedCategory != "All",
+        selectedGsPaper != "All",
+        selectedSubject != "All"
+    ).count { it }
+    val activeSummary = listOfNotNull(
+        selectedCategory.takeIf { it != "All" },
+        selectedGsPaper.takeIf { it != "All" },
+        selectedSubject.takeIf { it != "All" }
+    ).joinToString(" · ")
     val filtered = articles.filter { article ->
         val relevance = UpscEngine.classify(article)
         ExploreFilters.matches(article, selectedCategory, query) &&
@@ -748,9 +792,38 @@ private fun SearchFeed(
             (selectedGsPaper == "All" || relevance.gsPaper == selectedGsPaper)
     }
     Column(Modifier.fillMaxSize()) {
-        FilterChipRow("Topic", categories, selectedCategory, { selectedCategory = it })
-        FilterChipRow("GS paper", gsPapers, selectedGsPaper, { selectedGsPaper = it })
-        FilterChipRow("Subject", subjects, selectedSubject, { selectedSubject = it })
+        Row(
+            Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 5.dp, bottom = 2.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                Text(
+                    if (query.isBlank()) "RECENT ARTICLES" else "SEARCH RESULTS",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.secondary,
+                    letterSpacing = 1.0.sp,
+                    fontWeight = FontWeight.SemiBold
+                )
+                Text(
+                    if (activeFilterCount == 0) "All topics and subjects" else activeSummary,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+            FilterChip(
+                selected = activeFilterCount > 0,
+                onClick = {
+                    keyboardController?.hide()
+                    showFilters = true
+                },
+                label = { Text(if (activeFilterCount == 0) "Filters" else "Filters · $activeFilterCount") },
+                leadingIcon = {
+                    Icon(Icons.Outlined.Tune, contentDescription = null, modifier = Modifier.size(16.dp))
+                }
+            )
+        }
         LazyColumn(
             Modifier.weight(1f),
             contentPadding = PaddingValues(
@@ -763,6 +836,40 @@ private fun SearchFeed(
                 EmptyPanel("No matching articles", "Change your search or remove one of the filters.")
             } else items(filtered, key = { it.id }) { article ->
                 NewsCard(article, bookmarks.contains(article.url), onOpenArticle, onToggleBookmark)
+            }
+        }
+    }
+    if (showFilters) {
+        ModalBottomSheet(
+            onDismissRequest = { showFilters = false },
+            sheetState = filterSheetState,
+            containerColor = MaterialTheme.colorScheme.surface,
+            contentColor = MaterialTheme.colorScheme.onSurface
+        ) {
+            Column(
+                Modifier.fillMaxWidth().padding(horizontal = 18.dp, vertical = 10.dp),
+                verticalArrangement = Arrangement.spacedBy(9.dp)
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                        Text("Refine articles", style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.SemiBold)
+                        Text("Filters update the results immediately.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.secondary)
+                    }
+                    TextButton(onClick = {
+                        selectedCategory = "All"
+                        selectedGsPaper = "All"
+                        selectedSubject = "All"
+                    }) { Text("Reset") }
+                }
+                FilterChipRow("Topic", categories, selectedCategory, { selectedCategory = it })
+                FilterChipRow("GS paper", gsPapers, selectedGsPaper, { selectedGsPaper = it })
+                FilterChipRow("Subject", subjects, selectedSubject, { selectedSubject = it })
+                Button(onClick = { showFilters = false }, modifier = Modifier.fillMaxWidth()) {
+                    Text("Done")
+                }
             }
         }
     }
@@ -877,7 +984,7 @@ private fun SearchMorphField(
                     Box(contentAlignment = Alignment.CenterStart) {
                         if (query.isBlank()) {
                             Text(
-                                "Search headlines, publishers or topics…",
+                                "Search articles",
                                 color = adaptiveContentColor.copy(alpha = 0.64f),
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis
@@ -979,17 +1086,20 @@ private fun YouDashboard(
 ) {
     val answersAttempted = attempts.sumOf { it.answeredCount }
     val correctAnswers = attempts.sumOf { it.correctCount }
-    val wrongAnswers = attempts.sumOf { it.wrongCount }
+    val accuracy = if (answersAttempted == 0) "—"
+        else ((correctAnswers * 100f / answersAttempted).toInt().toString() + "%")
     LazyColumn(
         Modifier.fillMaxSize(),
         contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 112.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
+        verticalArrangement = Arrangement.spacedBy(13.dp)
     ) {
         item {
-            Text("YOUR ACTIVITY", color = MaterialTheme.colorScheme.primary,
-                fontWeight = FontWeight.Bold, fontSize = 10.sp, letterSpacing = 1.4.sp)
-            Text("A private snapshot of your reading and UPSC practice.",
-                style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.secondary)
+            Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                Text("YOUR ACTIVITY", color = MaterialTheme.colorScheme.primary,
+                    fontWeight = FontWeight.Bold, fontSize = 10.sp, letterSpacing = 1.4.sp)
+                Text("A private snapshot of your reading and practice.",
+                    style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.secondary)
+            }
         }
         item {
             Row(horizontalArrangement = Arrangement.spacedBy(9.dp)) {
@@ -997,40 +1107,52 @@ private fun YouDashboard(
                 MetricTile("Read today", articlesReadToday.toString(), Modifier.weight(1f))
             }
         }
-        item {
-            Row(horizontalArrangement = Arrangement.spacedBy(9.dp)) {
-                MetricTile("Saved", savedCount.toString(), Modifier.weight(1f))
-                MetricTile("Quiz attempts", attempts.size.toString(), Modifier.weight(1f))
+        if (attempts.isEmpty()) {
+            item {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(21.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+                ) {
+                    Column(Modifier.fillMaxWidth().padding(17.dp),
+                        verticalArrangement = Arrangement.spacedBy(5.dp)) {
+                        Text("Practice when you're ready",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.onSurface)
+                        Text(
+                            "Reading checks you submit from articles will appear here. Unsubmitted answers are never counted.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            }
+        } else {
+            item {
+                Row(horizontalArrangement = Arrangement.spacedBy(9.dp)) {
+                    MetricTile("Quiz attempts", attempts.size.toString(), Modifier.weight(1f))
+                    MetricTile("Accuracy", accuracy, Modifier.weight(1f))
+                }
             }
         }
         item {
-            Row(horizontalArrangement = Arrangement.spacedBy(9.dp)) {
-                MetricTile("Answers attempted", answersAttempted.toString(), Modifier.weight(1f))
-                MetricTile("Correct", correctAnswers.toString(), Modifier.weight(1f))
-            }
-        }
-        item {
-            Row(horizontalArrangement = Arrangement.spacedBy(9.dp)) {
-                MetricTile("Incorrect", wrongAnswers.toString(), Modifier.weight(1f))
-                MetricTile("Accuracy", if (answersAttempted == 0) "—" else
-                    ((correctAnswers * 100f / answersAttempted).toInt().toString() + "%"),
-                    Modifier.weight(1f))
-            }
-        }
-        item {
-            Text("YOUR LIBRARY & STATS", color = MaterialTheme.colorScheme.primary,
+            Text("YOUR LIBRARY", color = MaterialTheme.colorScheme.primary,
                 fontWeight = FontWeight.Bold, fontSize = 10.sp, letterSpacing = 1.4.sp,
-                modifier = Modifier.padding(top = 8.dp))
-        }
-        item { DestinationRow("Saved", "Your bookmarked articles", savedCount.toString(), onSaved) }
-        item { DestinationRow("Reading Stats", "Daily reading time, articles and filters", "›", onReadingStats) }
-        item { DestinationRow("Quiz & Practice Stats", "Submitted answers, correct and incorrect", "›", onQuizStats) }
-        item { DestinationRow("Settings", "Liquid Glass appearance", "›", onSettings) }
-        item {
-            Text("Legacy read markers remain available as history and contribute only to the unique-article count; their original dates and durations are unknown. Timed reading begins when an article loads and stays in the foreground for at least five seconds.",
-                style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.secondary,
                 modifier = Modifier.padding(top = 5.dp))
         }
+        item { DestinationRow("Saved", "Your bookmarked articles", savedCount.toString(), onSaved) }
+        item { DestinationRow("Reading Stats", "Daily reading time and article activity", "›", onReadingStats) }
+        item {
+            DestinationRow(
+                "Quiz & Practice Stats",
+                if (attempts.isEmpty()) "Submitted practice results will appear here"
+                else "$answersAttempted answers · $correctAnswers correct",
+                "›", onQuizStats
+            )
+        }
+        item { DestinationRow("Settings", "Liquid Glass appearance", "›", onSettings) }
     }
 }
 
@@ -1235,50 +1357,57 @@ private fun NewsCard(
     onToggleBookmark: (Article) -> Unit
 ) {
     val relevance = remember(article.id) { UpscEngine.classify(article) }
-    Card(modifier = Modifier.fillMaxWidth().clickable { onOpenArticle(article) },
+    val syllabusHint = remember(article.id, relevance.gsPaper, relevance.subject, relevance.matchedTerms) {
+        ArticleCardMetaPolicy.syllabusHint(
+            gsPaper = relevance.gsPaper,
+            subject = relevance.subject,
+            matchedTerms = relevance.matchedTerms
+        )
+    }
+    Card(
+        modifier = Modifier.fillMaxWidth().clickable { onOpenArticle(article) },
         shape = RoundedCornerShape(25.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)) {
-        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+    ) {
+        Column(Modifier.padding(15.dp), verticalArrangement = Arrangement.spacedBy(9.dp)) {
             if (!article.imageUrl.isNullOrBlank()) {
-                AsyncImage(model = article.imageUrl, contentDescription = null,
-                    modifier = Modifier.fillMaxWidth().height(186.dp).clip(RoundedCornerShape(17.dp)))
+                AsyncImage(
+                    model = article.imageUrl,
+                    contentDescription = article.title,
+                    modifier = Modifier.fillMaxWidth().height(190.dp).clip(RoundedCornerShape(17.dp))
+                )
             }
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(article.source.uppercase(), color = MaterialTheme.colorScheme.primary, fontSize = 10.sp, fontWeight = FontWeight.Bold, letterSpacing = 0.7.sp)
-                Text("  ·  " + article.section, color = MaterialTheme.colorScheme.secondary, fontSize = 10.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text(article.source.uppercase(), color = MaterialTheme.colorScheme.primary,
+                    fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 0.65.sp)
+                Text("  ·  " + article.section, color = MaterialTheme.colorScheme.secondary,
+                    fontSize = 11.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 Spacer(Modifier.weight(1f))
-                IconButton(onClick = { onToggleBookmark(article) }, modifier = Modifier.size(34.dp)) {
+                IconButton(onClick = { onToggleBookmark(article) }, modifier = Modifier.size(38.dp)) {
                     Icon(if (saved) Icons.Outlined.Bookmark else Icons.Outlined.BookmarkBorder,
                         contentDescription = if (saved) "Remove bookmark" else "Save article",
-                        tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(19.dp))
+                        tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
                 }
             }
             SelectionContainer {
-                Column(verticalArrangement = Arrangement.spacedBy(7.dp)) {
-                    Text(article.title, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold, lineHeight = 28.sp)
+                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Text(article.title, style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.SemiBold, lineHeight = 28.sp)
                     if (article.description.isNotBlank()) {
                         Text(article.description, style = MaterialTheme.typography.bodyLarge,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 4, overflow = TextOverflow.Ellipsis, lineHeight = 23.sp)
+                            color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 4,
+                            overflow = TextOverflow.Ellipsis, lineHeight = 23.sp)
                     }
                 }
             }
-            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text("INDICATIVE SYLLABUS MATCH", fontSize = 10.sp, fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.primary, letterSpacing = 0.5.sp)
-                    Spacer(Modifier.weight(1f))
-                    Text(relevance.signalLabel, fontSize = 10.sp, color = MaterialTheme.colorScheme.secondary)
-                }
-                Text(relevance.gsPaper + " · " + relevance.subject, fontSize = 11.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 2, overflow = TextOverflow.Ellipsis)
-                Text(
-                    if (relevance.matchedTerms.isEmpty()) "No mapped keywords in RSS headline/excerpt"
-                    else "Matched in RSS headline/excerpt: " + relevance.matchedTerms.joinToString(", "),
-                    fontSize = 10.sp, color = MaterialTheme.colorScheme.secondary
-                )
+            syllabusHint?.let { hint ->
+                Text(hint, style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.SemiBold,
+                    maxLines = 1, overflow = TextOverflow.Ellipsis)
             }
-            Text("Read in CurrentLens  →", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.SemiBold, fontSize = 13.sp)
+            // The entire card is the reading target; a repeated CTA adds visual weight
+            // without introducing a second action.
         }
     }
 }

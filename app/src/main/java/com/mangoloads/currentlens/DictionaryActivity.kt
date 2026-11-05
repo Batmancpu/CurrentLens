@@ -231,13 +231,24 @@ class DictionaryActivity : ComponentActivity() {
                 colorScheme = if (dark) {
                     androidx.compose.material3.darkColorScheme(
                         primary = androidx.compose.ui.graphics.Color(0xFFB9CAFF),
+                        onPrimary = androidx.compose.ui.graphics.Color(0xFF15233B),
                         background = androidx.compose.ui.graphics.Color(0xFF0D1118),
-                        surface = androidx.compose.ui.graphics.Color(0xFF1B2636)
+                        onBackground = androidx.compose.ui.graphics.Color(0xFFF1F4F8),
+                        surface = androidx.compose.ui.graphics.Color(0xFF1B2636),
+                        onSurface = androidx.compose.ui.graphics.Color(0xFFF1F4F8),
+                        surfaceVariant = androidx.compose.ui.graphics.Color(0xFF252D3A),
+                        onSurfaceVariant = androidx.compose.ui.graphics.Color(0xFFC2CBD7)
                     )
                 } else {
                     androidx.compose.material3.lightColorScheme(
-                        primary = androidx.compose.ui.graphics.Color(0xFF2859A8),
-                        surface = androidx.compose.ui.graphics.Color(0xFFF7F9FC)
+                        primary = androidx.compose.ui.graphics.Color(0xFF315F9F),
+                        onPrimary = androidx.compose.ui.graphics.Color.White,
+                        background = androidx.compose.ui.graphics.Color(0xFFF5F7FA),
+                        onBackground = androidx.compose.ui.graphics.Color(0xFF18212D),
+                        surface = androidx.compose.ui.graphics.Color(0xFFF7F9FC),
+                        onSurface = androidx.compose.ui.graphics.Color(0xFF1A2431),
+                        surfaceVariant = androidx.compose.ui.graphics.Color(0xFFE9EEF5),
+                        onSurfaceVariant = androidx.compose.ui.graphics.Color(0xFF526176)
                     )
                 }
             ) {
@@ -273,8 +284,9 @@ private fun DictionaryPopup(word: String, onClose: () -> Unit) {
             modifier = Modifier.fillMaxWidth().padding(12.dp),
             shape = RoundedCornerShape(26.dp),
             color = MaterialTheme.colorScheme.surface.copy(
-                alpha = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) 0.76f else 0.90f
+                alpha = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) 0.86f else 0.94f
             ),
+            contentColor = MaterialTheme.colorScheme.onSurface,
             tonalElevation = 0.dp,
             shadowElevation = 22.dp
         ) {
