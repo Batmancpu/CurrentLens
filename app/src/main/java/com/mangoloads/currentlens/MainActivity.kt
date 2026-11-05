@@ -1295,12 +1295,16 @@ private fun ReaderScreen(article: Article, backdrop: PrismalBackdrop, glassAlpha
             IconButton(onClick = onBack) { Icon(Icons.Outlined.ArrowBack, contentDescription = "Back") }
             Column(Modifier.weight(1f)) {
                 Text(article.source, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+                val readerSourceStatus = when {
+                    extractedHtml == null -> "In-app publisher view"
+                    loadedFromCache -> "Saved public content · on this device"
+                    else -> "Public publisher content · attributed"
+                }
                 Text(
-                    when {
-                        extractedHtml == null -> "In-app publisher view"
-                        loadedFromCache -> "Saved public content · on this device"
-                        else -> "Public publisher content · attributed"
-                    },
+                    listOf(
+                        ArticlePublicationDatePolicy.label(article.publishedAtMillis),
+                        readerSourceStatus
+                    ).joinToString(" · "),
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.secondary
                 )
