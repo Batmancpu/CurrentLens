@@ -2,6 +2,12 @@
 
 A free, local-first Android news reader for Indian and international journalism, with UPSC-oriented study tools.
 
+## UPSC-first editorial gate
+
+Today, Explore and Search show only stories with a mapped GS subject and a sufficiently specific syllabus signal. Broad entertainment, celebrity, box-office, reality-TV and routine sports coverage is excluded from these default feeds; stories about an actual law, regulator or institutional policy can still qualify. Saved stories remain available because saving is an explicit user choice.
+
+This is a conservative editorial heuristic over publisher RSS titles, excerpts and section labels—not a validated UPSC relevance score, a PYQ prediction engine or a substitute for reading the primary source. A keyword match alone is not proof of syllabus relevance. Verify important claims against the original public document and the official UPSC syllabus.
+
 ## Navigation
 
 The bottom bar has **exactly four destinations**:

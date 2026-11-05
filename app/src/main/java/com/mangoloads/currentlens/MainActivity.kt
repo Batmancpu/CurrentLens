@@ -117,8 +117,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.blur
+import androidx.compose.ui.draw.BlurredEdgeTreatment
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.TransformOrigin
@@ -428,7 +431,8 @@ private fun CurrentLensApp() {
                     refreshing = refreshing,
                     loading = loading,
                     loadError = loadError,
-                    todaysArticles = ArticleFilters.today(articles, LocalDate.now(ZoneId.of(INDIA_ZONE))),
+                    todaysArticles = ArticleFilters.today(articles, LocalDate.now(ZoneId.of(INDIA_ZONE)))
+                        .filter(UpscFeedPolicy::shouldInclude),
                     allCachedArticles = articles,
                     bookmarks = bookmarks,
                     readHistory = readHistory,
@@ -581,8 +585,8 @@ private fun HomeScreen(
     }
     val subtitle = when (selectedTab) {
         0 -> dateLabel
-        1 -> "Recent stories across your sources"
-        2 -> "Find articles by topic, subject or GS paper"
+        1 -> "UPSC-relevant current affairs across GS papers"
+        2 -> "Search syllabus-aligned current affairs by topic or GS paper"
         else -> when (youPage) {
             YouPage.DASHBOARD -> "Your reading and practice at a glance"
             YouPage.SAVED -> "Your saved articles and previously opened stories"
@@ -624,7 +628,7 @@ private fun HomeScreen(
                     bookmarks, onOpenArticle, onToggleBookmark
                 )
                 1 -> ExploreFeed(
-                    ArticleFilters.explore(allCachedArticles), exploreCategory,
+                    ArticleFilters.explore(allCachedArticles).filter(UpscFeedPolicy::shouldInclude), exploreCategory,
                     { exploreCategory = it }, bookmarks, onOpenArticle, onToggleBookmark
                 )
                 2 -> SearchFeed(
@@ -669,7 +673,8 @@ private fun TodayFeed(
     val weekendStart = today.minusDays(if (today.dayOfWeek == DayOfWeek.SATURDAY) 1 else 2)
     val weekendStories = if (weekend) {
         weekendArticles.filter { article ->
-            article.weekendRead && ArticleFilters.publishedDate(article)?.let { it >= weekendStart && it <= today } == true
+            article.weekendRead && UpscFeedPolicy.shouldInclude(article) &&
+                ArticleFilters.publishedDate(article)?.let { it >= weekendStart && it <= today } == true
         }.sortedByDescending { it.publishedAtMillis ?: 0L }.take(5)
     } else emptyList()
 
@@ -681,16 +686,16 @@ private fun TodayFeed(
         if (weekendStories.isNotEmpty()) item { WeekendPanel(weekendStories, onOpenArticle) }
         item {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Text("THE DAILY EDITION", color = MaterialTheme.colorScheme.primary, fontSize = 10.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.4.sp)
+                Text("UPSC CURRENT AFFAIRS", color = MaterialTheme.colorScheme.primary, fontSize = 10.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.4.sp)
                 Spacer(Modifier.weight(1f))
-                Text(if (refreshing || loading) "Updating" else articles.size.toString() + " stories",
+                Text(if (refreshing || loading) "Updating" else articles.size.toString() + " relevant stories",
                     color = MaterialTheme.colorScheme.secondary, fontSize = 11.sp)
             }
         }
         when {
             loading && articles.isEmpty() -> item { LoadingPanel() }
             loadError && articles.isEmpty() -> item { EmptyPanel("News is temporarily unavailable", "Check your connection and refresh.") }
-            articles.isEmpty() -> item { EmptyPanel("No articles dated today yet", "Explore keeps recent stories from all your feeds.") }
+            articles.isEmpty() -> item { EmptyPanel("No UPSC-relevant stories today", "Broad entertainment and general-interest updates are filtered out. Refresh later for syllabus-linked developments.") }
             else -> items(articles.take(45), key = { it.id }) { article ->
                 NewsCard(article, bookmarks.contains(article.url), onOpenArticle, onToggleBookmark)
             }
@@ -773,11 +778,12 @@ private fun SearchFeed(
     var showFilters by remember { mutableStateOf(false) }
     val filterSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val keyboardController = LocalSoftwareKeyboardController.current
+    val eligibleArticles = remember(articles) { articles.filter(UpscFeedPolicy::shouldInclude) }
     val categories = listOf("All", "India", "World", "Politics", "Economy", "Environment", "Science", "Explained", "UPSC", "Opinion")
-    val subjects = remember(articles) {
-        listOf("All") + articles.map { UpscEngine.classify(it).subject }.distinct().sorted()
+    val subjects = remember(eligibleArticles) {
+        listOf("All") + eligibleArticles.map { UpscEngine.classify(it).subject }.distinct().sorted()
     }
-    val gsPapers = listOf("All", "GS I", "GS II", "GS III", "GS IV", "Unmapped")
+    val gsPapers = listOf("All", "GS I", "GS II", "GS III", "GS IV")
     val activeFilterCount = listOf(
         selectedCategory != "All",
         selectedGsPaper != "All",
@@ -788,7 +794,7 @@ private fun SearchFeed(
         selectedGsPaper.takeIf { it != "All" },
         selectedSubject.takeIf { it != "All" }
     ).joinToString(" · ")
-    val filtered = articles.filter { article ->
+    val filtered = eligibleArticles.filter { article ->
         val relevance = UpscEngine.classify(article)
         ExploreFilters.matches(article, selectedCategory, query) &&
             (selectedSubject == "All" || relevance.subject == selectedSubject) &&
@@ -801,14 +807,14 @@ private fun SearchFeed(
         ) {
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                 Text(
-                    if (query.isBlank()) "RECENT ARTICLES" else "SEARCH RESULTS",
+                    if (query.isBlank()) "UPSC-RELEVANT ARTICLES" else "UPSC SEARCH RESULTS",
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.secondary,
                     letterSpacing = 1.0.sp,
                     fontWeight = FontWeight.SemiBold
                 )
                 Text(
-                    if (activeFilterCount == 0) "All topics and subjects" else activeSummary,
+                    if (activeFilterCount == 0) "Syllabus-linked topics and subjects" else activeSummary,
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 1,
@@ -1034,7 +1040,9 @@ private fun SavedFeed(
     val filtered = StudyStatsPolicy.filterArticles(
         savedArticles, dateRange, selectedSubject, selectedGsPaper, today
     )
-    val previouslyOpened = articles.filter { readHistory.contains(it.url) && !bookmarks.contains(it.url) }
+    val previouslyOpened = articles.filter {
+        readHistory.contains(it.url) && !bookmarks.contains(it.url) && UpscFeedPolicy.shouldInclude(it)
+    }
         .sortedByDescending { it.publishedAtMillis ?: 0L }.take(15)
 
     Column(Modifier.fillMaxSize()) {
@@ -1367,54 +1375,81 @@ private fun NewsCard(
             matchedTerms = relevance.matchedTerms
         )
     }
-    Card(
-        modifier = Modifier.fillMaxWidth().clickable { onOpenArticle(article) },
-        shape = RoundedCornerShape(25.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+    val hasImage = !article.imageUrl.isNullOrBlank()
+    Box(
+        modifier = Modifier.fillMaxWidth().padding(vertical = 3.dp)
     ) {
-        Column(Modifier.padding(15.dp), verticalArrangement = Arrangement.spacedBy(9.dp)) {
-            if (!article.imageUrl.isNullOrBlank()) {
-                AsyncImage(
-                    model = article.imageUrl,
-                    contentDescription = article.title,
-                    modifier = Modifier.fillMaxWidth().height(190.dp).clip(RoundedCornerShape(17.dp))
-                )
-            }
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(article.source.uppercase(), color = MaterialTheme.colorScheme.primary,
-                    fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 0.65.sp)
-                Text("  ·  " + article.section, color = MaterialTheme.colorScheme.secondary,
-                    fontSize = 11.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                Spacer(Modifier.weight(1f))
-                IconButton(onClick = { onToggleBookmark(article) }, modifier = Modifier.size(38.dp)) {
-                    Icon(if (saved) Icons.Outlined.Bookmark else Icons.Outlined.BookmarkBorder,
-                        contentDescription = if (saved) "Remove bookmark" else "Save article",
-                        tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
+        if (hasImage) {
+            // Diffuse the editorial image behind the card so its palette bleeds
+            // into the text surface and neighbouring feed background.
+            AsyncImage(
+                model = article.imageUrl,
+                contentDescription = null,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.matchParentSize()
+                    .graphicsLayer {
+                        clip = false
+                        scaleX = 1.12f
+                        scaleY = 1.10f
+                    }
+                    .blur(30.dp, edgeTreatment = BlurredEdgeTreatment.Unbounded)
+                    .graphicsLayer {
+                        alpha = 0.46f
+                        clip = false
+                    }
+            )
+        }
+        Card(
+            modifier = Modifier.fillMaxWidth().clickable { onOpenArticle(article) },
+            shape = RoundedCornerShape(25.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surface.copy(alpha = if (hasImage) 0.90f else 1f)
+            ),
+            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+        ) {
+            Column(Modifier.padding(15.dp), verticalArrangement = Arrangement.spacedBy(9.dp)) {
+                if (hasImage) {
+                    AsyncImage(
+                        model = article.imageUrl,
+                        contentDescription = article.title,
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.fillMaxWidth().height(190.dp).clip(RoundedCornerShape(17.dp))
+                    )
                 }
-            }
-            SelectionContainer {
-                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                    Text(article.title, style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.SemiBold, lineHeight = 28.sp)
-                    if (article.description.isNotBlank()) {
-                        Text(article.description, style = MaterialTheme.typography.bodyLarge,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 4,
-                            overflow = TextOverflow.Ellipsis, lineHeight = 23.sp)
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(article.source.uppercase(), color = MaterialTheme.colorScheme.primary,
+                        fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 0.65.sp)
+                    Text("  ·  " + article.section, color = MaterialTheme.colorScheme.secondary,
+                        fontSize = 11.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    Spacer(Modifier.weight(1f))
+                    IconButton(onClick = { onToggleBookmark(article) }, modifier = Modifier.size(38.dp)) {
+                        Icon(if (saved) Icons.Outlined.Bookmark else Icons.Outlined.BookmarkBorder,
+                            contentDescription = if (saved) "Remove bookmark" else "Save article",
+                            tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
                     }
                 }
+                SelectionContainer {
+                    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                        Text(article.title, style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.SemiBold, lineHeight = 28.sp)
+                        if (article.description.isNotBlank()) {
+                            Text(article.description, style = MaterialTheme.typography.bodyLarge,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 4,
+                                overflow = TextOverflow.Ellipsis, lineHeight = 23.sp)
+                        }
+                    }
+                }
+                syllabusHint?.let { hint ->
+                    Text(hint, style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.SemiBold,
+                        maxLines = 1, overflow = TextOverflow.Ellipsis)
+                }
+                // The entire card is the reading target; a repeated CTA adds visual weight
+                // without introducing a second action.
             }
-            syllabusHint?.let { hint ->
-                Text(hint, style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.SemiBold,
-                    maxLines = 1, overflow = TextOverflow.Ellipsis)
-            }
-            // The entire card is the reading target; a repeated CTA adds visual weight
-            // without introducing a second action.
         }
     }
 }
-
 @Composable
 private fun LoadingPanel() {
     Column(Modifier.fillMaxWidth().padding(38.dp), horizontalAlignment = Alignment.CenterHorizontally,
