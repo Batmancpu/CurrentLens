@@ -1360,18 +1360,23 @@ private fun matchesSearchTerms(article: Article, query: String): Boolean =
 @Composable
 private fun ReaderScreen(article: Article, backdrop: PrismalBackdrop, glassAlpha: Float, dark: Boolean, onBack: () -> Unit, onQuiz: () -> Unit, onSessionRecorded: () -> Unit) {
     val context = LocalContext.current
+    val readerWebViewHolder = remember { mutableStateOf<ReaderWebView?>(null) }
+    var savedReadingProgress by remember(article.url) {
+        mutableFloatStateOf(LocalStore.readerPosition(context, article.url)?.progress ?: 0f)
+    }
 
     var contentLoaded by remember(article.url) { mutableStateOf(false) }
     val lifecycleOwner = context as? LifecycleOwner
     DisposableEffect(lifecycleOwner, article.url, contentLoaded) {
         if (!contentLoaded) {
-            onDispose { }
+            onDispose { readerWebViewHolder.value?.flushReadingPosition() }
         } else {
             val clock = ForegroundReadingSessionClock()
             fun resumeSession() {
                 clock.resume(System.currentTimeMillis(), SystemClock.elapsedRealtime())
             }
             fun flushSession() {
+                readerWebViewHolder.value?.flushReadingPosition()
                 clock.pause(SystemClock.elapsedRealtime())?.let { window ->
                     if (LocalStore.recordReadingSession(context, article, window.startedAtMillis, window.durationMillis)) {
                         onSessionRecorded()
@@ -1391,6 +1396,7 @@ private fun ReaderScreen(article: Article, backdrop: PrismalBackdrop, glassAlpha
             ) resumeSession()
             onDispose {
                 lifecycleOwner?.lifecycle?.removeObserver(observer)
+                readerWebViewHolder.value?.flushReadingPosition()
                 flushSession()
             }
         }
@@ -1431,7 +1437,10 @@ private fun ReaderScreen(article: Article, backdrop: PrismalBackdrop, glassAlpha
 
     Column(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
         Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 7.dp), verticalAlignment = Alignment.CenterVertically) {
-            IconButton(onClick = onBack) { Icon(Icons.Outlined.ArrowBack, contentDescription = "Back") }
+            IconButton(onClick = {
+                readerWebViewHolder.value?.flushReadingPosition()
+                onBack()
+            }) { Icon(Icons.Outlined.ArrowBack, contentDescription = "Back") }
             Column(Modifier.weight(1f)) {
                 Text(article.source, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
                 val readerSourceStatus = when {
@@ -1462,6 +1471,7 @@ private fun ReaderScreen(article: Article, backdrop: PrismalBackdrop, glassAlpha
                 modifier = Modifier.fillMaxSize(),
                 factory = { ctx ->
                     ReaderWebView(ctx).apply {
+                        readerWebViewHolder.value = this
                         settings.javaScriptEnabled = false
                         settings.domStorageEnabled = false
                         settings.loadsImagesAutomatically = true
@@ -1480,6 +1490,7 @@ private fun ReaderScreen(article: Article, backdrop: PrismalBackdrop, glassAlpha
                             }
                             override fun onPageFinished(view: WebView?, url: String?) {
                                 onReaderPageFinished()
+                                (view as? ReaderWebView)?.schedulePendingReadingPositionRestore()
                                 // A page that fits entirely in the viewport never scrolls, so
                                 // onScrollChanged cannot expose its end-of-reading state.
                                 (view as? ReaderWebView)?.scheduleShortPageEndCheck()
@@ -1501,7 +1512,17 @@ private fun ReaderScreen(article: Article, backdrop: PrismalBackdrop, glassAlpha
                     }
                 },
                 update = { webView ->
-                    webView.onReachedBottom = { reachedBottom = true }
+                    val articleChanged = webView.beginArticle(article.url)
+                    webView.onReadingProgressChanged = { progress ->
+                        val persisted = LocalStore.saveReaderPosition(context, article.url, progress)
+                        savedReadingProgress = if (persisted) progress else 0f
+                    }
+                    webView.onReachedBottom = {
+                        webView.markReadingPositionCompleted()
+                        LocalStore.clearReaderPosition(context, article.url)
+                        savedReadingProgress = 0f
+                        reachedBottom = true
+                    }
                     webView.onDefineWord = { word, selectionRect ->
                         val webViewLocation = IntArray(2)
                         webView.getLocationInWindow(webViewLocation)
@@ -1543,7 +1564,7 @@ private fun ReaderScreen(article: Article, backdrop: PrismalBackdrop, glassAlpha
                     // Neither the app-owned document nor publisher fallback needs DOM storage.
                     webView.settings.domStorageEnabled = false
                     webView.settings.textZoom = if (fallbackToPublisher) (fontSize * 100 / 16) else 100
-                    if (webView.beginArticle(article.url)) {
+                    if (articleChanged) {
                         reachedBottom = false
                         activeWord = null
                         activeWordAnchor = null
@@ -1552,6 +1573,8 @@ private fun ReaderScreen(article: Article, backdrop: PrismalBackdrop, glassAlpha
                     if (cleanHtml != null) {
                         val key = "reader:" + article.url + ":" + fontSize + ":" + dark
                         if (webView.loadedKey != key) {
+                            if (!articleChanged) webView.flushReadingPosition()
+                            webView.queueReadingPositionRestore(savedReadingProgress)
                             webView.loadedKey = key
                             pageLoaded = false
                             contentLoaded = false
@@ -1560,6 +1583,8 @@ private fun ReaderScreen(article: Article, backdrop: PrismalBackdrop, glassAlpha
                     } else if (fallbackToPublisher) {
                         val key = "publisher:" + article.url + ":" + fontSize
                         if (webView.loadedKey != key) {
+                            if (!articleChanged) webView.flushReadingPosition()
+                            webView.queueReadingPositionRestore(savedReadingProgress)
                             webView.loadedKey = key
                             pageLoaded = false
                             contentLoaded = false
@@ -1678,6 +1703,7 @@ private class ReaderWebView(context: android.content.Context) : WebView(context)
     var onReaderMainFrameError: () -> Unit = {}
     var allowReaderNavigation: (String) -> Boolean = { false }
     var onOpenPublisherLink: (String) -> Unit = {}
+    var onReadingProgressChanged: (Float) -> Unit = {}
     var selectionBridgeEnabled: Boolean = false
         set(value) {
             if (field != value) {
@@ -1689,14 +1715,126 @@ private class ReaderWebView(context: android.content.Context) : WebView(context)
     private var selectionModeGeneration = 0
     private var pendingAutoDefine: Runnable? = null
     private var autoDefineEvaluationPending = false
+    private var pendingReadingPositionRestore: Float? = null
+    private var readingPositionRestore: Runnable? = null
+    private var readingPositionSave: Runnable? = null
+    private var lastRestoreContentHeight = -1
+    private var stableRestoreSamples = 0
+    private var restoringReadingPosition = false
+    private var readingPositionCompleted = false
 
     fun beginArticle(url: String): Boolean {
         val changed = progressGate.beginArticle(url)
         if (changed) {
+            flushReadingPosition()
+            readingPositionSave?.let { removeCallbacks(it) }
+            readingPositionSave = null
             cancelShortPageEndCheck(resetStability = true)
             cancelPendingAutoDefine()
+            cancelReadingPositionRestore()
+            readingPositionCompleted = false
         }
         return changed
+    }
+
+    fun queueReadingPositionRestore(progress: Float) {
+        cancelReadingPositionRestore()
+        pendingReadingPositionRestore = progress.takeIf { ReaderPositionPolicy.shouldPersist(it) }
+        lastRestoreContentHeight = -1
+        stableRestoreSamples = 0
+        readingPositionCompleted = false
+    }
+
+    fun schedulePendingReadingPositionRestore() {
+        if (pendingReadingPositionRestore == null || readingPositionRestore != null) return
+        scheduleReadingPositionRestoreAttempt(0)
+    }
+
+    private fun scheduleReadingPositionRestoreAttempt(attempt: Int) {
+        val check = Runnable {
+            readingPositionRestore = null
+            val progress = pendingReadingPositionRestore ?: return@Runnable
+            val fullHeight = (contentHeight * scale).toInt()
+            if (width <= 0 || height <= 0 || fullHeight <= height) {
+                if (attempt < MAX_READING_POSITION_RESTORE_ATTEMPTS) {
+                    scheduleReadingPositionRestoreAttempt(attempt + 1)
+                } else {
+                    pendingReadingPositionRestore = null
+                }
+                return@Runnable
+            }
+
+            if (fullHeight == lastRestoreContentHeight) {
+                stableRestoreSamples += 1
+            } else {
+                lastRestoreContentHeight = fullHeight
+                stableRestoreSamples = 0
+            }
+
+            if (stableRestoreSamples >= REQUIRED_STABLE_RESTORE_SAMPLES ||
+                attempt >= MAX_READING_POSITION_RESTORE_ATTEMPTS
+            ) {
+                val targetY = ReaderPositionPolicy.scrollYForProgress(progress, fullHeight, height)
+                pendingReadingPositionRestore = null
+                if (targetY != null && targetY > 0) {
+                    restoringReadingPosition = true
+                    scrollTo(0, targetY)
+                    postDelayed({
+                        restoringReadingPosition = false
+                        if (!readingPositionCompleted) scheduleReadingPositionSave()
+                    }, READING_POSITION_RESTORE_SETTLE_MS)
+                }
+            } else {
+                scheduleReadingPositionRestoreAttempt(attempt + 1)
+            }
+        }
+        readingPositionRestore = check
+        postDelayed(check, READING_POSITION_RESTORE_SAMPLE_MS)
+    }
+
+    private fun cancelReadingPositionRestore() {
+        readingPositionRestore?.let { removeCallbacks(it) }
+        readingPositionRestore = null
+        pendingReadingPositionRestore = null
+        stableRestoreSamples = 0
+        lastRestoreContentHeight = -1
+    }
+
+    fun markReadingPositionCompleted() {
+        readingPositionCompleted = true
+        pendingReadingPositionRestore = null
+        cancelReadingPositionRestore()
+        readingPositionSave?.let { removeCallbacks(it) }
+        readingPositionSave = null
+    }
+
+    private fun scheduleReadingPositionSave() {
+        if (restoringReadingPosition || readingPositionCompleted ||
+            pendingReadingPositionRestore != null
+        ) return
+        readingPositionSave?.let { removeCallbacks(it) }
+        val save = Runnable {
+            readingPositionSave = null
+            publishReadingPosition()
+        }
+        readingPositionSave = save
+        postDelayed(save, READING_POSITION_SAVE_DEBOUNCE_MS)
+    }
+
+    private fun publishReadingPosition() {
+        if (restoringReadingPosition || readingPositionCompleted ||
+            pendingReadingPositionRestore != null
+        ) return
+        val fullHeight = (contentHeight * scale).toInt()
+        val progress = ReaderPositionPolicy.progressFromScroll(scrollY, fullHeight, height) ?: return
+        onReadingProgressChanged(progress)
+    }
+
+    fun flushReadingPosition() {
+        val pending = readingPositionSave ?: return
+        removeCallbacks(pending)
+        readingPositionSave = null
+        publishReadingPosition()
     }
 
     private val shortPageStabilityGate = ReaderShortPageStabilityGate()
@@ -1735,6 +1873,10 @@ private class ReaderWebView(context: android.content.Context) : WebView(context)
     }
 
     override fun onDetachedFromWindow() {
+        flushReadingPosition()
+        readingPositionSave?.let { removeCallbacks(it) }
+        readingPositionSave = null
+        cancelReadingPositionRestore()
         cancelShortPageEndCheck(resetStability = true)
         cancelPendingAutoDefine()
         super.onDetachedFromWindow()
@@ -1944,6 +2086,7 @@ private class ReaderWebView(context: android.content.Context) : WebView(context)
 
     override fun onScrollChanged(scrollX: Int, scrollY: Int, oldScrollX: Int, oldScrollY: Int) {
         super.onScrollChanged(scrollX, scrollY, oldScrollX, oldScrollY)
+        if (scrollY != oldScrollY) scheduleReadingPositionSave()
         val fullHeight = (contentHeight * scale).toInt()
         if (fullHeight > height + 120 &&
             ReaderEndDetector.isAtEnd(fullHeight, height, scrollY) &&
@@ -1957,6 +2100,11 @@ private class ReaderWebView(context: android.content.Context) : WebView(context)
         private const val MENU_DEFINE_WORD = 0x43555252
         private const val SHORT_PAGE_END_CHECK_DELAY_MS = 180L
         private const val MAX_SHORT_PAGE_END_CHECK_ATTEMPTS = 5
+        private const val READING_POSITION_SAVE_DEBOUNCE_MS = 600L
+        private const val READING_POSITION_RESTORE_SAMPLE_MS = 180L
+        private const val READING_POSITION_RESTORE_SETTLE_MS = 260L
+        private const val MAX_READING_POSITION_RESTORE_ATTEMPTS = 12
+        private const val REQUIRED_STABLE_RESTORE_SAMPLES = 2
     }
 }
 

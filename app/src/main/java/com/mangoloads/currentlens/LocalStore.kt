@@ -17,8 +17,10 @@ object LocalStore {
     private const val CACHE_DAYS = 30
     private const val DEFAULT_GLASS_ALPHA = 0.28f
     private const val READING_SESSIONS = "reading_sessions"
+    private const val READER_POSITIONS = "reader_positions"
     private const val QUIZ_ATTEMPTS = "quiz_attempts"
     private const val MAX_READING_SESSIONS = 5_000
+    private const val MAX_READER_POSITIONS = ReaderPositionPolicy.MAX_ENTRIES
     private const val MAX_QUIZ_ATTEMPTS = 5_000
     private const val MAX_DETAILED_QUIZ_ATTEMPTS = 500
 
@@ -116,6 +118,89 @@ object LocalStore {
         return merged
     }
 
+
+    internal fun readerPosition(
+        context: Context,
+        articleUrl: String,
+        nowMillis: Long = System.currentTimeMillis()
+    ): ReaderPosition? {
+        if (articleUrl.isBlank()) return null
+        return savedReaderPositions(context, nowMillis).firstOrNull { it.articleUrl == articleUrl }
+    }
+
+    internal fun saveReaderPosition(
+        context: Context,
+        articleUrl: String,
+        progress: Float,
+        updatedAtMillis: Long = System.currentTimeMillis()
+    ): Boolean {
+        if (articleUrl.isBlank() || articleUrl.length > ReaderPositionPolicy.MAX_URL_LENGTH ||
+            updatedAtMillis <= 0L
+        ) return false
+
+        val current = savedReaderPositions(context, updatedAtMillis)
+            .filterNot { it.articleUrl == articleUrl }
+        if (!ReaderPositionPolicy.shouldPersist(progress)) {
+            writeReaderPositions(context, current, updatedAtMillis)
+            return false
+        }
+
+        val retained = ReaderPositionPolicy.retain(
+            current + ReaderPosition(articleUrl, progress, updatedAtMillis),
+            updatedAtMillis,
+            MAX_READER_POSITIONS
+        )
+        writeReaderPositions(context, retained, updatedAtMillis)
+        return retained.any { it.articleUrl == articleUrl }
+    }
+
+    internal fun clearReaderPosition(context: Context, articleUrl: String) {
+        if (articleUrl.isBlank()) return
+        val now = System.currentTimeMillis()
+        writeReaderPositions(
+            context,
+            savedReaderPositions(context, now).filterNot { it.articleUrl == articleUrl },
+            now
+        )
+    }
+
+    private fun savedReaderPositions(context: Context, nowMillis: Long): List<ReaderPosition> {
+        val raw = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+            .getString(READER_POSITIONS, null) ?: return emptyList()
+        return runCatching {
+            val array = JSONArray(raw)
+            buildList {
+                for (index in 0 until array.length()) {
+                    val item = array.optJSONObject(index) ?: continue
+                    add(
+                        ReaderPosition(
+                            articleUrl = item.optString("articleUrl"),
+                            progress = item.optDouble("progress", Double.NaN).toFloat(),
+                            updatedAtMillis = item.optLong("updatedAtMillis")
+                        )
+                    )
+                }
+            }.let { ReaderPositionPolicy.retain(it, nowMillis, MAX_READER_POSITIONS) }
+        }.getOrDefault(emptyList())
+    }
+
+    private fun writeReaderPositions(
+        context: Context,
+        positions: List<ReaderPosition>,
+        nowMillis: Long
+    ) {
+        val array = JSONArray()
+        ReaderPositionPolicy.retain(positions, nowMillis, MAX_READER_POSITIONS).forEach { position ->
+            array.put(
+                JSONObject()
+                    .put("articleUrl", position.articleUrl)
+                    .put("progress", position.progress.toDouble())
+                    .put("updatedAtMillis", position.updatedAtMillis)
+            )
+        }
+        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+            .edit().putString(READER_POSITIONS, array.toString()).apply()
+    }
 
     internal fun readingSessions(context: Context): List<ReadingSession> {
         val raw = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
