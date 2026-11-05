@@ -2,6 +2,7 @@ package com.mangoloads.currentlens
 
 import android.graphics.Rect
 import android.graphics.RectF
+import android.os.Build
 import android.view.ActionMode
 import android.view.HapticFeedbackConstants
 import android.view.Menu
@@ -27,9 +28,14 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.animateDp
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.updateTransition
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.WindowInsets
@@ -98,6 +104,7 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
@@ -106,10 +113,12 @@ import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.graphics.BlurEffect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
@@ -154,6 +163,7 @@ import java.time.LocalDate
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.Locale
+import kotlinx.coroutines.flow.first
 
 private const val INDIA_ZONE = "Asia/Kolkata"
 
@@ -207,17 +217,36 @@ private fun CurrentLensApp() {
     var glassAlpha by remember { mutableFloatStateOf(LocalStore.glassAlpha(context)) }
     var searchQuery by remember { mutableStateOf("") }
     var searchExpanded by remember { mutableStateOf(false) }
-    var searchTabAnchor by remember { mutableStateOf(Offset.Zero) }
+    var searchCollapseRequested by remember { mutableStateOf(false) }
+    val searchTabAnchorState = remember { mutableStateOf(Offset.Zero) }
+    val searchDockPositionState = remember { mutableStateOf(Offset.Zero) }
     val searchFocusRequester = remember { FocusRequester() }
     val keyboardController = LocalSoftwareKeyboardController.current
     val focusManager = LocalFocusManager.current
+    val density = LocalDensity.current
+
+    // Keep the composer IME-docked while the keyboard dismisses. Only after the
+    // keyboard reaches zero inset does the capsule travel back into its tab anchor.
+    val requestSearchCollapse: () -> Unit = {
+        focusManager.clearFocus()
+        keyboardController?.hide()
+        searchCollapseRequested = true
+    }
+
+    LaunchedEffect(searchCollapseRequested) {
+        if (searchCollapseRequested) {
+            snapshotFlow { WindowInsets.ime.getBottom(density) }.first { it == 0 }
+            searchExpanded = false
+            searchCollapseRequested = false
+        }
+    }
 
     LaunchedEffect(searchExpanded, selectedTab) {
-        if (searchExpanded && selectedTab == 2) {
+        if (searchExpanded && selectedTab == SearchNavigationPolicy.SEARCH_TAB) {
             withFrameNanos { }
             searchFocusRequester.requestFocus()
             keyboardController?.show()
-        } else {
+        } else if (!searchCollapseRequested) {
             focusManager.clearFocus()
             keyboardController?.hide()
         }
@@ -236,7 +265,7 @@ private fun CurrentLensApp() {
 
     BackHandler(enabled = searchExpanded || selectedArticle != null || showSettings || selectedTab != 0) {
         when {
-            searchExpanded -> searchExpanded = false
+            searchExpanded -> requestSearchCollapse()
             quizMode -> quizMode = false
             selectedArticle != null -> selectedArticle = null
             showSettings -> showSettings = false
@@ -246,34 +275,27 @@ private fun CurrentLensApp() {
     }
 
     BoxWithConstraints(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
-        val density = LocalDensity.current
-        val imeBottom = with(density) { WindowInsets.ime.getBottom(this).toDp() }
         val searchTransition = updateTransition(targetState = searchExpanded, label = "Search tab morph")
-        val sourceWidth = 48.dp
-        val searchHeight = 52.dp
-        val targetWidth = (maxWidth - 32.dp).coerceAtLeast(180.dp)
-        val sourceCenterX = if (searchTabAnchor != Offset.Zero) {
-            with(density) { searchTabAnchor.x.toDp() }
-        } else maxWidth * 0.625f
-        val sourceCenterY = if (searchTabAnchor != Offset.Zero) {
-            with(density) { searchTabAnchor.y.toDp() }
-        } else maxHeight - 35.dp
-        val sourceX = sourceCenterX - sourceWidth / 2
-        val sourceY = sourceCenterY - searchHeight / 2
-        val targetY = (maxHeight - imeBottom - searchHeight - 8.dp).coerceAtLeast(0.dp)
-        val morphX by searchTransition.animateDp(label = "Search bar horizontal morph") {
-            if (it) 16.dp else sourceX
-        }
-        val morphY by searchTransition.animateDp(label = "Search bar vertical morph") {
-            if (it) targetY else sourceY
-        }
-        val morphWidth by searchTransition.animateDp(label = "Search bar width morph") {
-            if (it) targetWidth else sourceWidth
-        }
-        val morphAlpha by searchTransition.animateFloat(label = "Search bar opacity") {
-            if (it) 1f else 0f
-        }
+        val searchMorphProgressState = searchTransition.animateFloat(
+            transitionSpec = { spring(dampingRatio = 0.84f, stiffness = 430f) },
+            label = "Liquid search morph progress"
+        ) { expanded -> if (expanded) 1f else 0f }
+        val searchMorphProgress = searchMorphProgressState.value
         val searchMorphActive = searchTransition.currentState || searchTransition.targetState
+        val sourceWidth = 58.dp
+        val searchHeight = 48.dp
+        val targetWidth = (maxWidth - 32.dp).coerceAtLeast(180.dp)
+        val sourceWidthPx = with(density) { sourceWidth.toPx() }
+        val sourceHeightPx = with(density) { searchHeight.toPx() }
+        val targetWidthPx = with(density) { targetWidth.toPx() }
+        val fallbackAnchor = Offset(
+            with(density) { maxWidth.toPx() * 0.625f },
+            with(density) { maxHeight.toPx() - 38.dp.toPx() }
+        )
+        val fallbackDock = Offset(
+            (with(density) { maxWidth.toPx() } - targetWidthPx) / 2f,
+            with(density) { maxHeight.toPx() - searchHeight.toPx() - 8.dp.toPx() }
+        )
 
         Column(
             Modifier.fillMaxSize()
@@ -342,49 +364,77 @@ private fun CurrentLensApp() {
             }
         }
 
-        if (selectedArticle == null && !showSettings &&
-            !(selectedTab == 2 && searchMorphActive)
-        ) {
+        if (selectedArticle == null && !showSettings) {
             Box(
                 Modifier.align(Alignment.BottomCenter).fillMaxWidth()
                     .navigationBarsPadding().padding(horizontal = 10.dp, vertical = 6.dp)
+                    .graphicsLayer {
+                        alpha = if (selectedTab == SearchNavigationPolicy.SEARCH_TAB && searchMorphActive) {
+                            SearchMorphGeometryPolicy.tabBarAlpha(searchMorphProgressState.value)
+                        } else 1f
+                    }
             ) {
                 GlassTabBar(
                     backdrop = backdrop,
                     selectedTab = selectedTab,
                     glassAlpha = glassAlpha,
-                    onSearchAnchor = { searchTabAnchor = it },
+                    onSearchAnchor = { searchTabAnchorState.value = it },
                     onSelect = { tab ->
                         val destination = SearchNavigationPolicy.selectTab(tab)
                         selectedTab = destination.selectedTab
                         searchExpanded = destination.searchExpanded
+                        searchCollapseRequested = false
                         if (tab == 3) youPage = YouPage.DASHBOARD
                     }
                 )
             }
         }
 
-        if (selectedArticle == null && !showSettings && selectedTab == 2 && searchMorphActive) {
-            SearchMorphField(
-                modifier = Modifier
-                    .offset {
-                        IntOffset(
-                            with(density) { morphX.roundToPx() },
-                            with(density) { morphY.roundToPx() }
-                        )
-                    }
-                    .width(morphWidth)
+        if (selectedArticle == null && !showSettings &&
+            selectedTab == SearchNavigationPolicy.SEARCH_TAB && searchMorphActive
+        ) {
+            // Compose's animated IME insets position this dock at the actual keyboard edge.
+            // No manual maxHeight - imeBottom subtraction, which double-counts on resized windows.
+            Box(
+                Modifier.align(Alignment.BottomCenter)
+                    .imePadding()
+                    .padding(bottom = 8.dp)
+                    .width(targetWidth)
                     .height(searchHeight)
-                    .graphicsLayer { alpha = morphAlpha },
-                backdrop = backdrop,
-                glassAlpha = glassAlpha,
-                query = searchQuery,
-                onQueryChange = { searchQuery = it },
-                focusRequester = searchFocusRequester,
-                enabled = searchExpanded,
-                onSubmit = { searchExpanded = false },
-                onClear = { searchQuery = "" }
-            )
+                    .onGloballyPositioned { coordinates ->
+                        searchDockPositionState.value = coordinates.positionInRoot()
+                    }
+            ) {
+                SearchMorphField(
+                    modifier = Modifier.fillMaxSize().graphicsLayer {
+                        val progress = searchMorphProgressState.value.coerceIn(0f, 1f)
+                        val anchor = searchTabAnchorState.value.takeIf { it != Offset.Zero } ?: fallbackAnchor
+                        val dock = searchDockPositionState.value.takeIf { it != Offset.Zero } ?: fallbackDock
+                        val sourceLeft = anchor.x - sourceWidthPx / 2f
+                        val sourceTop = anchor.y - sourceHeightPx / 2f
+                        // The dock follows imePadding() frame-by-frame. One spring interpolates
+                        // between the fixed tab anchor and the moving dock without retargeting
+                        // several animateDp values on every inset frame.
+                        translationX = (sourceLeft - dock.x) * (1f - progress)
+                        translationY = (sourceTop - dock.y) * (1f - progress)
+                        scaleX = SearchMorphGeometryPolicy.interpolate(
+                            sourceWidthPx / targetWidthPx, 1f, progress
+                        )
+                        scaleY = 1f
+                        transformOrigin = TransformOrigin(0f, 0f)
+                        alpha = SearchMorphGeometryPolicy.fieldAlpha(progress)
+                    },
+                    backdrop = backdrop,
+                    glassAlpha = glassAlpha,
+                    query = searchQuery,
+                    onQueryChange = { searchQuery = it },
+                    focusRequester = searchFocusRequester,
+                    enabled = searchExpanded && !searchCollapseRequested,
+                    morphProgress = searchMorphProgress,
+                    onSubmit = requestSearchCollapse,
+                    onClear = { searchQuery = "" }
+                )
+            }
         }
     }
 }
@@ -659,100 +709,187 @@ private fun SearchMorphField(
     onQueryChange: (String) -> Unit,
     focusRequester: FocusRequester,
     enabled: Boolean,
+    morphProgress: Float,
     onSubmit: () -> Unit,
     onClear: () -> Unit
 ) {
     val dark = isSystemInDarkTheme()
+    val density = LocalDensity.current
     val textColor = MaterialTheme.colorScheme.onSurface
-    val glowAlpha by androidx.compose.animation.core.animateFloatAsState(
-        targetValue = if (query.isBlank()) 0.20f else 0.82f,
-        animationSpec = tween(420),
-        label = "Search edge glow"
+    val progress = morphProgress.coerceIn(0f, 1f)
+    val collapsedFactor = SearchMorphGeometryPolicy.collapsedRefractionFactor(progress)
+    val glowIntensity by androidx.compose.animation.core.animateFloatAsState(
+        targetValue = if (query.isBlank()) 0.58f else 1f,
+        animationSpec = tween(360),
+        label = "Search glow intensity"
     )
-    val glow = Brush.sweepGradient(
-        listOf(
-            Color(0xFF7CE5FF),
-            Color(0xFF8D91FF),
-            Color(0xFFE28BFF),
-            Color(0xFF83C8FF),
-            Color(0xFF7CE5FF)
-        )
+    val glowMotion = rememberInfiniteTransition(label = "Search Siri glow")
+    val glowRotation by glowMotion.animateFloat(
+        initialValue = 0f,
+        targetValue = 360f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(7600, easing = LinearEasing),
+            repeatMode = RepeatMode.Restart
+        ),
+        label = "Search glow rotation"
     )
+    val glowPulse by glowMotion.animateFloat(
+        initialValue = 0.76f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(1900),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "Search glow pulse"
+    )
+    val glowColors = listOf(
+        Color(0xFF70E7FF),
+        Color(0xFF719DFF),
+        Color(0xFFA184FF),
+        Color(0xFFE08BFF),
+        Color(0xFFFFA5C9),
+        Color(0xFF70E7FF)
+    )
+    val glowBrush = Brush.sweepGradient(glowColors)
+    val blurRadiusPx = with(density) { 12.dp.toPx() }
 
-    Box(
-        modifier.drawWithContent {
-            drawContent()
-            drawRoundRect(
-                brush = glow,
-                alpha = glowAlpha,
-                cornerRadius = CornerRadius(size.height / 2f),
-                style = Stroke(width = 1.15.dp.toPx())
+    BoxWithConstraints(modifier) {
+        val fieldWidth = maxWidth
+        val fieldHeight = maxHeight
+
+        // The halo is drawn on a slightly oversized off-screen layer so its blur can bloom
+        // beyond the capsule. Pre-Android-12 devices use two soft gradient strokes instead.
+        Canvas(
+            Modifier.offset(x = (-12).dp, y = (-12).dp)
+                .size(width = fieldWidth + 24.dp, height = fieldHeight + 24.dp)
+                .graphicsLayer {
+                    clip = false
+                    renderEffect = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                        BlurEffect(radiusX = blurRadiusPx, radiusY = blurRadiusPx)
+                    } else null
+                }
+        ) {
+            val inset = 12.dp.toPx()
+            val haloSize = androidx.compose.ui.geometry.Size(
+                (size.width - inset * 2f).coerceAtLeast(1f),
+                (size.height - inset * 2f).coerceAtLeast(1f)
             )
+            val haloCorner = CornerRadius(haloSize.height / 2f)
+            rotate(
+                degrees = glowRotation,
+                pivot = Offset(size.width / 2f, size.height / 2f)
+            ) {
+                if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) {
+                    drawRoundRect(
+                        brush = glowBrush,
+                        topLeft = Offset(inset, inset),
+                        size = haloSize,
+                        cornerRadius = haloCorner,
+                        alpha = 0.10f * glowIntensity * glowPulse,
+                        style = Stroke(width = 18.dp.toPx())
+                    )
+                    drawRoundRect(
+                        brush = glowBrush,
+                        topLeft = Offset(inset, inset),
+                        size = haloSize,
+                        cornerRadius = haloCorner,
+                        alpha = 0.18f * glowIntensity * glowPulse,
+                        style = Stroke(width = 10.dp.toPx())
+                    )
+                }
+                drawRoundRect(
+                    brush = glowBrush,
+                    topLeft = Offset(inset, inset),
+                    size = haloSize,
+                    cornerRadius = haloCorner,
+                    alpha = 0.30f * glowIntensity * glowPulse,
+                    style = Stroke(width = 6.dp.toPx())
+                )
+            }
         }
-    ) {
+
         PrismalGlassSurface(
             backdrop = backdrop,
             modifier = Modifier.fillMaxSize(),
-            shape = { PrismalRoundedRectangle(30.dp) },
-            blurRadius = 15.dp,
-            refractionHeightPx = 18f,
-            refractionAmountPx = 14f,
+            shape = { PrismalRoundedRectangle(24.dp) },
+            blurRadius = (13f + collapsedFactor * 5f).dp,
+            refractionHeightPx = 18f + collapsedFactor * 25f,
+            refractionAmountPx = 15f + collapsedFactor * 42f,
             depthEffect = true,
-            chromaticAberration = 0.16f,
+            chromaticAberration = 0.14f + collapsedFactor * 0.46f,
             tint = if (dark) Color(0xFF202B3A) else Color(0xFFF5F8FC),
-            tintAlpha = (glassAlpha * 0.34f).coerceIn(0.07f, 0.20f)
-        ) {
-            Row(
-                Modifier.fillMaxSize().padding(start = 15.dp, end = 7.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(9.dp)
+            tintAlpha = (glassAlpha * 0.30f).coerceIn(0.06f, 0.18f)
+        ) {}
+
+        Canvas(Modifier.matchParentSize()) {
+            rotate(
+                degrees = glowRotation,
+                pivot = Offset(size.width / 2f, size.height / 2f)
             ) {
-                Icon(
-                    Icons.Outlined.Search,
-                    contentDescription = "Search",
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(21.dp)
+                drawRoundRect(
+                    brush = glowBrush,
+                    cornerRadius = CornerRadius(size.height / 2f),
+                    alpha = 0.42f * glowIntensity * glowPulse,
+                    style = Stroke(width = 1.15.dp.toPx())
                 )
-                BasicTextField(
-                    value = query,
-                    onValueChange = onQueryChange,
-                    modifier = Modifier.weight(1f).focusRequester(focusRequester),
-                    enabled = enabled,
-                    singleLine = true,
-                    textStyle = MaterialTheme.typography.bodyLarge.copy(color = textColor),
-                    cursorBrush = Brush.linearGradient(
-                        listOf(Color(0xFF7CE5FF), Color(0xFFAE8BFF), Color(0xFFE28BFF))
-                    ),
-                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
-                    keyboardActions = KeyboardActions(onSearch = { onSubmit() }),
-                    decorationBox = { inner ->
-                        Box(contentAlignment = Alignment.CenterStart) {
-                            if (query.isBlank()) {
-                                Text(
-                                    "Search headlines, topics…",
-                                    color = MaterialTheme.colorScheme.secondary,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis
-                                )
-                            }
-                            inner()
+            }
+        }
+
+        Row(
+            Modifier.fillMaxSize().padding(start = 13.dp, end = 6.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Icon(
+                Icons.Outlined.Search,
+                contentDescription = "Search",
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.offset(x = 6.dp * (1f - progress)).size(20.dp)
+            )
+            BasicTextField(
+                value = query,
+                onValueChange = onQueryChange,
+                modifier = Modifier.weight(1f).graphicsLayer { alpha = progress },
+                enabled = enabled,
+                singleLine = true,
+                textStyle = MaterialTheme.typography.bodyLarge.copy(
+                    color = textColor,
+                    shadow = androidx.compose.ui.graphics.Shadow(
+                        color = Color(0xFF8EDFFF).copy(alpha = 0.24f * glowIntensity),
+                        blurRadius = with(density) { 5.dp.toPx() }
+                    )
+                ),
+                cursorBrush = Brush.linearGradient(
+                    listOf(Color(0xFF7CE5FF), Color(0xFFAE8BFF), Color(0xFFE28BFF))
+                ),
+                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+                keyboardActions = KeyboardActions(onSearch = { onSubmit() }),
+                decorationBox = { inner ->
+                    Box(contentAlignment = Alignment.CenterStart) {
+                        if (query.isBlank()) {
+                            Text(
+                                "Search headlines, publishers or topics…",
+                                color = MaterialTheme.colorScheme.secondary,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
                         }
+                        inner()
                     }
-                )
-                if (query.isNotBlank()) {
-                    IconButton(
-                        onClick = onClear,
-                        enabled = enabled,
-                        modifier = Modifier.size(38.dp)
-                    ) {
-                        Icon(Icons.Outlined.Close, contentDescription = "Clear search")
-                    }
+                }
+            )
+            if (query.isNotBlank() && progress > 0.34f) {
+                IconButton(
+                    onClick = onClear,
+                    enabled = enabled,
+                    modifier = Modifier.size(38.dp).graphicsLayer { alpha = progress }
+                ) {
+                    Icon(Icons.Outlined.Close, contentDescription = "Clear search")
                 }
             }
         }
     }
 }
-
 
 
 @Composable
