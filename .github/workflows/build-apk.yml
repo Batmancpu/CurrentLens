@@ -54,20 +54,8 @@ jobs:
           archive_bytes="$(stat -c%s "$archive")"
           test "$archive_bytes" -ge 5000000
           test "$archive_bytes" -le 25000000
-          mkdir -p app/src/main/assets/licenses
-          cmudict_revision="74790861f652b15e4ac49015a90074ad62a27690"
-          cmudict="$RUNNER_TEMP/cmudict.dict"
-          curl --fail --location --retry 3 --retry-all-errors --retry-delay 2 \
-            --connect-timeout 15 --max-time 240 \
-            "https://raw.githubusercontent.com/cmusphinx/cmudict/${cmudict_revision}/cmudict.dict" \
-            --output "$cmudict"
-          cmudict_bytes="$(stat -c%s "$cmudict")"
-          test "$cmudict_bytes" -ge 3000000
-          test "$cmudict_bytes" -le 4500000
           python3 scripts/build_wordnet_db.py "$archive" app/src/main/assets/wordnet.db \
-            --min-unique-words 100000 \
-            --pronunciations "$cmudict" \
-            --min-pronunciation-words 50000
+            --min-unique-words 100000
           test -s app/src/main/assets/wordnet.db
 
       - name: Compile APK
@@ -90,7 +78,7 @@ jobs:
             CurrentLens v0.2.0 testing build.
             Package: com.mangoloads.currentlens
             Includes the four-tab editorial redesign, Prismal AGSL glass controls, a 30-day local article metadata cache,
-            Express Sunday Eye RSS, best-effort public-page extraction with in-app publisher fallback, offline WordNet definitions and CMUdict US pronunciations.
+            Express Sunday Eye RSS, best-effort public-page extraction with in-app publisher fallback, offline WordNet definitions.
             Debug-signed APK for testing; not a production or Play Store release.
           files: app/build/outputs/apk/debug/app-debug.apk
           prerelease: true

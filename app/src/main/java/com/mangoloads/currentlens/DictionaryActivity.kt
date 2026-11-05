@@ -48,7 +48,6 @@ import java.util.Locale
 
 data class Definition(
     val word: String,
-    val phonetic: String,
     val meanings: List<String>,
     val synonyms: List<String> = emptyList(),
     val dictionaryAvailable: Boolean = true
@@ -61,7 +60,7 @@ data class Definition(
 object DictionaryRepository {
     private const val ASSET_NAME = "wordnet.db"
     private const val DATABASE_NAME = "currentlens_wordnet_2025_plus.db"
-    private const val DATABASE_VERSION = 2026
+    private const val DATABASE_VERSION = 2027
     private val databaseLock = Any()
     private val lookupCache = DictionaryDefinitionCache()
     private val databaseSession = DictionaryDatabaseSession<SQLiteDatabase> { it.isOpen }
@@ -72,35 +71,18 @@ object DictionaryRepository {
         // Reuse the read-only SQLite connection across word selections. Opening a 50 MB
         // database for every uncached word adds avoidable latency to the selection experience.
         val database = databaseSession.getOrOpen { openDatabase(context.applicationContext) }
-            ?: return@withContext Definition(word.trim(), "", emptyList(), dictionaryAvailable = false)
+            ?: return@withContext Definition(word.trim(), emptyList(), dictionaryAvailable = false)
         try {
             val candidates = DictionaryWordPolicy.lookupCandidates(
                 normalized,
                 exceptionForms(database, normalized)
             )
 
-            val exactPronunciation = queryPronunciation(database, normalized)
-            var firstCandidatePronunciation: String? = null
             for (candidate in candidates) {
-                val candidatePronunciation = if (candidate == normalized) {
-                    exactPronunciation
-                } else {
-                    queryPronunciation(database, candidate)
-                }
-                if (firstCandidatePronunciation.isNullOrBlank() && !candidatePronunciation.isNullOrBlank()) {
-                    firstCandidatePronunciation = candidatePronunciation
-                }
                 val result = queryEntries(database, candidate)
                 if (result.meanings.isNotEmpty()) {
-                    // Prefer the selected form's pronunciation; otherwise use the same
-                    // lemma that supplied the definition, never an unrelated earlier guess.
-                    val pronunciation = DictionaryPronunciationPolicy.forDefinition(
-                        exactPronunciation,
-                        candidatePronunciation
-                    )
                     val definition = Definition(
                         word = normalized,
-                        phonetic = pronunciation.orEmpty(),
                         meanings = result.meanings,
                         synonyms = result.synonyms
                     )
@@ -108,13 +90,7 @@ object DictionaryRepository {
                     return@withContext definition
                 }
             }
-            // A pronunciation may exist even when WordNet has no gloss for the token.
-            // Keep that useful offline result distinct from a database/open/query failure.
-            val pronunciation = DictionaryPronunciationPolicy.forPronunciationOnly(
-                exactPronunciation,
-                firstCandidatePronunciation
-            )
-            Definition(word = normalized, phonetic = pronunciation.orEmpty(), meanings = emptyList()).also {
+            Definition(word = normalized, meanings = emptyList()).also {
                 lookupCache.put(normalized, it)
             }
         } catch (_: Exception) {
@@ -221,18 +197,6 @@ object DictionaryRepository {
         return bases.toList()
     }
 
-    private fun queryPronunciation(database: SQLiteDatabase, word: String): String? =
-        database.rawQuery(
-            "SELECT ipa FROM pronunciations WHERE word = ?",
-            arrayOf(word)
-        ).use { cursor ->
-            if (cursor.moveToFirst()) {
-                cursor.getString(0)?.takeIf { it.isNotBlank() }
-            } else {
-                null
-            }
-        }
-
     private fun posLabel(value: String): String = when (value.lowercase(Locale.ROOT)) {
         "noun" -> "noun"
         "verb" -> "verb"
@@ -329,7 +293,7 @@ private fun DictionaryPopup(word: String, onClose: () -> Unit) {
                     }
                     if (result?.let {
                             it.dictionaryAvailable && DictionaryMeaningPolicy.hasCopyableContent(
-                                it.meanings, it.synonyms, it.phonetic
+                                it.meanings, it.synonyms
                             )
                         } == true) {
                         TextButton(onClick = {
@@ -342,8 +306,7 @@ private fun DictionaryPopup(word: String, onClose: () -> Unit) {
                                     DictionaryMeaningPolicy.copyText(
                                         word,
                                         current.meanings,
-                                        current.synonyms,
-                                        current.phonetic
+                                        current.synonyms
                                     )
                                 )
                             )
@@ -352,16 +315,6 @@ private fun DictionaryPopup(word: String, onClose: () -> Unit) {
                     TextButton(onClick = onClose) { Text("Close") }
                 }
                 val definition = result
-                definition?.phonetic?.takeIf { it.isNotBlank() }?.let { pronunciation ->
-                    Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
-                        Text(
-                            "US PRONUNCIATION · CMUDICT",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.secondary
-                        )
-                        Text(pronunciation, style = MaterialTheme.typography.titleMedium)
-                    }
-                }
                 when {
                     loading -> CircularProgressIndicator()
                     definition == null ->
@@ -397,13 +350,6 @@ private fun DictionaryPopup(word: String, onClose: () -> Unit) {
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.secondary
                 )
-                if (definition?.phonetic?.isNotBlank() == true) {
-                    Text(
-                        "US pronunciation · CMUdict · Carnegie Mellon University",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.secondary
-                    )
-                }
             }
         }
     }

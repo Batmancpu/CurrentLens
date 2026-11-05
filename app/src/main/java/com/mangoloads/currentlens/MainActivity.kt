@@ -2389,15 +2389,14 @@ private fun DefinitionGlassOverlay(
                         }
                         if (definition != null && definition.dictionaryAvailable &&
                             DictionaryMeaningPolicy.hasCopyableContent(
-                                definition.meanings, definition.synonyms, definition.phonetic
+                                definition.meanings, definition.synonyms
                             )
                         ) {
                             TextButton(onClick = {
                                 val copiedText = DictionaryMeaningPolicy.copyText(
                                     word = word,
                                     meanings = definition.meanings,
-                                    synonyms = definition.synonyms,
-                                    pronunciation = definition.phonetic
+                                    synonyms = definition.synonyms
                                 )
                                 val clipboard = context.getSystemService(android.content.Context.CLIPBOARD_SERVICE)
                                     as? android.content.ClipboardManager
@@ -2411,17 +2410,6 @@ private fun DefinitionGlassOverlay(
                         }
                         TextButton(onClick = { visibilityState.targetState = false }) { Text("Done") }
                     }
-                    definition?.phonetic?.takeIf { it.isNotBlank() }?.let { pronunciation ->
-                        Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
-                            Text(
-                                "US PRONUNCIATION · CMUDICT",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.secondary,
-                                letterSpacing = 0.8.sp
-                            )
-                            Text(pronunciation, style = MaterialTheme.typography.titleMedium)
-                        }
-                    }
                     when {
                         loading -> CircularProgressIndicator()
                         definition == null ->
@@ -2432,11 +2420,6 @@ private fun DefinitionGlassOverlay(
                         !definition.dictionaryAvailable ->
                             Text(
                                 "The offline word database is not included in this build.",
-                                style = MaterialTheme.typography.bodyMedium
-                            )
-                        definition.meanings.isEmpty() && definition.phonetic.isNotBlank() ->
-                            Text(
-                                "Pronunciation found; no definition entry is available offline.",
                                 style = MaterialTheme.typography.bodyMedium
                             )
                         definition.meanings.isEmpty() ->
@@ -2482,13 +2465,6 @@ private fun DefinitionGlassOverlay(
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.secondary
                     )
-                    if (definition?.phonetic?.isNotBlank() == true) {
-                        Text(
-                            "US pronunciation · CMUdict · Carnegie Mellon University",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.secondary
-                        )
-                    }
                 }
             }
         }

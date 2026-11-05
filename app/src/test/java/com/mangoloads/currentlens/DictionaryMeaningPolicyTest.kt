@@ -2,7 +2,6 @@ package com.mangoloads.currentlens
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
-import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class DictionaryMeaningPolicyTest {
@@ -39,47 +38,11 @@ class DictionaryMeaningPolicyTest {
     }
 
     @Test
-    fun copyTextIncludesUSPronunciationWhenAvailable() {
-        assertEquals(
-            "cat\n\nUS pronunciation: /ˈkæt/\n\nnoun · a small domesticated feline",
-            DictionaryMeaningPolicy.copyText(
-                word = "cat",
-                meanings = listOf("noun · a small domesticated feline"),
-                synonyms = emptyList(),
-                pronunciation = "/ˈkæt/"
-            )
-        )
-    }
-
-    @Test
-    fun pronunciationOnlyResultRemainsCopyableWithoutInventingADefinition() {
-        assertTrue(
-            DictionaryMeaningPolicy.hasCopyableContent(
-                meanings = emptyList(),
-                synonyms = emptyList(),
-                pronunciation = "/ˈkæt/"
-            )
-        )
-        assertEquals(
-            "cat\n\nUS pronunciation: /ˈkæt/",
-            DictionaryMeaningPolicy.copyText(
-                word = "cat",
-                meanings = emptyList(),
-                synonyms = emptyList(),
-                pronunciation = "/ˈkæt/"
-            )
-        )
-    }
-
-    @Test
     fun emptyDictionaryResultDoesNotOfferCopy() {
-        assertFalse(
-            DictionaryMeaningPolicy.hasCopyableContent(
-                meanings = emptyList(),
-                synonyms = emptyList(),
-                pronunciation = " "
-            )
-        )
+        assertFalse(DictionaryMeaningPolicy.hasCopyableContent(
+            meanings = emptyList(),
+            synonyms = emptyList()
+        ))
     }
 
     @Test
@@ -92,35 +55,5 @@ class DictionaryMeaningPolicyTest {
                 synonyms = listOf("sprint", "jog", "sprint", " ")
             )
         )
-    }
-
-    @Test
-    fun definitionUsesExactFormPronunciationBeforeLemmaPronunciation() {
-        assertEquals(
-            "/ˈriːd/",
-            DictionaryPronunciationPolicy.forDefinition("/ˈriːd/", "/ˈrɛd/")
-        )
-    }
-
-    @Test
-    fun definitionUsesTheMatchingLemmaWhenExactFormHasNoPronunciation() {
-        assertEquals(
-            "/ˈæksɪs/",
-            DictionaryPronunciationPolicy.forDefinition(null, "/ˈæksɪs/")
-        )
-    }
-
-    @Test
-    fun pronunciationOnlyFallbackUsesFirstAvailableCandidate() {
-        assertEquals(
-            "/ˈtʃɪldrən/",
-            DictionaryPronunciationPolicy.forPronunciationOnly(null, " /ˈtʃɪldrən/ ")
-        )
-    }
-
-    @Test
-    fun blankPronunciationsAreTreatedAsUnavailable() {
-        assertEquals(null, DictionaryPronunciationPolicy.forDefinition("  ", ""))
-        assertEquals(null, DictionaryPronunciationPolicy.forPronunciationOnly(null, " "))
     }
 }

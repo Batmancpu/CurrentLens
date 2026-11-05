@@ -3,7 +3,7 @@ import tempfile
 import unittest
 import zipfile
 from pathlib import Path
-from build_wordnet_db import build_database, parse_cmudict_line, parse_data_line
+from build_wordnet_db import build_database, parse_data_line
 
 
 class WordNetParserTests(unittest.TestCase):
@@ -23,40 +23,15 @@ class WordNetParserTests(unittest.TestCase):
             (["café", "can't", "state-of-the-art"], "noun",
              "words with accents and publisher punctuation"),
         )
-        self.assertEqual(
-            parse_cmudict_line("CAFE\u0301 K AE1 F EY0"),
-            ("café", "/ˈkæfeɪ/", "K AE1 F EY0"),
-        )
-        self.assertEqual(
-            parse_cmudict_line("CAN’T K AE1 N T"),
-            ("can't", "/ˈkænt/", "K AE1 N T"),
-        )
 
     def test_skips_malformed_and_header_lines(self):
         self.assertIsNone(parse_data_line("  index.vrb 2 0\n", "verb"))
         self.assertIsNone(parse_data_line("broken line | gloss\n", "noun"))
 
-    def test_converts_cmudict_phones_to_stress_marked_us_ipa(self):
-        self.assertEqual(
-            parse_cmudict_line("BANANA B AH0 N AE1 N AH0"),
-            ("banana", "/bəˈnænə/", "B AH0 N AE1 N AH0"),
-        )
-        self.assertEqual(
-            parse_cmudict_line("COMPUTER K AH0 M P Y UW1 T ER0"),
-            ("computer", "/kəmˈpjutɚ/", "K AH0 M P Y UW1 T ER0"),
-        )
-        self.assertEqual(
-            parse_cmudict_line("CAT K AE1 T"),
-            ("cat", "/ˈkæt/", "K AE1 T"),
-        )
-        self.assertIsNone(parse_cmudict_line(";;; CMUdict header comment"))
-        self.assertIsNone(parse_cmudict_line("UNMAPPED ZZ1"))
-
-    def test_builds_indexed_database_and_morphology_exceptions(self):
+    def test_builds_wordnet_only_database_and_morphology_exceptions(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             archive_path = root / "wordnet.zip"
-            pronunciation_path = root / "cmudict.dict"
             output_path = root / "assets" / "wordnet.db"
             with zipfile.ZipFile(archive_path, "w") as archive:
                 archive.writestr(
@@ -80,22 +55,12 @@ class WordNetParserTests(unittest.TestCase):
                 archive.writestr("dict/verb.exc", "ran run\n")
                 archive.writestr("dict/adj.exc", "better good\n")
                 archive.writestr("dict/adv.exc", "")
-            pronunciation_path.write_text(
-                ";;; CMUdict fixture\n"
-                "CAT K AE1 T\n"
-                "CAT(2) K AE0 T\n"
-                "BANANA B AH0 N AE1 N AH0\n",
-                encoding="ascii",
-            )
             self.assertEqual(
                 build_database(
                     archive_path,
                     output_path,
                     min_unique_words=4,
                     min_archive_bytes=0,
-                    pronunciation_path=pronunciation_path,
-                    min_pronunciation_words=2,
-                    min_pronunciation_bytes=0,
                 ),
                 6,
             )
@@ -117,16 +82,8 @@ class WordNetParserTests(unittest.TestCase):
                     "SELECT base_forms FROM exceptions WHERE inflected='cafés'"
                 ).fetchone()
                 self.assertEqual(unicode_exception[0], "café")
-                pronunciation = database.execute(
-                    "SELECT ipa, arpabet FROM pronunciations WHERE word='cat'"
-                ).fetchone()
-                self.assertEqual(pronunciation, ("/ˈkæt/", "K AE1 T"))
-                pronunciation_count = database.execute(
-                    "SELECT COUNT(*) FROM pronunciations"
-                ).fetchone()[0]
-                self.assertEqual(pronunciation_count, 2)
                 version = database.execute("PRAGMA user_version").fetchone()[0]
-                self.assertEqual(version, 2026)
+                self.assertEqual(version, 2027)
                 entries_plan = database.execute(
                     "EXPLAIN QUERY PLAN SELECT definition FROM entries WHERE word = ?",
                     ("entity",),
@@ -139,7 +96,26 @@ class WordNetParserTests(unittest.TestCase):
                 self.assertTrue(any("sqlite_autoindex_exceptions_1" in row[-1] for row in exceptions_plan))
                 metadata = dict(database.execute("SELECT key, value FROM metadata"))
                 self.assertEqual(metadata["dataset"], "Open English WordNet 2025+")
-                self.assertEqual(metadata["pronunciation_dataset"], "CMU Pronouncing Dictionary (CMUdict)")
+                self.assertEqual(
+                    set(metadata),
+                    {"dataset", "dataset_license", "underlying_database", "attribution"}
+                )
+                tables = {
+                    row[0] for row in database.execute(
+                        "SELECT name FROM sqlite_master WHERE type='table'"
+                    )
+                }
+                self.assertEqual(tables, {"entries", "exceptions", "metadata"})
+                schema_sql = " ".join(
+                    row[0] or "" for row in database.execute(
+                        "SELECT sql FROM sqlite_master WHERE type='table'"
+                    )
+                ).lower()
+                self.assertNotIn("ipa", schema_sql)
+                self.assertNotIn("arpabet", schema_sql)
+                self.assertNotIn("pronunciation", schema_sql)
+                self.assertFalse(any("pronunciation" in key.lower() for key in metadata))
+                self.assertFalse(any("cmu" in value.lower() for value in metadata.values()))
             finally:
                 database.close()
 

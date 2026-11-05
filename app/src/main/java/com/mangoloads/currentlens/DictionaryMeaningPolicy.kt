@@ -27,24 +27,17 @@ internal object DictionaryMeaningPolicy {
 
     fun hasCopyableContent(
         meanings: List<String>,
-        synonyms: List<String>,
-        pronunciation: String?
+        synonyms: List<String>
     ): Boolean =
-        pronunciation?.isNotBlank() == true ||
-            meanings.any { present(it).definition.isNotBlank() } ||
+        meanings.any { present(it).definition.isNotBlank() } ||
             synonyms.any { it.isNotBlank() }
 
     fun copyText(
         word: String,
         meanings: List<String>,
-        synonyms: List<String>,
-        pronunciation: String? = null
+        synonyms: List<String>
     ): String = buildString {
         append(word.trim())
-        pronunciation?.trim()?.takeIf { it.isNotEmpty() }?.let {
-            append("\n\nUS pronunciation: ")
-            append(it)
-        }
         val formattedMeanings = meanings.map(::present).filter { it.definition.isNotBlank() }
         if (formattedMeanings.isNotEmpty()) {
             append("\n\n")
@@ -58,16 +51,4 @@ internal object DictionaryMeaningPolicy {
             append(related.joinToString(" · "))
         }
     }
-}
-
-
-/** Keeps a pronunciation aligned with the exact token or the lemma that supplied its gloss. */
-internal object DictionaryPronunciationPolicy {
-    fun forDefinition(exactForm: String?, matchedLemma: String?): String? =
-        clean(exactForm) ?: clean(matchedLemma)
-
-    fun forPronunciationOnly(exactForm: String?, firstCandidate: String?): String? =
-        clean(exactForm) ?: clean(firstCandidate)
-
-    private fun clean(value: String?): String? = value?.trim()?.takeIf { it.isNotEmpty() }
 }

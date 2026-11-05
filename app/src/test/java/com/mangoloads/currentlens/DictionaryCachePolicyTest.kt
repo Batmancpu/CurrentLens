@@ -24,9 +24,9 @@ class DictionaryCachePolicyTest {
     @Test
     fun cacheHitRefreshesRecencyBeforeEviction() {
         val cache = DictionaryDefinitionCache(maxEntries = 2)
-        val first = Definition("first", "", listOf("noun · first meaning"))
-        val second = Definition("second", "", listOf("noun · second meaning"))
-        val third = Definition("third", "", listOf("noun · third meaning"))
+        val first = Definition("first", listOf("noun · first meaning"))
+        val second = Definition("second", listOf("noun · second meaning"))
+        val third = Definition("third", listOf("noun · third meaning"))
 
         cache.put("first", first)
         cache.put("second", second)
@@ -42,7 +42,7 @@ class DictionaryCachePolicyTest {
     @Test
     fun successfulNoEntryResultCanBeCachedSeparatelyFromCacheMiss() {
         val cache = DictionaryDefinitionCache(maxEntries = 2)
-        val noEntry = Definition("unlistedword", "", emptyList())
+        val noEntry = Definition("unlistedword", emptyList())
 
         assertNull(cache.get("unlistedword"))
         cache.put("unlistedword", noEntry)

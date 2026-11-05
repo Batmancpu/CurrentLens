@@ -67,8 +67,8 @@ class DictionaryDatabaseSessionTest {
             DictionaryDatabaseInstallPolicy.shouldInstall(
                 fileExists = true,
                 fileLength = 50_000_000L,
-                installedVersion = 2026,
-                expectedVersion = 2026
+                installedVersion = 2027,
+                expectedVersion = 2027
             )
         )
     }
@@ -79,8 +79,8 @@ class DictionaryDatabaseSessionTest {
             DictionaryDatabaseInstallPolicy.shouldInstall(
                 fileExists = true,
                 fileLength = 50_000_000L,
-                installedVersion = 2025,
-                expectedVersion = 2026
+                installedVersion = 2026,
+                expectedVersion = 2027
             )
         )
         assertTrue(
@@ -88,7 +88,7 @@ class DictionaryDatabaseSessionTest {
                 fileExists = true,
                 fileLength = 50_000_000L,
                 installedVersion = null,
-                expectedVersion = 2026
+                expectedVersion = 2027
             )
         )
     }
@@ -100,7 +100,7 @@ class DictionaryDatabaseSessionTest {
                 fileExists = false,
                 fileLength = 0L,
                 installedVersion = null,
-                expectedVersion = 2026
+                expectedVersion = 2027
             )
         )
         assertTrue(
@@ -108,7 +108,7 @@ class DictionaryDatabaseSessionTest {
                 fileExists = true,
                 fileLength = 100L,
                 installedVersion = null,
-                expectedVersion = 2026
+                expectedVersion = 2027
             )
         )
     }
