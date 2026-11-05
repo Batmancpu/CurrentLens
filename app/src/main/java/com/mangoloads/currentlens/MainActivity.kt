@@ -345,10 +345,9 @@ private fun CurrentLensApp() {
             iconWidthPx = with(density) { 20.dp.toPx() },
             leadingInsetPx = with(density) { 13.dp.toPx() }
         )
-        val navigationBarsBottomPx = WindowInsets.navigationBars.getBottom(density).toFloat()
         val fallbackAnchor = Offset(
             with(density) { (maxWidth * 0.625f - 3.5.dp).toPx() },
-            with(density) { maxHeight.toPx() - navigationBarsBottomPx - 37.dp.toPx() }
+            with(density) { maxHeight.toPx() - 38.dp.toPx() }
         )
         val fallbackDock = Offset(
             (with(density) { maxWidth.toPx() } - targetWidthPx) / 2f,
