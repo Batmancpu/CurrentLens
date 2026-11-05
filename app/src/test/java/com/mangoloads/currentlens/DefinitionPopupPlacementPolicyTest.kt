@@ -158,4 +158,43 @@ class DefinitionPopupPlacementPolicyTest {
         assertEquals(208f / 236f, result.originY, 0.0001f)
     }
 
+
+    @Test
+    fun usesMeasuredPopupHeightAndSelectionBoundsForTheMorph() {
+        val result = DefinitionPopupPlacementPolicy.calculate(
+            parentWidthPx = 360,
+            parentHeightPx = 1000,
+            anchor = Offset(180f, 900f),
+            popupWidthPx = 320,
+            estimatedHeightPx = 180,
+            marginPx = 12,
+            gapPx = 10,
+            anchorWidthPx = 48f,
+            anchorHeightPx = 24f
+        )
+
+        assertEquals(710, result.topPx)
+        assertEquals(1f, result.originY)
+        assertEquals(0.15f, result.initialScaleX, 0.0001f)
+        assertEquals(24f / 180f, result.initialScaleY, 0.0001f)
+    }
+
+    @Test
+    fun usesSafeMorphScaleWhenSelectionBoundsAreMissingOrInvalid() {
+        val result = DefinitionPopupPlacementPolicy.calculate(
+            parentWidthPx = 360,
+            parentHeightPx = 900,
+            anchor = Offset(180f, 420f),
+            popupWidthPx = 320,
+            estimatedHeightPx = 240,
+            marginPx = 12,
+            gapPx = 10,
+            anchorWidthPx = 0f,
+            anchorHeightPx = Float.NaN
+        )
+
+        assertEquals(0.12f, result.initialScaleX)
+        assertEquals(0.12f, result.initialScaleY)
+    }
+
 }

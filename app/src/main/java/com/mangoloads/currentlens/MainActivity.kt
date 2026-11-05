@@ -122,11 +122,13 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInWindow
 import androidx.compose.ui.layout.positionInRoot
@@ -1264,7 +1266,7 @@ private fun ReaderScreen(article: Article, backdrop: PrismalBackdrop, glassAlpha
     var publisherLoadFailed by remember(article.url) { mutableStateOf(false) }
     var reachedBottom by remember(article.url) { mutableStateOf(false) }
     var activeWord by remember(article.url) { mutableStateOf<String?>(null) }
-    var activeWordAnchor by remember(article.url) { mutableStateOf<Offset?>(null) }
+    var activeWordAnchor by remember(article.url) { mutableStateOf<DefinitionSelectionAnchor?>(null) }
     var readerViewportScreenOrigin by remember(article.url) { mutableStateOf(Offset.Zero) }
     var fontSize by remember(article.url) { mutableIntStateOf(20) }
 
@@ -1367,9 +1369,13 @@ private fun ReaderScreen(article: Article, backdrop: PrismalBackdrop, glassAlpha
                         webView.getLocationOnScreen(webViewLocation)
                         val cssToScreenScale = webView.resources.displayMetrics.density * webView.scale
                         activeWordAnchor = selectionRect?.let { rect ->
-                            Offset(
-                                webViewLocation[0] + rect.centerX() * cssToScreenScale - readerViewportScreenOrigin.x,
-                                webViewLocation[1] + rect.centerY() * cssToScreenScale - readerViewportScreenOrigin.y
+                            DefinitionSelectionAnchor(
+                                center = Offset(
+                                    webViewLocation[0] + rect.centerX() * cssToScreenScale - readerViewportScreenOrigin.x,
+                                    webViewLocation[1] + rect.centerY() * cssToScreenScale - readerViewportScreenOrigin.y
+                                ),
+                                widthPx = rect.width() * cssToScreenScale,
+                                heightPx = rect.height() * cssToScreenScale
                             )
                         }
                         activeWord = word
@@ -1814,7 +1820,13 @@ private class ReaderWebView(context: android.content.Context) : WebView(context)
 }
 
 @Composable
-private fun DefinitionGlassOverlay(word: String, anchor: Offset?, backdrop: PrismalBackdrop, glassAlpha: Float, onClose: () -> Unit) {
+private fun DefinitionGlassOverlay(
+    word: String,
+    anchor: DefinitionSelectionAnchor?,
+    backdrop: PrismalBackdrop,
+    glassAlpha: Float,
+    onClose: () -> Unit
+) {
     val context = LocalContext.current
     var result by remember(word) { mutableStateOf<Definition?>(null) }
     var loading by remember(word) { mutableStateOf(true) }
@@ -1823,9 +1835,23 @@ private fun DefinitionGlassOverlay(word: String, anchor: Offset?, backdrop: Pris
         loading = false
     }
     val definition = result
+    // The same transition drives both the surface expansion and its reverse dismissal.
+    // Its transform origin is measured from the selected word, not a fixed card edge.
     val visibilityState = remember(word) {
-        androidx.compose.animation.core.MutableTransitionState(true)
+        androidx.compose.animation.core.MutableTransitionState(false).apply {
+            targetState = true
+        }
     }
+    val transition = updateTransition(visibilityState, label = "Definition glass morph")
+    val expansion by transition.animateFloat(
+        transitionSpec = { spring(dampingRatio = 0.76f, stiffness = 480f) },
+        label = "Definition expansion"
+    ) { visible -> if (visible) 1f else 0f }
+    val opacity by transition.animateFloat(
+        transitionSpec = { tween(durationMillis = 115) },
+        label = "Definition opacity"
+    ) { visible -> if (visible) 1f else 0f }
+
     BackHandler(enabled = visibilityState.targetState) {
         visibilityState.targetState = false
     }
@@ -1834,51 +1860,13 @@ private fun DefinitionGlassOverlay(word: String, anchor: Offset?, backdrop: Pris
             onClose()
         }
     }
-    BoxWithConstraints(Modifier.fillMaxSize()) {
-        val density = LocalDensity.current
-        val marginPx = with(density) { 12.dp.roundToPx() }
-        val maxWidthPx = constraints.maxWidth
-        val maxHeightPx = constraints.maxHeight
-        val popupWidthPx = (maxWidthPx - marginPx * 2).coerceAtLeast(1)
-        // Keep the definition surface compact on tablets and wide split-screen layouts;
-        // narrow phone windows still use their full safe width.
-        val maxPopupWidthPx = with(density) { 420.dp.roundToPx() }
-        val estimatedHeightPx = with(density) { 300.dp.roundToPx() }
-        val fallbackAnchor = Offset(maxWidthPx / 2f, maxHeightPx * 0.72f)
-        val placement = DefinitionPopupPlacementPolicy.calculate(
-            parentWidthPx = maxWidthPx,
-            parentHeightPx = maxHeightPx,
-            anchor = anchor ?: fallbackAnchor,
-            popupWidthPx = popupWidthPx,
-            estimatedHeightPx = estimatedHeightPx,
-            marginPx = marginPx,
-            gapPx = with(density) { 14.dp.roundToPx() },
-            maxPopupWidthPx = maxPopupWidthPx
-        )
-        AnimatedVisibility(
-            visibleState = visibilityState,
-            modifier = Modifier
-                .offset { IntOffset(placement.leftPx, placement.topPx) }
-                .width(with(density) { placement.widthPx.toDp() })
-                .heightIn(max = with(density) { placement.maxHeightPx.toDp() }),
-            enter = fadeIn(tween(150)) +
-                scaleIn(
-                    initialScale = 0.88f,
-                    transformOrigin = TransformOrigin(placement.originX, placement.originY),
-                    animationSpec = spring(dampingRatio = 0.74f, stiffness = 480f)
-                ) +
-                slideInVertically(
-                    initialOffsetY = { it / 7 },
-                    animationSpec = spring(dampingRatio = 0.74f, stiffness = 480f)
-                ),
-            exit = fadeOut(tween(110)) +
-                scaleOut(
-                    targetScale = 0.94f,
-                    transformOrigin = TransformOrigin(placement.originX, placement.originY),
-                    animationSpec = spring(dampingRatio = 0.82f, stiffness = 520f)
-                ) +
-                slideOutVertically(targetOffsetY = { it / 9 }, animationSpec = spring())
-        ) {
+
+    val density = LocalDensity.current
+    val marginPx = with(density) { 12.dp.roundToPx() }
+    val maxPopupWidthPx = with(density) { 420.dp.roundToPx() }
+    Layout(
+        modifier = Modifier.fillMaxSize(),
+        content = {
             PrismalGlassSurface(
                 backdrop = backdrop,
                 modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
@@ -1899,8 +1887,12 @@ private fun DefinitionGlassOverlay(word: String, anchor: Offset?, backdrop: Pris
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Column(Modifier.weight(1f)) {
                             Text(word, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-                            Text("OFFLINE DICTIONARY", style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.secondary, letterSpacing = 1.1.sp)
+                            Text(
+                                "OFFLINE DICTIONARY",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.secondary,
+                                letterSpacing = 1.1.sp
+                            )
                         }
                         if (definition != null && definition.dictionaryAvailable &&
                             DictionaryMeaningPolicy.hasCopyableContent(
@@ -1919,7 +1911,9 @@ private fun DefinitionGlassOverlay(word: String, anchor: Offset?, backdrop: Pris
                                 clipboard?.setPrimaryClip(
                                     android.content.ClipData.newPlainText("Definition of $word", copiedText)
                                 )
-                                android.widget.Toast.makeText(context, "Definition copied", android.widget.Toast.LENGTH_SHORT).show()
+                                android.widget.Toast.makeText(
+                                    context, "Definition copied", android.widget.Toast.LENGTH_SHORT
+                                ).show()
                             }) { Text("Copy") }
                         }
                         TextButton(onClick = { visibilityState.targetState = false }) { Text("Done") }
@@ -1938,17 +1932,25 @@ private fun DefinitionGlassOverlay(word: String, anchor: Offset?, backdrop: Pris
                     when {
                         loading -> CircularProgressIndicator()
                         definition == null ->
-                            Text("The offline dictionary lookup could not be completed.",
-                                style = MaterialTheme.typography.bodyMedium)
+                            Text(
+                                "The offline dictionary lookup could not be completed.",
+                                style = MaterialTheme.typography.bodyMedium
+                            )
                         !definition.dictionaryAvailable ->
-                            Text("The offline word database is not included in this build.",
-                                style = MaterialTheme.typography.bodyMedium)
+                            Text(
+                                "The offline word database is not included in this build.",
+                                style = MaterialTheme.typography.bodyMedium
+                            )
                         definition.meanings.isEmpty() && definition.phonetic.isNotBlank() ->
-                            Text("Pronunciation found; no definition entry is available offline.",
-                                style = MaterialTheme.typography.bodyMedium)
+                            Text(
+                                "Pronunciation found; no definition entry is available offline.",
+                                style = MaterialTheme.typography.bodyMedium
+                            )
                         definition.meanings.isEmpty() ->
-                            Text("No entry found in the offline English dictionary. Try the base form of the word.",
-                                style = MaterialTheme.typography.bodyMedium)
+                            Text(
+                                "No entry found in the offline English dictionary. Try the base form of the word.",
+                                style = MaterialTheme.typography.bodyMedium
+                            )
                         else -> {
                             definition.meanings.take(3).forEach { meaning ->
                                 val presentation = DictionaryMeaningPolicy.present(meaning)
@@ -1969,25 +1971,71 @@ private fun DefinitionGlassOverlay(word: String, anchor: Offset?, backdrop: Pris
                                 }
                             }
                             if (definition.synonyms.isNotEmpty()) {
-                                Text("RELATED WORDS", style = MaterialTheme.typography.labelSmall,
-                                    color = MaterialTheme.colorScheme.secondary, letterSpacing = 1.sp)
-                                Text(definition.synonyms.take(8).joinToString(" · "),
-                                    style = MaterialTheme.typography.bodyMedium)
+                                Text(
+                                    "RELATED WORDS",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.secondary,
+                                    letterSpacing = 1.sp
+                                )
+                                Text(
+                                    definition.synonyms.take(8).joinToString(" · "),
+                                    style = MaterialTheme.typography.bodyMedium
+                                )
                             }
                         }
                     }
-                    Text("Open English WordNet 2025+ · CC BY 4.0",
-                        style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.secondary)
+                    Text(
+                        "Open English WordNet 2025+ · CC BY 4.0",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.secondary
+                    )
                     if (definition?.phonetic?.isNotBlank() == true) {
-                        Text("US pronunciation · CMUdict · Carnegie Mellon University",
+                        Text(
+                            "US pronunciation · CMUdict · Carnegie Mellon University",
                             style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.secondary)
+                            color = MaterialTheme.colorScheme.secondary
+                        )
                     }
                 }
             }
         }
+    ) { measurables, constraints ->
+        val parentWidthPx = constraints.maxWidth
+        val parentHeightPx = constraints.maxHeight
+        val popupWidthLimitPx = (parentWidthPx - marginPx * 2)
+            .coerceAtLeast(1)
+            .coerceAtMost(maxPopupWidthPx)
+        val popupHeightLimitPx = (parentHeightPx - marginPx * 2).coerceAtLeast(1)
+        val popup = measurables.single().measure(
+            Constraints(maxWidth = popupWidthLimitPx, maxHeight = popupHeightLimitPx)
+        )
+        val fallbackAnchor = Offset(parentWidthPx / 2f, parentHeightPx * 0.72f)
+        val placement = DefinitionPopupPlacementPolicy.calculate(
+            parentWidthPx = parentWidthPx,
+            parentHeightPx = parentHeightPx,
+            anchor = anchor?.center ?: fallbackAnchor,
+            popupWidthPx = popup.width,
+            // Use the measured, scroll-constrained surface height. An estimated 300 dp
+            // height left short definitions floating far from words near the bottom.
+            estimatedHeightPx = popup.height,
+            marginPx = marginPx,
+            gapPx = with(density) { 14.dp.roundToPx() },
+            maxPopupWidthPx = maxPopupWidthPx,
+            anchorWidthPx = anchor?.widthPx ?: 0f,
+            anchorHeightPx = anchor?.heightPx ?: 0f
+        )
+        layout(parentWidthPx, parentHeightPx) {
+            popup.placeWithLayer(placement.leftPx, placement.topPx) {
+                val progress = expansion.coerceIn(0f, 1f)
+                alpha = opacity.coerceIn(0f, 1f)
+                scaleX = placement.initialScaleX + (1f - placement.initialScaleX) * progress
+                scaleY = placement.initialScaleY + (1f - placement.initialScaleY) * progress
+                transformOrigin = TransformOrigin(placement.originX, placement.originY)
+            }
+        }
     }
 }
+
 @Composable
 private fun GlassSettingsScreen(backdrop: PrismalBackdrop, glassAlpha: Float, onGlassAlphaChange: (Float) -> Unit, onBack: () -> Unit) {
     Column(Modifier.fillMaxSize().padding(horizontal = 18.dp)) {
