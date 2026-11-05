@@ -113,7 +113,6 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.focus.FocusRequester
@@ -1222,7 +1221,6 @@ private fun matchesSearchTerms(article: Article, query: String): Boolean =
 @Composable
 private fun ReaderScreen(article: Article, backdrop: PrismalBackdrop, glassAlpha: Float, dark: Boolean, onBack: () -> Unit, onQuiz: () -> Unit, onSessionRecorded: () -> Unit) {
     val context = LocalContext.current
-    val composeRootView = LocalView.current
 
     var contentLoaded by remember(article.url) { mutableStateOf(false) }
     val lifecycleOwner = context as? LifecycleOwner
@@ -1267,7 +1265,7 @@ private fun ReaderScreen(article: Article, backdrop: PrismalBackdrop, glassAlpha
     var reachedBottom by remember(article.url) { mutableStateOf(false) }
     var activeWord by remember(article.url) { mutableStateOf<String?>(null) }
     var activeWordAnchor by remember(article.url) { mutableStateOf<DefinitionSelectionAnchor?>(null) }
-    var readerViewportScreenOrigin by remember(article.url) { mutableStateOf(Offset.Zero) }
+    var readerViewportWindowOrigin by remember(article.url) { mutableStateOf(Offset.Zero) }
     var fontSize by remember(article.url) { mutableIntStateOf(20) }
 
     LaunchedEffect(article.url) {
@@ -1312,13 +1310,10 @@ private fun ReaderScreen(article: Article, backdrop: PrismalBackdrop, glassAlpha
         }
         if (extracting || (!pageLoaded && (extractedHtml != null || fallbackToPublisher))) androidx.compose.material3.LinearProgressIndicator(Modifier.fillMaxWidth())
         Box(Modifier.weight(1f).fillMaxWidth().onGloballyPositioned { coordinates ->
-            val rootLocation = IntArray(2)
-            composeRootView.getLocationOnScreen(rootLocation)
-            val positionInWindow = coordinates.positionInWindow()
-            readerViewportScreenOrigin = Offset(
-                rootLocation[0] + positionInWindow.x,
-                rootLocation[1] + positionInWindow.y
-            )
+            // Both this viewport and the WebView selection rectangle are converted
+            // in window coordinates; mixing screen and window origins double-counts
+            // edge-to-edge/status-bar offsets on some Android window configurations.
+            readerViewportWindowOrigin = coordinates.positionInWindow()
         }) {
             AndroidView(
                 modifier = Modifier.fillMaxSize(),
@@ -1366,16 +1361,19 @@ private fun ReaderScreen(article: Article, backdrop: PrismalBackdrop, glassAlpha
                     webView.onReachedBottom = { reachedBottom = true }
                     webView.onDefineWord = { word, selectionRect ->
                         val webViewLocation = IntArray(2)
-                        webView.getLocationOnScreen(webViewLocation)
-                        val cssToScreenScale = webView.resources.displayMetrics.density * webView.scale
+                        webView.getLocationInWindow(webViewLocation)
+                        val cssToWindowScale = webView.resources.displayMetrics.density * webView.scale
                         activeWordAnchor = selectionRect?.let { rect ->
-                            DefinitionSelectionAnchor(
-                                center = Offset(
-                                    webViewLocation[0] + rect.centerX() * cssToScreenScale - readerViewportScreenOrigin.x,
-                                    webViewLocation[1] + rect.centerY() * cssToScreenScale - readerViewportScreenOrigin.y
+                            DefinitionSelectionAnchorPolicy.fromCssRect(
+                                leftCssPx = rect.left,
+                                topCssPx = rect.top,
+                                widthCssPx = rect.width(),
+                                heightCssPx = rect.height(),
+                                webViewWindowOrigin = Offset(
+                                    webViewLocation[0].toFloat(), webViewLocation[1].toFloat()
                                 ),
-                                widthPx = rect.width() * cssToScreenScale,
-                                heightPx = rect.height() * cssToScreenScale
+                                viewportWindowOrigin = readerViewportWindowOrigin,
+                                cssToWindowScale = cssToWindowScale
                             )
                         }
                         activeWord = word
