@@ -29,7 +29,4 @@ internal object GlassTabGeometryPolicy {
         return restingScale * motionScale * (1f - normalizedVelocity * 0.25f)
     }
 
-    /** Fade the tab control only near the end of the search morph; do not clip its bleed. */
-    fun barAlpha(progress: Float): Float =
-        1f - ((progress.coerceIn(0f, 1f) - 0.78f) / 0.22f).coerceIn(0f, 1f)
 }

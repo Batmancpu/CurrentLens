@@ -460,10 +460,16 @@ private fun CurrentLensApp() {
                         // several animateDp values on every inset frame.
                         translationX = (sourceLeft - dock.x) * (1f - progress)
                         translationY = (sourceTop - dock.y) * (1f - progress)
-                        scaleX = SearchMorphGeometryPolicy.interpolate(
-                            sourceWidthPx / targetWidthPx, 1f, progress
+                        scaleX = SearchMorphGeometryPolicy.scaleFromAnchor(
+                            sourceDimensionPx = sourceWidthPx,
+                            targetDimensionPx = targetWidthPx,
+                            progress = progress
                         )
-                        scaleY = 1f
+                        scaleY = SearchMorphGeometryPolicy.scaleFromAnchor(
+                            sourceDimensionPx = sourceHeightPx,
+                            targetDimensionPx = searchHeightPx,
+                            progress = progress
+                        )
                         transformOrigin = TransformOrigin(0f, 0f)
                         alpha = SearchMorphGeometryPolicy.fieldAlpha(progress)
                     },

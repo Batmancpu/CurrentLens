@@ -41,11 +41,4 @@ class GlassTabGeometryPolicyTest {
         assertTrue(GlassTabGeometryPolicy.horizontalScale(base, 1f, 2f) > base)
     }
 
-    @Test
-    fun tabSurfaceFadesOnlyAtTheEndOfTheSearchMorph() {
-        assertEquals(1f, GlassTabGeometryPolicy.barAlpha(0f), 0.001f)
-        assertEquals(1f, GlassTabGeometryPolicy.barAlpha(0.78f), 0.001f)
-        assertEquals(0.5f, GlassTabGeometryPolicy.barAlpha(0.89f), 0.001f)
-        assertEquals(0f, GlassTabGeometryPolicy.barAlpha(1f), 0.001f)
-    }
 }
