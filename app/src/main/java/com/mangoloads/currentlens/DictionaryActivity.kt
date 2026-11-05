@@ -10,6 +10,7 @@ import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.slideInVertically
@@ -20,6 +21,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -38,6 +40,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.TransformOrigin
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.Dispatchers
@@ -214,12 +217,12 @@ class DictionaryActivity : ComponentActivity() {
         ).orEmpty()
         window?.setBackgroundDrawableResource(android.R.color.transparent)
         window?.addFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND)
-        window?.attributes = window?.attributes?.apply { dimAmount = 0.11f }
+        window?.attributes = window?.attributes?.apply { dimAmount = 0.08f }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             // Blur-behind samples the whole app window, unlike a blur confined to this popup.
             window?.addFlags(WindowManager.LayoutParams.FLAG_BLUR_BEHIND)
             window?.attributes = window?.attributes?.apply {
-                blurBehindRadius = (resources.displayMetrics.density * 30f).toInt()
+                blurBehindRadius = (resources.displayMetrics.density * 24f).toInt()
             }
         }
         window?.setLayout(WindowManager.LayoutParams.MATCH_PARENT, WindowManager.LayoutParams.WRAP_CONTENT)
@@ -263,7 +266,10 @@ private fun DictionaryPopup(word: String, onClose: () -> Unit) {
     val context = LocalContext.current
     var result by remember(word) { mutableStateOf<Definition?>(null) }
     var loading by remember(word) { mutableStateOf(true) }
+    var expanded by remember(word) { mutableStateOf(false) }
+    val scrollState = rememberScrollState()
     LaunchedEffect(word) {
+        scrollState.scrollTo(0)
         result = DictionaryRepository.lookup(context, word)
         loading = false
     }
@@ -281,29 +287,44 @@ private fun DictionaryPopup(word: String, onClose: () -> Unit) {
             )
     ) {
         Surface(
-            modifier = Modifier.fillMaxWidth().padding(12.dp),
+            modifier = Modifier.fillMaxWidth().padding(12.dp)
+                .animateContentSize(spring(dampingRatio = 0.82f, stiffness = 480f)),
             shape = RoundedCornerShape(26.dp),
             color = MaterialTheme.colorScheme.surface.copy(
                 alpha = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) 0.86f else 0.94f
             ),
             contentColor = MaterialTheme.colorScheme.onSurface,
             tonalElevation = 0.dp,
-            shadowElevation = 22.dp
+            shadowElevation = 18.dp
         ) {
             Column(
-                Modifier.padding(20.dp).verticalScroll(rememberScrollState()),
+                Modifier.padding(20.dp)
+                    .heightIn(max = if (expanded) 360.dp else 176.dp)
+                    .verticalScroll(scrollState),
                 verticalArrangement = Arrangement.spacedBy(9.dp)
             ) {
+                if (result?.dictionaryAvailable == true && result?.meanings?.isNotEmpty() == true) {
+                    DefinitionExpansionHandle(
+                        expanded = expanded,
+                        scrollAtTop = scrollState.value == 0,
+                        onExpandedChange = { expanded = it }
+                    )
+                }
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Column(Modifier.weight(1f)) {
-                        Text(word, style = MaterialTheme.typography.headlineSmall)
+                        Text(
+                            word,
+                            style = MaterialTheme.typography.headlineSmall,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
                         Text(
                             "OFFLINE DICTIONARY",
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.secondary
                         )
                     }
-                    if (result?.let {
+                    if (expanded && result?.let {
                             it.dictionaryAvailable && DictionaryMeaningPolicy.hasCopyableContent(
                                 it.meanings, it.synonyms
                             )
@@ -324,6 +345,11 @@ private fun DictionaryPopup(word: String, onClose: () -> Unit) {
                             )
                         }) { Text("Copy") }
                     }
+                    if (result?.dictionaryAvailable == true && result?.meanings?.isNotEmpty() == true) {
+                        TextButton(onClick = { expanded = !expanded }) {
+                            Text(if (expanded) "Less" else "More")
+                        }
+                    }
                     TextButton(onClick = onClose) { Text("Close") }
                 }
                 val definition = result
@@ -336,24 +362,40 @@ private fun DictionaryPopup(word: String, onClose: () -> Unit) {
                     definition.meanings.isEmpty() ->
                         Text("No entry found in the offline English dictionary.")
                     else -> {
-                        definition.meanings.forEach { meaning ->
+                        val visibleMeaningCount = DictionaryOverlayPolicy.visibleMeanings(
+                            definition.meanings.size, expanded
+                        )
+                        definition.meanings.take(visibleMeaningCount).forEach { meaning ->
                             val presentation = DictionaryMeaningPolicy.present(meaning)
                             Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
-                                presentation.partOfSpeech?.let { partOfSpeech ->
-                                    Text(
-                                        partOfSpeech.uppercase(Locale.ROOT),
-                                        style = MaterialTheme.typography.labelSmall,
-                                        color = MaterialTheme.colorScheme.primary
-                                    )
+                                if (expanded) {
+                                    presentation.partOfSpeech?.let { partOfSpeech ->
+                                        Text(
+                                            partOfSpeech.uppercase(Locale.ROOT),
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = MaterialTheme.colorScheme.primary
+                                        )
+                                    }
                                 }
-                                Text(presentation.definition, style = MaterialTheme.typography.bodyLarge)
+                                Text(
+                                    presentation.definition,
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    maxLines = if (expanded) Int.MAX_VALUE else 2,
+                                    overflow = TextOverflow.Ellipsis
+                                )
                             }
                         }
-                        if (definition.synonyms.isNotEmpty()) {
+                        val visibleSynonymCount = DictionaryOverlayPolicy.visibleSynonyms(
+                            definition.synonyms.size, expanded
+                        )
+                        if (visibleSynonymCount > 0) {
                             Spacer(Modifier.height(2.dp))
                             Text("RELATED WORDS", style = MaterialTheme.typography.labelSmall,
                                 color = MaterialTheme.colorScheme.secondary)
-                            Text(definition.synonyms.joinToString(" · "), style = MaterialTheme.typography.bodyMedium)
+                            Text(
+                                definition.synonyms.take(visibleSynonymCount).joinToString(" · "),
+                                style = MaterialTheme.typography.bodyMedium
+                            )
                         }
                     }
                 }
