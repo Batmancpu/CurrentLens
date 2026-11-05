@@ -28,6 +28,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
 import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.snap
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.core.animateDp
 import androidx.compose.animation.core.animateFloat
@@ -317,25 +318,41 @@ private fun CurrentLensApp() {
 
     BoxWithConstraints(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
         val searchTransition = updateTransition(targetState = searchExpanded, label = "Search tab morph")
-        val searchMorphProgressState = searchTransition.animateFloat(
-            transitionSpec = { spring(dampingRatio = 0.84f, stiffness = 320f) },
+        val animatedSearchMorphProgress = searchTransition.animateFloat(
+            transitionSpec = {
+                if (reduceMotion) snap() else spring(dampingRatio = 0.84f, stiffness = 320f)
+            },
             label = "Liquid search morph progress"
-        ) { expanded -> if (expanded) 1f else 0f }
-        val searchMorphProgress = searchMorphProgressState.value
+        ) { expanded -> if (expanded) 1f else 0f }.value
+        val searchMorphProgress = SearchMorphGeometryPolicy.effectiveProgress(
+            animatedProgress = animatedSearchMorphProgress,
+            expanded = searchExpanded,
+            reduceMotion = reduceMotion
+        )
         val searchMorphActive = searchTransition.currentState || searchTransition.targetState
-        val sourceWidth = 58.dp
-        val searchHeight = 48.dp
+        // Match the collapsed Search capsule to the selected tab's resting optical footprint.
+        // The tab row is inset by 10dp outside and 4dp inside; its content height is 56dp.
+        val sourceWidth = ((maxWidth - 28.dp) / 4f).coerceAtLeast(1.dp)
+        val sourceHeight = 56.dp
+        val searchHeight = 52.dp
         val targetWidth = (maxWidth - 32.dp).coerceAtLeast(180.dp)
         val sourceWidthPx = with(density) { sourceWidth.toPx() }
-        val sourceHeightPx = with(density) { searchHeight.toPx() }
+        val sourceHeightPx = with(density) { sourceHeight.toPx() }
+        val searchHeightPx = with(density) { searchHeight.toPx() }
         val targetWidthPx = with(density) { targetWidth.toPx() }
+        val collapsedIconOffsetPx = SearchMorphGeometryPolicy.collapsedIconOffsetPx(
+            sourceWidthPx = sourceWidthPx,
+            iconWidthPx = with(density) { 20.dp.toPx() },
+            leadingInsetPx = with(density) { 13.dp.toPx() }
+        )
+        val navigationBarsBottomPx = WindowInsets.navigationBars.getBottom(density).toFloat()
         val fallbackAnchor = Offset(
-            with(density) { maxWidth.toPx() * 0.625f },
-            with(density) { maxHeight.toPx() - 38.dp.toPx() }
+            with(density) { (maxWidth * 0.625f - 3.5.dp).toPx() },
+            with(density) { maxHeight.toPx() - navigationBarsBottomPx - 37.dp.toPx() }
         )
         val fallbackDock = Offset(
             (with(density) { maxWidth.toPx() } - targetWidthPx) / 2f,
-            with(density) { maxHeight.toPx() - searchHeight.toPx() - 8.dp.toPx() }
+            with(density) { maxHeight.toPx() - searchHeight.toPx() - 2.dp.toPx() }
         )
 
         Column(
@@ -419,7 +436,7 @@ private fun CurrentLensApp() {
                     adaptiveContentColor = glassLuminance.contentColor,
                     reduceMotion = reduceMotion,
                     morphProgress = if (selectedTab == SearchNavigationPolicy.SEARCH_TAB && searchMorphActive) {
-                        searchMorphProgressState.value
+                        searchMorphProgress
                     } else 0f,
                     onSearchAnchor = { searchTabAnchorState.value = it },
                     onSelect = { tab ->
@@ -450,7 +467,7 @@ private fun CurrentLensApp() {
             ) {
                 SearchMorphField(
                     modifier = Modifier.fillMaxSize().graphicsLayer {
-                        val progress = searchMorphProgressState.value.coerceIn(0f, 1f)
+                        val progress = searchMorphProgress.coerceIn(0f, 1f)
                         val anchor = searchTabAnchorState.value.takeIf { it != Offset.Zero } ?: fallbackAnchor
                         val dock = searchDockPositionState.value.takeIf { it != Offset.Zero } ?: fallbackDock
                         val sourceLeft = anchor.x - sourceWidthPx / 2f
@@ -477,6 +494,7 @@ private fun CurrentLensApp() {
                     glassAlpha = glassAlpha,
                     luminance = glassLuminance.luminance,
                     adaptiveContentColor = glassLuminance.contentColor,
+                    collapsedIconOffsetPx = collapsedIconOffsetPx,
                     query = searchQuery,
                     onQueryChange = { searchQuery = it },
                     focusRequester = searchFocusRequester,
@@ -758,6 +776,7 @@ private fun SearchMorphField(
     glassAlpha: Float,
     luminance: Float,
     adaptiveContentColor: Color,
+    collapsedIconOffsetPx: Float,
     query: String,
     onQueryChange: (String) -> Unit,
     focusRequester: FocusRequester,
@@ -776,12 +795,15 @@ private fun SearchMorphField(
         minAlpha = 0.04f,
         maxAlpha = 0.12f
     )
+    val iconOffset = with(density) {
+        SearchMorphGeometryPolicy.iconOffset(collapsedIconOffsetPx, progress).toDp()
+    }
 
     Box(modifier) {
         Box(
             Modifier.fillMaxSize().drawPrismalGlass(
                 backdrop = backdrop,
-                shape = { PrismalRoundedRectangle(24.dp) },
+                shape = { PrismalCapsule() },
                 effects = {
                     applyPrismalGlassEffects(
                         density = density,
@@ -833,7 +855,7 @@ private fun SearchMorphField(
                 Icons.Outlined.Search,
                 contentDescription = "Search",
                 tint = adaptiveContentColor,
-                modifier = Modifier.offset(x = 6.dp * (1f - progress)).size(20.dp)
+                modifier = Modifier.offset(x = iconOffset).size(20.dp)
             )
             BasicTextField(
                 value = query,
@@ -1294,7 +1316,7 @@ private fun GlassTabBar(
     val tabsBackdrop = rememberPrismalGlassLayer()
     val dropletBackdrop = rememberPrismalMergedSource(backdrop, tabsBackdrop)
     tabsBackdrop.readSamplingState()
-    val barAlpha = GlassTabGeometryPolicy.barAlpha(morphProgress)
+    val barAlpha = SearchMorphGeometryPolicy.tabBarAlpha(morphProgress)
     val glassTint = if (adaptiveContentColor == Color.Black) Color(0xFFEAF0FA) else Color(0xFF1C2E49)
     val baseTintAlpha = GlassOpticsPolicy.adaptiveTintAlpha(
         baseAlpha = glassAlpha * 0.12f,
@@ -1476,6 +1498,7 @@ private fun GlassTabBar(
             }
                 .size(dropletWidth, dropletHeight)
                 .graphicsLayer {
+                    alpha = barAlpha
                     val velocity = (pillVelocity / 10f).coerceIn(-0.2f, 0.2f)
                     scaleX = GlassTabGeometryPolicy.horizontalScale(restingScaleX, motion.scaleX, velocity)
                     scaleY = GlassTabGeometryPolicy.verticalScale(restingScaleY, motion.scaleY, velocity)
