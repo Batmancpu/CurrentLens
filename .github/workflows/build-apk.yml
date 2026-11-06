@@ -50,6 +50,11 @@ jobs:
           mkdir -p .ci
           keytool -genkeypair -noprompt -v -keystore .ci/stability-debug.keystore -storetype JKS -storepass currentlens-stability-test-only -keypass currentlens-stability-test-only -alias currentlens-stability -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=CurrentLens Stability Debug,O=CurrentLens,C=IN"
 
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+        with:
+          packages: platform-tools
+
       - name: Install Android platform
         run: |
           yes | sdkmanager --licenses
