@@ -168,7 +168,7 @@ internal object LaunchCrashDiagnostics {
         appendLine("The previous process ended before confirming the first stable Compose frames.")
         appendLine("Use the Android process-exit reason above to distinguish a Java crash, native crash,")
         appendLine("ANR, signal, low-memory termination, or user/system stop.")
-        appendLine("This is not a Java/Kotlin stack trace unless a separate exception report says so.")
+        appendLine("It is not a Java/Kotlin stack trace.")
     }.take(MAX_REPORT_CHARS)
 
     private fun writeInterruptedStartupReport(
@@ -202,7 +202,11 @@ internal object LaunchCrashDiagnostics {
 
     internal fun isKnownLegacyFalsePositive(report: String): Boolean {
         val lines = report.lineSequence().toList()
-        return lines.contains("App: 0.2.1-stability") &&
+        return lines.contains("CurrentLens startup interruption report") &&
+            lines.contains(
+                "Report type: startup interrupted; no uncaught Java/Kotlin exception was captured"
+            ) &&
+            lines.contains("App: 0.2.1-stability") &&
             lines.contains("Package: com.mangoloads.currentlens.stability") &&
             lines.any {
                 it.startsWith("Last completed startup stage: ") &&
