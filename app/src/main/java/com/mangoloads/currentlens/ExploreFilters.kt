@@ -2,6 +2,10 @@ package com.mangoloads.currentlens
 
 /** Deterministic Explore matching over publisher sections and RSS metadata only. */
 internal object ExploreFilters {
+    /** Explore keeps its wider date window but never bypasses the default editorial gate. */
+    fun eligible(articles: List<Article>): List<Article> =
+        articles.filter(UpscFeedPolicy::shouldInclude)
+
     fun matches(article: Article, category: String, query: String): Boolean =
         matchesCategory(article, category) && matchesSearchTerms(article, query)
 
@@ -9,12 +13,19 @@ internal object ExploreFilters {
         if (category.equals("All", true)) return true
         val section = article.section.lowercase()
         val text = (article.title + " " + article.description + " " + article.section).lowercase()
+        val normalizedText = EditorialTextMatcher.normalize(text)
         return when (category.lowercase()) {
             "india" -> section.contains("india") || listOf("india", "indian", "new delhi").any { text.contains(it) }
             "world" -> section.contains("world") || section.contains("international") ||
                 listOf("international", "global", "geopolitical", "united nations").any { text.contains(it) }
             "politics" -> section.contains("politic") ||
                 listOf("government", "parliament", "election", "minister", "political", "legislature", "cabinet", "opposition", "constitution").any { text.contains(it) }
+            "geography" -> listOf(
+                "physical geography", "monsoon", "river basin", "river systems", "glacier",
+                "ocean current", "tectonic plate", "earthquake", "tsunami", "cyclone",
+                "volcanic activity", "coastal erosion", "mineral resources",
+                "industrial location", "rainfall distribution", "groundwater aquifer"
+            ).any { EditorialTextMatcher.contains(normalizedText, it) }
             "economy" -> section.contains("econom") ||
                 listOf("econom", "rbi", "inflation", "budget", "fiscal", "monetary", "banking", "taxation", "trade", "employment", "gdp").any { text.contains(it) }
             "science" -> section.contains("science") || section.contains("technology") ||
@@ -42,6 +53,7 @@ internal object ExploreFilters {
                 "world", "global", "international" -> article.section.contains("world", true) || article.section.contains("international", true) || text.contains("global")
                 "economy", "economic" -> text.contains("econom") || text.contains("rbi") || text.contains("inflation")
                 "environment", "climate" -> text.contains("environment") || text.contains("climate") || text.contains("biodiversity")
+                "geography", "geographic", "geographical" -> UpscEngine.classify(article).subject == "Geography"
                 "science", "technology", "tech" -> text.contains("science") || text.contains("technology") || text.contains("space") || text.contains("isro") || text.contains("semiconductor")
                 else -> text.contains(raw.lowercase())
             }

@@ -76,7 +76,14 @@ internal object UpscFeedPolicy {
         "direct benefit transfer", "public service delivery", "lokpal",
         "comptroller and auditor general", "central vigilance commission",
         "disaster management", "earthquake", "cyclone", "flood", "drought",
-        "landslide", "heatwave"
+        "landslide", "heatwave",
+        "physical geography", "monsoon", "river basin", "river systems", "glacier",
+        "ice cap", "ocean current", "tectonic plate", "plate boundary",
+        "tsunami", "volcano", "volcanoes", "volcanic activity", "coastal erosion",
+        "natural resource distribution", "resource distribution", "mineral resources",
+        "industrial location", "location of industries", "rainfall distribution",
+        "groundwater aquifer", "geomorphology", "landform", "geophysical phenomena",
+        "weathering", "desertification"
     )
 
     fun shouldInclude(article: Article): Boolean {

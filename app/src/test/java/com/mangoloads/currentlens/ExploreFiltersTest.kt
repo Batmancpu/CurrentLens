@@ -29,6 +29,25 @@ class ExploreFiltersTest {
     }
 
     @Test
+    fun exploreEligibilitySuppressesEntertainmentEvenInTheAllCategory() {
+        val relevant = article(
+            "RBI holds repo rate amid inflation concerns",
+            "The monetary policy committee explains the inflation outlook.",
+            "India"
+        )
+        val entertainment = article(
+            "Celebrity film trailer celebrates Himalayan glaciers",
+            "A movie uses glacier and river-basin imagery in a fictional landscape.",
+            "Entertainment"
+        )
+
+        val eligible = ExploreFilters.eligible(listOf(relevant, entertainment))
+
+        assertTrue(eligible.contains(relevant))
+        assertFalse(eligible.contains(entertainment))
+    }
+
+    @Test
     fun environmentAndOpinionMatchPublisherSectionOrMetadata() {
         val environment = article("Forest conservation plan announced", "Wildlife habitat restoration.", "India")
         val editorial = article("A view on public policy", "The government needs reform.", "Editorial")
