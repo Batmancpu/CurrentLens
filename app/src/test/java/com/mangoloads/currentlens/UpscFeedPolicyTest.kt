@@ -66,6 +66,29 @@ class UpscFeedPolicyTest {
     }
 
     @Test
+    fun suppressesRoutineSportsScoresAndGenericViralNoiseDespiteIncidentalSyllabusWords() {
+        assertFalse(UpscFeedPolicy.shouldInclude(article(
+            "India vs Australia final score: 3-1",
+            "A match report mentions inflation only in a sponsor's unrelated statement.",
+            "Sports"
+        )))
+        assertFalse(UpscFeedPolicy.shouldInclude(article(
+            "Viral dance challenge becomes an internet sensation",
+            "The clip uses climate change and biodiversity imagery as a backdrop.",
+            "Trending"
+        )))
+    }
+
+    @Test
+    fun preservesSpecificSportsGovernancePolicyDevelopments() {
+        assertTrue(UpscFeedPolicy.shouldInclude(article(
+            "Sports ministry revises anti-doping rules",
+            "The institutional change concerns sports governance and regulatory oversight.",
+            "Sports"
+        )))
+    }
+
+    @Test
     fun tokenBoundariesPreventIplAndActorSubstringFalsePositives() {
         assertTrue(UpscFeedPolicy.shouldInclude(article(
             "Multiple irrigation projects receive clearance",
@@ -84,6 +107,18 @@ class UpscFeedPolicyTest {
             "The feature profiles performers rather than a technology or public-policy development.",
             "India"
         )))
+    }
+
+    @Test
+    fun preservesScientificThinFilmSolarTechnologyDespiteEntertainmentNoise() {
+        // False-negative fixture: "thin film" is a materials-science term, not film promotion.
+        val story = article(
+            "Thin-film photovoltaic cells could improve renewable energy access",
+            "Researchers report a new coating that improves solar-cell efficiency and supports renewable energy deployment.",
+            "Science"
+        )
+
+        assertTrue(UpscFeedPolicy.shouldInclude(story))
     }
 
     @Test

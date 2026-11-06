@@ -12,14 +12,17 @@ internal object UpscFeedPolicy {
     private val noiseTerms = listOf(
         "ranbir kapoor", "salman khan", "celebrity", "celebrity news",
         "box office", "box-office", "opening weekend", "entertainment",
-        "film", "movie", "cinema", "actor", "actress", "trailer", "teaser",
+        "movie", "cinema", "actor", "actress", "trailer", "teaser",
         "reality show", "reality tv", "reality television", "contestant", "bigg boss",
         "tv show", "tv series", "television show", "television series",
         "series premiere", "season premiere", "season finale", "show promotion",
         "cast announcement", "match result", "scorecard", "live score",
         "red carpet", "paparazzi", "celebrity gossip", "film review", "movie review",
         "streaming release", "cricket", "ipl", "football match", "match highlights",
-        "sports score", "transfer window", "player signs", "tournament result", "league table"
+        "sports score", "transfer window", "player signs", "tournament result", "league table",
+        "final score", "match score", "points table", "league standings", "medal tally",
+        "viral challenge", "social media trend", "trending now", "internet sensation",
+        "meme", "memes", "influencer feud", "influencer drama"
     )
 
     private val policyExceptions = listOf(
@@ -76,7 +79,14 @@ internal object UpscFeedPolicy {
         "direct benefit transfer", "public service delivery", "lokpal",
         "comptroller and auditor general", "central vigilance commission",
         "disaster management", "earthquake", "cyclone", "flood", "drought",
-        "landslide", "heatwave"
+        "landslide", "heatwave",
+        "physical geography", "monsoon", "river basin", "river systems", "glacier",
+        "ice cap", "ocean current", "tectonic plate", "plate boundary",
+        "tsunami", "volcano", "volcanoes", "volcanic activity", "coastal erosion",
+        "natural resource distribution", "resource distribution", "mineral resources",
+        "industrial location", "location of industries", "rainfall distribution",
+        "groundwater aquifer", "geomorphology", "landform", "geophysical phenomena",
+        "weathering", "desertification"
     )
 
     fun shouldInclude(article: Article): Boolean {
