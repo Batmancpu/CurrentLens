@@ -68,7 +68,7 @@ For conversation-only decisions that do not produce a commit, append a dated ses
 - Inspect live main, all open PRs/branches, complete Actions history/queue, workflow, latest steps/logs, artifacts and Releases before proposing repository actions.
 - Check for equivalent existing PRs before opening another. Update an equivalent PR rather than duplicating it.
 - Use one isolated branch and one focused draft PR for material improvements. Keep work batched and evidence-backed.
-- The current single workflow triggers on pushes to main, has contents:write and publishes a debug APK prerelease. Merging can publish a Release automatically; flag this before any merge discussion.
+- The single workflow has `contents:write`; `main` pushes publish a debug APK prerelease, while the temporary active crash-stabilisation branch builds an Actions artifact only. Merging any branch into `main` can trigger a Release; flag this before any merge discussion. Remove temporary branch triggers when the stabilisation work is completed.
 - If no material change is justified, do not send a no-change alert or a generic UPSC news digest.
 
 ## Verification rules
