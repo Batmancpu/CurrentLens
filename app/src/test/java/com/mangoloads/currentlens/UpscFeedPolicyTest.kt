@@ -47,18 +47,65 @@ class UpscFeedPolicyTest {
     }
 
     @Test
-    fun oneBroadKeywordIsNotEnoughForDefaultFeedEligibility() {
+    fun broadTermsAndPublisherSectionsCannotQualifyAStoryAlone() {
         assertFalse(UpscFeedPolicy.shouldInclude(article(
             "Technology trends reshape everyday life",
-            "A general feature describes consumer technology and gadgets."
+            "A general feature describes consumer technology and gadgets.",
+            "UPSC"
+        )))
+        assertFalse(UpscFeedPolicy.shouldInclude(article(
+            "Women and health in everyday life",
+            "A general lifestyle feature discusses wellness and routines.",
+            "Explained"
+        )))
+        assertFalse(UpscFeedPolicy.shouldInclude(article(
+            "Culture and policy in a popular series",
+            "A general entertainment feature discusses public taste.",
+            "UPSC"
         )))
     }
 
     @Test
-    fun publicPolicyCoverageCanPassDespiteEntertainmentVocabulary() {
+    fun tokenBoundariesPreventIplAndActorSubstringFalsePositives() {
+        assertTrue(UpscFeedPolicy.shouldInclude(article(
+            "Multiple irrigation projects receive clearance",
+            "The report explains a key factor in groundwater management."
+        )))
+        assertTrue(UpscFeedPolicy.shouldInclude(article(
+            "RBI inflation outlook remains uncertain",
+            "The policy committee discusses monetary conditions and a key factor in price stability."
+        )))
+    }
+
+    @Test
+    fun pluralEntertainmentTermsRemainSuppressedWithoutSectionHelp() {
+        assertFalse(UpscFeedPolicy.shouldInclude(article(
+            "Actors prepare for an artificial intelligence role",
+            "The feature profiles performers rather than a technology or public-policy development.",
+            "India"
+        )))
+    }
+
+    @Test
+    fun unrelatedWordArbitraryCannotBecomeAnRbiSyllabusSignal() {
+        assertFalse(UpscFeedPolicy.shouldInclude(article(
+            "Arbitrary changes to a local event schedule",
+            "Residents prepare for a neighbourhood gathering.",
+            "Local"
+        )))
+    }
+
+    @Test
+    fun entertainmentPolicyExceptionMustBeEstablishedInTheHeadline() {
+        assertFalse(UpscFeedPolicy.shouldInclude(article(
+            "Salman Khan film release draws attention",
+            "A passing paragraph mentions film certification rules and a wider policy debate.",
+            "Entertainment"
+        )))
         assertTrue(UpscFeedPolicy.shouldInclude(article(
             "Parliament reviews film certification rules under the Cinematograph Act",
-            "The debate concerns regulatory powers, constitutional safeguards and media governance."
+            "The report concerns statutory powers, constitutional safeguards and media governance.",
+            "Entertainment"
         )))
     }
 }
