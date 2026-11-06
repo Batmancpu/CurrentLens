@@ -33,6 +33,12 @@ jobs:
         with:
           packages: platform-tools
 
+      - name: Restore stable debug signing key for repeatable test APK updates
+        uses: actions/cache@v4
+        with:
+          path: ~/.android/debug.keystore
+          key: currentlens-stability-debug-signing-v1
+
       - name: Install Android platform
         run: |
           yes | sdkmanager --licenses
