@@ -2404,6 +2404,7 @@ private fun ReaderScreen(article: Article, backdrop: PrismalBackdrop, glassAlpha
     var readerViewportHeightPx by remember(article.url) { mutableIntStateOf(0) }
     var fontSize by remember(article.url) { mutableIntStateOf(20) }
     var completionDismissed by remember(article.url) { mutableStateOf(false) }
+    var selectionActionModeActive by remember(article.url) { mutableStateOf(false) }
 
     LaunchedEffect(article.url) {
         extracting = true
@@ -2533,6 +2534,9 @@ private fun ReaderScreen(article: Article, backdrop: PrismalBackdrop, glassAlpha
                         LocalStore.clearReaderPosition(context, article.url)
                         savedReadingProgress = 0f
                         reachedBottom = true
+                    }
+                    webView.onSelectionActionModeChanged = { active ->
+                        selectionActionModeActive = active
                     }
                     webView.onDefineWord = { word, selectionRect ->
                         val webViewLocation = IntArray(2)
@@ -2686,7 +2690,8 @@ private fun ReaderScreen(article: Article, backdrop: PrismalBackdrop, glassAlpha
         if (ReaderChromePolicy.shouldShowCompletion(
                 reachedBottom = reachedBottom,
                 definitionOpen = activeWord != null,
-                dismissed = completionDismissed
+                dismissed = completionDismissed,
+                selectionActive = selectionActionModeActive
             )
         ) {
             PrismalGlassSurface(
@@ -2859,6 +2864,7 @@ private fun readerDocument(article: Article, content: String, fontSize: Int, dar
 private class ReaderWebView(context: android.content.Context) : WebView(context) {
     var loadedKey: String? = null
     var onReachedBottom: () -> Unit = {}
+    var onSelectionActionModeChanged: (Boolean) -> Unit = {}
     var onDefineWord: (String, RectF?) -> Unit = { _, _ -> }
     var onReaderPageFinished: () -> Unit = {}
     var onReaderMainFrameError: () -> Unit = {}
@@ -3040,6 +3046,7 @@ private class ReaderWebView(context: android.content.Context) : WebView(context)
         cancelReadingPositionRestore()
         cancelShortPageEndCheck(resetStability = true)
         cancelPendingAutoDefine()
+        onSelectionActionModeChanged(false)
         super.onDetachedFromWindow()
     }
 
@@ -3089,6 +3096,7 @@ private class ReaderWebView(context: android.content.Context) : WebView(context)
         object : ActionMode.Callback2() {
             override fun onCreateActionMode(mode: ActionMode, menu: Menu): Boolean {
                 val created = original.onCreateActionMode(mode, menu)
+                if (created) onSelectionActionModeChanged(true)
                 if (created && selectionBridgeEnabled) {
                     menu.add(0, MENU_DEFINE_WORD, menu.size(), "Define")
                         .setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS)
@@ -3154,6 +3162,7 @@ private class ReaderWebView(context: android.content.Context) : WebView(context)
 
             override fun onDestroyActionMode(mode: ActionMode) {
                 cancelPendingAutoDefine()
+                onSelectionActionModeChanged(false)
                 original.onDestroyActionMode(mode)
             }
 
