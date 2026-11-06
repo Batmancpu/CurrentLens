@@ -109,4 +109,57 @@ class UpscEngineTest {
         assertTrue(questions[3].provenance.contains("Original practice question"))
         assertTrue(questions[4].provenance.contains("PYQ-style practice"))
     }
+    @Test
+    fun syntheticFalsePositiveBillGatesNameDoesNotMapToConstitution() {
+        // Synthetic false-positive fixture, not a live publisher article or UPSC PYQ.
+        val article = Article(
+            id = "bill-gates",
+            title = "Bill Gates visits a local community event",
+            description = "The philanthropist meets volunteers and foundation staff.",
+            url = "https://example.test/bill-gates",
+            source = "Test",
+            section = "World",
+            published = "2026-11-07T10:00:00Z"
+        )
+
+        assertEquals("Unmapped", UpscEngine.classify(article).gsPaper)
+    }
+
+    @Test
+    fun specificFinanceBillPhraseMapsToTheEconomyRatherThanGenericConstitution() {
+        val article = Article(
+            id = "finance-bill",
+            title = "Finance Bill receives presidential assent",
+            description = "The annual finance bill sets the government's tax proposals.",
+            url = "https://example.test/finance-bill",
+            source = "Test",
+            section = "India",
+            published = "2026-11-07T10:00:00Z"
+        )
+
+        val result = UpscEngine.classify(article)
+        assertEquals("GS III", result.gsPaper)
+        assertEquals("Indian Economy", result.subject)
+        assertTrue(result.matchedTerms.contains("finance bill"))
+    }
+
+    @Test
+    fun syntheticFalseNegativeNdmaHeatWaveActionPlanMapsToDisasterManagement() {
+        // Synthetic false-negative fixture grounded in NDMA's official heat-wave action-plan guidance.
+        val article = Article(
+            id = "ndma-heat-plan",
+            title = "NDMA updates heat wave action plan for vulnerable districts",
+            description = "The national authority coordinates preparedness and early response.",
+            url = "https://example.test/ndma-heat-plan",
+            source = "Test",
+            section = "India",
+            published = "2026-11-07T10:00:00Z"
+        )
+
+        val result = UpscEngine.classify(article)
+        assertEquals("GS III", result.gsPaper)
+        assertEquals("Disaster Management", result.subject)
+        assertTrue(result.matchedTerms.contains("heat wave action plan"))
+    }
+
 }
