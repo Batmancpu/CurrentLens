@@ -14,6 +14,12 @@ import com.styropyr0.prismal.PrismalGlass
 class CurrentLensApplication : Application() {
     override fun attachBaseContext(base: Context) {
         super.attachBaseContext(base)
+        // Install diagnostics and inspect the PREVIOUS process before writing any
+        // stage belonging to this process. Reversing this order creates a false
+        // interruption report on every cold start.
+        runCatching { LaunchCrashDiagnostics.install(base) }
+        runCatching { LaunchCrashDiagnostics.beginStartup(base) }
+
         // Disable the API 33+ AGSL renderer during launch stabilisation. Standard keeps
         // RenderEffect blur while avoiding the Liquid/AGSL shader path on affected GPUs.
         runCatching {
@@ -22,8 +28,6 @@ class CurrentLensApplication : Application() {
                 LaunchCrashDiagnostics.recordStage(base, "Prismal pipeline forced to " + tier.name)
             }
         }
-        runCatching { LaunchCrashDiagnostics.install(base) }
-        runCatching { LaunchCrashDiagnostics.beginStartup(base) }
     }
 
     override fun onCreate() {
