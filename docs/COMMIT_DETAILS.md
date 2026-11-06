@@ -148,7 +148,7 @@ This file currently explains selected high-impact commits whose diffs were inspe
 ## PR #16 — early-startup crash instrumentation and recovery
 
 URL: https://github.com/Batmancpu/CurrentLens/pull/16  
-Snapshot head: 28a6950fe9e1c0e53f48deacc92cbcd7e89dc4e8  
+Snapshot head: b66315c2f82f7785e7dfd96577d83d203770faad  
 Base main: 73b8a0d1ba33503fede02db2c3c0af082d724a12
 
 ### Why this change was made
@@ -157,7 +157,7 @@ Main previously installed its uncaught-exception handler in MainActivity.onCreat
 ### File-level changes
 - AndroidManifest.xml registers CurrentLensApplication as the Application class.
 - CurrentLensApplication.kt installs crash handling from attachBaseContext(), before ContentProviders/AndroidX Startup, and records startup milestones.
-- LaunchCrashDiagnostics.kt stores exception reports with device/build/app info and full stack; writes through a temporary file with fsync; tracks the last startup stage; detects a prior process end before first Compose frames even without an uncaught Java/Kotlin exception; explicitly labels that as an interruption marker, not a stack trace; marks healthy only after three Compose frame callbacks; synthetic diagnostic write failures are best-effort and must not abort app startup.
+- LaunchCrashDiagnostics.kt stores exception reports with device/build/app info and full stack; writes through a temporary file with fsync; tracks the last startup stage; detects a prior process end before first Compose frames even without an uncaught Java/Kotlin exception; explicitly labels that as an interruption marker, not a stack trace; marks healthy only after three Compose frame callbacks; synthetic diagnostic write failures and Application-level diagnostic installation/checkpoint operations are best-effort and must not abort app startup.
 - MainActivity.kt shows crash details through ordinary Android Views, not Compose, with selectable text and copy action; records startup checkpoints and marks first launch healthy after three frame callbacks.
 - LaunchCrashDiagnosticsTest.kt adds checks for managed-exception reports, interrupted startup report wording and bounded report size.
 

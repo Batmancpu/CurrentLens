@@ -19,10 +19,10 @@
 - User's current symptom: tap launcher icon, Android shows opening animation, no app screen appears, and Android returns to the launcher.
 - PR: https://github.com/Batmancpu/CurrentLens/pull/16 (draft; not merged).
 - Branch: fix/early-startup-crash-diagnostics-2026-11-06.
-- Head: 28a6950fe9e1c0e53f48deacc92cbcd7e89dc4e8; base main: 73b8a0d1ba33503fede02db2c3c0af082d724a12; 6 commits ahead / 0 behind.
+- Head: b66315c2f82f7785e7dfd96577d83d203770faad; base main: 73b8a0d1ba33503fede02db2c3c0af082d724a12; 7 commits ahead / 0 behind.
 - Root cause is not established: no OPPO logcat, tombstone, ANR or current on-device stack trace was available. Do not claim the crash is fixed.
 - Audit found that the old uncaught-exception handler was installed inside MainActivity.onCreate(), but PrismalAGSL v1.0.4 contributes an AndroidX Startup InitializationProvider that runs before the Activity. A managed exception in that earlier startup phase could occur before the old handler existed. Prismal's v1.0.4 initializer itself only binds the asset manager; this is an instrumentation gap, not evidence that Prismal causes the crash. Android references: https://developer.android.com/topic/libraries/app-startup and https://developer.android.com/reference/androidx/startup/InitializationProvider.
-- PR #16 installs a custom Application handler from attachBaseContext(), records startup stages, writes reports atomically, detects a prior interrupted startup without inventing a stack trace, and replaces the Compose recovery screen with native Views.
+- PR #16 installs a custom Application handler from attachBaseContext(), records startup stages, writes reports atomically, detects a prior interrupted startup without inventing a stack trace, replaces the Compose recovery screen with native Views, and makes diagnostic setup best-effort so storage failures cannot block app launch.
 - Unit tests were updated/added but not executed. The current workflow only runs on pushes to main; no build was dispatched and no APK exists for this branch.
 - After review/merge and installation of the next build, relaunch once if it still exits; the native recovery screen should expose a local report for copying. If a native/system kill still produces no report, collect Android bugreport/logcat/tombstone evidence.
 - Merging PR #16 triggers the main-push workflow and publishes a debug APK prerelease; account for this before merging.
@@ -137,10 +137,10 @@ Do not blindly merge. No PR branch CI result follows from Build #116.
 
 - URL: https://github.com/Batmancpu/CurrentLens/pull/16
 - State: open draft; branch fix/early-startup-crash-diagnostics-2026-11-06.
-- Branch head: 28a6950fe9e1c0e53f48deacc92cbcd7e89dc4e8; base main 73b8a0d1ba33503fede02db2c3c0af082d724a12; 6 ahead, 0 behind.
+- Branch head: b66315c2f82f7785e7dfd96577d83d203770faad; base main 73b8a0d1ba33503fede02db2c3c0af082d724a12; 6 ahead, 0 behind.
 - Files: AndroidManifest.xml, new CurrentLensApplication.kt, LaunchCrashDiagnostics.kt, MainActivity.kt, LaunchCrashDiagnosticsTest.kt.
 - Scope: early Java/Kotlin crash instrumentation and non-Compose recovery surface only; no Prismal version, feed logic, app navigation, permissions or workflow changes.
-- Tests added but not run; no CI run because the existing workflow triggers only on push to main.
+- Tests added but not run; no CI run because the existing workflow triggers only on push to main. Diagnostic I/O/setup is wrapped best-effort to avoid adding a new launch blocker.
 - Exact code root cause remains unknown until a real device report is obtained.
 
 ## Session continuity
