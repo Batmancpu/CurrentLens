@@ -26,5 +26,6 @@ class ReaderChromePolicyTest {
         assertFalse(ReaderChromePolicy.shouldShowCompletion(false, false, false))
         assertFalse(ReaderChromePolicy.shouldShowCompletion(true, true, false))
         assertFalse(ReaderChromePolicy.shouldShowCompletion(true, false, true))
+        assertFalse(ReaderChromePolicy.shouldShowCompletion(true, false, false, selectionActive = true))
     }
 }
