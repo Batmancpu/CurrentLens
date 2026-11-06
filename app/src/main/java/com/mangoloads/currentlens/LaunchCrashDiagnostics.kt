@@ -5,8 +5,6 @@ import android.app.ApplicationExitInfo
 import android.content.Context
 import android.os.Build
 import android.os.Process
-import android.util.Base64
-import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.FileOutputStream
 import java.io.PrintWriter
@@ -21,7 +19,6 @@ import kotlin.system.exitProcess
  */
 internal object LaunchCrashDiagnostics {
     const val MAX_REPORT_CHARS = 30_000
-    private const val MAX_TRACE_BYTES = 8192
     private const val REPORT_NAME = "currentlens-last-crash.txt"
     private const val REPORT_TEMP_NAME = "currentlens-last-crash.tmp"
     private const val STAGE_NAME = "currentlens-last-startup-stage.txt"
@@ -71,10 +68,15 @@ internal object LaunchCrashDiagnostics {
                 stageFile.takeIf { it.isFile }?.readText(Charsets.UTF_8)
             }.getOrNull()
             val reportFile = File(directory, REPORT_NAME)
-            if (reportFile.isFile && isKnownLegacyFalsePositive(
-                    runCatching { reportFile.readText(Charsets.UTF_8) }.getOrDefault("")
-                )
+            val existingReport = runCatching {
+                reportFile.takeIf { it.isFile }?.readText(Charsets.UTF_8).orEmpty()
+            }.getOrDefault("")
+            if (reportFile.isFile && (
+                    isKnownLegacyFalsePositive(existingReport) ||
+                        hasLegacyDeviceMetadata(existingReport)
+                    )
             ) {
+                // Remove pre-privacy diagnostic reports that exposed device/build identifiers.
                 reportFile.delete()
             }
 
@@ -136,22 +138,15 @@ internal object LaunchCrashDiagnostics {
     internal fun formatInterruptedStartupReport(
         lastCompletedStage: String,
         versionName: String? = null,
-        processId: Int? = null,
         packageName: String = "com.mangoloads.currentlens",
-        systemExitSummary: String? = null,
-        nativeTraceBase64: String? = null
+        systemExitSummary: String? = null
     ): String = buildString {
         appendLine("CurrentLens startup interruption report")
-        appendLine("Timestamp: " + Instant.now().toString())
         appendLine("App: " + versionName.orEmpty())
         appendLine("Package: " + packageName)
-        appendLine("Device: " + Build.MANUFACTURER + " " + Build.BRAND + " " + Build.MODEL)
-        appendLine("Device code: " + Build.DEVICE)
-        appendLine("Android: " + Build.VERSION.RELEASE + " (API " + Build.VERSION.SDK_INT + ")")
-        appendLine("Build fingerprint: " + Build.FINGERPRINT)
-        appendLine("Process id: " + (processId?.toString() ?: "unavailable"))
+        appendLine("Android API: " + Build.VERSION.SDK_INT)
         appendLine("Report type: startup interrupted; no uncaught Java/Kotlin exception was captured")
-        appendLine("Last completed startup stage: " + lastCompletedStage)
+        appendLine("Last completed startup stage: " + displayStartupStage(lastCompletedStage))
         appendLine()
         if (!systemExitSummary.isNullOrBlank()) {
             appendLine("Android historical process-exit record:")
@@ -159,15 +154,11 @@ internal object LaunchCrashDiagnostics {
         } else {
             appendLine("Android historical process-exit record: unavailable")
         }
-        if (!nativeTraceBase64.isNullOrBlank()) {
-            appendLine()
-            appendLine("Android system trace (Base64; first 8192 bytes only):")
-            appendLine(nativeTraceBase64)
-        }
         appendLine()
         appendLine("The previous process ended before confirming the first stable Compose frames.")
         appendLine("Use the Android process-exit reason above to distinguish a Java crash, native crash,")
         appendLine("ANR, signal, low-memory termination, or user/system stop.")
+        appendLine("This report omits device identifiers, process identifiers, precise timestamps and raw traces.")
         appendLine("It is not a Java/Kotlin stack trace.")
     }.take(MAX_REPORT_CHARS)
 
@@ -184,13 +175,21 @@ internal object LaunchCrashDiagnostics {
             formatInterruptedStartupReport(
                 lastCompletedStage = lastCompletedStage,
                 versionName = versionName,
-                processId = Process.myPid(),
                 packageName = context.packageName,
-                systemExitSummary = exitInfo?.let(::describeExitInfo),
-                nativeTraceBase64 = exitInfo?.let(::readExitTraceBase64)
+                systemExitSummary = exitInfo?.let(::describeExitInfo)
             )
         )
     }
+
+    internal fun displayStartupStage(stage: String): String =
+        stage.substringAfterLast("|").trim().take(240)
+
+    internal fun hasLegacyDeviceMetadata(report: String): Boolean =
+        report.contains("Device:") ||
+            report.contains("Device code:") ||
+            report.contains("Build fingerprint:") ||
+            report.contains("Process id:") ||
+            report.contains("Android system trace (Base64")
 
     internal fun processIdFromStage(stage: String?): Int? =
         stage?.split("|")?.getOrNull(1)?.trim()?.removePrefix("pid=")?.toIntOrNull()
@@ -235,12 +234,10 @@ internal object LaunchCrashDiagnostics {
 
     private fun describeExitInfo(info: ApplicationExitInfo): String = buildString {
         appendLine("Reason: " + exitReasonName(info.reason) + " (" + info.reason + ")")
-        appendLine("Timestamp: " + Instant.ofEpochMilli(info.timestamp).toString())
-        appendLine("PID: " + info.pid + " | Process: " + info.processName)
         appendLine("Status/signal: " + info.status)
         appendLine("Importance: " + info.importance)
         appendLine("PSS/RSS: " + info.pss + " KB / " + info.rss + " KB")
-        info.description?.take(1000)?.let {
+        info.description?.take(240)?.let {
             appendLine("System description: " + it)
         }
     }.trimEnd()
@@ -263,27 +260,6 @@ internal object LaunchCrashDiagnostics {
         else -> "UNKNOWN_OR_NEWER_REASON"
     }
 
-    private fun readExitTraceBase64(info: ApplicationExitInfo): String? {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) return null
-        return runCatching {
-            val input = info.traceInputStream ?: return@runCatching null
-            input.use { stream ->
-                val output = ByteArrayOutputStream()
-                val buffer = ByteArray(1024)
-                var total = 0
-                while (total < MAX_TRACE_BYTES) {
-                    val count = stream.read(buffer, 0, minOf(buffer.size, MAX_TRACE_BYTES - total))
-                    if (count <= 0) break
-                    output.write(buffer, 0, count)
-                    total += count
-                }
-                val truncated = stream.read() != -1
-                Base64.encodeToString(output.toByteArray(), Base64.NO_WRAP) +
-                    if (truncated) " [trace truncated]" else ""
-            }
-        }.getOrNull()
-    }
-
     private fun writeCrashReport(context: Context, threadName: String, throwable: Throwable) {
         val directory = context.filesDir
         val stage = runCatching {
@@ -297,7 +273,6 @@ internal object LaunchCrashDiagnostics {
             throwable = throwable,
             lastCompletedStage = stage,
             versionName = versionName,
-            processId = Process.myPid(),
             packageName = context.packageName
         )
         writeReportFile(directory, report)
@@ -326,26 +301,19 @@ internal object LaunchCrashDiagnostics {
         throwable: Throwable,
         lastCompletedStage: String? = null,
         versionName: String? = null,
-        processId: Int? = null,
         packageName: String = "com.mangoloads.currentlens"
-    ): String {
-        val writer = StringWriter()
-        throwable.printStackTrace(PrintWriter(writer))
-        return buildString {
-            appendLine("CurrentLens local startup crash report")
-            appendLine("Timestamp: " + Instant.now().toString())
-            appendLine("App: " + versionName.orEmpty())
-            appendLine("Package: " + packageName)
-            appendLine("Device: " + Build.MANUFACTURER + " " + Build.BRAND + " " + Build.MODEL)
-            appendLine("Device code: " + Build.DEVICE)
-            appendLine("Android: " + Build.VERSION.RELEASE + " (API " + Build.VERSION.SDK_INT + ")")
-            appendLine("Build fingerprint: " + Build.FINGERPRINT)
-            appendLine("Process id: " + (processId?.toString() ?: "unavailable"))
-            appendLine("Thread: " + threadName)
-            appendLine("Last completed startup stage: " + (lastCompletedStage ?: "unknown"))
-            appendLine("Exception: " + throwable.javaClass.name)
-            appendLine()
-            append(writer.toString())
-        }.take(MAX_REPORT_CHARS)
-    }
+    ): String = buildString {
+        appendLine("CurrentLens local startup crash report")
+        appendLine("App: " + versionName.orEmpty())
+        appendLine("Package: " + packageName)
+        appendLine("Android API: " + Build.VERSION.SDK_INT)
+        appendLine("Thread: " + threadName.take(40))
+        appendLine("Last completed startup stage: " +
+            (lastCompletedStage?.let(::displayStartupStage) ?: "unknown"))
+        appendLine("Exception type: " + throwable.javaClass.name)
+        appendLine("Stack frames (class and method only):")
+        throwable.stackTrace.take(20).forEach { frame ->
+            appendLine("  at " + frame.className + "." + frame.methodName)
+        }
+    }.take(MAX_REPORT_CHARS)
 }
