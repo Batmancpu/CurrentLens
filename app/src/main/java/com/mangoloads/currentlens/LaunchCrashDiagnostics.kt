@@ -168,6 +168,7 @@ internal object LaunchCrashDiagnostics {
         appendLine("The previous process ended before confirming the first stable Compose frames.")
         appendLine("Use the Android process-exit reason above to distinguish a Java crash, native crash,")
         appendLine("ANR, signal, low-memory termination, or user/system stop.")
+        appendLine("This is not a Java/Kotlin stack trace unless a separate exception report says so.")
     }.take(MAX_REPORT_CHARS)
 
     private fun writeInterruptedStartupReport(
