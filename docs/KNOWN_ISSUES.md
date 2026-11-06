@@ -144,3 +144,13 @@ Snapshot main: 73b8a0d1ba33503fede02db2c3c0af082d724a12 (6 Nov 2026).
 - Stability 0.2.6 adds three isolated, incremental checks: root capture only; one full Liquid Glass surface; two captured layers plus merged tab backdrop. Full app remains a separate final button.
 - The 0.2.5 report and recording contain no raw identifiers in the repository. Do not upload the video or any raw tombstone to GitHub.
 - Root cause must remain “not established” until a failing stage is reproduced with a sanitised symbol-level trace or a code-level trigger and then verified on repeated device launches.
+
+
+### KL-018 — Prismal backdrop self-capture in the full app
+- Status: **Resolved in code on draft PR #16; native-crash causality remains unverified without another device trace.**
+- Source review found that `MainActivity.BrrrNewsApp` applied `.prismalGlassLayer(backdrop)` to the complete content `Column`, while descendant surfaces such as the home header, Explore/Search glass controls and reader/settings glass sampled that same `backdrop`.
+- PrismalAGSL v1.0.6 specifies capture for background content with glass drawn above it. Its modifier draws the child subtree and then records that subtree into the backing GraphicsLayer. Descendant glass surfaces reading the same layer create a self-referential capture/sampling path, a strong explanation for a failure that begins only when the full UI is composed and rendered.
+- Correction: move the captured layer to a background-only sibling and keep all app content/glass surfaces outside the captured subtree. Add subtle ambient background gradients so the full glass effects still have a non-flat source.
+- Preserve the original automatic Prismal pipeline and all blur, refraction, chromatic, specular, depth and spring settings. The separate tab-glyph capture/merged droplet source remains intact.
+- The Stability build is advanced to 0.2.7 / versionCode 9 so it can be installed as an update to 0.2.6 with the same test signing key.
+- No new user test was requested or run. CI result is recorded separately; the native signal-11 causal link is still a strong diagnosis, not device-proven fact. No raw trace, device identifier or user media is committed.

@@ -198,3 +198,15 @@ The user continues in ChatGPT and does not want to repeat project context. Start
 - Prismal Legacy still uses GraphicsLayer capture/draw. The failed Legacy attempt did not exonerate the shared layer path. Normal rendering remains full Liquid Glass.
 - Stability 0.2.6 is an incremental diagnostic APK, not a claimed fix. It tests backdrop capture, one Liquid Glass surface, merged tab capture, and full app separately. See root AGENTS.md and KL-017.
 
+
+
+## Latest crash diagnosis and correction — 6 November 2026
+
+- Main remains `73b8a0d1ba33503fede02db2c3c0af082d724a12`; no direct main change, PR merge or Release.
+- Work remains on existing draft PR #16 / `fix/early-startup-crash-diagnostics-2026-11-06`.
+- Strongest code-level diagnosis: the full app had a Prismal backdrop capture on its root content `Column`, while glass descendants inside that captured subtree sampled the same layer. Prismal v1.0.6 documents the capture modifier for background-only content; the prior structure created a self-referential layer dependency.
+- Correction commit: `8c5f29d3a53669b3d810e4318d949caef4922f1a`. The captured source is now a separate background-only sibling with subtle ambient gradients; app content and glass surfaces are outside it.
+- All original Prismal effects and automatic pipeline remain enabled. No telemetry, upload, extra permissions or raw diagnostic material was introduced.
+- Stability version is advanced to 0.2.7 / versionCode 9, preserving the same signing key and separate package so it can replace the prior Stability APK.
+- The user declined another staged diagnostic round. Do not ask for one. CI and source review are the available verification in this session; device-level causality remains unverified.
+- Fetch live PR #16 metadata for its exact current head and CI run; do not rely on a self-referential branch SHA inside this handoff.

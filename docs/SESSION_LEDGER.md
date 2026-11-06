@@ -318,3 +318,24 @@ Branch: `fix/early-startup-crash-diagnostics-2026-11-06`.
 - CI must run on the single existing PR #16 branch after this batched commit. Record exact unit-test/WordNet/build/artifact outcomes when the run completes.
 - No device launch or GPU verification is possible here. Do not claim the native crash is fixed; 0.2.6 is an isolation build.
 - Preserve the current main SHA and do not merge or publish a Release.
+
+
+## 6 November 2026 — One source-level diagnosis and Prismal capture correction
+
+### Diagnosis
+- The 0.2.5 Stability report and supplied recording show the plain Compose/Material probe can render, but the request to enter the complete app is followed by a native signal-11 process exit. Earlier partial GPU/HWUI/Skia frames point to the rendering path but do not identify a faulting source line.
+- Reviewed the live `MainActivity.kt` and PrismalAGSL v1.0.6 implementation. The app attached `.prismalGlassLayer(backdrop)` to the entire main content `Column`; that subtree contains glass surfaces that also sample `backdrop`. Prismal's modifier draws the subtree and then captures it into the same layer. This is a self-referential capture/sampling dependency and violates Prismal's documented background-only usage pattern.
+- This is the strongest concrete source-level defect found and is consistent with the full-app first-render crash. The partial tombstone does not prove it was the exact SIGSEGV instruction; preserve that uncertainty.
+
+### Code change
+- Commit `8c5f29d3a53669b3d810e4318d949caef4922f1a` — `fix: isolate Prismal backdrop from glass surfaces`.
+- In `MainActivity.kt`, move `prismalGlassLayer(backdrop)` from the full content `Column` to a separate background-only full-screen sibling. That source contains only the theme background and two subtle radial ambient glows; all app content and all glass surfaces render above it and are excluded from the captured subtree.
+- Keep the normal automatic Prismal pipeline and all current blur, refraction, chromatic aberration, specular, depth, adaptive tuning and spring effects. Keep the independent tab-glyph source/merged droplet path; this correction targets the more fundamental self-capture defect rather than weakening the navigation glass.
+- Advance the Stability package to versionCode 9 / versionName `0.2.7-stability` for update installation using the existing Stability signing key; update workflow artifact/release labels to 0.2.7.
+- No network, telemetry, permissions, raw crash data or user media were added.
+
+### Verification and limits
+- The owner declined another staged diagnostic test. No additional device test was requested or run.
+- The PR branch CI build should verify WordNet generation, Gradle/JVM tests, APK compilation, signing and artifact upload. Those results must be reported independently.
+- Do not claim the native crash is definitively fixed from code or CI alone. Runtime causality remains unverified; a later owner-initiated normal launch is sufficient to supply the next evidence if they choose.
+- Work remains on existing draft PR #16. Main is not changed, no merge or Release is performed.

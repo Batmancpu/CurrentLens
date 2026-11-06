@@ -140,3 +140,14 @@ CI establishes that the code compiles and JVM tests pass. It cannot establish th
 - Build version code/name: 8 / `0.2.6-stability`; same Stability signing key for update installation.
 - Workflow concurrency is scoped per Git ref and cancels older in-progress builds on the same ref only. A Stability push will not cancel a main-branch build.
 - CI result/artifact must be appended after run completion. This is a diagnostic build, not a fix claim.
+
+
+## Stability 0.2.7 — Prismal source-capture correction
+
+- Branch: existing draft PR #16, `fix/early-startup-crash-diagnostics-2026-11-06`; no new branch.
+- Version code/name: 9 / `0.2.7-stability`; package suffix remains `.stability`; same dedicated Stability signing key allows update installation over 0.2.6.
+- Source diagnosis: the root content `Column` was itself the Prismal backdrop capture target, even though glass descendants inside that same subtree sampled the same layer. Prismal v1.0.6 documents capture for background-only content; this self-referential layer usage is the strongest source-level defect consistent with the full-app native first-render failure.
+- Correction: place the captured source on a background-only sibling containing only the app theme background and subtle radial ambient glows. All content and glass surfaces are siblings above it. The original Prismal automatic pipeline and blur/refraction/chromatic/specular/depth/spring effects are preserved.
+- The previous separate tab-glyph capture/merged droplet source remains unchanged.
+- Workflow artifact and prerelease labels are updated to 0.2.7. The active PR branch still produces an Actions artifact only; Release publication is skipped.
+- Owner declined further staged device testing; none was run. CI success is not physical-device verification and the native signal-11 causal link remains unverified.
