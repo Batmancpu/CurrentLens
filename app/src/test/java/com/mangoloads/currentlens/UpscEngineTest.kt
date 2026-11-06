@@ -21,8 +21,8 @@ class UpscEngineTest {
 
         assertEquals("GS III", result.gsPaper)
         assertEquals("Indian Economy", result.subject)
-        assertTrue(result.matchedTerms.containsAll(listOf("rbi", "inflation", "monetary")))
-        assertEquals("3 matched keywords", result.signalLabel)
+        assertTrue(result.matchedTerms.containsAll(listOf("rbi", "repo rate", "inflation", "monetary")))
+        assertEquals("4 matched keywords", result.signalLabel)
     }
 
     @Test
