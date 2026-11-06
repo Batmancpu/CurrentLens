@@ -376,21 +376,37 @@ private fun CurrentLensApp() {
     // WindowInsets.ime is a composable local; capture it here before entering an effect.
     val imeInsets = WindowInsets.ime
     val lifecycleOwner = context as? LifecycleOwner
+    var appResumed by remember {
+        mutableStateOf(lifecycleOwner?.lifecycle?.currentState?.isAtLeast(Lifecycle.State.RESUMED) == true)
+    }
     var reduceMotion by remember { mutableStateOf(!ValueAnimator.areAnimatorsEnabled()) }
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
-            if (event == Lifecycle.Event.ON_RESUME) reduceMotion = !ValueAnimator.areAnimatorsEnabled()
+            when (event) {
+                Lifecycle.Event.ON_RESUME -> {
+                    appResumed = true
+                    reduceMotion = !ValueAnimator.areAnimatorsEnabled()
+                }
+                Lifecycle.Event.ON_PAUSE, Lifecycle.Event.ON_STOP -> appResumed = false
+                else -> Unit
+            }
         }
         lifecycleOwner?.lifecycle?.addObserver(observer)
         onDispose { lifecycleOwner?.lifecycle?.removeObserver(observer) }
     }
 
-    // Theme-derived contrast avoids recurring GPU readback synchronisation during flings.
-    val glassLuminance = remember(dark) {
-        GlassLuminanceState(if (dark) 0.08f else 0.92f).also {
-            it.contentColor = if (dark) Color.White else Color.Black
-        }
-    }
+    // One shared 8x8 readback follows the live bottom band behind navigation and Search.
+    // It is sampled slowly and only while the app is foregrounded outside Reader/Settings.
+    val glassLuminance = rememberBottomBandGlassLuminance(
+        enabled = GlassLuminanceActivationPolicy.shouldSample(
+            isResumed = appResumed,
+            readerOpen = selectedArticle != null,
+            settingsOpen = showSettings
+        ),
+        source = backdrop,
+        isLightTheme = !dark,
+        bandHeight = 104.dp
+    )
     val todayDate = LocalDate.now(ZoneId.of(INDIA_ZONE))
     var feedIndex by remember {
         mutableStateOf(EditorialFeedIndex(emptyList(), emptyList(), emptyList()))
