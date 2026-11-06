@@ -7,8 +7,6 @@ import android.os.Build
 import android.os.Process
 import java.io.File
 import java.io.FileOutputStream
-import java.io.PrintWriter
-import java.io.StringWriter
 import java.time.Instant
 import kotlin.system.exitProcess
 
