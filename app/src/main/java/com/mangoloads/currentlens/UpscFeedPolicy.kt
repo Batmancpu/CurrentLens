@@ -79,7 +79,7 @@ internal object UpscFeedPolicy {
         "landslide", "heatwave",
         "physical geography", "monsoon", "river basin", "river systems", "glacier",
         "ice cap", "ocean current", "tectonic plate", "plate boundary",
-        "tsunami", "volcanic activity", "coastal erosion",
+        "tsunami", "volcano", "volcanoes", "volcanic activity", "coastal erosion",
         "natural resource distribution", "resource distribution", "mineral resources",
         "industrial location", "location of industries", "rainfall distribution",
         "groundwater aquifer", "geomorphology", "landform", "geophysical phenomena",

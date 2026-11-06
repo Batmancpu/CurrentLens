@@ -44,6 +44,21 @@ class GeographyEditorialCoverageTest {
     }
 
     @Test
+    fun volcanoesAreNotDroppedBetweenGeographyClassificationAndFeedEligibility() {
+        val story = article(
+            "Volcanoes erupt after renewed tectonic activity",
+            "Scientists monitor ash plumes and changes around the volcanic region."
+        )
+
+        val relevance = UpscEngine.classify(story)
+
+        assertEquals("GS I", relevance.gsPaper)
+        assertEquals("Geography", relevance.subject)
+        assertTrue(relevance.matchedTerms.contains("volcanoes"))
+        assertTrue(UpscFeedPolicy.shouldInclude(story))
+    }
+
+    @Test
     fun geographyCategoryAndSearchAreWiredToTheGsOneMapping() {
         val story = article(
             "Monsoon onset shifts across the Indo-Gangetic plain",
