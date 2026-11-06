@@ -154,3 +154,11 @@ Snapshot main: 73b8a0d1ba33503fede02db2c3c0af082d724a12 (6 Nov 2026).
 - Preserve the original automatic Prismal pipeline and all blur, refraction, chromatic, specular, depth and spring settings. The separate tab-glyph capture/merged droplet source remains intact.
 - The Stability build is advanced to 0.2.7 / versionCode 9 so it can be installed as an update to 0.2.6 with the same test signing key.
 - No new user test was requested or run. CI result is recorded separately; the native signal-11 causal link is still a strong diagnosis, not device-proven fact. No raw trace, device identifier or user media is committed.
+
+
+### KL-019 — Opaque Android process-exit description in copyable diagnostics
+- Status: Evidence-backed privacy defect; focused correction added to draft PR #16; natural CI verification pending.
+- The full-app recovery screen exposes a selectable/copyable startup report. The previous describeExitInfo() copied ApplicationExitInfo.description directly and also included importance plus PSS/RSS. The free-form platform description is not an allow-listed field and may contain low-level system details; the UI's promise that the report omits raw system traces was therefore stronger than the implementation could guarantee.
+- The PR #16 correction exports only the numeric exit reason and numeric status/signal. It no longer forwards the opaque description, importance or memory measurements. Java/Kotlin reports continue to omit exception messages and raw addresses/traces.
+- Added focused JVM assertions for the exact allow-listed summary and the interrupted-startup report. Tests are added, not yet executed for this new commit.
+- This change improves report minimisation only. It does not establish the native launch crash's root cause or prove the app launches on a physical device.

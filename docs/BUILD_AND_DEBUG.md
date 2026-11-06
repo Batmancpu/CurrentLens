@@ -151,3 +151,12 @@ CI establishes that the code compiles and JVM tests pass. It cannot establish th
 - The previous separate tab-glyph capture/merged droplet source remains unchanged.
 - Workflow artifact and prerelease labels are updated to 0.2.7. The active PR branch still produces an Actions artifact only; Release publication is skipped.
 - Owner declined further staged device testing; none was run. CI success is not physical-device verification and the native signal-11 causal link remains unverified.
+
+
+## Live Actions and artifact snapshot — 7 November 2026
+- Full Actions history was paginated: 166 runs total across two pages (91 success, 44 failure, 31 cancelled); zero queued or in-progress runs at inspection.
+- Latest overall run #166 / https://github.com/Batmancpu/CurrentLens/actions/runs/42275323743 succeeded on PR #16 head d63c22d621a5e8c4c293d1c1b856e8afca478ead. WordNet builder tests, offline DB generation (151,456 unique words), :app:testDebugUnitTest, :app:assembleDebug and artifact upload passed. Gradle compilation/tests took about 1m34s; this is CI evidence only.
+- Artifact: CurrentLens-v0.2.8-stability-debug-apk, ID 13533102905, 38,996,079 bytes, SHA-256 ZIP digest c107b424d120f25aa6316f7db6fe4e287769d33c8f021af02ec3b89ef59b4948, 14-day retention. Release publication was skipped.
+- Latest main run remains #116 / https://github.com/Batmancpu/CurrentLens/actions/runs/42209037417, success on main SHA 73b8a0d1ba33503fede02db2c3c0af082d724a12; it published v0.2.0-build-116. The latest main Release does not contain the unmerged PR #16 changes.
+- PR #18's read-only pull-request build / isolated release-write workflow passed run #165 / https://github.com/Batmancpu/CurrentLens/actions/runs/42260538402; PR #18 remains open/draft. Main still has the older push-only workflow with contents: write at workflow scope. Reconcile PR #16's branch-specific workflow and PR #18 before any merge; no workflow was changed in this review.
+- The current PR #16 privacy-minimisation change adds focused JVM tests. Its new natural CI run must be checked before describing those tests as passed. No Actions workflow was manually dispatched or rerun.

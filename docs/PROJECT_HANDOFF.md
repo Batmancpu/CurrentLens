@@ -1,12 +1,23 @@
-# CurrentLens — Latest project handoff (6 November 2026)
+# CurrentLens — Latest project handoff (7 November 2026)
 
 > This is the newest status snapshot and supersedes older dated snapshots below where they conflict. Full chronological context remains in SESSION_LEDGER.md.
+
+
+## Live snapshot — 7 November 2026
+- Main remains 73b8a0d1ba33503fede02db2c3c0af082d724a12; no main write, PR merge or Release was performed in this review.
+- The repository has 19 branch refs and eight open draft PRs: #6, #8, #11, #12, #13, #16, #17 and #18. No open issue records were returned in the live issue search. Preserve unique work on the independent PR branches; do not blindly merge diverged branches.
+- Actions history was paginated across all 166 runs: 91 success, 44 failure and 31 cancelled; queue and in-progress lists were empty. Latest overall run #166 passed on PR #16; latest main run #116 passed on main; PR #18 run #165 passed.
+- Main's latest release is v0.2.0-build-116 from main SHA 73b8a0d; it is older than the unmerged Stability branch. PR #16's Stability 0.2.8 / versionCode 10 APK is an Actions artifact, not a Release: artifact 13533102905, 38,996,079 bytes, 14-day retention.
+- PR #16 remains draft/open on fix/early-startup-crash-diagnostics-2026-11-06; head before the current privacy-minimisation commit was d63c22d621a5e8c4c293d1c1b856e8afca478ead. The background-only Prismal capture correction is present. Device-level native-crash causality remains unverified; CI is not a physical-device launch test.
+- Main still has one push-only Actions workflow with workflow-wide contents: write. PR #18 proposes normal pull-request CI with read-only build permissions and a separately gated main-release job; its own PR run #165 passed. PR #16 has a branch-specific workflow; reconcile the two workflow versions before any merge.
+- The current quality-watch change in PR #16 removes the opaque Android process-exit description, importance and PSS/RSS from the selectable/copyable crash report, retaining only reason/status. Focused tests are added; check the natural CI result before marking them passed.
+- Product gaps remain tracked: primary-source corroboration per story, labelled real-world false-positive/false-negative validation, GS I Geography integration, Atom alternate-link handling, date/cache precedence, tracking-URL deduplication, off-main persistence and adaptive glass contrast. Existing PRs #6/#8/#11/#12/#13/#17 cover portions; review their live diffs/ancestry before integration.
 
 ## Current repository state
 - Main remains at `73b8a0d1ba33503fede02db2c3c0af082d724a12`; no direct-main edit, merge or production release was performed in this stabilisation session.
 - Active draft PR: [#16](https://github.com/Batmancpu/CurrentLens/pull/16), branch `fix/early-startup-crash-diagnostics-2026-11-06`.
 - The branch contains the launch diagnostics, privacy-minimised reports, network redirect/cookie guards and a Stability-only launch probe. Reuse this branch for this ongoing crash investigation; do not open another branch/PR for the same work.
-- Current Stability code is v0.2.5, versionCode 7. CI Build #158 / run `42239425526` passed compilation, unit tests, APK assembly and artifact upload. The workflow did not publish a Release.
+- Current Stability code is v0.2.8, versionCode 10. CI Build #166 / run `42275323743` passed WordNet generation, JVM tests, APK assembly and artifact upload. Artifact 13533102905 is a 14-day Actions artifact; the workflow did not publish a Release.
 - CI is not physical-device verification. The native launch crash is not yet marked fixed.
 
 ## Crash evidence and next action

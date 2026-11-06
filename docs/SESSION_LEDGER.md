@@ -352,3 +352,12 @@ Branch: `fix/early-startup-crash-diagnostics-2026-11-06`.
 - Version advances to 0.2.8 / versionCode 10, retaining the Stability package suffix and signing identity.
 - Added a JVM test for compact IST date labels. CI must be checked before sharing the next APK.
 - No further user device-test round is requested. CI does not replace runtime evidence already present in the private recording. PR #16 remains draft/unmerged; main and Release state remain untouched.
+
+
+## 7 November 2026 — minimise the copyable Android process-exit report
+- Review source: draft PR #16, branch fix/early-startup-crash-diagnostics-2026-11-06, parent/source head d63c22d621a5e8c4c293d1c1b856e8afca478ead; main remains 73b8a0d1ba33503fede02db2c3c0af082d724a12.
+- Evidence: MainActivity.showCrashRecoveryScreen() displays the local report in selectable text and provides a Copy action. LaunchCrashDiagnostics.describeExitInfo() previously passed the platform's free-form ApplicationExitInfo.description into that report and also exposed importance and PSS/RSS. The description is opaque and not constrained to the repository's privacy allow-list; the app therefore could not guarantee that copied reports omitted all low-level system details.
+- Change: replace the free-form exit description with a pure, bounded formatter that emits only the Android exit-reason enum and numeric status/signal. Remove importance, PSS/RSS and the raw platform description from the shareable report. Existing local-only storage, no-upload behaviour, startup checkpoints and original Prismal rendering are unchanged.
+- Tests: replace the string-injection test with exact assertions for CRASH_NATIVE (5) and status 11; assert that the report has no system-description, PSS/RSS or importance fields. A second test asserts the formatter's exact allow-listed output. Tests are added; the natural branch CI result is pending at commit time.
+- Files changed: LaunchCrashDiagnostics.kt, LaunchCrashDiagnosticsTest.kt, KNOWN_ISSUES.md, SESSION_LEDGER.md, BUILD_AND_DEBUG.md and PROJECT_HANDOFF.md.
+- Scope/limits: privacy minimisation only; no claim that the native startup crash is fixed. No physical-device run, raw crash trace, user media, workflow edit, manual Actions dispatch/rerun, main edit, merge or Release.

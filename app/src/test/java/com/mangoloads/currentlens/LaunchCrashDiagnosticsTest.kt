@@ -51,17 +51,29 @@ class LaunchCrashDiagnosticsTest {
     }
 
     @Test
-    fun interruptionReportIncludesExitReasonButOmitsRawTrace() {
+    fun interruptionReportIncludesAllowlistedExitReasonAndStatusButNoOpaqueDetails() {
         val report = LaunchCrashDiagnostics.formatInterruptedStartupReport(
             lastCompletedStage = "MainActivity.onCreate entered",
-            systemExitSummary = "Reason: CRASH_NATIVE (5)"
+            systemExitReason = 5,
+            systemExitStatus = 11
         )
 
         assertTrue(report.contains("Android historical process-exit record:"))
-        assertTrue(report.contains("Reason: CRASH_NATIVE"))
-        assertFalse(report.contains("AQID"))
+        assertTrue(report.contains("Reason: CRASH_NATIVE (5)"))
+        assertTrue(report.contains("Status/signal: 11"))
+        assertFalse(report.contains("System description:"))
+        assertFalse(report.contains("PSS/RSS:"))
+        assertFalse(report.contains("Importance:"))
         assertFalse(report.contains("Timestamp:"))
         assertFalse(report.contains("Process id:"))
+    }
+
+    @Test
+    fun platformExitSummaryContainsOnlyReasonAndNumericStatus() {
+        assertEquals(
+            "Reason: CRASH_NATIVE (5)\nStatus/signal: 11",
+            LaunchCrashDiagnostics.formatExitSummary(5, 11)
+        )
     }
 
     @Test

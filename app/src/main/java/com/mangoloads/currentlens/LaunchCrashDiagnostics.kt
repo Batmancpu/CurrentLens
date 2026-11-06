@@ -140,7 +140,8 @@ internal object LaunchCrashDiagnostics {
         lastCompletedStage: String,
         versionName: String? = null,
         packageName: String = "com.mangoloads.currentlens",
-        systemExitSummary: String? = null
+        systemExitReason: Int? = null,
+        systemExitStatus: Int? = null
     ): String = buildString {
         appendLine("CurrentLens startup interruption report")
         appendLine("App: " + versionName.orEmpty())
@@ -149,7 +150,12 @@ internal object LaunchCrashDiagnostics {
         appendLine("Report type: startup interrupted; no uncaught Java/Kotlin exception was captured")
         appendLine("Last completed startup stage: " + displayStartupStage(lastCompletedStage))
         appendLine()
-        if (!systemExitSummary.isNullOrBlank()) {
+        val systemExitSummary = if (systemExitReason != null && systemExitStatus != null) {
+            formatExitSummary(systemExitReason, systemExitStatus)
+        } else {
+            null
+        }
+        if (systemExitSummary != null) {
             appendLine("Android historical process-exit record:")
             appendLine(systemExitSummary)
         } else {
@@ -177,7 +183,8 @@ internal object LaunchCrashDiagnostics {
                 lastCompletedStage = lastCompletedStage,
                 versionName = versionName,
                 packageName = context.packageName,
-                systemExitSummary = exitInfo?.let(::describeExitInfo)
+                systemExitReason = exitInfo?.reason,
+                systemExitStatus = exitInfo?.status
             )
         )
     }
@@ -233,15 +240,15 @@ internal object LaunchCrashDiagnostics {
         else -> false
     }
 
-    private fun describeExitInfo(info: ApplicationExitInfo): String = buildString {
-        appendLine("Reason: " + exitReasonName(info.reason) + " (" + info.reason + ")")
-        appendLine("Status/signal: " + info.status)
-        appendLine("Importance: " + info.importance)
-        appendLine("PSS/RSS: " + info.pss + " KB / " + info.rss + " KB")
-        info.description?.take(240)?.let {
-            appendLine("System description: " + it)
-        }
-    }.trimEnd()
+    /**
+     * Export only the allow-listed numeric fields needed to distinguish an exit.
+     * Android's free-form description can contain opaque system diagnostics (including
+     * addresses); importance and memory measurements are unnecessary in a shareable report.
+     */
+    internal fun formatExitSummary(reason: Int, status: Int): String = buildString {
+        appendLine("Reason: " + exitReasonName(reason) + " (" + reason + ")")
+        append("Status/signal: " + status)
+    }
 
     private fun exitReasonName(reason: Int): String = when (reason) {
         ApplicationExitInfo.REASON_UNKNOWN -> "UNKNOWN"
