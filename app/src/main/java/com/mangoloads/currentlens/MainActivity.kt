@@ -1689,8 +1689,8 @@ private fun NewsCard(
 ) {
     val context = LocalContext.current
     val density = LocalDensity.current
-    val relevance = remember(article.id) { UpscEngine.classify(article) }
-    val syllabusHint = remember(article.id, relevance.gsPaper, relevance.subject, relevance.matchedTerms) {
+    val relevance = remember(article.id, article.title, article.description) { UpscEngine.classify(article) }
+    val syllabusHint = remember(article.id, relevance.gsPaper, relevance.subject, relevance.matchedTerms, relevance.syllabusLink) {
         ArticleCardMetaPolicy.syllabusHint(
             gsPaper = relevance.gsPaper,
             subject = relevance.subject,
@@ -1708,7 +1708,7 @@ private fun NewsCard(
                 .build()
         }
     }
-    var imagePalette by remember(article.id) { mutableStateOf<Color?>(null) }
+    var imagePalette by remember(article.id, article.imageUrl) { mutableStateOf<Color?>(null) }
     val palette = imagePalette
 
     Box(
