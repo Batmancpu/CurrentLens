@@ -7,9 +7,9 @@ import org.junit.Test
 
 class StartupRenderPolicyTest {
     @Test
-    fun android13AndNewerUseStandardRendererDuringStabilisation() {
-        assertEquals(PrismalGlassPipeline.Standard, StartupRenderPolicy.overrideFor(33))
-        assertEquals(PrismalGlassPipeline.Standard, StartupRenderPolicy.overrideFor(35))
+    fun android13AndNewerUseLegacyRendererWithoutRenderEffectDuringStabilisation() {
+        assertEquals(PrismalGlassPipeline.Legacy, StartupRenderPolicy.overrideFor(33))
+        assertEquals(PrismalGlassPipeline.Legacy, StartupRenderPolicy.overrideFor(35))
     }
 
     @Test
