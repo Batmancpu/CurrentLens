@@ -22,6 +22,12 @@ internal object ReadHistoryPolicy {
         return unique.toList().takeLast(maxEntries)
     }
 
+    fun visibleHistory(
+        legacy: Set<String>,
+        recent: List<String>,
+        maxEntries: Int = MAX_RECENT_ENTRIES
+    ): Set<String> = legacy + retain(recent, maxEntries)
+
     fun add(
         existing: List<String>,
         url: String,
