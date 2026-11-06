@@ -11,11 +11,22 @@ internal object ArticlePublicationDatePolicy {
     private val formatter = DateTimeFormatter
         .ofPattern("d MMM uuuu", Locale.ENGLISH)
         .withZone(indiaZone)
+    private val compactFormatter = DateTimeFormatter
+        .ofPattern("d MMM uuuu · h:mm a 'IST'", Locale.ENGLISH)
+        .withZone(indiaZone)
 
     fun label(publishedAtMillis: Long?): String {
         if (publishedAtMillis == null) return "Date unavailable"
         return runCatching {
             "Date: ${formatter.format(Instant.ofEpochMilli(publishedAtMillis))} (IST)"
+        }.getOrDefault("Date unavailable")
+    }
+
+    /** Compact card label with the publisher timestamp rendered in India Standard Time. */
+    fun compactLabel(publishedAtMillis: Long?): String {
+        if (publishedAtMillis == null) return "Date unavailable"
+        return runCatching {
+            compactFormatter.format(Instant.ofEpochMilli(publishedAtMillis))
         }.getOrDefault("Date unavailable")
     }
 }

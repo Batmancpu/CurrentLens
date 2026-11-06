@@ -36,6 +36,8 @@ data class FeedSource(
     val weekendRead: Boolean = false
 )
 
+private val FEED_REDIRECT_STATUS_CODES = setOf(301, 302, 303, 307, 308)
+
 object NewsRepository {
     private val feeds = listOf(
         // Section feeds precede broad feeds so duplicate URLs keep useful labels.
@@ -64,26 +66,80 @@ object NewsRepository {
             .take(250)
     }
 
-    private fun fetchOne(source: FeedSource): List<Article> = try {
-        val connection = (URL(source.url).openConnection() as HttpURLConnection).apply {
-            connectTimeout = 8000
-            readTimeout = 10000
-            requestMethod = "GET"
-            setRequestProperty("User-Agent", "CurrentLens/0.2 RSS reader")
-            setRequestProperty("Accept", "application/rss+xml, application/atom+xml, application/xml, text/xml")
-        }
-        try {
-            val tooLarge = connection.contentLengthLong > NetworkLimits.MAX_RSS_BYTES
-            val status = if (tooLarge) -1 else connection.responseCode
-            if (tooLarge || status !in 200..299) emptyList()
-            else connection.inputStream.use { input ->
-                parse(source, NetworkLimits.readUtf8Limited(input, NetworkLimits.MAX_RSS_BYTES))
+    private fun fetchOne(source: FeedSource): List<Article> {
+        return try {
+            val connection = openAllowedFeedConnection(source) ?: return emptyList()
+            try {
+                if (connection.contentLengthLong > NetworkLimits.MAX_RSS_BYTES) {
+                    emptyList()
+                } else {
+                    connection.inputStream.use { input ->
+                        parse(source, NetworkLimits.readUtf8Limited(input, NetworkLimits.MAX_RSS_BYTES))
+                    }
+                }
+            } finally {
+                connection.disconnect()
             }
-        } finally {
-            connection.disconnect()
+        } catch (_: Exception) {
+            emptyList()
         }
-    } catch (_: Exception) {
-        emptyList()
+    }
+
+    /**
+     * RSS feeds are network inputs too: disable automatic redirects and validate each
+     * destination against the feed's publisher before issuing the next request.
+     */
+    private fun openAllowedFeedConnection(source: FeedSource): HttpURLConnection? {
+        var currentUrl = source.url
+        var redirectsFollowed = 0
+
+        while (true) {
+            if (!PublisherHostPolicy.allows(source.name, currentUrl)) return null
+
+            val connection = (URL(currentUrl).openConnection() as HttpURLConnection).apply {
+                connectTimeout = 8000
+                readTimeout = 10000
+                requestMethod = "GET"
+                instanceFollowRedirects = false
+                setRequestProperty("User-Agent", "CurrentLens/0.2 RSS reader")
+                setRequestProperty(
+                    "Accept",
+                    "application/rss+xml, application/atom+xml, application/xml, text/xml"
+                )
+            }
+
+            val status = try {
+                connection.responseCode
+            } catch (error: Exception) {
+                connection.disconnect()
+                throw error
+            }
+
+            if (status in FEED_REDIRECT_STATUS_CODES) {
+                val nextUrl = connection.getHeaderField("Location")?.let { location ->
+                    PublisherRedirectPolicy.resolveAllowedTarget(
+                        source = source.name,
+                        currentUrl = currentUrl,
+                        location = location,
+                        redirectsFollowed = redirectsFollowed
+                    )
+                }
+                connection.disconnect()
+                if (nextUrl == null) return null
+                currentUrl = nextUrl
+                redirectsFollowed += 1
+                continue
+            }
+
+            if (status !in 200..299 ||
+                !PublisherHostPolicy.allows(source.name, connection.url.toExternalForm())
+            ) {
+                connection.disconnect()
+                return null
+            }
+
+            return connection
+        }
     }
 
     private fun clean(value: String): String =

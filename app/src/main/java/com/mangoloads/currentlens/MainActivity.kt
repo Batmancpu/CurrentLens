@@ -17,6 +17,7 @@ import android.view.View
 import android.view.ViewConfiguration
 import android.os.SystemClock
 import android.webkit.WebResourceRequest
+import android.webkit.CookieManager
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import androidx.activity.ComponentActivity
@@ -208,8 +209,13 @@ private const val INDIA_ZONE = "Asia/Kolkata"
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: android.os.Bundle?) {
         super.onCreate(savedInstanceState)
-        LaunchCrashDiagnostics.install(applicationContext)
+        LaunchCrashDiagnostics.recordStage(applicationContext, "MainActivity.onCreate entered")
         val previousCrashReport = LaunchCrashDiagnostics.read(this)
+        if (previousCrashReport != null) {
+            this.showCrashRecoveryScreen(previousCrashReport)
+            return
+        }
+        LaunchCrashDiagnostics.recordStage(applicationContext, "MainActivity preparing Compose content")
         setContent {
             val dark = isSystemInDarkTheme()
             val colors = if (dark) {
@@ -267,68 +273,131 @@ class MainActivity : ComponentActivity() {
                     }
                 }
             }
+            // Stability packages now enter the complete app directly. The
+            // isolated rendering probes remain in source for engineering diagnosis,
+            // but are not part of the owner's ordinary launch experience.
+            var showFullApp by remember { mutableStateOf(true) }
             MaterialTheme(colorScheme = colors) {
-                if (previousCrashReport != null) {
-                    Surface(
-                        modifier = Modifier.fillMaxSize(),
-                        color = colors.background,
-                        contentColor = colors.onBackground
-                    ) {
-                        CrashRecoveryScreen(
-                            report = previousCrashReport,
-                            onRetry = {
-                                LaunchCrashDiagnostics.clear(this@MainActivity)
-                                recreate()
-                            }
-                        )
+                Surface(
+                    modifier = Modifier.fillMaxSize(),
+                    color = colors.background,
+                    contentColor = colors.onBackground
+                ) {
+                    if (showFullApp) {
+                        BrrrNewsApp()
+                    } else {
+                        StabilityLaunchProbe {
+                            LaunchCrashDiagnostics.recordStage(
+                                applicationContext,
+                                "Full brrrNews composition requested from stability probe"
+                            )
+                            showFullApp = true
+                        }
                     }
-                } else {
-                    Surface(
-                        modifier = Modifier.fillMaxSize(),
-                        color = colors.background,
-                        contentColor = colors.onBackground
-                    ) { BrrrNewsApp() }
                 }
             }
         }
+        LaunchCrashDiagnostics.recordStage(applicationContext, "MainActivity.setContent returned")
     }
 }
 
-@Composable
-private fun CrashRecoveryScreen(report: String, onRetry: () -> Unit) {
-    val context = LocalContext.current
-    Column(
-        Modifier.fillMaxSize().verticalScroll(rememberScrollState())
-            .padding(horizontal = 22.dp, vertical = 28.dp),
-        verticalArrangement = Arrangement.spacedBy(14.dp)
-    ) {
-        Text("brrrNews could not complete its previous launch",
-            style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
-        Text(
-            "A local crash report has been saved on this device. Copy it and send it with your next message so the exact failure can be fixed instead of guessed.",
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            Button(
-                onClick = {
-                    val clipboard = context.getSystemService(android.content.Context.CLIPBOARD_SERVICE)
-                        as? android.content.ClipboardManager
-                    clipboard?.setPrimaryClip(
-                        android.content.ClipData.newPlainText("brrrNews crash report", report)
-                    )
-                    android.widget.Toast.makeText(context, "Crash report copied", android.widget.Toast.LENGTH_SHORT).show()
-                },
-                modifier = Modifier.weight(1f)
-            ) { Text("Copy crash report") }
-            OutlinedButton(onClick = onRetry, modifier = Modifier.weight(1f)) { Text("Try again") }
-        }
-        Text("LOCAL DIAGNOSTICS", style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
-        Text(report.take(12_000), style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace)
+/**
+ * Uses framework Views deliberately: this screen must remain available if Compose or
+ * the Prismal graphics pipeline caused the preceding startup failure.
+ */
+private fun MainActivity.showCrashRecoveryScreen(report: String) {
+    val activity = this
+    val density = resources.displayMetrics.density
+    fun dp(value: Int): Int = (value * density).toInt()
+
+    val root = android.widget.LinearLayout(this).apply {
+        orientation = android.widget.LinearLayout.VERTICAL
+        setPadding(dp(22), dp(28), dp(22), dp(20))
+        setBackgroundColor(android.graphics.Color.rgb(13, 17, 24))
     }
+    val title = android.widget.TextView(this).apply {
+        text = "brrrNews could not complete its previous launch"
+        textSize = 24f
+        setTextColor(android.graphics.Color.WHITE)
+        typeface = android.graphics.Typeface.DEFAULT_BOLD
+    }
+    val description = android.widget.TextView(this).apply {
+        text = "A privacy-minimised local report was saved on this device. Copy it and share it for diagnosis; it omits device identifiers and raw system traces."
+        textSize = 15f
+        setTextColor(android.graphics.Color.rgb(205, 215, 228))
+        setPadding(0, dp(12), 0, dp(14))
+    }
+    val reportLabel = android.widget.TextView(this).apply {
+        text = "LOCAL STARTUP DIAGNOSTICS"
+        textSize = 12f
+        setTextColor(android.graphics.Color.rgb(150, 190, 255))
+        typeface = android.graphics.Typeface.DEFAULT_BOLD
+        setPadding(0, dp(14), 0, dp(8))
+    }
+    val reportText = android.widget.TextView(this).apply {
+        text = report.take(LaunchCrashDiagnostics.MAX_REPORT_CHARS)
+        textSize = 11f
+        setTextColor(android.graphics.Color.rgb(220, 226, 235))
+        typeface = android.graphics.Typeface.MONOSPACE
+        setTextIsSelectable(true)
+        setPadding(dp(10), dp(10), dp(10), dp(10))
+        setBackgroundColor(android.graphics.Color.rgb(25, 33, 45))
+    }
+    val reportScroll = android.widget.ScrollView(this).apply {
+        isFillViewport = true
+        addView(reportText)
+    }
+    val actions = android.widget.LinearLayout(this).apply {
+        orientation = android.widget.LinearLayout.VERTICAL
+        gravity = android.view.Gravity.CENTER_HORIZONTAL
+    }
+    val copyButton = android.widget.Button(this).apply {
+        text = "Copy crash report"
+        setOnClickListener {
+            val clipboard = activity.getSystemService(android.content.Context.CLIPBOARD_SERVICE)
+                as? android.content.ClipboardManager
+            clipboard?.setPrimaryClip(
+                android.content.ClipData.newPlainText("brrrNews crash report", report)
+            )
+            android.widget.Toast.makeText(
+                activity,
+                "Crash report copied",
+                android.widget.Toast.LENGTH_LONG
+            ).show()
+        }
+    }
+    val retryButton = android.widget.Button(this).apply {
+        text = "Continue to brrrNews"
+        setOnClickListener {
+            LaunchCrashDiagnostics.clear(activity)
+            activity.recreate()
+        }
+    }
+    actions.addView(
+        copyButton,
+        android.widget.LinearLayout.LayoutParams(
+            android.widget.LinearLayout.LayoutParams.MATCH_PARENT, dp(48)
+        ).apply { bottomMargin = dp(8) }
+    )
+    actions.addView(
+        retryButton,
+        android.widget.LinearLayout.LayoutParams(
+            android.widget.LinearLayout.LayoutParams.MATCH_PARENT, dp(48)
+        )
+    )
+    root.addView(title)
+    root.addView(description)
+    root.addView(actions)
+    root.addView(reportLabel)
+    root.addView(
+        reportScroll,
+        android.widget.LinearLayout.LayoutParams(
+            android.widget.LinearLayout.LayoutParams.MATCH_PARENT,
+            0,
+            1f
+        )
+    )
+    setContentView(root)
 }
 
 private enum class YouPage { DASHBOARD, SAVED, READING_STATS, QUIZ_STATS }
@@ -344,6 +413,11 @@ private data class LocalAppSnapshot(
 @Composable
 private fun BrrrNewsApp() {
     val context = LocalContext.current
+    LaunchedEffect(Unit) {
+        LaunchCrashDiagnostics.recordStage(context, "BrrrNewsApp composition started")
+        repeat(3) { withFrameNanos { } }
+        LaunchCrashDiagnostics.markHealthy(context)
+    }
     val backdrop = rememberPrismalGlassLayer()
     val dark = isSystemInDarkTheme()
     // Restore larger persisted collections after the first frame; parsing 5,000
@@ -481,6 +555,49 @@ private fun BrrrNewsApp() {
             if (searchExpanded) Color.Transparent else MaterialTheme.colorScheme.background
         )
     ) {
+        // Prismal's capture source must contain background pixels only. Capturing the
+        // complete UI subtree here would also record glass surfaces that sample this
+        // same layer, creating a self-referential GraphicsLayer render dependency.
+        // Keep the live glass surfaces as siblings above this isolated ambient source.
+        Box(
+            Modifier.fillMaxSize()
+                .prismalGlassLayer(backdrop)
+                .background(MaterialTheme.colorScheme.background)
+                .drawBehind {
+                    val topCenter = Offset(size.width * 0.82f, size.height * 0.12f)
+                    val lowerCenter = Offset(size.width * 0.14f, size.height * 0.78f)
+                    val glowRadius = size.width * 0.92f
+                    val topGlow = if (dark) {
+                        Color(0xFF5279B6).copy(alpha = 0.24f)
+                    } else {
+                        Color(0xFF8CB5F0).copy(alpha = 0.20f)
+                    }
+                    val lowerGlow = if (dark) {
+                        Color(0xFF315B79).copy(alpha = 0.16f)
+                    } else {
+                        Color(0xFFB7C9E8).copy(alpha = 0.18f)
+                    }
+                    drawCircle(
+                        brush = Brush.radialGradient(
+                            colors = listOf(topGlow, Color.Transparent),
+                            center = topCenter,
+                            radius = glowRadius
+                        ),
+                        radius = glowRadius,
+                        center = topCenter
+                    )
+                    drawCircle(
+                        brush = Brush.radialGradient(
+                            colors = listOf(lowerGlow, Color.Transparent),
+                            center = lowerCenter,
+                            radius = glowRadius * 0.82f
+                        ),
+                        radius = glowRadius * 0.82f,
+                        center = lowerCenter
+                    )
+                }
+        )
+
         val searchTransition = updateTransition(targetState = searchExpanded, label = "Search tab morph")
         val animatedSearchMorphProgress = searchTransition.animateFloat(
             transitionSpec = {
@@ -520,7 +637,6 @@ private fun BrrrNewsApp() {
         Column(
             Modifier.fillMaxSize()
                 .then(if (searchExpanded) Modifier.imePadding() else Modifier)
-                .prismalGlassLayer(backdrop)
                 .background(if (searchExpanded) Color.Transparent else MaterialTheme.colorScheme.background)
         ) {
             when {
@@ -1764,6 +1880,20 @@ private fun NewsCard(
                                 tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(21.dp))
                         }
                     }
+                    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                        Text(ArticlePublicationDatePolicy.compactLabel(article.publishedAtMillis),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.secondary,
+                            maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        Spacer(Modifier.weight(1f))
+                        Text(
+                            if (article.feedUrl.isBlank()) "Feed provenance unavailable"
+                            else "Publisher RSS · secondary source",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.secondary,
+                            maxLines = 1, overflow = TextOverflow.Ellipsis
+                        )
+                    }
                     SelectionContainer {
                         Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                             Text(article.title, style = MaterialTheme.typography.titleLarge,
@@ -2332,6 +2462,16 @@ private fun ReaderScreen(article: Article, backdrop: PrismalBackdrop, glassAlpha
                 factory = { ctx ->
                     ReaderWebView(ctx).apply {
                         readerWebViewHolder.value = this
+                        // Public-page reading is intentionally stateless: never reuse
+                        // publisher login/tracking cookies from an earlier WebView session.
+                        val cookieManager = CookieManager.getInstance()
+                        ReaderCookiePolicy.enforce(
+                            setAcceptCookie = cookieManager::setAcceptCookie,
+                            setAcceptThirdPartyCookies = { accept ->
+                                cookieManager.setAcceptThirdPartyCookies(this, accept)
+                            },
+                            clearCookies = { cookieManager.removeAllCookies(null) }
+                        )
                         settings.javaScriptEnabled = false
                         settings.domStorageEnabled = false
                         settings.loadsImagesAutomatically = true
@@ -2532,16 +2672,21 @@ private fun ReaderScreen(article: Article, backdrop: PrismalBackdrop, glassAlpha
                 }
             }
         }
-        if (reachedBottom) {
+        // Do not let the completion prompt occupy the dictionary popover's area.
+        // The prompt returns when the definition is dismissed.
+        if (reachedBottom && activeWord == null) {
             Card(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp),
                 shape = RoundedCornerShape(22.dp),
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)) {
                 Row(Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
                     Column(Modifier.weight(1f)) {
                         Text("Finished reading?", fontWeight = FontWeight.Bold)
-                        Text("Five practice questions based on the RSS headline/excerpt and indicative syllabus mapping.", fontSize = 12.sp)
+                        Text(
+                            "Five original practice prompts: headline, indicative GS mapping and answer-writing skills. Not official PYQs.",
+                            fontSize = 12.sp
+                        )
                     }
-                    Button(onClick = onQuiz) { Text("Test") }
+                    Button(onClick = onQuiz) { Text("Review") }
                 }
             }
         }
@@ -3107,32 +3252,113 @@ private fun DefinitionGlassOverlay(
 }
 
 @Composable
-private fun GlassSettingsScreen(backdrop: PrismalBackdrop, glassAlpha: Float, onGlassAlphaChange: (Float) -> Unit, onBack: () -> Unit) {
-    Column(Modifier.fillMaxSize().padding(horizontal = 18.dp)) {
-        Row(Modifier.fillMaxWidth().padding(vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
+private fun GlassSettingsScreen(
+    backdrop: PrismalBackdrop,
+    glassAlpha: Float,
+    onGlassAlphaChange: (Float) -> Unit,
+    onBack: () -> Unit
+) {
+    val dark = isSystemInDarkTheme()
+    val tint = if (dark) Color(0xFF30394B) else Color(0xFFEAF0FA)
+    val selectedPreset = when {
+        kotlin.math.abs(glassAlpha - 0.12f) < 0.015f -> "Clear"
+        kotlin.math.abs(glassAlpha - 0.32f) < 0.015f -> "Balanced"
+        kotlin.math.abs(glassAlpha - 0.55f) < 0.015f -> "Frosted"
+        else -> "Custom"
+    }
+    Column(
+        Modifier.fillMaxSize().verticalScroll(rememberScrollState())
+            .padding(horizontal = 18.dp).padding(bottom = 28.dp),
+        verticalArrangement = Arrangement.spacedBy(14.dp)
+    ) {
+        Row(Modifier.fillMaxWidth().padding(top = 8.dp), verticalAlignment = Alignment.CenterVertically) {
             IconButton(onClick = onBack) { Icon(Icons.Outlined.ArrowBack, contentDescription = "Back") }
-            Text("Appearance", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+            Column(verticalArrangement = Arrangement.spacedBy(1.dp)) {
+                Text("Appearance", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                Text("Personalise the reading surfaces", style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.secondary)
+            }
         }
-        PrismalGlassSurface(backdrop = backdrop, modifier = Modifier.fillMaxWidth(),
+        PrismalGlassSurface(
+            backdrop = backdrop, modifier = Modifier.fillMaxWidth(),
             shape = { PrismalRoundedRectangle(26.dp) }, blurRadius = 11.dp,
-            tint = if (isSystemInDarkTheme()) Color(0xFF30394B) else Color(0xFFEAF0FA), tintAlpha = glassAlpha) {
+            tint = tint, tintAlpha = glassAlpha
+        ) {
             Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(13.dp)) {
                 Text("Liquid Glass", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-                Text("Adjust the transparency of brrrNews glass surfaces.", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.secondary)
+                Text("Control how strongly the glass tint sits over the content beneath it.",
+                    style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.secondary)
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text("Clear", fontSize = 11.sp, color = MaterialTheme.colorScheme.secondary)
                     Spacer(Modifier.weight(1f))
-                    Text((glassAlpha * 100).toInt().toString() + "%", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                    Text((glassAlpha * 100).toInt().toString() + "%", fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary)
                     Spacer(Modifier.weight(1f))
                     Text("Frosted", fontSize = 11.sp, color = MaterialTheme.colorScheme.secondary)
                 }
-                PrismalGlassSlider(value = { glassAlpha }, onValueChange = onGlassAlphaChange,
-                    valueRange = 0.12f..0.55f, visibilityThreshold = 0.01f, backdrop = backdrop,
-                    modifier = Modifier.fillMaxWidth())
+                PrismalGlassSlider(
+                    value = { glassAlpha }, onValueChange = onGlassAlphaChange,
+                    valueRange = 0.12f..0.55f, visibilityThreshold = 0.01f,
+                    backdrop = backdrop, modifier = Modifier.fillMaxWidth()
+                )
             }
         }
-        Text("Four-tab navigation, editorial cards and adaptive glass effects. Heavy shader effects fall back on unsupported devices.",
-            style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.secondary, modifier = Modifier.padding(vertical = 16.dp))
+        Column(verticalArrangement = Arrangement.spacedBy(7.dp)) {
+            Text("Presets", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+            Text("Choose a starting point or fine-tune it with the slider.",
+                style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.secondary)
+            Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                FilterChip(selected = selectedPreset == "Clear", onClick = { onGlassAlphaChange(0.12f) },
+                    label = { Text("Clear") })
+                FilterChip(selected = selectedPreset == "Balanced", onClick = { onGlassAlphaChange(0.32f) },
+                    label = { Text("Balanced") })
+                FilterChip(selected = selectedPreset == "Frosted", onClick = { onGlassAlphaChange(0.55f) },
+                    label = { Text("Frosted") })
+            }
+        }
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text("Live preview", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+            Text("Sample feed card · appearance only", style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.secondary)
+            PrismalGlassSurface(
+                backdrop = backdrop, modifier = Modifier.fillMaxWidth(),
+                shape = { PrismalRoundedRectangle(24.dp) }, blurRadius = 9.dp,
+                tint = tint, tintAlpha = glassAlpha
+            ) {
+                Column(Modifier.padding(17.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text("THE HINDU", style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
+                        Spacer(Modifier.weight(1f))
+                        Text("GS II", style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.secondary)
+                    }
+                    Text("How a policy decision shapes India's federal balance",
+                        style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onSurface)
+                    Text("6 Nov 2026 · Publisher report · Indicative syllabus link",
+                        style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.secondary)
+                }
+            }
+        }
+        Card(
+            modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(20.dp),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+        ) {
+            Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) {
+                Text("Designed for reading first", fontWeight = FontWeight.SemiBold)
+                Text(
+                    "The app keeps text and article imagery readable while adapting the glass treatment. Your appearance choice is saved locally on this device.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+        Text(
+            "On devices without the required graphics support, unsupported shader effects fall back automatically. No cloud service is used for appearance settings.",
+            style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.secondary
+        )
     }
 }
 
@@ -3163,11 +3389,11 @@ private fun QuizScreen(
             Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) {
                 Text("Question-source note", fontWeight = FontWeight.Bold)
                 Text(
-                    "This quiz uses the publisher's RSS headline and excerpt only. Extracted full-text reader content is not yet used to generate questions.",
+                    "This review uses the publisher's RSS headline and excerpt for story context. It does not test the full article body.",
                     style = MaterialTheme.typography.bodySmall
                 )
                 Text(
-                    "Q1: headline comprehension · Q2: indicative syllabus keyword mapping · Q3–Q5: original general UPSC skill practice. No official PYQ is included.",
+                    "Q1: headline comprehension · Q2: indicative syllabus keyword mapping · Q3–Q5: original source-literacy and GS answer-framing practice. None is an official PYQ.",
                     style = MaterialTheme.typography.bodySmall
                 )
             }

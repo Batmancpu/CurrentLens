@@ -18,6 +18,17 @@ class ArticlePublicationDatePolicyTest {
     }
 
     @Test
+    fun compactCardLabelIncludesPublicationTimeInIndiaTimeZone() {
+        val timestamp = Instant.parse("2026-11-04T20:00:00Z").toEpochMilli()
+        assertEquals("5 Nov 2026 · 1:30 AM IST", ArticlePublicationDatePolicy.compactLabel(timestamp))
+    }
+
+    @Test
+    fun compactCardLabelNeverInventsMissingDate() {
+        assertEquals("Date unavailable", ArticlePublicationDatePolicy.compactLabel(null))
+    }
+
+    @Test
     fun neverInventsDateWhenFeedTimestampIsMissing() {
         assertEquals("Date unavailable", ArticlePublicationDatePolicy.label(null))
     }
