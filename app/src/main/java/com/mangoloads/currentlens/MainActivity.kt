@@ -273,12 +273,27 @@ class MainActivity : ComponentActivity() {
                     }
                 }
             }
+            var showFullApp by remember {
+                mutableStateOf(!BuildConfig.STABILITY_TEST_BUILD)
+            }
             MaterialTheme(colorScheme = colors) {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = colors.background,
                     contentColor = colors.onBackground
-                ) { BrrrNewsApp() }
+                ) {
+                    if (showFullApp) {
+                        BrrrNewsApp()
+                    } else {
+                        StabilityLaunchProbe {
+                            LaunchCrashDiagnostics.recordStage(
+                                applicationContext,
+                                "Full brrrNews composition requested from stability probe"
+                            )
+                            showFullApp = true
+                        }
+                    }
+                }
             }
         }
         LaunchCrashDiagnostics.recordStage(applicationContext, "MainActivity.setContent returned")
