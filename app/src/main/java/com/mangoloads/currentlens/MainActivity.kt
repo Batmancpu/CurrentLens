@@ -1054,6 +1054,7 @@ private fun SearchFeed(
     val keyboardController = LocalSoftwareKeyboardController.current
     val eligibleArticles = articles
     val density = LocalDensity.current
+    val glassSurfaceColor = MaterialTheme.colorScheme.surface
     val categories = listOf("All", "India", "World", "Politics", "Economy", "Environment", "Science", "Explained", "UPSC", "Opinion")
     val subjects = remember(eligibleArticles) {
         listOf("All") + eligibleArticles.map { UpscEngine.classify(it).subject }.distinct().sorted()
@@ -1108,7 +1109,7 @@ private fun SearchFeed(
                             color = Color.Black.copy(alpha = 0.04f), alpha = 0.04f)
                     },
                     onDrawSurface = {
-                        drawRect(MaterialTheme.colorScheme.surface.copy(alpha = glassAlpha * 0.10f))
+                        drawRect(glassSurfaceColor.copy(alpha = glassAlpha * 0.10f))
                     }
                 )
         ) {
