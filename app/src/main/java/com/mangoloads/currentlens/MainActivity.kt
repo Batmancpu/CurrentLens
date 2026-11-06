@@ -140,6 +140,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.platform.LocalFocusManager
@@ -207,6 +208,8 @@ private const val INDIA_ZONE = "Asia/Kolkata"
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: android.os.Bundle?) {
         super.onCreate(savedInstanceState)
+        LaunchCrashDiagnostics.install(applicationContext)
+        val previousCrashReport = LaunchCrashDiagnostics.read(this)
         setContent {
             val dark = isSystemInDarkTheme()
             val colors = if (dark) {
@@ -265,13 +268,66 @@ class MainActivity : ComponentActivity() {
                 }
             }
             MaterialTheme(colorScheme = colors) {
-                Surface(
-                    modifier = Modifier.fillMaxSize(),
-                    color = colors.background,
-                    contentColor = colors.onBackground
-                ) { CurrentLensApp() }
+                if (previousCrashReport != null) {
+                    Surface(
+                        modifier = Modifier.fillMaxSize(),
+                        color = colors.background,
+                        contentColor = colors.onBackground
+                    ) {
+                        CrashRecoveryScreen(
+                            report = previousCrashReport,
+                            onRetry = {
+                                LaunchCrashDiagnostics.clear(this@MainActivity)
+                                recreate()
+                            }
+                        )
+                    }
+                } else {
+                    Surface(
+                        modifier = Modifier.fillMaxSize(),
+                        color = colors.background,
+                        contentColor = colors.onBackground
+                    ) { CurrentLensApp() }
+                }
             }
         }
+    }
+}
+
+@Composable
+private fun CrashRecoveryScreen(report: String, onRetry: () -> Unit) {
+    val context = LocalContext.current
+    Column(
+        Modifier.fillMaxSize().verticalScroll(rememberScrollState())
+            .padding(horizontal = 22.dp, vertical = 28.dp),
+        verticalArrangement = Arrangement.spacedBy(14.dp)
+    ) {
+        Text("CurrentLens could not complete its previous launch",
+            style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+        Text(
+            "A local crash report has been saved on this device. Copy it and send it with your next message so the exact failure can be fixed instead of guessed.",
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            Button(
+                onClick = {
+                    val clipboard = context.getSystemService(android.content.Context.CLIPBOARD_SERVICE)
+                        as? android.content.ClipboardManager
+                    clipboard?.setPrimaryClip(
+                        android.content.ClipData.newPlainText("CurrentLens crash report", report)
+                    )
+                    android.widget.Toast.makeText(context, "Crash report copied", android.widget.Toast.LENGTH_SHORT).show()
+                },
+                modifier = Modifier.weight(1f)
+            ) { Text("Copy crash report") }
+            OutlinedButton(onClick = onRetry, modifier = Modifier.weight(1f)) { Text("Try again") }
+        }
+        Text("LOCAL DIAGNOSTICS", style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
+        Text(report.take(12_000), style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace)
     }
 }
 
@@ -320,39 +376,33 @@ private fun CurrentLensApp() {
     // WindowInsets.ime is a composable local; capture it here before entering an effect.
     val imeInsets = WindowInsets.ime
     val lifecycleOwner = context as? LifecycleOwner
-    var appResumed by remember {
-        mutableStateOf(lifecycleOwner?.lifecycle?.currentState?.isAtLeast(Lifecycle.State.RESUMED) == true)
-    }
     var reduceMotion by remember { mutableStateOf(!ValueAnimator.areAnimatorsEnabled()) }
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
-            when (event) {
-                Lifecycle.Event.ON_RESUME -> {
-                    appResumed = true
-                    reduceMotion = !ValueAnimator.areAnimatorsEnabled()
-                }
-                Lifecycle.Event.ON_PAUSE, Lifecycle.Event.ON_STOP -> appResumed = false
-                else -> Unit
-            }
+            if (event == Lifecycle.Event.ON_RESUME) reduceMotion = !ValueAnimator.areAnimatorsEnabled()
         }
         lifecycleOwner?.lifecycle?.addObserver(observer)
         onDispose { lifecycleOwner?.lifecycle?.removeObserver(observer) }
     }
 
-    // One shared 8x8 probe samples the full-width bottom 104dp of the live root backdrop.
-    // This bounded band follows the IME-resized root, staying behind both navigation
-    // glass and the keyboard-docked Search composer instead of averaging unrelated
-    // content across the full screen. Cadence remains 600ms on API 31+ and 1500ms
-    // on legacy devices; sampling is foreground-only and shared by both surfaces.
-    val glassLuminance = rememberBottomBandGlassLuminance(
-        enabled = appResumed && selectedArticle == null && !showSettings,
-        source = backdrop,
-        isLightTheme = !dark,
-        bandHeight = 104.dp
-    )
+    // Theme-derived contrast avoids recurring GPU readback synchronisation during flings.
+    val glassLuminance = remember(dark) {
+        GlassLuminanceState(if (dark) 0.08f else 0.92f).also {
+            it.contentColor = if (dark) Color.White else Color.Black
+        }
+    }
     val todayDate = LocalDate.now(ZoneId.of(INDIA_ZONE))
-    val todaysArticles = remember(articles, todayDate) {
-        ArticleFilters.today(articles, todayDate).filter(UpscFeedPolicy::shouldInclude)
+    var feedIndex by remember {
+        mutableStateOf(EditorialFeedIndex(emptyList(), emptyList(), emptyList()))
+    }
+    var feedIndexReady by remember { mutableStateOf(false) }
+    LaunchedEffect(articles, todayDate, localStateLoaded) {
+        if (!localStateLoaded) return@LaunchedEffect
+        val nextIndex = withContext(Dispatchers.Default) {
+            EditorialFeedIndexPolicy.build(articles, todayDate)
+        }
+        feedIndex = nextIndex
+        feedIndexReady = true
     }
 
     // Keep the composer IME-docked while the keyboard dismisses. Only after the
@@ -508,9 +558,11 @@ private fun CurrentLensApp() {
                     onYouPageChange = { youPage = it },
                     onRefresh = { if (!refreshing) refreshKey++ },
                     refreshing = refreshing,
-                    loading = loading,
+                    loading = loading || !feedIndexReady,
                     loadError = loadError,
-                    todaysArticles = todaysArticles,
+                    todaysArticles = feedIndex.todayArticles,
+                    eligibleArticles = feedIndex.eligibleArticles,
+                    exploreArticles = feedIndex.exploreArticles,
                     allCachedArticles = articles,
                     bookmarks = bookmarks,
                     readHistory = readHistory,
@@ -635,6 +687,8 @@ private fun HomeScreen(
     loading: Boolean,
     loadError: Boolean,
     todaysArticles: List<Article>,
+    eligibleArticles: List<Article>,
+    exploreArticles: List<Article>,
     allCachedArticles: List<Article>,
     bookmarks: Set<String>,
     readHistory: Set<String>,
@@ -651,9 +705,6 @@ private fun HomeScreen(
     val today = LocalDate.now(ZoneId.of(INDIA_ZONE))
     val dateLabel = remember(today) { today.format(DateTimeFormatter.ofPattern("EEEE, d MMMM", Locale.ENGLISH)) }
     var exploreCategory by remember { mutableStateOf("All") }
-    val exploreArticles = remember(allCachedArticles) {
-        ArticleFilters.explore(allCachedArticles).filter(UpscFeedPolicy::shouldInclude)
-    }
 
     val pageTitle = when (selectedTab) {
         0 -> "Today"
@@ -700,7 +751,7 @@ private fun HomeScreen(
             val (tab, page) = target
             when (tab) {
                 0 -> TodayFeed(
-                    todaysArticles, allCachedArticles, loading, loadError, refreshing,
+                    todaysArticles, eligibleArticles, loading, loadError, refreshing,
                     bookmarks, onOpenArticle, onToggleBookmark
                 )
                 1 -> ExploreFeed(
@@ -709,8 +760,9 @@ private fun HomeScreen(
                     loading, loadError, backdrop, glassAlpha, isSystemInDarkTheme()
                 )
                 2 -> SearchFeed(
-                    allCachedArticles, searchQuery, searchExpanded,
-                    bookmarks, onOpenArticle, onToggleBookmark, loading, loadError
+                    eligibleArticles, searchQuery, searchExpanded,
+                    bookmarks, onOpenArticle, onToggleBookmark, loading, loadError,
+                    backdrop, glassAlpha, isSystemInDarkTheme()
                 )
                 else -> when (page) {
                     YouPage.DASHBOARD -> YouDashboard(
@@ -876,12 +928,14 @@ private fun TodayFeed(
     val today = LocalDate.now(ZoneId.of(INDIA_ZONE))
     val weekend = today.dayOfWeek == DayOfWeek.SATURDAY || today.dayOfWeek == DayOfWeek.SUNDAY
     val weekendStart = today.minusDays(if (today.dayOfWeek == DayOfWeek.SATURDAY) 1 else 2)
-    val weekendStories = if (weekend) {
-        weekendArticles.filter { article ->
-            article.weekendRead && UpscFeedPolicy.shouldInclude(article) &&
-                ArticleFilters.publishedDate(article)?.let { it >= weekendStart && it <= today } == true
-        }.sortedByDescending { it.publishedAtMillis ?: 0L }.take(5)
-    } else emptyList()
+    val weekendStories = remember(weekend, weekendArticles, today) {
+        if (weekend) {
+            weekendArticles.filter { article ->
+                article.weekendRead &&
+                    ArticleFilters.publishedDate(article)?.let { it >= weekendStart && it <= today } == true
+            }.sortedByDescending { it.publishedAtMillis ?: 0L }.take(5)
+        } else emptyList()
+    }
 
     LazyColumn(
         Modifier.fillMaxSize(),
@@ -898,7 +952,7 @@ private fun TodayFeed(
             }
         }
         when {
-            loading && articles.isEmpty() -> items(3) { FeedSkeletonCard() }
+            loading -> items(3) { FeedSkeletonCard() }
             loadError && articles.isEmpty() -> item { EmptyPanel("News is temporarily unavailable", "Check your connection and refresh.") }
             articles.isEmpty() -> item { EmptyPanel("No UPSC-relevant stories today", "Broad entertainment and general-interest updates are filtered out. Refresh later for syllabus-linked developments.") }
             else -> items(articles.take(45), key = { it.id }, contentType = { "article" }) { article ->
@@ -947,7 +1001,9 @@ private fun ExploreFeed(
     dark: Boolean
 ) {
     val categories = listOf("All", "India", "World", "Politics", "Economy", "Environment", "Science", "Explained", "UPSC", "Opinion")
-    val filtered = articles.filter { article -> ExploreFilters.matches(article, selectedCategory, "") }
+    val filtered = remember(articles, selectedCategory) {
+        articles.filter { article -> ExploreFilters.matches(article, selectedCategory, "") }
+    }
     Column(Modifier.fillMaxSize()) {
         ExploreGlassCategories(
             categories = categories,
@@ -985,7 +1041,10 @@ private fun SearchFeed(
     onOpenArticle: (Article) -> Unit,
     onToggleBookmark: (Article) -> Unit,
     loading: Boolean,
-    loadError: Boolean
+    loadError: Boolean,
+    backdrop: PrismalBackdrop,
+    glassAlpha: Float,
+    dark: Boolean
 ) {
     var selectedCategory by remember { mutableStateOf("All") }
     var selectedSubject by remember { mutableStateOf("All") }
@@ -993,7 +1052,8 @@ private fun SearchFeed(
     var showFilters by remember { mutableStateOf(false) }
     val filterSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val keyboardController = LocalSoftwareKeyboardController.current
-    val eligibleArticles = remember(articles) { articles.filter(UpscFeedPolicy::shouldInclude) }
+    val eligibleArticles = articles
+    val density = LocalDensity.current
     val categories = listOf("All", "India", "World", "Politics", "Economy", "Environment", "Science", "Explained", "UPSC", "Opinion")
     val subjects = remember(eligibleArticles) {
         listOf("All") + eligibleArticles.map { UpscEngine.classify(it).subject }.distinct().sorted()
@@ -1009,17 +1069,53 @@ private fun SearchFeed(
         selectedGsPaper.takeIf { it != "All" },
         selectedSubject.takeIf { it != "All" }
     ).joinToString(" · ")
-    val filtered = eligibleArticles.filter { article ->
-        val relevance = UpscEngine.classify(article)
-        ExploreFilters.matches(article, selectedCategory, query) &&
-            (selectedSubject == "All" || relevance.subject == selectedSubject) &&
-            (selectedGsPaper == "All" || relevance.gsPaper == selectedGsPaper)
+    val filtered = remember(eligibleArticles, query, selectedCategory, selectedSubject, selectedGsPaper) {
+        eligibleArticles.filter { article ->
+            val relevance = UpscEngine.classify(article)
+            ExploreFilters.matches(article, selectedCategory, query) &&
+                (selectedSubject == "All" || relevance.subject == selectedSubject) &&
+                (selectedGsPaper == "All" || relevance.gsPaper == selectedGsPaper)
+        }
     }
     Column(Modifier.fillMaxSize()) {
-        Row(
-            Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 5.dp, bottom = 2.dp),
-            verticalAlignment = Alignment.CenterVertically
+        Box(
+            Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 5.dp)
+                .drawPrismalGlass(
+                    backdrop = backdrop,
+                    shape = { PrismalRoundedRectangle(22.dp) },
+                    effects = {
+                        applyPrismalGlassEffects(
+                            density = density,
+                            adaptiveLuminance = true,
+                            luminance = if (dark) 0.10f else 0.90f,
+                            blurRadiusPx = with(density) { 7.dp.toPx() },
+                            refractionHeightPx = with(density) { 3.dp.toPx() },
+                            refractionAmountPx = with(density) { 4.dp.toPx() },
+                            depthEffect = true,
+                            chromaticAberration = 0.001f,
+                            adaptiveTuning = PrismalAdaptiveTuning.Subtle
+                        )
+                    },
+                    specular = {
+                        PrismalSpecular.Default.copy(width = 0.42.dp, blurRadius = 0.28.dp, alpha = 0.19f)
+                    },
+                    depthShadow = {
+                        PrismalDepthShadow(radius = 8.dp, offset = DpOffset(0.dp, 1.dp),
+                            color = Color.Black.copy(alpha = 0.06f), alpha = 0.12f)
+                    },
+                    depthInset = {
+                        PrismalDepthInset(radius = 3.dp, offset = DpOffset(0.dp, 1.dp),
+                            color = Color.Black.copy(alpha = 0.04f), alpha = 0.04f)
+                    },
+                    onDrawSurface = {
+                        drawRect(MaterialTheme.colorScheme.surface.copy(alpha = glassAlpha * 0.10f))
+                    }
+                )
         ) {
+            Row(
+                Modifier.fillMaxWidth().padding(start = 12.dp, end = 8.dp, top = 7.dp, bottom = 7.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                 Text(
                     if (query.isBlank()) "UPSC-RELEVANT ARTICLES" else "UPSC SEARCH RESULTS",
@@ -1047,6 +1143,7 @@ private fun SearchFeed(
                     Icon(Icons.Outlined.Tune, contentDescription = null, modifier = Modifier.size(16.dp))
                 }
             )
+            }
         }
         LazyColumn(
             Modifier.weight(1f),
@@ -2067,16 +2164,16 @@ private fun GlassTabBar(
         Box(
             Modifier.offset {
                 val center = GlassTabGeometryPolicy.tabCenterPx(contentStartPx, motion.value, tabWidthPx)
-                val iconSizePx = with(density) { 27.dp.toPx() }
+                val iconSizePx = with(density) { 29.dp.toPx() }
                 IntOffset((center - iconSizePx / 2f).roundToInt(),
                     ((barHeightPx - iconSizePx) / 2f).roundToInt())
             }
-                .size(27.dp)
+                .size(29.dp)
                 .clearAndSetSemantics {},
             contentAlignment = Alignment.Center
         ) {
             Icon(activeGlyph, contentDescription = null, tint = adaptiveContentColor,
-                modifier = Modifier.size(27.dp))
+                modifier = Modifier.size(29.dp))
         }
     }
 }
@@ -2103,9 +2200,13 @@ private fun RowScope.GlassTab(
             )
         }
     } else Modifier
-    val tabModifier = positionModifier.semantics(mergeDescendants = true) { selected = isSelected }
+    val tabModifier = positionModifier.semantics(mergeDescendants = true) {
+        selected = isSelected
+        contentDescription = label
+    }
     PrismalGlassBottomTab(onClick = { onSelect(index) }, modifier = tabModifier) {
-        Icon(icon, contentDescription = label, tint = tint, modifier = Modifier.size(27.dp))
+        if (isSelected) Spacer(Modifier.size(29.dp))
+        else Icon(icon, contentDescription = null, tint = tint, modifier = Modifier.size(29.dp))
     }
 }
 
