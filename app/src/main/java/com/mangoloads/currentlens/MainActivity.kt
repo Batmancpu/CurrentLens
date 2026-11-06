@@ -17,6 +17,7 @@ import android.view.View
 import android.view.ViewConfiguration
 import android.os.SystemClock
 import android.webkit.WebResourceRequest
+import android.webkit.CookieManager
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import androidx.activity.ComponentActivity
@@ -2379,6 +2380,16 @@ private fun ReaderScreen(article: Article, backdrop: PrismalBackdrop, glassAlpha
                 factory = { ctx ->
                     ReaderWebView(ctx).apply {
                         readerWebViewHolder.value = this
+                        // Public-page reading is intentionally stateless: never reuse
+                        // publisher login/tracking cookies from an earlier WebView session.
+                        val cookieManager = CookieManager.getInstance()
+                        ReaderCookiePolicy.enforce(
+                            setAcceptCookie = cookieManager::setAcceptCookie,
+                            setAcceptThirdPartyCookies = { accept ->
+                                cookieManager.setAcceptThirdPartyCookies(this, accept)
+                            },
+                            clearCookies = { cookieManager.removeAllCookies(null) }
+                        )
                         settings.javaScriptEnabled = false
                         settings.domStorageEnabled = false
                         settings.loadsImagesAutomatically = true
