@@ -50,6 +50,25 @@ internal object LaunchCrashDiagnostics {
         }
     }
 
+    /**
+     * Called from Application.attachBaseContext before ContentProviders start.
+     * If the prior process never reached its first stable Compose frames, preserve
+     * that fact even when Android killed it without a Java/Kotlin exception.
+     */
+    fun beginStartup(context: Context) {
+        val directory = context.applicationContext?.filesDir ?: context.filesDir
+        val previousStage = runCatching {
+            File(directory, STAGE_NAME).takeIf { it.isFile }?.readText(Charsets.UTF_8)
+        }.getOrNull()
+        val reportFile = File(directory, REPORT_NAME)
+        if (!reportFile.isFile && !previousStage.isNullOrBlank() &&
+            !previousStage.contains("First Compose frames completed")
+        ) {
+            writeInterruptedStartupReport(context, previousStage)
+        }
+        recordStage(context, "Application.attachBaseContext completed")
+    }
+
     /** Record the last completed startup boundary for the next crash report. */
     fun recordStage(context: Context, stage: String) {
         if (stage.isBlank()) return
@@ -84,6 +103,37 @@ internal object LaunchCrashDiagnostics {
         return reportDeleted && (tempDeleted || !File(directory, REPORT_TEMP_NAME).exists())
     }
 
+    internal fun formatInterruptedStartupReport(
+        lastCompletedStage: String,
+        versionName: String? = null
+    ): String = buildString {
+        appendLine("CurrentLens startup interruption report")
+        appendLine("Timestamp: " + Instant.now().toString())
+        appendLine("App: " + versionName.orEmpty())
+        appendLine("Package: com.mangoloads.currentlens")
+        appendLine("Device: " + Build.MANUFACTURER + " " + Build.BRAND + " " + Build.MODEL)
+        appendLine("Device code: " + Build.DEVICE)
+        appendLine("Android: " + Build.VERSION.RELEASE + " (API " + Build.VERSION.SDK_INT + ")")
+        appendLine("Build fingerprint: " + Build.FINGERPRINT)
+        appendLine("Process id: " + runCatching { Process.myPid().toString() }.getOrDefault("unavailable"))
+        appendLine("Report type: startup interrupted; no uncaught Java/Kotlin exception was captured")
+        appendLine("Last completed startup stage: " + lastCompletedStage)
+        appendLine()
+        appendLine("The previous process ended before confirming the first stable Compose frames.")
+        appendLine("This can indicate a native/render-thread crash, abrupt process termination,")
+        appendLine("or a force-stop during launch. It is not a Java/Kotlin stack trace.")
+    }.take(MAX_REPORT_CHARS)
+
+    private fun writeInterruptedStartupReport(context: Context, lastCompletedStage: String) {
+        val versionName = runCatching {
+            context.packageManager.getPackageInfo(context.packageName, 0).versionName
+        }.getOrNull()
+        writeReportFile(
+            context.filesDir,
+            formatInterruptedStartupReport(lastCompletedStage, versionName)
+        )
+    }
+
     private fun writeCrashReport(context: Context, threadName: String, throwable: Throwable) {
         val directory = context.filesDir
         val stage = runCatching {
@@ -99,6 +149,10 @@ internal object LaunchCrashDiagnostics {
             versionName = versionName,
             processId = Process.myPid()
         )
+        writeReportFile(directory, report)
+    }
+
+    private fun writeReportFile(directory: File, report: String) {
         val destination = File(directory, REPORT_NAME)
         val temporary = File(directory, REPORT_TEMP_NAME)
 

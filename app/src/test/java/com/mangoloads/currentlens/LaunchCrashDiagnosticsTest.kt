@@ -22,6 +22,19 @@ class LaunchCrashDiagnosticsTest {
     }
 
     @Test
+    fun interruptionReportDoesNotPretendToContainAnExceptionStackTrace() {
+        val report = LaunchCrashDiagnostics.formatInterruptedStartupReport(
+            lastCompletedStage = "MainActivity.setContent returned",
+            versionName = "0.2.0"
+        )
+
+        assertTrue(report.contains("startup interrupted"))
+        assertTrue(report.contains("no uncaught Java/Kotlin exception was captured"))
+        assertTrue(report.contains("MainActivity.setContent returned"))
+        assertTrue(report.contains("This is not a Java/Kotlin stack trace."))
+    }
+
+    @Test
     fun reportIsBoundedForSafeLocalDisplay() {
         val report = LaunchCrashDiagnostics.formatReport(
             threadName = "main",

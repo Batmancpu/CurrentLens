@@ -13,7 +13,7 @@ class CurrentLensApplication : Application() {
     override fun attachBaseContext(base: Context) {
         super.attachBaseContext(base)
         LaunchCrashDiagnostics.install(base)
-        LaunchCrashDiagnostics.recordStage(base, "Application.attachBaseContext completed")
+        LaunchCrashDiagnostics.beginStartup(base)
     }
 
     override fun onCreate() {
