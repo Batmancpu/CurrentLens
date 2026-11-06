@@ -2,6 +2,10 @@ package com.mangoloads.currentlens
 
 /** Deterministic Explore matching over publisher sections and RSS metadata only. */
 internal object ExploreFilters {
+    /** Explore keeps its wider date window but never bypasses the default editorial gate. */
+    fun eligible(articles: List<Article>): List<Article> =
+        articles.filter(UpscFeedPolicy::shouldInclude)
+
     fun matches(article: Article, category: String, query: String): Boolean =
         matchesCategory(article, category) && matchesSearchTerms(article, query)
 

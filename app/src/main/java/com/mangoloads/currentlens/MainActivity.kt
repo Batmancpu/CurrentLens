@@ -911,7 +911,10 @@ private fun ExploreFeed(
     dark: Boolean
 ) {
     val categories = listOf("All", "India", "Geography", "World", "Politics", "Economy", "Environment", "Science", "Explained", "UPSC", "Opinion")
-    val filtered = articles.filter { article -> ExploreFilters.matches(article, selectedCategory, "") }
+    val eligibleArticles = remember(articles) { ExploreFilters.eligible(articles) }
+    val filtered = remember(eligibleArticles, selectedCategory) {
+        eligibleArticles.filter { article -> ExploreFilters.matches(article, selectedCategory, "") }
+    }
     Column(Modifier.fillMaxSize()) {
         ExploreGlassCategories(
             categories = categories,
