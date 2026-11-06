@@ -75,7 +75,6 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.ArrowBack
-import androidx.compose.material.icons.outlined.AccountCircle
 import androidx.compose.material.icons.outlined.Bookmark
 import androidx.compose.material.icons.outlined.BookmarkBorder
 import androidx.compose.material.icons.outlined.Explore
@@ -247,17 +246,21 @@ class MainActivity : ComponentActivity() {
             }
             val view = LocalView.current
             SideEffect {
-                val window = (view.context as? Activity)?.window
-                if (window != null) {
-                    window.statusBarColor = AndroidColor.TRANSPARENT
-                    window.navigationBarColor = AndroidColor.TRANSPARENT
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                        window.isStatusBarContrastEnforced = false
-                        window.isNavigationBarContrastEnforced = false
-                    }
-                    WindowCompat.getInsetsController(window, view).apply {
-                        isAppearanceLightStatusBars = !dark
-                        isAppearanceLightNavigationBars = !dark
+                // OEM window implementations can differ. Bar styling must not abort
+                // activity startup or prevent the first Compose frame from drawing.
+                runCatching {
+                    val window = (view.context as? Activity)?.window
+                    if (window != null) {
+                        window.statusBarColor = AndroidColor.TRANSPARENT
+                        window.navigationBarColor = AndroidColor.TRANSPARENT
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                            window.isStatusBarContrastEnforced = false
+                            window.isNavigationBarContrastEnforced = false
+                        }
+                        WindowCompat.getInsetsController(window, view).apply {
+                            isAppearanceLightStatusBars = !dark
+                            isAppearanceLightNavigationBars = !dark
+                        }
                     }
                 }
             }
@@ -274,17 +277,28 @@ class MainActivity : ComponentActivity() {
 
 private enum class YouPage { DASHBOARD, SAVED, READING_STATS, QUIZ_STATS }
 
+private data class LocalAppSnapshot(
+    val articles: List<Article>,
+    val bookmarks: Set<String>,
+    val readHistory: Set<String>,
+    val readingSessions: List<ReadingSession>,
+    val quizAttempts: List<QuizAttempt>
+)
+
 @Composable
 private fun CurrentLensApp() {
     val context = LocalContext.current
     val backdrop = rememberPrismalGlassLayer()
     val dark = isSystemInDarkTheme()
-    var articles by remember { mutableStateOf(LocalStore.cachedArticles(context)) }
-    var bookmarks by remember { mutableStateOf(LocalStore.bookmarks(context)) }
-    var readHistory by remember { mutableStateOf(LocalStore.readHistory(context)) }
-    var readingSessions by remember { mutableStateOf(LocalStore.readingSessions(context)) }
-    var quizAttempts by remember { mutableStateOf(LocalStore.quizAttempts(context)) }
-    var loading by remember { mutableStateOf(articles.isEmpty()) }
+    // Restore larger persisted collections after the first frame; parsing 5,000
+    // sessions/quiz attempts on the UI thread can stall cold launch.
+    var articles by remember { mutableStateOf(emptyList<Article>()) }
+    var bookmarks by remember { mutableStateOf(emptySet<String>()) }
+    var readHistory by remember { mutableStateOf(emptySet<String>()) }
+    var readingSessions by remember { mutableStateOf(emptyList<ReadingSession>()) }
+    var quizAttempts by remember { mutableStateOf(emptyList<QuizAttempt>()) }
+    var localStateLoaded by remember { mutableStateOf(false) }
+    var loading by remember { mutableStateOf(true) }
     var refreshing by remember { mutableStateOf(false) }
     var loadError by remember { mutableStateOf(false) }
     var refreshKey by remember { mutableIntStateOf(0) }
@@ -336,6 +350,10 @@ private fun CurrentLensApp() {
         isLightTheme = !dark,
         bandHeight = 104.dp
     )
+    val todayDate = LocalDate.now(ZoneId.of(INDIA_ZONE))
+    val todaysArticles = remember(articles, todayDate) {
+        ArticleFilters.today(articles, todayDate).filter(UpscFeedPolicy::shouldInclude)
+    }
 
     // Keep the composer IME-docked while the keyboard dismisses. Only after the
     // keyboard reaches zero inset does the capsule travel back into its tab anchor.
@@ -364,7 +382,26 @@ private fun CurrentLensApp() {
         }
     }
 
-    LaunchedEffect(refreshKey) {
+    LaunchedEffect(context) {
+        val restored = withContext(Dispatchers.IO) {
+            LocalAppSnapshot(
+                articles = LocalStore.cachedArticles(context),
+                bookmarks = LocalStore.bookmarks(context),
+                readHistory = LocalStore.readHistory(context),
+                readingSessions = LocalStore.readingSessions(context),
+                quizAttempts = LocalStore.quizAttempts(context)
+            )
+        }
+        articles = restored.articles
+        bookmarks = restored.bookmarks
+        readHistory = restored.readHistory
+        readingSessions = restored.readingSessions
+        quizAttempts = restored.quizAttempts
+        localStateLoaded = true
+    }
+
+    LaunchedEffect(refreshKey, localStateLoaded) {
+        if (!localStateLoaded) return@LaunchedEffect
         loading = articles.isEmpty()
         refreshing = articles.isNotEmpty()
         loadError = false
@@ -473,8 +510,7 @@ private fun CurrentLensApp() {
                     refreshing = refreshing,
                     loading = loading,
                     loadError = loadError,
-                    todaysArticles = ArticleFilters.today(articles, LocalDate.now(ZoneId.of(INDIA_ZONE)))
-                        .filter(UpscFeedPolicy::shouldInclude),
+                    todaysArticles = todaysArticles,
                     allCachedArticles = articles,
                     bookmarks = bookmarks,
                     readHistory = readHistory,
@@ -490,12 +526,12 @@ private fun CurrentLensApp() {
                     onOpenArticle = {
                         searchExpanded = false
                         LocalStore.markRead(context, it.url)
-                        readHistory = LocalStore.readHistory(context)
+                        readHistory = readHistory + it.url
                         selectedArticle = it
                     },
                     onToggleBookmark = {
-                        LocalStore.toggleBookmark(context, it.url)
-                        bookmarks = LocalStore.bookmarks(context)
+                        val added = LocalStore.toggleBookmark(context, it.url)
+                        bookmarks = if (added) bookmarks + it.url else bookmarks - it.url
                     }
                 )
             }
@@ -865,7 +901,7 @@ private fun TodayFeed(
             loading && articles.isEmpty() -> items(3) { FeedSkeletonCard() }
             loadError && articles.isEmpty() -> item { EmptyPanel("News is temporarily unavailable", "Check your connection and refresh.") }
             articles.isEmpty() -> item { EmptyPanel("No UPSC-relevant stories today", "Broad entertainment and general-interest updates are filtered out. Refresh later for syllabus-linked developments.") }
-            else -> items(articles.take(45), key = { it.id }) { article ->
+            else -> items(articles.take(45), key = { it.id }, contentType = { "article" }) { article ->
                 NewsCard(article, bookmarks.contains(article.url), onOpenArticle, onToggleBookmark)
             }
         }
@@ -932,7 +968,7 @@ private fun ExploreFeed(
                 item { EmptyPanel("News is temporarily unavailable", "Check your connection and refresh.") }
             } else if (filtered.isEmpty()) item {
                 EmptyPanel("No stories in this topic", "Try another topic or refresh your feeds.")
-            } else items(filtered, key = { it.id }) { article ->
+            } else items(filtered, key = { it.id }, contentType = { "article" }) { article ->
                 NewsCard(article, bookmarks.contains(article.url), onOpenArticle, onToggleBookmark)
             }
         }
@@ -1026,7 +1062,7 @@ private fun SearchFeed(
                 item { EmptyPanel("News is temporarily unavailable", "Check your connection and refresh.") }
             } else if (filtered.isEmpty()) item {
                 EmptyPanel("No matching articles", "Change your search or remove one of the filters.")
-            } else items(filtered, key = { it.id }) { article ->
+            } else items(filtered, key = { it.id }, contentType = { "article" }) { article ->
                 NewsCard(article, bookmarks.contains(article.url), onOpenArticle, onToggleBookmark)
             }
         }
@@ -1248,7 +1284,7 @@ private fun SavedFeed(
                 EmptyPanel("Nothing saved yet", "Tap the bookmark on any story to keep it here.")
             } else if (filtered.isEmpty()) item {
                 EmptyPanel("No saved articles match", "Change the publication-date, subject or GS-paper filter.")
-            } else items(filtered, key = { it.id }) { article ->
+            } else items(filtered, key = { it.id }, contentType = { "article" }) { article ->
                 NewsCard(article, true, onOpenArticle, onToggleBookmark)
             }
             if (previouslyOpened.isNotEmpty()) {
@@ -1563,7 +1599,11 @@ private fun NewsCard(
     val hasImage = !article.imageUrl.isNullOrBlank()
     val imageRequest = remember(article.imageUrl) {
         article.imageUrl?.let { url ->
-            ImageRequest.Builder(context).data(url).allowHardware(false).crossfade(false).build()
+            ImageRequest.Builder(context).data(url)
+                .size(960, 640)
+                .allowHardware(false)
+                .crossfade(false)
+                .build()
         }
     }
     var imagePalette by remember(article.id) { mutableStateOf<Color?>(null) }
@@ -1602,8 +1642,10 @@ private fun NewsCard(
                         contentDescription = article.title,
                         contentScale = ContentScale.Crop,
                         onSuccess = { state ->
-                            val bitmap = (state.result.drawable as? BitmapDrawable)?.bitmap
-                            val sampled = bitmap?.let(::sampleImagePalette)
+                            val sampled = runCatching {
+                                val bitmap = (state.result.drawable as? BitmapDrawable)?.bitmap
+                                if (bitmap != null && !bitmap.isRecycled) sampleImagePalette(bitmap) else null
+                            }.getOrNull()
                             if (sampled != null && imagePalette != sampled) imagePalette = sampled
                         },
                         modifier = Modifier.fillMaxWidth().height(190.dp)
@@ -1926,7 +1968,7 @@ private fun GlassTabBar(
                 GlassTab(0, "Today", Icons.Outlined.Today, onSelect, adaptiveContentColor)
                 GlassTab(1, "Explore", Icons.Outlined.Explore, onSelect, adaptiveContentColor)
                 GlassTab(2, "Search", Icons.Outlined.Search, onSelect, adaptiveContentColor)
-                GlassTab(3, "You", Icons.Outlined.AccountCircle, onSelect, adaptiveContentColor)
+                GlassTab(3, "You", Icons.Outlined.Person, onSelect, adaptiveContentColor)
             }
 
             Row(
@@ -1938,7 +1980,7 @@ private fun GlassTabBar(
                 GlassTab(0, "Today", Icons.Outlined.Today, onSelect, adaptiveContentColor)
                 GlassTab(1, "Explore", Icons.Outlined.Explore, onSelect, adaptiveContentColor)
                 GlassTab(2, "Search", Icons.Outlined.Search, onSelect, adaptiveContentColor, onSearchAnchor)
-                GlassTab(3, "You", Icons.Outlined.AccountCircle, onSelect, adaptiveContentColor)
+                GlassTab(3, "You", Icons.Outlined.Person, onSelect, adaptiveContentColor)
             }
         }
 
@@ -2020,7 +2062,7 @@ private fun GlassTabBar(
             0 -> Icons.Outlined.Today
             1 -> Icons.Outlined.Explore
             2 -> Icons.Outlined.Search
-            else -> Icons.Outlined.AccountCircle
+            else -> Icons.Outlined.Person
         }
         Box(
             Modifier.offset {

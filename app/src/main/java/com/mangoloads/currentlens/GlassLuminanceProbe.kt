@@ -82,7 +82,8 @@ internal fun rememberBottomBandGlassLuminance(
         val pixelBuffer = IntArray(probeSizePx * probeSizePx)
         val probeSize = IntSize(probeSizePx, probeSizePx)
         val requestedBandHeightPx = with(density) { bandHeight.toPx().roundToInt() }
-        val sampleIntervalMs = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) 600L else 1500L
+        // Readback captures only 8x8 pixels; lower cadence avoids competing with flings.
+        val sampleIntervalMs = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) 1500L else 2500L
 
         while (isActive) {
             try {
