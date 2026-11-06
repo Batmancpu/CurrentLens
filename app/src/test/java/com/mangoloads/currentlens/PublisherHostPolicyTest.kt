@@ -17,6 +17,55 @@ class PublisherHostPolicyTest {
     }
 
     @Test
+    fun allowsConfiguredRssFeedHostsIncludingTheOfficialBbcFeedHost() {
+        val feeds = listOf(
+            "The Hindu" to "https://www.thehindu.com/business/Economy/feeder/default.rss",
+            "Indian Express" to "https://indianexpress.com/section/india/feed/",
+            "BBC" to "https://feeds.bbci.co.uk/news/world/rss.xml",
+            "DW" to "https://rss.dw.com/rdf/rss-en-all",
+            "Al Jazeera" to "https://www.aljazeera.com/xml/rss/all.xml"
+        )
+
+        feeds.forEach { (source, url) ->
+            assertTrue("$source feed host should be allowed", PublisherHostPolicy.allows(source, url))
+        }
+    }
+
+    @Test
+    fun resolvesRelativeRedirectsOnTheOfficialBbcFeedHost() {
+        assertEquals(
+            "https://feeds.bbci.co.uk/news/world/rss-v2.xml",
+            PublisherRedirectPolicy.resolveAllowedTarget(
+                source = "BBC",
+                currentUrl = "https://feeds.bbci.co.uk/news/world/rss.xml",
+                location = "rss-v2.xml",
+                redirectsFollowed = 0
+            )
+        )
+    }
+
+    @Test
+    fun rejectsOffPublisherRssRedirectsBeforeFollowing() {
+        val current = "https://feeds.bbci.co.uk/news/world/rss.xml"
+        listOf(
+            "https://attacker.example/collect",
+            "http://feeds.bbci.co.uk/news/world/rss.xml",
+            "https://feeds.bbci.co.uk.attacker.test/rss.xml",
+            "https://user@feeds.bbci.co.uk/rss.xml",
+            "https://feeds.bbci.co.uk:8443/rss.xml"
+        ).forEach { location ->
+            assertNull(
+                PublisherRedirectPolicy.resolveAllowedTarget(
+                    source = "BBC",
+                    currentUrl = current,
+                    location = location,
+                    redirectsFollowed = 0
+                )
+            )
+        }
+    }
+
+    @Test
     fun rejectsNonDefaultHttpsPorts() {
         assertFalse(PublisherHostPolicy.allows("The Hindu", "https://www.thehindu.com:8443/news/story"))
         assertTrue(PublisherHostPolicy.allows("The Hindu", "https://www.thehindu.com:443/news/story"))
