@@ -2428,9 +2428,10 @@ private fun ReaderScreen(article: Article, backdrop: PrismalBackdrop, glassAlpha
     }
 
     val readerSourceStatus = when {
-        extractedHtml == null -> "In-app publisher view"
-        loadedFromCache -> "Saved public content · on this device"
-        else -> "Public publisher content · attributed"
+        extractedHtml != null && loadedFromCache -> "Saved public content · on this device"
+        extractedHtml != null -> "Public publisher content · attributed"
+        fallbackToPublisher -> "Publisher fallback · scripts disabled"
+        else -> "Public article unavailable"
     }
 
     Column(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
