@@ -66,7 +66,7 @@ object LocalStore {
                 prefs.getStringSet(READ, emptySet())?.toSet() ?: emptySet()
             }.getOrDefault(emptySet())
             val recentRaw = runCatching { prefs.getString(RECENT_READ, null) }.getOrNull()
-            legacy + (parseRecentReadHistory(recentRaw) ?: emptyList())
+            ReadHistoryPolicy.visibleHistory(legacy, parseRecentReadHistory(recentRaw) ?: emptyList())
         }.getOrDefault(emptySet())
 
     fun markRead(context: Context, url: String) {
