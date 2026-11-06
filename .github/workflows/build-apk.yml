@@ -33,11 +33,26 @@ jobs:
         with:
           packages: platform-tools
 
-      - name: Restore stable debug signing key for repeatable test APK updates
+      - name: Restore stable Stability test signing key
+        id: stability-signing-cache
         uses: actions/cache@v4
         with:
-          path: ~/.android/debug.keystore
-          key: currentlens-stability-debug-signing-v1
+          path: .ci/stability-debug.keystore
+          key: currentlens-stability-debug-keystore-v1
+
+      - name: Generate Stability test signing key on cache miss
+        if: steps.stability-signing-cache.outputs.cache-hit != 'true'
+        run: |
+          set -euo pipefail
+          mkdir -p .ci
+          keytool -genkeypair -noprompt -v \\
+            -keystore .ci/stability-debug.keystore \\
+            -storetype JKS \\
+            -storepass currentlens-stability-test-only \\
+            -keypass currentlens-stability-test-only \\
+            -alias currentlens-stability \\
+            -keyalg RSA -keysize 2048 -validity 10000 \\
+            -dname "CN=CurrentLens Stability Debug,O=CurrentLens,C=IN"
 
       - name: Install Android platform
         run: |
