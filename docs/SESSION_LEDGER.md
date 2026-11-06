@@ -186,14 +186,14 @@ Created a durable, multi-document memory system:
 2. b30b1f75f87f0f7e779f4d1feaf8d5f1e8c0af6c — add docs/COMMIT_DETAILS.md.
 3. f819b3d839feb32c1d96fe16619835645e8e8602 — add COMMIT_DETAILS to mandatory reading order and Project/handoff instructions.
 
-### Final PR state at snapshot
+### PR #14 state before the current continuity refresh
 - PR #14: https://github.com/Batmancpu/CurrentLens/pull/14
 - Draft/open; branch docs/ai-agent-handoff-2026-11-06.
 - Base main 73b8a0d1ba33503fede02db2c3c0af082d724a12.
-- Head f819b3d839feb32c1d96fe16619835645e8e8602.
-- 3 commits ahead, 0 behind; 10 files; 1,080 additions, 0 deletions.
+- Previous branch head b549b9c4f02a154d39fdb0ef807380a58a52b797; compare was 5 commits ahead / 0 behind, 10 docs-only files, 1,258 additions, 0 deletions.
+- Current refresh adds crash-session details and updates all relevant status registers. Check live PR #14 for its newest head/commit count after this journal commit.
 - README not in diff. No application source, assets, permissions, dependencies or workflow config changed.
-- All ten files fetched/verified on final branch. Main commit index contains 119 rows. PR diff path list checked.
+- Main commit index still contains 119 rows. PR diff path list checked previously; no README file.
 - No PR CI run is available/expected because the single workflow triggers only on push to main. No build was dispatched/rerun and no release was published.
 - PR was left draft and unmerged. A merge will run the current main push workflow and publish a debug APK prerelease.
 
@@ -213,7 +213,7 @@ The user reports the latest app still behaves as follows: tap launcher icon → 
 - Inspected current main manifest, MainActivity startup/first composition, LaunchCrashDiagnostics, LocalStore, NewsRepository, DictionaryActivity/WordNet database session, build Gradle settings, workflow and project source inventory.
 - Main has no custom Application class; launcher activity is MainActivity.
 - Main LaunchCrashDiagnostics.install() was called inside MainActivity.onCreate(), too late for failures during ContentProvider initialisation.
-- The app depends on PrismalAGSL v1.0.4. Its merged manifest includes androidx.startup.InitializationProvider and metadata for PrismalAgslInitializer. AndroidX Startup runs provider initializers before an Activity is created. Prismal's initializer binds its AGSL assets when API >=33. If a managed exception occurs during provider/library startup, the old activity-level handler may never be installed.
+- The app depends on PrismalAGSL v1.0.4. Its merged manifest includes androidx.startup.InitializationProvider and metadata for PrismalAgslInitializer. AndroidX Startup runs provider initializers at application startup before Activity creation. Prismal's v1.0.4 initializer itself only binds the asset manager when API >=33; this does not implicate Prismal as the cause. It does mean a managed exception in any earlier provider startup could precede the old activity-level handler. Official references: https://developer.android.com/topic/libraries/app-startup and https://developer.android.com/reference/androidx/startup/InitializationProvider.
 - The previous recovery UI was implemented in Compose. That is not a robust recovery surface if the failure involves Compose or Prismal drawing.
 - Main CI Build #116 succeeded but only establishes that the earlier main code compiled and its JVM tests ran; it does not establish that the OPPO device launches.
 - No device-level evidence identifies a particular code line as the root cause. The exact crash remains unverified; do not present the instrumentation change as a guaranteed app fix.

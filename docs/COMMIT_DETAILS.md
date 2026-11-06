@@ -152,7 +152,7 @@ Snapshot head: 28a6950fe9e1c0e53f48deacc92cbcd7e89dc4e8
 Base main: 73b8a0d1ba33503fede02db2c3c0af082d724a12
 
 ### Why this change was made
-Main previously installed its uncaught-exception handler in MainActivity.onCreate(). PrismalAGSL v1.0.4's merged manifest registers an AndroidX Startup InitializationProvider, so its initializer executes before MainActivity. A managed failure in that earlier phase can occur before the old handler exists. The earlier recovery screen also used Compose and could fail again if Compose/graphics were involved.
+Main previously installed its uncaught-exception handler in MainActivity.onCreate(). PrismalAGSL v1.0.4's merged manifest registers an AndroidX Startup InitializationProvider, so its initializer executes before MainActivity. A managed failure in that earlier phase can occur before the old handler exists. Prismal's initializer itself only binds the asset manager; this is not evidence that Prismal causes the crash. The earlier recovery screen also used Compose and could fail again if Compose/graphics were involved. Android references: https://developer.android.com/topic/libraries/app-startup and https://developer.android.com/reference/androidx/startup/InitializationProvider.
 
 ### File-level changes
 - AndroidManifest.xml registers CurrentLensApplication as the Application class.

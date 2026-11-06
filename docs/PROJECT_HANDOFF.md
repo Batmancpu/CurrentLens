@@ -21,7 +21,7 @@
 - Branch: fix/early-startup-crash-diagnostics-2026-11-06.
 - Head: 28a6950fe9e1c0e53f48deacc92cbcd7e89dc4e8; base main: 73b8a0d1ba33503fede02db2c3c0af082d724a12; 6 commits ahead / 0 behind.
 - Root cause is not established: no OPPO logcat, tombstone, ANR or current on-device stack trace was available. Do not claim the crash is fixed.
-- Audit found that the old uncaught-exception handler was installed inside MainActivity.onCreate(), but PrismalAGSL v1.0.4 contributes an AndroidX Startup InitializationProvider that runs before the Activity. A managed exception in that earlier startup phase could occur before the old handler existed.
+- Audit found that the old uncaught-exception handler was installed inside MainActivity.onCreate(), but PrismalAGSL v1.0.4 contributes an AndroidX Startup InitializationProvider that runs before the Activity. A managed exception in that earlier startup phase could occur before the old handler existed. Prismal's v1.0.4 initializer itself only binds the asset manager; this is an instrumentation gap, not evidence that Prismal causes the crash. Android references: https://developer.android.com/topic/libraries/app-startup and https://developer.android.com/reference/androidx/startup/InitializationProvider.
 - PR #16 installs a custom Application handler from attachBaseContext(), records startup stages, writes reports atomically, detects a prior interrupted startup without inventing a stack trace, and replaces the Compose recovery screen with native Views.
 - Unit tests were updated/added but not executed. The current workflow only runs on pushes to main; no build was dispatched and no APK exists for this branch.
 - After review/merge and installation of the next build, relaunch once if it still exits; the native recovery screen should expose a local report for copying. If a native/system kill still produces no report, collect Android bugreport/logcat/tombstone evidence.
@@ -127,8 +127,8 @@ Do not blindly merge. No PR branch CI result follows from Build #116.
 
 - PR: https://github.com/Batmancpu/CurrentLens/pull/14
 - State at snapshot: open draft, mergeable; base main SHA 73b8a0d1ba33503fede02db2c3c0af082d724a12; branch docs/ai-agent-handoff-2026-11-06; head f819b3d839feb32c1d96fe16619835645e8e8602.
-- Comparison: 3 commits ahead, 0 behind. Ten docs-only files, 1,080 additions, 0 deletions. README is absent from the diff.
-- Branch commits: c2603bfa34ba00874c64c863e47710273120bb97 (nine initial continuity docs); b30b1f75f87f0f7e779f4d1feaf8d5f1e8c0af6c (COMMIT_DETAILS.md); f819b3d839feb32c1d96fe16619835645e8e8602 (wire commit detail file into mandatory reading order and continuity docs).
+- Comparison at the previous checkpoint: 5 commits ahead, 0 behind. Ten docs-only files, 1,258 additions, 0 deletions. This current update adds a journal commit; re-fetch the live PR head for the latest count. README is absent from the diff.
+- The branch includes the initial continuity-doc commit, commit-details addition, mandatory-reading-order update, PR #14 state bookkeeping, and the 6 November launch-crash journal update. The GitHub branch history is canonical; do not rely on this file's prior head if the branch has advanced.
 - The branch was rebuilt on latest main; the earlier two-commit docs branch based on ba06a8f was replaced and its README modification is not in this PR.
 - Verification: all ten files were fetched from the final branch; commit index contains 119 rows; PR diff paths were checked and README is absent. No CI run is available/expected because the workflow triggers only on pushes to main. No application/workflow source, permissions, assets or release files changed.
 - The only remaining human step is to review/merge PR #14 if desired. Merging will trigger the existing main-push workflow and publish a debug APK prerelease; see BUILD_AND_DEBUG.md.
