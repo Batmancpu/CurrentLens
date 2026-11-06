@@ -1,6 +1,10 @@
 package com.mangoloads.currentlens
 
 import android.animation.ValueAnimator
+import android.app.Activity
+import android.graphics.Bitmap
+import android.graphics.drawable.BitmapDrawable
+import android.graphics.Color as AndroidColor
 import android.graphics.Rect
 import android.graphics.RectF
 import android.os.Build
@@ -35,6 +39,7 @@ import androidx.compose.animation.core.animateDp
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.updateTransition
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.imePadding
@@ -100,6 +105,7 @@ import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -115,18 +121,24 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.blur
-import androidx.compose.ui.draw.BlurredEdgeTreatment
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Outline
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.selected
@@ -156,6 +168,7 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.LifecycleOwner
 import androidx.compose.foundation.isSystemInDarkTheme
 import coil.compose.AsyncImage
+import coil.request.ImageRequest
 import com.styropyr0.prismal.PrismalBackdrop
 import com.styropyr0.prismal.PrismalGlassSurface
 import com.styropyr0.prismal.drawPrismalGlass
@@ -175,6 +188,7 @@ import com.styropyr0.prismal.shapes.PrismalRoundedRectangle
 import com.styropyr0.prismal.sources.prismalGlassLayer
 import com.styropyr0.prismal.sources.rememberPrismalGlassLayer
 import com.styropyr0.prismal.sources.rememberPrismalMergedSource
+import androidx.core.view.WindowCompat
 import org.json.JSONTokener
 import org.json.JSONObject
 import java.time.DayOfWeek
@@ -184,7 +198,9 @@ import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 import kotlin.math.roundToInt
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.withContext
 
 private const val INDIA_ZONE = "Asia/Kolkata"
 
@@ -227,6 +243,22 @@ class MainActivity : ComponentActivity() {
                     outline = Color(0xFF8291A5),
                     error = Color(0xFFBA1A1A)
                 )
+            }
+            val view = LocalView.current
+            SideEffect {
+                val window = (view.context as? Activity)?.window
+                if (window != null) {
+                    window.statusBarColor = AndroidColor.TRANSPARENT
+                    window.navigationBarColor = AndroidColor.TRANSPARENT
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                        window.isStatusBarContrastEnforced = false
+                        window.isNavigationBarContrastEnforced = false
+                    }
+                    WindowCompat.getInsetsController(window, view).apply {
+                        isAppearanceLightStatusBars = !dark
+                        isAppearanceLightNavigationBars = !dark
+                    }
+                }
             }
             MaterialTheme(colorScheme = colors) {
                 Surface(
@@ -336,7 +368,10 @@ private fun CurrentLensApp() {
         refreshing = articles.isNotEmpty()
         loadError = false
         val fetched = NewsRepository.fetchAll()
-        if (fetched.isNotEmpty()) articles = LocalStore.mergeAndSaveArticles(context, fetched)
+        if (fetched.isNotEmpty()) {
+            val merged = withContext(Dispatchers.IO) { LocalStore.mergeAndSaveArticles(context, fetched) }
+            articles = merged
+        }
         else if (articles.isEmpty()) loadError = true
         loading = false
         refreshing = false
@@ -353,7 +388,11 @@ private fun CurrentLensApp() {
         }
     }
 
-    BoxWithConstraints(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
+    BoxWithConstraints(
+        Modifier.fillMaxSize().background(
+            if (searchExpanded) Color.Transparent else MaterialTheme.colorScheme.background
+        )
+    ) {
         val searchTransition = updateTransition(targetState = searchExpanded, label = "Search tab morph")
         val animatedSearchMorphProgress = searchTransition.animateFloat(
             transitionSpec = {
@@ -370,7 +409,7 @@ private fun CurrentLensApp() {
         // Match the collapsed Search capsule to the selected tab's resting optical footprint.
         // The tab row is inset by 10dp outside and 4dp inside; its content height is 56dp.
         val sourceWidth = ((maxWidth - 28.dp) / 4f).coerceAtLeast(1.dp)
-        val sourceHeight = 56.dp
+        val sourceHeight = 64.dp
         val searchHeight = 52.dp
         val targetWidth = (maxWidth - 32.dp).coerceAtLeast(180.dp)
         val sourceWidthPx = with(density) { sourceWidth.toPx() }
@@ -394,7 +433,7 @@ private fun CurrentLensApp() {
             Modifier.fillMaxSize()
                 .then(if (searchExpanded) Modifier.imePadding() else Modifier)
                 .prismalGlassLayer(backdrop)
-                .background(MaterialTheme.colorScheme.background)
+                .background(if (searchExpanded) Color.Transparent else MaterialTheme.colorScheme.background)
         ) {
             when {
                 selectedArticle != null && quizMode -> QuizScreen(
@@ -424,6 +463,8 @@ private fun CurrentLensApp() {
                     onBack = { showSettings = false }
                 )
                 else -> HomeScreen(
+                    backdrop = backdrop,
+                    glassAlpha = glassAlpha,
                     selectedTab = selectedTab,
                     youPage = youPage,
                     onYouPageChange = { youPage = it },
@@ -547,6 +588,8 @@ private fun CurrentLensApp() {
 
 @Composable
 private fun HomeScreen(
+    backdrop: PrismalBackdrop,
+    glassAlpha: Float,
     selectedTab: Int,
     youPage: YouPage,
     onYouPageChange: (YouPage) -> Unit,
@@ -571,6 +614,9 @@ private fun HomeScreen(
     val today = LocalDate.now(ZoneId.of(INDIA_ZONE))
     val dateLabel = remember(today) { today.format(DateTimeFormatter.ofPattern("EEEE, d MMMM", Locale.ENGLISH)) }
     var exploreCategory by remember { mutableStateOf("All") }
+    val exploreArticles = remember(allCachedArticles) {
+        ArticleFilters.explore(allCachedArticles).filter(UpscFeedPolicy::shouldInclude)
+    }
 
     val pageTitle = when (selectedTab) {
         0 -> "Today"
@@ -596,25 +642,18 @@ private fun HomeScreen(
     }
 
     Column(Modifier.fillMaxSize()) {
-        Row(
-            Modifier.fillMaxWidth().padding(start = 12.dp, end = 12.dp, top = 10.dp, bottom = 8.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            if (selectedTab == 3 && youPage != YouPage.DASHBOARD) {
-                IconButton(onClick = { onYouPageChange(YouPage.DASHBOARD) }) {
-                    Icon(Icons.Outlined.ArrowBack, contentDescription = "Back to You")
-                }
-            }
-            Column(Modifier.weight(1f)) {
-                Text(pageTitle, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
-                Text(subtitle, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.secondary)
-            }
-            if (selectedTab != 3) {
-                IconButton(onClick = onRefresh, enabled = !refreshing) {
-                    Icon(Icons.Outlined.Refresh, contentDescription = "Refresh news")
-                }
-            }
-        }
+        HomeGlassHeader(
+            backdrop = backdrop,
+            glassAlpha = glassAlpha,
+            dark = isSystemInDarkTheme(),
+            pageTitle = pageTitle,
+            subtitle = subtitle,
+            showRefresh = selectedTab != 3,
+            onRefresh = onRefresh,
+            refreshing = refreshing,
+            showBack = selectedTab == 3 && youPage != YouPage.DASHBOARD,
+            onBack = { onYouPageChange(YouPage.DASHBOARD) }
+        )
 
         AnimatedContent(
             targetState = selectedTab to youPage,
@@ -628,12 +667,13 @@ private fun HomeScreen(
                     bookmarks, onOpenArticle, onToggleBookmark
                 )
                 1 -> ExploreFeed(
-                    ArticleFilters.explore(allCachedArticles).filter(UpscFeedPolicy::shouldInclude), exploreCategory,
-                    { exploreCategory = it }, bookmarks, onOpenArticle, onToggleBookmark
+                    exploreArticles, exploreCategory,
+                    { exploreCategory = it }, bookmarks, onOpenArticle, onToggleBookmark,
+                    loading, loadError, backdrop, glassAlpha, isSystemInDarkTheme()
                 )
                 2 -> SearchFeed(
                     allCachedArticles, searchQuery, searchExpanded,
-                    bookmarks, onOpenArticle, onToggleBookmark
+                    bookmarks, onOpenArticle, onToggleBookmark, loading, loadError
                 )
                 else -> when (page) {
                     YouPage.DASHBOARD -> YouDashboard(
@@ -657,6 +697,134 @@ private fun HomeScreen(
     }
 }
 
+@Composable
+private fun HomeGlassHeader(
+    backdrop: PrismalBackdrop,
+    glassAlpha: Float,
+    dark: Boolean,
+    pageTitle: String,
+    subtitle: String,
+    showRefresh: Boolean,
+    onRefresh: () -> Unit,
+    refreshing: Boolean,
+    showBack: Boolean,
+    onBack: () -> Unit
+) {
+    val density = LocalDensity.current
+    val surfaceTint = MaterialTheme.colorScheme.surface
+    val luminance = if (dark) 0.12f else 0.82f
+    Box(
+        Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 5.dp)
+            .drawPrismalGlass(
+                backdrop = backdrop,
+                shape = { PrismalRoundedRectangle(24.dp) },
+                effects = {
+                    applyPrismalGlassEffects(
+                        density = density, adaptiveLuminance = true, luminance = luminance,
+                        blurRadiusPx = with(density) { 13.dp.toPx() },
+                        refractionHeightPx = with(density) { 4.dp.toPx() },
+                        refractionAmountPx = with(density) { 6.dp.toPx() },
+                        depthEffect = true, chromaticAberration = 0.003f,
+                        adaptiveTuning = PrismalAdaptiveTuning.Subtle
+                    )
+                },
+                specular = {
+                    PrismalSpecular.Default.copy(width = 0.55.dp, blurRadius = 0.35.dp, alpha = 0.28f)
+                },
+                depthShadow = {
+                    PrismalDepthShadow(radius = 12.dp, offset = DpOffset(0.dp, 2.dp),
+                        color = Color.Black.copy(alpha = 0.09f), alpha = 0.20f)
+                },
+                depthInset = {
+                    PrismalDepthInset(radius = 4.dp, offset = DpOffset(0.dp, 1.dp),
+                        color = Color.Black.copy(alpha = 0.05f), alpha = 0.05f)
+                },
+                onDrawSurface = { drawRect(surfaceTint.copy(alpha = glassAlpha * 0.13f)) }
+            )
+    ) {
+        Row(Modifier.fillMaxWidth().padding(start = 14.dp, end = 8.dp, top = 8.dp, bottom = 8.dp),
+            verticalAlignment = Alignment.CenterVertically) {
+            if (showBack) IconButton(onClick = onBack, modifier = Modifier.size(44.dp)) {
+                Icon(Icons.Outlined.ArrowBack, contentDescription = "Back to You", modifier = Modifier.size(23.dp))
+            }
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(1.dp)) {
+                Text(pageTitle, style = MaterialTheme.typography.headlineMedium,
+                    fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
+                Text(subtitle, style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+            if (showRefresh) IconButton(onClick = onRefresh, enabled = !refreshing, modifier = Modifier.size(46.dp)) {
+                Icon(Icons.Outlined.Refresh, contentDescription = "Refresh news", modifier = Modifier.size(25.dp))
+            }
+        }
+    }
+}
+
+@Composable
+private fun ExploreGlassCategories(
+    categories: List<String>,
+    selectedCategory: String,
+    onCategory: (String) -> Unit,
+    backdrop: PrismalBackdrop,
+    glassAlpha: Float,
+    dark: Boolean
+) {
+    val density = LocalDensity.current
+    val surfaceTint = MaterialTheme.colorScheme.surface
+    val luminance = if (dark) 0.14f else 0.80f
+    val chipShape = ContinuousCornerShape(18.dp)
+    Box(
+        Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 5.dp)
+            .drawPrismalGlass(
+                backdrop = backdrop,
+                shape = { PrismalRoundedRectangle(22.dp) },
+                effects = {
+                    applyPrismalGlassEffects(
+                        density = density, adaptiveLuminance = true, luminance = luminance,
+                        blurRadiusPx = with(density) { 8.dp.toPx() },
+                        refractionHeightPx = with(density) { 3.dp.toPx() },
+                        refractionAmountPx = with(density) { 4.dp.toPx() },
+                        depthEffect = true, chromaticAberration = 0.0015f,
+                        adaptiveTuning = PrismalAdaptiveTuning.Subtle
+                    )
+                },
+                specular = {
+                    PrismalSpecular.Default.copy(width = 0.45.dp, blurRadius = 0.30.dp, alpha = 0.20f)
+                },
+                depthShadow = {
+                    PrismalDepthShadow(radius = 9.dp, offset = DpOffset(0.dp, 1.dp),
+                        color = Color.Black.copy(alpha = 0.07f), alpha = 0.12f)
+                },
+                depthInset = {
+                    PrismalDepthInset(radius = 3.dp, offset = DpOffset(0.dp, 1.dp),
+                        color = Color.Black.copy(alpha = 0.04f), alpha = 0.04f)
+                },
+                onDrawSurface = { drawRect(surfaceTint.copy(alpha = glassAlpha * 0.09f)) }
+            )
+    ) {
+        Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState())
+            .padding(horizontal = 5.dp, vertical = 5.dp),
+            horizontalArrangement = Arrangement.spacedBy(7.dp), verticalAlignment = Alignment.CenterVertically) {
+            categories.forEach { category ->
+                val selected = selectedCategory == category
+                val borderColor = if (selected) MaterialTheme.colorScheme.primary.copy(alpha = 0.48f)
+                    else MaterialTheme.colorScheme.outline.copy(alpha = 0.34f)
+                Box(
+                    Modifier.clip(chipShape)
+                        .background(if (selected) MaterialTheme.colorScheme.primary.copy(alpha = 0.20f)
+                            else surfaceTint.copy(alpha = 0.12f))
+                        .border(1.dp, borderColor, chipShape)
+                        .clickable { onCategory(category) }
+                        .padding(horizontal = 14.dp, vertical = 8.dp)
+                ) {
+                    Text(category, fontSize = 13.sp,
+                        fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium,
+                        color = MaterialTheme.colorScheme.onSurface, maxLines = 1)
+                }
+            }
+        }
+    }
+}
 @Composable
 private fun TodayFeed(
     articles: List<Article>,
@@ -693,7 +861,7 @@ private fun TodayFeed(
             }
         }
         when {
-            loading && articles.isEmpty() -> item { LoadingPanel() }
+            loading && articles.isEmpty() -> items(3) { FeedSkeletonCard() }
             loadError && articles.isEmpty() -> item { EmptyPanel("News is temporarily unavailable", "Check your connection and refresh.") }
             articles.isEmpty() -> item { EmptyPanel("No UPSC-relevant stories today", "Broad entertainment and general-interest updates are filtered out. Refresh later for syllabus-linked developments.") }
             else -> items(articles.take(45), key = { it.id }) { article ->
@@ -734,26 +902,34 @@ private fun ExploreFeed(
     onCategory: (String) -> Unit,
     bookmarks: Set<String>,
     onOpenArticle: (Article) -> Unit,
-    onToggleBookmark: (Article) -> Unit
+    onToggleBookmark: (Article) -> Unit,
+    loading: Boolean,
+    loadError: Boolean,
+    backdrop: PrismalBackdrop,
+    glassAlpha: Float,
+    dark: Boolean
 ) {
     val categories = listOf("All", "India", "World", "Politics", "Economy", "Environment", "Science", "Explained", "UPSC", "Opinion")
     val filtered = articles.filter { article -> ExploreFilters.matches(article, selectedCategory, "") }
     Column(Modifier.fillMaxSize()) {
-        Row(
-            Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(horizontal = 14.dp, vertical = 5.dp),
-            horizontalArrangement = Arrangement.spacedBy(7.dp)
-        ) {
-            categories.forEach { category ->
-                FilterChip(selected = selectedCategory == category, onClick = { onCategory(category) },
-                    label = { Text(category, fontSize = 12.sp) })
-            }
-        }
+        ExploreGlassCategories(
+            categories = categories,
+            selectedCategory = selectedCategory,
+            onCategory = onCategory,
+            backdrop = backdrop,
+            glassAlpha = glassAlpha,
+            dark = dark
+        )
         LazyColumn(
             Modifier.weight(1f),
             contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 110.dp),
             verticalArrangement = Arrangement.spacedBy(13.dp)
         ) {
-            if (filtered.isEmpty()) item {
+            if (filtered.isEmpty() && loading) {
+                items(3) { FeedSkeletonCard() }
+            } else if (filtered.isEmpty() && loadError) {
+                item { EmptyPanel("News is temporarily unavailable", "Check your connection and refresh.") }
+            } else if (filtered.isEmpty()) item {
                 EmptyPanel("No stories in this topic", "Try another topic or refresh your feeds.")
             } else items(filtered, key = { it.id }) { article ->
                 NewsCard(article, bookmarks.contains(article.url), onOpenArticle, onToggleBookmark)
@@ -770,7 +946,9 @@ private fun SearchFeed(
     searchExpanded: Boolean,
     bookmarks: Set<String>,
     onOpenArticle: (Article) -> Unit,
-    onToggleBookmark: (Article) -> Unit
+    onToggleBookmark: (Article) -> Unit,
+    loading: Boolean,
+    loadError: Boolean
 ) {
     var selectedCategory by remember { mutableStateOf("All") }
     var selectedSubject by remember { mutableStateOf("All") }
@@ -841,7 +1019,11 @@ private fun SearchFeed(
             ),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            if (filtered.isEmpty()) item {
+            if (filtered.isEmpty() && loading) {
+                items(3) { FeedSkeletonCard() }
+            } else if (filtered.isEmpty() && loadError) {
+                item { EmptyPanel("News is temporarily unavailable", "Check your connection and refresh.") }
+            } else if (filtered.isEmpty()) item {
                 EmptyPanel("No matching articles", "Change your search or remove one of the filters.")
             } else items(filtered, key = { it.id }) { article ->
                 NewsCard(article, bookmarks.contains(article.url), onOpenArticle, onToggleBookmark)
@@ -1367,6 +1549,8 @@ private fun NewsCard(
     onOpenArticle: (Article) -> Unit,
     onToggleBookmark: (Article) -> Unit
 ) {
+    val context = LocalContext.current
+    val density = LocalDensity.current
     val relevance = remember(article.id) { UpscEngine.classify(article) }
     val syllabusHint = remember(article.id, relevance.gsPaper, relevance.subject, relevance.matchedTerms) {
         ArticleCardMetaPolicy.syllabusHint(
@@ -1376,80 +1560,176 @@ private fun NewsCard(
         )
     }
     val hasImage = !article.imageUrl.isNullOrBlank()
+    val imageRequest = remember(article.imageUrl) {
+        article.imageUrl?.let { url ->
+            ImageRequest.Builder(context).data(url).allowHardware(false).crossfade(false).build()
+        }
+    }
+    var imagePalette by remember(article.id) { mutableStateOf<Color?>(null) }
+    val palette = imagePalette
+
     Box(
         modifier = Modifier.fillMaxWidth().padding(vertical = 3.dp)
+            .graphicsLayer { clip = false }
+            .drawBehind {
+                val sampled = palette ?: return@drawBehind
+                val overscan = with(density) { 24.dp.toPx() }
+                drawRoundRect(
+                    brush = Brush.radialGradient(
+                        colors = listOf(sampled.copy(alpha = 0.30f), sampled.copy(alpha = 0.16f), Color.Transparent),
+                        center = Offset(size.width * 0.5f, size.height * 0.40f),
+                        radius = maxOf(size.width, size.height) * 0.82f
+                    ),
+                    topLeft = Offset(-overscan, -overscan),
+                    size = Size(size.width + overscan * 2f, size.height + overscan * 2f),
+                    cornerRadius = CornerRadius(with(density) { 34.dp.toPx() })
+                )
+            }
     ) {
-        if (hasImage) {
-            // Diffuse the editorial image behind the card so its palette bleeds
-            // into the text surface and neighbouring feed background.
-            AsyncImage(
-                model = article.imageUrl,
-                contentDescription = null,
-                contentScale = ContentScale.Crop,
-                modifier = Modifier.matchParentSize()
-                    .graphicsLayer {
-                        clip = false
-                        scaleX = 1.12f
-                        scaleY = 1.10f
-                    }
-                    .blur(30.dp, edgeTreatment = BlurredEdgeTreatment.Unbounded)
-                    .graphicsLayer {
-                        alpha = 0.46f
-                        clip = false
-                    }
-            )
-        }
         Card(
             modifier = Modifier.fillMaxWidth().clickable { onOpenArticle(article) },
-            shape = RoundedCornerShape(25.dp),
+            shape = ContinuousCornerShape(29.dp),
             colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.surface.copy(alpha = if (hasImage) 0.90f else 1f)
+                containerColor = MaterialTheme.colorScheme.surface.copy(alpha = if (palette != null) 0.94f else 1f)
             ),
             elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
         ) {
-            Column(Modifier.padding(15.dp), verticalArrangement = Arrangement.spacedBy(9.dp)) {
-                if (hasImage) {
+            Column {
+                if (hasImage && imageRequest != null) {
                     AsyncImage(
-                        model = article.imageUrl,
+                        model = imageRequest,
                         contentDescription = article.title,
                         contentScale = ContentScale.Crop,
-                        modifier = Modifier.fillMaxWidth().height(190.dp).clip(RoundedCornerShape(17.dp))
+                        onSuccess = { state ->
+                            val bitmap = (state.result.drawable as? BitmapDrawable)?.bitmap
+                            val sampled = bitmap?.let(::sampleImagePalette)
+                            if (sampled != null && imagePalette != sampled) imagePalette = sampled
+                        },
+                        modifier = Modifier.fillMaxWidth().height(190.dp)
+                            .clip(ContinuousCornerShape(23.dp))
                     )
                 }
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(article.source.uppercase(), color = MaterialTheme.colorScheme.primary,
-                        fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 0.65.sp)
-                    Text("  ·  " + article.section, color = MaterialTheme.colorScheme.secondary,
-                        fontSize = 11.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                    Spacer(Modifier.weight(1f))
-                    IconButton(onClick = { onToggleBookmark(article) }, modifier = Modifier.size(38.dp)) {
-                        Icon(if (saved) Icons.Outlined.Bookmark else Icons.Outlined.BookmarkBorder,
-                            contentDescription = if (saved) "Remove bookmark" else "Save article",
-                            tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
-                    }
-                }
-                SelectionContainer {
-                    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                        Text(article.title, style = MaterialTheme.typography.titleLarge,
-                            fontWeight = FontWeight.SemiBold, lineHeight = 28.sp)
-                        if (article.description.isNotBlank()) {
-                            Text(article.description, style = MaterialTheme.typography.bodyLarge,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 4,
-                                overflow = TextOverflow.Ellipsis, lineHeight = 23.sp)
+                Column(Modifier.padding(horizontal = 15.dp, vertical = 14.dp),
+                    verticalArrangement = Arrangement.spacedBy(9.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(article.source.uppercase(), color = MaterialTheme.colorScheme.primary,
+                            fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 0.65.sp)
+                        Text("  ·  " + article.section, color = MaterialTheme.colorScheme.secondary,
+                            fontSize = 11.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        Spacer(Modifier.weight(1f))
+                        IconButton(onClick = { onToggleBookmark(article) }, modifier = Modifier.size(40.dp)) {
+                            Icon(if (saved) Icons.Outlined.Bookmark else Icons.Outlined.BookmarkBorder,
+                                contentDescription = if (saved) "Remove bookmark" else "Save article",
+                                tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(21.dp))
                         }
                     }
+                    SelectionContainer {
+                        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                            Text(article.title, style = MaterialTheme.typography.titleLarge,
+                                fontWeight = FontWeight.SemiBold, lineHeight = 28.sp)
+                            if (article.description.isNotBlank()) {
+                                Text(article.description, style = MaterialTheme.typography.bodyLarge,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 4,
+                                    overflow = TextOverflow.Ellipsis, lineHeight = 23.sp)
+                            }
+                        }
+                    }
+                    syllabusHint?.let { hint ->
+                        Text(hint, style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.SemiBold,
+                            maxLines = 2, overflow = TextOverflow.Ellipsis)
+                    }
                 }
-                syllabusHint?.let { hint ->
-                    Text(hint, style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.SemiBold,
-                        maxLines = 2, overflow = TextOverflow.Ellipsis)
-                }
-                // The entire card is the reading target; a repeated CTA adds visual weight
-                // without introducing a second action.
             }
         }
     }
 }
+
+private data class ContinuousCornerShape(private val radius: androidx.compose.ui.unit.Dp) : Shape {
+    override fun createOutline(
+        size: Size,
+        layoutDirection: LayoutDirection,
+        density: androidx.compose.ui.unit.Density
+    ): Outline {
+        val r = with(density) { radius.toPx() }.coerceIn(0f, minOf(size.width, size.height) / 2f)
+        val handle = r * 0.43f
+        val path = Path().apply {
+            moveTo(0f, r)
+            cubicTo(0f, r - handle, r - handle, 0f, r, 0f)
+            lineTo(size.width - r, 0f)
+            cubicTo(size.width - r + handle, 0f, size.width, r - handle, size.width, r)
+            lineTo(size.width, size.height - r)
+            cubicTo(size.width, size.height - r + handle, size.width - r + handle, size.height, size.width - r, size.height)
+            lineTo(r, size.height)
+            cubicTo(r - handle, size.height, 0f, size.height - r + handle, 0f, size.height - r)
+            close()
+        }
+        return Outline.Generic(path)
+    }
+}
+
+private fun sampleImagePalette(bitmap: Bitmap): Color {
+    if (bitmap.width <= 0 || bitmap.height <= 0) return Color(0xFF527AA8)
+    val positions = arrayOf(
+        0.12f to 0.16f, 0.50f to 0.16f, 0.88f to 0.16f,
+        0.12f to 0.50f, 0.50f to 0.50f, 0.88f to 0.50f,
+        0.12f to 0.84f, 0.50f to 0.84f, 0.88f to 0.84f
+    )
+    var red = 0f
+    var green = 0f
+    var blue = 0f
+    var totalWeight = 0f
+    positions.forEach { (xRatio, yRatio) ->
+        val pixel = bitmap.getPixel(
+            (bitmap.width * xRatio).toInt().coerceIn(0, bitmap.width - 1),
+            (bitmap.height * yRatio).toInt().coerceIn(0, bitmap.height - 1)
+        )
+        val r = AndroidColor.red(pixel).toFloat()
+        val g = AndroidColor.green(pixel).toFloat()
+        val b = AndroidColor.blue(pixel).toFloat()
+        val saturation = maxOf(r, g, b) - minOf(r, g, b)
+        val weight = 1f + saturation / 220f
+        red += r * weight
+        green += g * weight
+        blue += b * weight
+        totalWeight += weight
+    }
+    return Color(AndroidColor.rgb(
+        (red / totalWeight).toInt().coerceIn(0, 255),
+        (green / totalWeight).toInt().coerceIn(0, 255),
+        (blue / totalWeight).toInt().coerceIn(0, 255)
+    ))
+}
+
+@Composable
+private fun FeedSkeletonCard() {
+    val base = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.82f)
+    val line = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.075f)
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = ContinuousCornerShape(29.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+    ) {
+        Column {
+            Box(Modifier.fillMaxWidth().height(176.dp).background(base))
+            Column(Modifier.padding(15.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Box(Modifier.width(86.dp).height(10.dp).clip(CircleShape).background(line))
+                    Spacer(Modifier.width(9.dp))
+                    Box(Modifier.width(64.dp).height(10.dp).clip(CircleShape).background(line))
+                    Spacer(Modifier.weight(1f))
+                    Box(Modifier.size(22.dp).clip(CircleShape).background(line))
+                }
+                Box(Modifier.fillMaxWidth(0.88f).height(25.dp).clip(CircleShape).background(line))
+                Box(Modifier.fillMaxWidth(0.71f).height(25.dp).clip(CircleShape).background(line))
+                Box(Modifier.fillMaxWidth().height(13.dp).clip(CircleShape).background(line))
+                Box(Modifier.fillMaxWidth(0.82f).height(13.dp).clip(CircleShape).background(line))
+            }
+        }
+    }
+}
+
 @Composable
 private fun LoadingPanel() {
     Column(Modifier.fillMaxWidth().padding(38.dp), horizontalAlignment = Alignment.CenterHorizontally,
@@ -1497,7 +1777,7 @@ private fun GlassTabBar(
     )
 
     BoxWithConstraints(
-        modifier = Modifier.fillMaxWidth().height(62.dp),
+        modifier = Modifier.fillMaxWidth().height(70.dp),
         contentAlignment = Alignment.CenterStart
     ) {
         val tabWidthPx = (
@@ -1505,9 +1785,9 @@ private fun GlassTabBar(
         ).div(4f).coerceAtLeast(1f)
         val tabWidth = with(density) { tabWidthPx.toDp() }
         val contentStartPx = with(density) { 4.dp.toPx() }
-        val contentHeight = 56.dp
+        val contentHeight = 64.dp
         val contentHeightPx = with(density) { contentHeight.toPx() }
-        val barHeightPx = with(density) { 62.dp.toPx() }
+        val barHeightPx = with(density) { 70.dp.toPx() }
         val dropletWidth = with(density) {
             GlassTabGeometryPolicy.expandedDimension(tabWidthPx, 12.dp.toPx()).toDp()
         }
@@ -1642,10 +1922,10 @@ private fun GlassTabBar(
                     .padding(horizontal = 4.dp, vertical = 3.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                GlassTab(0, "Today", Icons.Outlined.Today, onSelect, adaptiveContentColor)
+                GlassTab(0, "Today", Icons.Outlined.CalendarMonth, onSelect, adaptiveContentColor)
                 GlassTab(1, "Explore", Icons.Outlined.Explore, onSelect, adaptiveContentColor)
                 GlassTab(2, "Search", Icons.Outlined.Search, onSelect, adaptiveContentColor)
-                GlassTab(3, "You", Icons.Outlined.Person, onSelect, adaptiveContentColor)
+                GlassTab(3, "You", Icons.Outlined.AccountCircle, onSelect, adaptiveContentColor)
             }
 
             Row(
@@ -1654,10 +1934,10 @@ private fun GlassTabBar(
                     .graphicsLayer { alpha = barAlpha },
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                GlassTab(0, "Today", Icons.Outlined.Today, onSelect, adaptiveContentColor)
+                GlassTab(0, "Today", Icons.Outlined.CalendarMonth, onSelect, adaptiveContentColor)
                 GlassTab(1, "Explore", Icons.Outlined.Explore, onSelect, adaptiveContentColor)
                 GlassTab(2, "Search", Icons.Outlined.Search, onSelect, adaptiveContentColor, onSearchAnchor)
-                GlassTab(3, "You", Icons.Outlined.Person, onSelect, adaptiveContentColor)
+                GlassTab(3, "You", Icons.Outlined.AccountCircle, onSelect, adaptiveContentColor)
             }
         }
 
@@ -1734,6 +2014,27 @@ private fun GlassTabBar(
                 )
             )
         }
+
+        val activeGlyph = when (highlightedIndex) {
+            0 -> Icons.Outlined.CalendarMonth
+            1 -> Icons.Outlined.Explore
+            2 -> Icons.Outlined.Search
+            else -> Icons.Outlined.AccountCircle
+        }
+        Box(
+            Modifier.offset {
+                val center = GlassTabGeometryPolicy.tabCenterPx(contentStartPx, motion.value, tabWidthPx)
+                val iconSizePx = with(density) { 27.dp.toPx() }
+                IntOffset((center - iconSizePx / 2f).roundToInt(),
+                    ((barHeightPx - iconSizePx) / 2f).roundToInt())
+            }
+                .size(27.dp)
+                .clearAndSetSemantics {},
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(activeGlyph, contentDescription = null, tint = adaptiveContentColor,
+                modifier = Modifier.size(27.dp))
+        }
     }
 }
 
@@ -1748,7 +2049,7 @@ private fun RowScope.GlassTab(
 ) {
     val highlighted = LocalPrismalBottomTabHighlightedIndex.current()
     val isSelected = highlighted == index
-    val tint = if (isSelected) adaptiveContentColor else adaptiveContentColor.copy(alpha = 0.66f)
+    val tint = if (isSelected) adaptiveContentColor else adaptiveContentColor.copy(alpha = 0.72f)
     val positionModifier = if (onPositioned != null) {
         Modifier.onGloballyPositioned { coordinates ->
             onPositioned(
@@ -1761,14 +2062,7 @@ private fun RowScope.GlassTab(
     } else Modifier
     val tabModifier = positionModifier.semantics(mergeDescendants = true) { selected = isSelected }
     PrismalGlassBottomTab(onClick = { onSelect(index) }, modifier = tabModifier) {
-        Icon(icon, contentDescription = label, tint = tint, modifier = Modifier.size(20.dp))
-        Text(
-            label,
-            fontSize = 9.sp,
-            lineHeight = 11.sp,
-            fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
-            color = tint
-        )
+        Icon(icon, contentDescription = label, tint = tint, modifier = Modifier.size(27.dp))
     }
 }
 
