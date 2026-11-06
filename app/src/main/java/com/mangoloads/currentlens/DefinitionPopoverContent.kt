@@ -61,7 +61,7 @@ internal fun DefinitionPopoverContent(
                 maxLines = 2,
                 softWrap = true,
                 overflow = TextOverflow.Clip,
-                lineHeight = 20.sp
+                lineHeight = if (expanded) 26.sp else 20.sp
             )
             if (DictionaryOverlayPolicy.shouldShowCopy(expanded, hasCopyableContent)) {
                 IconButton(onClick = onCopy, modifier = Modifier.size(48.dp)) {
