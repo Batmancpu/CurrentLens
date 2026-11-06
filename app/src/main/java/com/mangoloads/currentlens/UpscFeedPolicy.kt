@@ -19,7 +19,10 @@ internal object UpscFeedPolicy {
         "cast announcement", "match result", "scorecard", "live score",
         "red carpet", "paparazzi", "celebrity gossip", "film review", "movie review",
         "streaming release", "cricket", "ipl", "football match", "match highlights",
-        "sports score", "transfer window", "player signs", "tournament result", "league table"
+        "sports score", "transfer window", "player signs", "tournament result", "league table",
+        "final score", "match score", "points table", "league standings", "medal tally",
+        "viral challenge", "social media trend", "trending now", "internet sensation",
+        "meme", "memes", "influencer feud", "influencer drama"
     )
 
     private val policyExceptions = listOf(
