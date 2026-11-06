@@ -99,8 +99,12 @@ object LocalStore {
         val zone = ZoneId.of("Asia/Kolkata")
         val cutoff = LocalDate.now(zone).minusDays(CACHE_DAYS.toLong())
             .atStartOfDay(zone).toInstant().toEpochMilli()
-        val merged = ArticleCachePolicy.retain(
+        val deduplicated = ArticleUrlIdentityPolicy.deduplicate(
             incoming + cachedArticles(context),
+            bookmarkedUrls = savedUrls
+        )
+        val merged = ArticleCachePolicy.retain(
+            deduplicated,
             bookmarkedUrls = savedUrls,
             cutoffMillis = cutoff,
             maxArticles = MAX_CACHED_ARTICLES
