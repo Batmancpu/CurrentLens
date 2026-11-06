@@ -64,7 +64,7 @@ internal object LaunchCrashDiagnostics {
         if (!reportFile.isFile && !previousStage.isNullOrBlank() &&
             !previousStage.contains("First Compose frames completed")
         ) {
-            writeInterruptedStartupReport(context, previousStage)
+            runCatching { writeInterruptedStartupReport(context, previousStage) }
         }
         recordStage(context, "Application.attachBaseContext completed")
     }
