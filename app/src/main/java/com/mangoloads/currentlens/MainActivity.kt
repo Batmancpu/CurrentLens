@@ -905,7 +905,8 @@ private fun ExploreGlassCategories(
                         .background(if (selected) MaterialTheme.colorScheme.primary.copy(alpha = 0.20f)
                             else surfaceTint.copy(alpha = 0.12f))
                         .border(1.dp, borderColor, chipShape)
-                        .clickable { onCategory(category) }
+                        .selectable(selected = selected, role = Role.Tab) { onCategory(category) }
+                        .heightIn(min = 48.dp)
                         .padding(horizontal = 14.dp, vertical = 8.dp)
                 ) {
                     Text(category, fontSize = 13.sp,
@@ -1781,7 +1782,7 @@ private fun NewsCard(
                     syllabusHint?.let { hint ->
                         Text(hint, style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.SemiBold,
-                            maxLines = 2, overflow = TextOverflow.Ellipsis)
+                            maxLines = 4, overflow = TextOverflow.Ellipsis)
                     }
                 }
             }
