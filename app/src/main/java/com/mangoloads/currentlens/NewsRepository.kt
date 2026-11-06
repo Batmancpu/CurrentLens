@@ -56,11 +56,10 @@ object NewsRepository {
     )
 
     suspend fun fetchAll(): List<Article> = withContext(Dispatchers.IO) {
-        feeds.map { source -> async { fetchOne(source) } }
+        val fetched = feeds.map { source -> async { fetchOne(source) } }
             .awaitAll()
             .flatten()
-            .distinctBy { it.url.ifBlank { it.title } }
-            .sortedByDescending { it.publishedAtMillis ?: 0L }
+        ArticleUrlIdentityPolicy.deduplicate(fetched, bookmarkedUrls = emptySet())
             .take(250)
     }
 
