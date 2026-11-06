@@ -1,4 +1,4 @@
-# brrrNEWS
+# brrrNews
 
 A free, local-first Android news reader for Indian and international journalism, with UPSC-oriented study tools.
 
@@ -34,7 +34,7 @@ Navigation and Search share one foreground-only 8×8 luminance probe over a full
 ## News sources and reader behaviour
 
 - RSS supplies attributed headlines, publication dates, images and short excerpts; it does not guarantee full article text.
-- brrrNEWS attempts best-effort extraction only from publicly accessible publisher pages, without logged-in cookies, subscription tokens, proxying or paywall circumvention. If extraction is blocked, paywalled or incomplete, the original publisher page is offered in the in-app WebView when its HTTPS host matches the publisher allow-list.
+- brrrNews attempts best-effort extraction only from publicly accessible publisher pages, without logged-in cookies, subscription tokens, proxying or paywall circumvention. If extraction is blocked, paywalled or incomplete, the original publisher page is offered in the in-app WebView when its HTTPS host matches the publisher allow-list.
 - If neither a public article body nor a verified publisher page can be shown, the reader explains that only the RSS headline/excerpt remains available in the feed.
 - RSS metadata is cached locally with a 30-day retention window and a 500-article soft limit; saved stories are retained. Extracted public article bodies use a separate cache capped at 30 entries and 24 MB, with a 2 MB per-entry limit and 30-day expiry.
 - Newly fetched stories retain the configured originating RSS feed URL in the local metadata cache. Duplicate article URLs keep the first feed match; section-specific feeds are intentionally listed before broad feeds.
@@ -58,7 +58,7 @@ Navigation and Search share one foreground-only 8×8 luminance probe over a full
 
 The single concurrency-protected **Build Android APK** workflow tests the dictionary builder, generates the offline Open English WordNet database from the official CC BY 4.0 dataset, runs JVM unit tests, and publishes a debug-signed APK as a GitHub Release asset. Actions artifacts are retained for 14 days.
 
-[Download the latest brrrNEWS APK from Releases](https://github.com/Batmancpu/CurrentLens/releases).
+[Download the latest brrrNews APK from Releases](https://github.com/Batmancpu/CurrentLens/releases).
 
 These are testing builds, not production or Play Store releases. Android may ask you to allow installation from your browser or file manager.
 
