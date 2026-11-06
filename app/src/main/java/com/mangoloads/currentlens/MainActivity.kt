@@ -287,7 +287,7 @@ class MainActivity : ComponentActivity() {
                         modifier = Modifier.fillMaxSize(),
                         color = colors.background,
                         contentColor = colors.onBackground
-                    ) { CurrentLensApp() }
+                    ) { BrrrNewsApp() }
                 }
             }
         }
@@ -302,7 +302,7 @@ private fun CrashRecoveryScreen(report: String, onRetry: () -> Unit) {
             .padding(horizontal = 22.dp, vertical = 28.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
-        Text("CurrentLens could not complete its previous launch",
+        Text("brrrNEWS could not complete its previous launch",
             style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
         Text(
             "A local crash report has been saved on this device. Copy it and send it with your next message so the exact failure can be fixed instead of guessed.",
@@ -315,7 +315,7 @@ private fun CrashRecoveryScreen(report: String, onRetry: () -> Unit) {
                     val clipboard = context.getSystemService(android.content.Context.CLIPBOARD_SERVICE)
                         as? android.content.ClipboardManager
                     clipboard?.setPrimaryClip(
-                        android.content.ClipData.newPlainText("CurrentLens crash report", report)
+                        android.content.ClipData.newPlainText("brrrNEWS crash report", report)
                     )
                     android.widget.Toast.makeText(context, "Crash report copied", android.widget.Toast.LENGTH_SHORT).show()
                 },
@@ -342,7 +342,7 @@ private data class LocalAppSnapshot(
 )
 
 @Composable
-private fun CurrentLensApp() {
+private fun BrrrNewsApp() {
     val context = LocalContext.current
     val backdrop = rememberPrismalGlassLayer()
     val dark = isSystemInDarkTheme()
@@ -746,7 +746,7 @@ private fun HomeScreen(
         AnimatedContent(
             targetState = selectedTab to youPage,
             transitionSpec = { fadeIn(tween(190)) togetherWith fadeOut(tween(120)) },
-            label = "CurrentLens destination transition"
+            label = "brrrNEWS destination transition"
         ) { target ->
             val (tab, page) = target
             when (tab) {
@@ -2474,7 +2474,7 @@ private fun ReaderScreen(article: Article, backdrop: PrismalBackdrop, glassAlpha
                 ) {
                     Text("A readable public article is unavailable", style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.SemiBold, textAlign = TextAlign.Center)
-                    Text("CurrentLens could not verify a publisher page for this link. The RSS headline and excerpt remain available in the feed; no paywall or access restriction is bypassed.",
+                    Text("brrrNEWS could not verify a publisher page for this link. The RSS headline and excerpt remain available in the feed; no paywall or access restriction is bypassed.",
                         style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.secondary,
                         textAlign = TextAlign.Center)
                 }
@@ -2570,7 +2570,7 @@ private fun readerDocument(article: Article, content: String, fontSize: Int, dar
         "a{color:" + (if (dark) "#9CB9FF" else "#2859A8") + ";text-decoration:none;}blockquote{margin:1.4em 0;padding:14px 16px;border-left:3px solid " + (if (dark) "#52658D" else "#A9BCE0") + ";border-radius:0 12px 12px 0;background:" + (if (dark) "#171D27" else "#F2F5F9") + ";color:" + muted + ";}" +
         ReaderPresentationPolicy.responsiveTableCss(dark) +
         "iframe{max-width:100%;}pre{white-space:pre-wrap;overflow-wrap:anywhere;border-radius:12px;padding:12px;background:" + (if (dark) "#171D27" else "#F2F5F9") + ";}code{overflow-wrap:anywhere;}" +
-        "</style></head><body><div class=\"cl-source\">" + source + " · CurrentLens Reader</div><h1>" + title + "</h1><main>" + content + "</main></body></html>"
+        "</style></head><body><div class=\"cl-source\">" + source + " · brrrNEWS Reader</div><h1>" + title + "</h1><main>" + content + "</main></body></html>"
 }
 
 private class ReaderWebView(context: android.content.Context) : WebView(context) {
@@ -3118,7 +3118,7 @@ private fun GlassSettingsScreen(backdrop: PrismalBackdrop, glassAlpha: Float, on
             tint = if (isSystemInDarkTheme()) Color(0xFF30394B) else Color(0xFFEAF0FA), tintAlpha = glassAlpha) {
             Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(13.dp)) {
                 Text("Liquid Glass", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-                Text("Adjust the transparency of CurrentLens glass surfaces.", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.secondary)
+                Text("Adjust the transparency of brrrNEWS glass surfaces.", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.secondary)
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text("Clear", fontSize = 11.sp, color = MaterialTheme.colorScheme.secondary)
                     Spacer(Modifier.weight(1f))
