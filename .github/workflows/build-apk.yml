@@ -61,7 +61,14 @@ jobs:
           test -s app/src/main/assets/wordnet.db
 
       - name: Compile APK
-        run: gradle --no-daemon --stacktrace :app:testDebugUnitTest :app:assembleDebug
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ "$GITHUB_REF" == "refs/heads/main" ]]; then
+            gradle --no-daemon --stacktrace :app:testDebugUnitTest :app:assembleDebug
+          else
+            gradle --no-daemon --stacktrace -PstabilityTest=true :app:testDebugUnitTest :app:assembleDebug
+          fi
 
       - name: Upload installable APK artifact
         uses: actions/upload-artifact@v4

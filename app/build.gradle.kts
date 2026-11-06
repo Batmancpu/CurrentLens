@@ -1,3 +1,5 @@
+val stabilityTestBuild = providers.gradleProperty("stabilityTest").orNull == "true"
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.plugin.compose")
@@ -13,6 +15,16 @@ android {
         targetSdk = 35
         versionCode = 3
         versionName = "0.2.1"
+        manifestPlaceholders["appLabel"] = if (stabilityTestBuild) "brrrNews Stability" else "brrrNews"
+    }
+
+    buildTypes {
+        getByName("debug") {
+            if (stabilityTestBuild) {
+                applicationIdSuffix = ".stability"
+                versionNameSuffix = "-stability"
+            }
+        }
     }
 
     compileOptions {

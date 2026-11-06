@@ -110,12 +110,13 @@ internal object LaunchCrashDiagnostics {
     internal fun formatInterruptedStartupReport(
         lastCompletedStage: String,
         versionName: String? = null,
-        processId: Int? = null
+        processId: Int? = null,
+        packageName: String = "com.mangoloads.currentlens"
     ): String = buildString {
         appendLine("CurrentLens startup interruption report")
         appendLine("Timestamp: " + Instant.now().toString())
         appendLine("App: " + versionName.orEmpty())
-        appendLine("Package: com.mangoloads.currentlens")
+        appendLine("Package: " + packageName)
         appendLine("Device: " + Build.MANUFACTURER + " " + Build.BRAND + " " + Build.MODEL)
         appendLine("Device code: " + Build.DEVICE)
         appendLine("Android: " + Build.VERSION.RELEASE + " (API " + Build.VERSION.SDK_INT + ")")
@@ -135,7 +136,7 @@ internal object LaunchCrashDiagnostics {
         }.getOrNull()
         writeReportFile(
             context.filesDir,
-            formatInterruptedStartupReport(lastCompletedStage, versionName, Process.myPid())
+            formatInterruptedStartupReport(lastCompletedStage, versionName, Process.myPid(), context.packageName)
         )
     }
 
@@ -152,7 +153,8 @@ internal object LaunchCrashDiagnostics {
             throwable = throwable,
             lastCompletedStage = stage,
             versionName = versionName,
-            processId = Process.myPid()
+            processId = Process.myPid(),
+            packageName = context.packageName
         )
         writeReportFile(directory, report)
     }
@@ -188,7 +190,7 @@ internal object LaunchCrashDiagnostics {
             appendLine("CurrentLens local startup crash report")
             appendLine("Timestamp: " + Instant.now().toString())
             appendLine("App: " + versionName.orEmpty())
-            appendLine("Package: com.mangoloads.currentlens")
+            appendLine("Package: " + packageName)
             appendLine("Device: " + Build.MANUFACTURER + " " + Build.BRAND + " " + Build.MODEL)
             appendLine("Device code: " + Build.DEVICE)
             appendLine("Android: " + Build.VERSION.RELEASE + " (API " + Build.VERSION.SDK_INT + ")")

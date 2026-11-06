@@ -22,6 +22,16 @@ class LaunchCrashDiagnosticsTest {
     }
 
     @Test
+    fun reportUsesActualInstalledPackageForSideBySideStabilityBuild() {
+        val report = LaunchCrashDiagnostics.formatReport(
+            threadName = "main",
+            throwable = IllegalStateException("startup failure"),
+            packageName = "com.mangoloads.currentlens.stability"
+        )
+        assertTrue(report.contains("Package: com.mangoloads.currentlens.stability"))
+    }
+
+    @Test
     fun interruptionReportDoesNotPretendToContainAnExceptionStackTrace() {
         val report = LaunchCrashDiagnostics.formatInterruptedStartupReport(
             lastCompletedStage = "MainActivity.setContent returned",
