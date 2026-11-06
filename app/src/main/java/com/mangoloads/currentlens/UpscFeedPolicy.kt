@@ -49,7 +49,7 @@ internal object UpscFeedPolicy {
         "gdp", "fiscal deficit", "monetary policy", "current account deficit",
         "financial inclusion", "banking sector", "banking regulation",
         "non performing assets", "payment system", "gst", "taxation",
-        "union budget", "government budgeting", "trade agreement",
+        "union budget", "government budgeting", "finance bill", "money bill", "amendment bill", "bill introduced in parliament", "bill passed by parliament", "bill introduced in lok sabha", "bill passed by lok sabha", "bill passed by rajya sabha", "trade agreement",
         "free trade agreement", "world trade organization", "foreign exchange reserves",
         "employment guarantee", "unemployment rate", "labour code", "labor code",
         "labour force participation", "plfs",
@@ -76,7 +76,7 @@ internal object UpscFeedPolicy {
         "direct benefit transfer", "public service delivery", "lokpal",
         "comptroller and auditor general", "central vigilance commission",
         "disaster management", "earthquake", "cyclone", "flood", "drought",
-        "landslide", "heatwave"
+        "landslide", "heatwave", "heat wave", "heat action plan", "heat wave action plan"
     )
 
     fun shouldInclude(article: Article): Boolean {
