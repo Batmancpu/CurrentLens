@@ -211,7 +211,7 @@ class MainActivity : ComponentActivity() {
         LaunchCrashDiagnostics.recordStage(applicationContext, "MainActivity.onCreate entered")
         val previousCrashReport = LaunchCrashDiagnostics.read(this)
         if (previousCrashReport != null) {
-            showCrashRecoveryScreen(previousCrashReport)
+            this.showCrashRecoveryScreen(previousCrashReport)
             return
         }
         LaunchCrashDiagnostics.recordStage(applicationContext, "MainActivity preparing Compose content")

@@ -33,7 +33,7 @@ internal object LaunchCrashDiagnostics {
             val current = Thread.getDefaultUncaughtExceptionHandler()
             if (current != null && current === installedHandler) return
 
-            val appContext = context.applicationContext
+            val appContext = context.applicationContext ?: context
             val handler = Thread.UncaughtExceptionHandler { thread, throwable ->
                 runCatching {
                     writeCrashReport(appContext, thread.name, throwable)
@@ -54,27 +54,27 @@ internal object LaunchCrashDiagnostics {
     fun recordStage(context: Context, stage: String) {
         if (stage.isBlank()) return
         runCatching {
-            File(context.applicationContext.filesDir, STAGE_NAME)
+            File((context.applicationContext ?: context).filesDir, STAGE_NAME)
                 .writeText(Instant.now().toString() + " | " + stage.take(240), Charsets.UTF_8)
         }
     }
 
     /** A launch is considered healthy only after the first several Compose frames. */
     fun markHealthy(context: Context) {
-        val directory = context.applicationContext.filesDir
+        val directory = (context.applicationContext ?: context).filesDir
         runCatching { File(directory, REPORT_NAME).delete() }
         recordStage(context, "First Compose frames completed")
     }
 
     fun read(context: Context): String? = runCatching {
-        File(context.applicationContext.filesDir, REPORT_NAME)
+        File((context.applicationContext ?: context).filesDir, REPORT_NAME)
             .takeIf { it.isFile }
             ?.readText(Charsets.UTF_8)
             ?.take(MAX_REPORT_CHARS)
     }.getOrNull()
 
     fun clear(context: Context): Boolean {
-        val directory = context.applicationContext.filesDir
+        val directory = (context.applicationContext ?: context).filesDir
         val reportDeleted = runCatching {
             val file = File(directory, REPORT_NAME)
             !file.exists() || file.delete()
@@ -96,7 +96,8 @@ internal object LaunchCrashDiagnostics {
             threadName = threadName,
             throwable = throwable,
             lastCompletedStage = stage,
-            versionName = versionName
+            versionName = versionName,
+            processId = Process.myPid()
         )
         val destination = File(directory, REPORT_NAME)
         val temporary = File(directory, REPORT_TEMP_NAME)
@@ -119,7 +120,8 @@ internal object LaunchCrashDiagnostics {
         threadName: String,
         throwable: Throwable,
         lastCompletedStage: String? = null,
-        versionName: String? = null
+        versionName: String? = null,
+        processId: Int? = null
     ): String {
         val writer = StringWriter()
         throwable.printStackTrace(PrintWriter(writer))
@@ -132,7 +134,7 @@ internal object LaunchCrashDiagnostics {
             appendLine("Device code: " + Build.DEVICE)
             appendLine("Android: " + Build.VERSION.RELEASE + " (API " + Build.VERSION.SDK_INT + ")")
             appendLine("Build fingerprint: " + Build.FINGERPRINT)
-            appendLine("Process id: " + Process.myPid())
+            appendLine("Process id: " + (processId?.toString() ?: "unavailable"))
             appendLine("Thread: " + threadName)
             appendLine("Last completed startup stage: " + (lastCompletedStage ?: "unknown"))
             appendLine("Exception: " + throwable.javaClass.name)
