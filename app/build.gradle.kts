@@ -11,8 +11,8 @@ android {
         applicationId = "com.mangoloads.currentlens"
         minSdk = 26
         targetSdk = 35
-        versionCode = 2
-        versionName = "0.2.0"
+        versionCode = 3
+        versionName = "0.2.1"
     }
 
     compileOptions {
@@ -36,7 +36,7 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.9.0")
     implementation("org.jsoup:jsoup:1.23.2")
 
-    implementation("com.github.styropyr0:PrismalAGSL:v1.0.4")
+    implementation("com.github.styropyr0:PrismalAGSL:v1.0.6")
 
     testImplementation("junit:junit:4.13.2")
 
