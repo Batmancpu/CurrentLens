@@ -6,6 +6,10 @@ import org.json.JSONObject
 import java.time.LocalDate
 import java.time.ZoneId
 import java.util.UUID
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withContext
 
 object LocalStore {
     private const val PREFS = "currentlens_local"
@@ -23,6 +27,8 @@ object LocalStore {
     private const val MAX_READER_POSITIONS = ReaderPositionPolicy.MAX_ENTRIES
     private const val MAX_QUIZ_ATTEMPTS = 5_000
     private const val MAX_DETAILED_QUIZ_ATTEMPTS = 500
+    // Serialize read-modify-write operations for the two growing JSON histories.
+    private val historyWriteMutex = Mutex()
 
     fun bookmarks(context: Context): Set<String> =
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
@@ -233,6 +239,23 @@ object LocalStore {
         }.getOrDefault(emptyList())
     }
 
+    /**
+     * Persist and reload the bounded reading history on IO. The mutex prevents
+     * overlapping lifecycle flushes from overwriting one another's read-modify-write.
+     */
+    internal suspend fun recordReadingSessionAndRead(
+        context: Context,
+        article: Article,
+        startedAtMillis: Long,
+        durationMillis: Long
+    ): List<ReadingSession>? = withContext(Dispatchers.IO) {
+        historyWriteMutex.withLock {
+            if (recordReadingSession(context, article, startedAtMillis, durationMillis)) {
+                readingSessions(context)
+            } else null
+        }
+    }
+
     internal fun recordReadingSession(
         context: Context,
         article: Article,
@@ -338,6 +361,21 @@ object LocalStore {
                 }
             }.sortedByDescending { it.submittedAtMillis }
         }.getOrDefault(emptyList())
+    }
+
+    /** Persist and reload quiz history off the UI thread, serialized with session writes. */
+    internal suspend fun recordQuizAttemptAndRead(
+        context: Context,
+        article: Article,
+        answers: Map<Int, Int>,
+        questions: List<QuizQuestion>,
+        submittedAtMillis: Long = System.currentTimeMillis()
+    ): List<QuizAttempt>? = withContext(Dispatchers.IO) {
+        historyWriteMutex.withLock {
+            if (recordQuizAttempt(context, article, answers, questions, submittedAtMillis) != null) {
+                quizAttempts(context)
+            } else null
+        }
     }
 
     internal fun recordQuizAttempt(
