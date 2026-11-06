@@ -289,6 +289,7 @@ class MainActivity : ComponentActivity() {
  * the Prismal graphics pipeline caused the preceding startup failure.
  */
 private fun MainActivity.showCrashRecoveryScreen(report: String) {
+    val activity = this
     val density = resources.displayMetrics.density
     fun dp(value: Int): Int = (value * density).toInt()
 
@@ -336,13 +337,13 @@ private fun MainActivity.showCrashRecoveryScreen(report: String) {
     val copyButton = android.widget.Button(this).apply {
         text = "Copy crash report"
         setOnClickListener {
-            val clipboard = getSystemService(android.content.Context.CLIPBOARD_SERVICE)
+            val clipboard = activity.getSystemService(android.content.Context.CLIPBOARD_SERVICE)
                 as? android.content.ClipboardManager
             clipboard?.setPrimaryClip(
                 android.content.ClipData.newPlainText("brrrNews crash report", report)
             )
             android.widget.Toast.makeText(
-                this@MainActivity,
+                activity,
                 "Crash report copied",
                 android.widget.Toast.LENGTH_LONG
             ).show()
@@ -351,8 +352,8 @@ private fun MainActivity.showCrashRecoveryScreen(report: String) {
     val retryButton = android.widget.Button(this).apply {
         text = "Try normal launch"
         setOnClickListener {
-            LaunchCrashDiagnostics.clear(this@MainActivity)
-            recreate()
+            LaunchCrashDiagnostics.clear(activity)
+            activity.recreate()
         }
     }
     actions.addView(copyButton, android.widget.LinearLayout.LayoutParams(0, dp(54), 1f))
@@ -3100,7 +3101,7 @@ private fun DefinitionGlassOverlay(
                     onCopy = {
                         definition?.let { current ->
                             val copiedText = DictionaryMeaningPolicy.copyText(word, current.meanings, current.synonyms)
-                            val clipboard = context.getSystemService(android.content.Context.CLIPBOARD_SERVICE)
+                            val clipboard = context.activity.getSystemService(android.content.Context.CLIPBOARD_SERVICE)
                                 as? android.content.ClipboardManager
                             clipboard?.setPrimaryClip(android.content.ClipData.newPlainText("Definition of $word", copiedText))
                             android.widget.Toast.makeText(context, "Definition copied", android.widget.Toast.LENGTH_SHORT).show()
