@@ -12,6 +12,7 @@ internal object ReaderChromePolicy {
     fun shouldShowCompletion(
         reachedBottom: Boolean,
         definitionOpen: Boolean,
-        dismissed: Boolean
-    ): Boolean = reachedBottom && !definitionOpen && !dismissed
+        dismissed: Boolean,
+        selectionActive: Boolean = false
+    ): Boolean = reachedBottom && !definitionOpen && !dismissed && !selectionActive
 }
