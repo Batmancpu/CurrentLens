@@ -1,9 +1,9 @@
-val stabilityTestBuild = providers.gradleProperty("stabilityTest").orNull == "true"
-
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.plugin.compose")
 }
+
+val stabilityTestBuild = providers.gradleProperty("stabilityTest").orNull == "true"
 
 android {
     namespace = "com.mangoloads.currentlens"

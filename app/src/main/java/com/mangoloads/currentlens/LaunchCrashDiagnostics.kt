@@ -182,7 +182,8 @@ internal object LaunchCrashDiagnostics {
         throwable: Throwable,
         lastCompletedStage: String? = null,
         versionName: String? = null,
-        processId: Int? = null
+        processId: Int? = null,
+        packageName: String = "com.mangoloads.currentlens"
     ): String {
         val writer = StringWriter()
         throwable.printStackTrace(PrintWriter(writer))
