@@ -202,3 +202,55 @@ Created a durable, multi-document memory system:
 - Future image assets should be stored in the private CurrentLens ChatGPT Project or otherwise privately, with metadata in DESIGN_EVIDENCE.md. Do not upload personal screenshots into public GitHub without explicit approval.
 - The user must create/use a ChatGPT Project named CurrentLens, move this conversation into it if the Move to project option is available, add the ten docs as Project sources, and start future chats inside that Project. Project files should be refreshed after material repository updates.
 - README intentionally untouched.
+
+
+## 2026-11-06 — Investigate launcher-startup crash and add early diagnostics (PR #16)
+
+### User report
+The user reports the latest app still behaves as follows: tap launcher icon → Android shows opening animation → no app UI is visible → Android returns to launcher and the app appears closed. This matches the earlier Build 100 cold-start report on OPPO Reno10 5G, but there is no fresh crash report/logcat/tombstone in this conversation.
+
+### Repository inspection and findings
+- Inspected current main manifest, MainActivity startup/first composition, LaunchCrashDiagnostics, LocalStore, NewsRepository, DictionaryActivity/WordNet database session, build Gradle settings, workflow and project source inventory.
+- Main has no custom Application class; launcher activity is MainActivity.
+- Main LaunchCrashDiagnostics.install() was called inside MainActivity.onCreate(), too late for failures during ContentProvider initialisation.
+- The app depends on PrismalAGSL v1.0.4. Its merged manifest includes androidx.startup.InitializationProvider and metadata for PrismalAgslInitializer. AndroidX Startup runs provider initializers before an Activity is created. Prismal's initializer binds its AGSL assets when API >=33. If a managed exception occurs during provider/library startup, the old activity-level handler may never be installed.
+- The previous recovery UI was implemented in Compose. That is not a robust recovery surface if the failure involves Compose or Prismal drawing.
+- Main CI Build #116 succeeded but only establishes that the earlier main code compiled and its JVM tests ran; it does not establish that the OPPO device launches.
+- No device-level evidence identifies a particular code line as the root cause. The exact crash remains unverified; do not present the instrumentation change as a guaranteed app fix.
+
+### PR #16 implementation
+PR: https://github.com/Batmancpu/CurrentLens/pull/16
+Branch: fix/early-startup-crash-diagnostics-2026-11-06
+Head: 28a6950fe9e1c0e53f48deacc92cbcd7e89dc4e8
+Base: main 73b8a0d1ba33503fede02db2c3c0af082d724a12
+Status: open draft; six commits ahead, zero behind; five files changed.
+
+Six PR commits:
+1. e81939b32dca807abb59a987e33c739751550e30 — early Application handler, crash report and native recovery implementation.
+2. 356515458e9b689ac152a0f202113dfac324c365 — make early crash report formatting test-safe.
+3. d70caac2dd0f2247667df12226c2ff3cc845222b — detect a startup interruption even without a Java exception stack.
+4. e865c60473a19809a71d916bc7792bfd6861537a — avoid Android process API calls from pure report-formatting tests.
+5. d5e0bd8c42d1cec6f4707ef550340162493acc7c — make synthetic startup-diagnostic writing best-effort so diagnostics do not abort launch.
+6. 28a6950fe9e1c0e53f48deacc92cbcd7e89dc4e8 — correct interruption-report test assertion to match exact report wording.
+
+Files and effects:
+- app/src/main/AndroidManifest.xml — registers .CurrentLensApplication.
+- app/src/main/java/com/mangoloads/currentlens/CurrentLensApplication.kt — installs diagnostics in attachBaseContext, before AndroidX Startup providers; records Application lifecycle stage.
+- app/src/main/java/com/mangoloads/currentlens/LaunchCrashDiagnostics.kt — writes local exception reports via temp file + fd.sync + rename/fallback; captures app/device/build/Android/PID/thread/last stage; stores startup stage markers; if a previous process ended before first three Compose frame callbacks and no exception report exists, creates an explicitly labelled interruption report (not a fabricated Java stack trace); clears the marker only after the first three frame callbacks.
+- app/src/main/java/com/mangoloads/currentlens/MainActivity.kt — reads prior report and shows native Android Views recovery screen with selectable text/copy action rather than re-entering Compose; logs Activity/Compose checkpoints; marks launch healthy after three frame callbacks.
+- app/src/test/java/com/mangoloads/currentlens/LaunchCrashDiagnosticsTest.kt — tests stack report detail, interrupted-start semantics, and size bound.
+
+### Verification / limitations
+- All five files were fetched and source-reviewed on the PR branch after the final commit.
+- GitHub compare against current main reported 6 commits ahead, 0 behind; only those five paths changed.
+- Tests have been added but not executed. No local Gradle build was run.
+- Existing workflow triggers only on push to main; it has no pull_request or workflow_dispatch trigger. No build was dispatched/rerun, no APK produced, no Release created.
+- No physical OPPO test is possible from this environment. PR #16 was left draft and unmerged.
+- This change primarily fixes a gap in crash evidence collection/recovery. It does not prove that Prismal, Compose or another component is the crash's underlying cause.
+
+### Required next device validation
+After PR #16 has been reviewed/merged and its new debug APK installed:
+1. Tap the app icon and observe cold launch.
+2. If it returns to launcher, open it once more.
+3. If the recovery screen appears, copy the full local report and paste it into the CurrentLens chat.
+4. If there is still no report/recovery screen, obtain Android bugreport/logcat/tombstone/ANR evidence. A native/system kill may not produce a Java/Kotlin uncaught-exception report.

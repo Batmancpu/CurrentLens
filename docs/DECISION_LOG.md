@@ -60,3 +60,9 @@ Every material engineering session and code commit must have detailed ledger ent
 - PR #12 open draft: Atom alternate link selection.
 - PR #13 open draft: low-cadence adaptive glass contrast restoration.
 - PR #14 open draft: expanded ChatGPT context continuity memory; README excluded.
+
+
+## D-015 — Install launch diagnostics before AndroidX Startup
+Decision: The uncaught-exception handler must be installed from custom Application.attachBaseContext(), not MainActivity.onCreate(), because AndroidX Startup ContentProviders (including PrismalAGSL's initializer) execute before any Activity. Keep startup checkpoints in app-private storage and use a framework-View recovery surface so failure details remain visible without re-entering the potentially failing Compose/graphics stack.
+
+Scope: This improves crash evidence and recovery, does not assert that Prismal or any other component is the actual root cause, and must not add telemetry/network uploads. A startup interruption without a managed stack must be labelled as such, never represented as a Java exception. Physical-device validation remains mandatory.

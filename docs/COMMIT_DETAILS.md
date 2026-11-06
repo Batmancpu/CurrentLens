@@ -143,3 +143,23 @@ Files inspected: EditorialFeedIndexPolicy, LaunchCrashDiagnostics, LocalStore, M
 ## How to extend these notes
 
 This file currently explains selected high-impact commits whose diffs were inspected in this session. MAIN_COMMIT_INDEX.md has every main commit SHA/date/subject. Future material commits must receive a full entry here or in SESSION_LEDGER.md, including changed files, exact behavioural changes, reason, tests, failure/fix chain, risks and verification. If an old commit has not been inspected, say so and link to its diff rather than inventing detail.
+
+
+## PR #16 — early-startup crash instrumentation and recovery
+
+URL: https://github.com/Batmancpu/CurrentLens/pull/16  
+Snapshot head: 28a6950fe9e1c0e53f48deacc92cbcd7e89dc4e8  
+Base main: 73b8a0d1ba33503fede02db2c3c0af082d724a12
+
+### Why this change was made
+Main previously installed its uncaught-exception handler in MainActivity.onCreate(). PrismalAGSL v1.0.4's merged manifest registers an AndroidX Startup InitializationProvider, so its initializer executes before MainActivity. A managed failure in that earlier phase can occur before the old handler exists. The earlier recovery screen also used Compose and could fail again if Compose/graphics were involved.
+
+### File-level changes
+- AndroidManifest.xml registers CurrentLensApplication as the Application class.
+- CurrentLensApplication.kt installs crash handling from attachBaseContext(), before ContentProviders/AndroidX Startup, and records startup milestones.
+- LaunchCrashDiagnostics.kt stores exception reports with device/build/app info and full stack; writes through a temporary file with fsync; tracks the last startup stage; detects a prior process end before first Compose frames even without an uncaught Java/Kotlin exception; explicitly labels that as an interruption marker, not a stack trace; marks healthy only after three Compose frame callbacks; synthetic diagnostic write failures are best-effort and must not abort app startup.
+- MainActivity.kt shows crash details through ordinary Android Views, not Compose, with selectable text and copy action; records startup checkpoints and marks first launch healthy after three frame callbacks.
+- LaunchCrashDiagnosticsTest.kt adds checks for managed-exception reports, interrupted startup report wording and bounded report size.
+
+### Scope and status
+This does not change Prismal dependency/version, shaders, RSS, feed classifier, local data semantics, navigation, privacy permissions, or CI workflow. It does not establish the underlying crash root cause and is not proof of a fix. Tests were added but not executed; PR workflow has no CI trigger. Physical-device verification is mandatory after an APK is built and installed.

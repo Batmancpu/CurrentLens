@@ -14,6 +14,19 @@
 - Latest Actions run #116 succeeded and published Build 116 debug APK. Details in BUILD_AND_DEBUG.md.
 - No physical-device crash/frame/GPU verification is available.
 
+## Active launcher-crash investigation — PR #16
+
+- User's current symptom: tap launcher icon, Android shows opening animation, no app screen appears, and Android returns to the launcher.
+- PR: https://github.com/Batmancpu/CurrentLens/pull/16 (draft; not merged).
+- Branch: fix/early-startup-crash-diagnostics-2026-11-06.
+- Head: 28a6950fe9e1c0e53f48deacc92cbcd7e89dc4e8; base main: 73b8a0d1ba33503fede02db2c3c0af082d724a12; 6 commits ahead / 0 behind.
+- Root cause is not established: no OPPO logcat, tombstone, ANR or current on-device stack trace was available. Do not claim the crash is fixed.
+- Audit found that the old uncaught-exception handler was installed inside MainActivity.onCreate(), but PrismalAGSL v1.0.4 contributes an AndroidX Startup InitializationProvider that runs before the Activity. A managed exception in that earlier startup phase could occur before the old handler existed.
+- PR #16 installs a custom Application handler from attachBaseContext(), records startup stages, writes reports atomically, detects a prior interrupted startup without inventing a stack trace, and replaces the Compose recovery screen with native Views.
+- Unit tests were updated/added but not executed. The current workflow only runs on pushes to main; no build was dispatched and no APK exists for this branch.
+- After review/merge and installation of the next build, relaunch once if it still exits; the native recovery screen should expose a local report for copying. If a native/system kill still produces no report, collect Android bugreport/logcat/tombstone evidence.
+- Merging PR #16 triggers the main-push workflow and publishes a debug APK prerelease; account for this before merging.
+
 ## Mission and quality bar
 
 CurrentLens is a strict UPSC CSE current-affairs reading app, not a general news aggregator. Quality has two pillars:
@@ -101,7 +114,7 @@ Do not blindly merge. No PR branch CI result follows from Build #116.
 
 ## Ordered next priorities
 
-1. Verify Build 116 cold-launch on OPPO Reno10 and retrieve local crash report/logcat if needed. No crash fix certified.
+1. Review PR #16 early-startup crash diagnostics. It is diagnostic hardening, not a proven root-cause fix. After merge and install, reproduce on OPPO Reno10 and return the local report or logcat/tombstone.
 2. Resolve brrrNEWS vs brrrNews case before future brand updates.
 3. Rebase/review PRs #6/#8/#11/#12/#13 separately against latest main; all are diverged.
 4. Improve primary-source corroboration with explicit claim/document/authority records.
@@ -119,6 +132,16 @@ Do not blindly merge. No PR branch CI result follows from Build #116.
 - The branch was rebuilt on latest main; the earlier two-commit docs branch based on ba06a8f was replaced and its README modification is not in this PR.
 - Verification: all ten files were fetched from the final branch; commit index contains 119 rows; PR diff paths were checked and README is absent. No CI run is available/expected because the workflow triggers only on pushes to main. No application/workflow source, permissions, assets or release files changed.
 - The only remaining human step is to review/merge PR #14 if desired. Merging will trigger the existing main-push workflow and publish a debug APK prerelease; see BUILD_AND_DEBUG.md.
+
+## Crash investigation PR #16
+
+- URL: https://github.com/Batmancpu/CurrentLens/pull/16
+- State: open draft; branch fix/early-startup-crash-diagnostics-2026-11-06.
+- Branch head: 28a6950fe9e1c0e53f48deacc92cbcd7e89dc4e8; base main 73b8a0d1ba33503fede02db2c3c0af082d724a12; 6 ahead, 0 behind.
+- Files: AndroidManifest.xml, new CurrentLensApplication.kt, LaunchCrashDiagnostics.kt, MainActivity.kt, LaunchCrashDiagnosticsTest.kt.
+- Scope: early Java/Kotlin crash instrumentation and non-Compose recovery surface only; no Prismal version, feed logic, app navigation, permissions or workflow changes.
+- Tests added but not run; no CI run because the existing workflow triggers only on push to main.
+- Exact code root cause remains unknown until a real device report is obtained.
 
 ## Session continuity
 

@@ -80,3 +80,16 @@ The CI downloads WordNet at build time and generates a local SQLite asset; the a
 - Never imply CI proves app opens or scrolls smoothly on user's OPPO.
 - If tests are added in a PR but not run, say “added, not executed”.
 - Never dispatch/rerun Actions or publish release during ordinary review.
+
+
+## PR #16 — diagnostic startup build status (6 November 2026)
+
+- Draft PR: https://github.com/Batmancpu/CurrentLens/pull/16.
+- Branch: fix/early-startup-crash-diagnostics-2026-11-06.
+- Head: 28a6950fe9e1c0e53f48deacc92cbcd7e89dc4e8.
+- Base main: 73b8a0d1ba33503fede02db2c3c0af082d724a12.
+- Six commits ahead, zero behind; five changed files: manifest, new Application class, crash diagnostics, MainActivity, tests.
+- Tests have been added but not executed. No PR build ran. The current workflow triggers only on push to main, not pull_request or workflow_dispatch. No build was dispatched/rerun and no APK/Release was produced from this branch.
+- Build #116 is the last verified build of old main code and must not be treated as including PR #16.
+- If PR #16 is merged, it triggers the current main-push workflow, which publishes a debug APK prerelease. Account for this release side effect before merge.
+- A build/test pass will not prove the OPPO app launches. Physical cold-start, retry and device report are required.

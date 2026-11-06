@@ -112,3 +112,14 @@ Snapshot main: 73b8a0d1ba33503fede02db2c3c0af082d724a12 (6 Nov 2026).
 - #13 open draft: 1 ahead / 13 behind, diverged.
 - #14 continuity documentation PR: being rebuilt on latest main; README excluded.
 - No PR branch CI result is implied by passing Build #116.
+
+
+### KL-015 — Latest launcher cold-start exits back to Android launcher
+- Status: User-reported; root cause unverified; PR #16 adds earlier diagnostics/recovery but does not prove the root fix.
+- Current symptom: tap app icon → opening animation → no visible app screen → Android returns to launcher.
+- Same user previously reported a cold-start failure on OPPO Reno10 around Build 100. Do not assume the old and new events have identical causes until log evidence matches.
+- Main's prior handler was installed only in MainActivity.onCreate(). PrismalAGSL v1.0.4 registers an AndroidX Startup InitializationProvider through its merged manifest, which is initialised before Activity creation. This identifies an instrumentation blind spot, not proof that Prismal is the crashing component.
+- PR #16: https://github.com/Batmancpu/CurrentLens/pull/16 (draft, unmerged; branch head 28a6950fe9e1c0e53f48deacc92cbcd7e89dc4e8).
+- PR #16 installs the local handler from Application.attachBaseContext(), records startup checkpoints, writes detailed exception reports and falls back to a plain Android View recovery screen. It can also record a clearly labelled startup interruption without a managed stack trace.
+- No current OPPO logcat/tombstone/ANR/local crash report is available. Do not claim fixed from source review or CI.
+- After review/merge and installation, retry launch and copy the native recovery report. If no report appears, obtain Android bugreport/logcat/tombstone/ANR evidence; native/system kills may not invoke a Java uncaught-exception handler.
