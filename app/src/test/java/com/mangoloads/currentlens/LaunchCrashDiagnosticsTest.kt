@@ -7,7 +7,7 @@ import org.junit.Test
 
 class LaunchCrashDiagnosticsTest {
     @Test
-    fun reportContainsDeviceThreadExceptionAndStartupStage() {
+    fun reportContainsExceptionAndStartupStageWithoutDeviceMetadata() {
         val report = LaunchCrashDiagnostics.formatReport(
             threadName = "main",
             throwable = IllegalStateException("first composition failed"),
@@ -18,9 +18,13 @@ class LaunchCrashDiagnosticsTest {
         assertTrue(report.contains("CurrentLens local startup crash report"))
         assertTrue(report.contains("Thread: main"))
         assertTrue(report.contains("IllegalStateException"))
-        assertTrue(report.contains("first composition failed"))
+        assertFalse(report.contains("first composition failed"))
         assertTrue(report.contains("Application.attachBaseContext completed"))
         assertTrue(report.contains("0.2.0"))
+        assertFalse(report.contains("Device:"))
+        assertFalse(report.contains("Build fingerprint:"))
+        assertFalse(report.contains("Timestamp:"))
+        assertFalse(report.contains("Process id:")))
     }
 
     @Test
@@ -47,16 +51,30 @@ class LaunchCrashDiagnosticsTest {
     }
 
     @Test
-    fun interruptionReportIncludesAndroidExitReasonAndAvailableTrace() {
+    fun interruptionReportIncludesExitReasonButOmitsRawTrace() {
         val report = LaunchCrashDiagnostics.formatInterruptedStartupReport(
             lastCompletedStage = "MainActivity.onCreate entered",
-            systemExitSummary = "Reason: CRASH_NATIVE (5)",
-            nativeTraceBase64 = "AQID"
+            systemExitSummary = "Reason: CRASH_NATIVE (5)"
         )
 
         assertTrue(report.contains("Android historical process-exit record:"))
         assertTrue(report.contains("Reason: CRASH_NATIVE"))
-        assertTrue(report.contains("AQID"))
+        assertFalse(report.contains("AQID"))
+        assertFalse(report.contains("Timestamp:"))
+        assertFalse(report.contains("Process id:"))
+    }
+
+    @Test
+    fun startupStageIsSanitizedBeforeItIsDisplayed() {
+        val stage = "2026-11-06T12:00:00Z | pid=29860 | MainActivity.onCreate entered"
+        assertEquals("MainActivity.onCreate entered", LaunchCrashDiagnostics.displayStartupStage(stage))
+    }
+
+    @Test
+    fun legacyReportsWithDeviceIdentifiersAreDetectedForCleanup() {
+        val report = "Device: Example Brand Model\\nBuild fingerprint: private-build"
+        assertTrue(LaunchCrashDiagnostics.hasLegacyDeviceMetadata(report))
+        assertFalse(LaunchCrashDiagnostics.hasLegacyDeviceMetadata("Android API: 35\\nReason: CRASH_NATIVE"))
     }
 
     @Test
