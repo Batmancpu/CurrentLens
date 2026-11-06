@@ -73,7 +73,7 @@ class GeographyEditorialCoverageTest {
     @Test
     fun cardExplainsTheIndicativeSyllabusConnection() {
         assertEquals(
-            "Indicative · GS I · Geography\nWhy it may fit: monsoon, river basin are signals for this syllabus theme: Salient features of physical geography and distribution of key natural resources.",
+            "Indicative · GS I · Geography\nSignals: monsoon, river basin\nSyllabus: Salient features of physical geography and distribution of key natural resources.",
             ArticleCardMetaPolicy.syllabusHint(
                 gsPaper = "GS I",
                 subject = "Geography",

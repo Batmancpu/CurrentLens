@@ -19,6 +19,6 @@ internal object ArticleCardMetaPolicy {
             .take(2)
         if (signals.isEmpty()) return null
 
-        return "Indicative · $gsPaper · $subject\\nWhy it may fit: ${signals.joinToString(", ")} are signals for this syllabus theme: $syllabusLink"
+        return "Indicative · $gsPaper · $subject\nSignals: ${signals.joinToString(", ")}\nSyllabus: $syllabusLink"
     }
 }
