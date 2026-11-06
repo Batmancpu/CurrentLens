@@ -110,6 +110,18 @@ class UpscFeedPolicyTest {
     }
 
     @Test
+    fun preservesScientificThinFilmSolarTechnologyDespiteEntertainmentNoise() {
+        // False-negative fixture: "thin film" is a materials-science term, not film promotion.
+        val story = article(
+            "Thin-film photovoltaic cells could improve renewable energy access",
+            "Researchers report a new coating that improves solar-cell efficiency and supports renewable energy deployment.",
+            "Science"
+        )
+
+        assertTrue(UpscFeedPolicy.shouldInclude(story))
+    }
+
+    @Test
     fun unrelatedWordArbitraryCannotBecomeAnRbiSyllabusSignal() {
         assertFalse(UpscFeedPolicy.shouldInclude(article(
             "Arbitrary changes to a local event schedule",

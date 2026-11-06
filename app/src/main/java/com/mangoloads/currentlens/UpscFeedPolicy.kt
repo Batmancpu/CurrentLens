@@ -12,7 +12,7 @@ internal object UpscFeedPolicy {
     private val noiseTerms = listOf(
         "ranbir kapoor", "salman khan", "celebrity", "celebrity news",
         "box office", "box-office", "opening weekend", "entertainment",
-        "film", "movie", "cinema", "actor", "actress", "trailer", "teaser",
+        "movie", "cinema", "actor", "actress", "trailer", "teaser",
         "reality show", "reality tv", "reality television", "contestant", "bigg boss",
         "tv show", "tv series", "television show", "television series",
         "series premiere", "season premiere", "season finale", "show promotion",
