@@ -1764,6 +1764,14 @@ private fun NewsCard(
                                 tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(21.dp))
                         }
                     }
+                    Text(
+                        ArticlePublicationDatePolicy.label(article.publishedAtMillis) + " · " +
+                            ArticleProvenancePolicy.label(article.source, article.feedUrl),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.secondary,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis
+                    )
                     SelectionContainer {
                         Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                             Text(article.title, style = MaterialTheme.typography.titleLarge,
