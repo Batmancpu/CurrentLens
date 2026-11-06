@@ -191,15 +191,15 @@ internal object LaunchCrashDiagnostics {
         )
     }
 
-    private fun processIdFromStage(stage: String?): Int? =
+    internal fun processIdFromStage(stage: String?): Int? =
         stage?.split("|")?.getOrNull(1)?.trim()?.removePrefix("pid=")?.toIntOrNull()
 
-    private fun isLegacyMisorderedRendererStage(stage: String): Boolean {
+    internal fun isLegacyMisorderedRendererStage(stage: String): Boolean {
         val hasPid = stage.split("|").any { it.trim().startsWith("pid=") }
         return !hasPid && stage.trimEnd().endsWith("Prismal pipeline forced to Standard")
     }
 
-    private fun isKnownLegacyFalsePositive(report: String): Boolean {
+    internal fun isKnownLegacyFalsePositive(report: String): Boolean {
         val lines = report.lineSequence().toList()
         return lines.contains("App: 0.2.1-stability") &&
             lines.contains("Package: com.mangoloads.currentlens.stability") &&
@@ -274,7 +274,7 @@ internal object LaunchCrashDiagnostics {
                 }
                 val truncated = stream.read() != -1
                 Base64.encodeToString(output.toByteArray(), Base64.NO_WRAP) +
-                    if (truncated) "\\n[trace truncated]" else ""
+                    if (truncated) " [trace truncated]" else ""
             }
         }.getOrNull()
     }
