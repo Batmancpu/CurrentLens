@@ -1,5 +1,7 @@
 package com.mangoloads.currentlens
 
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -42,6 +44,48 @@ class LaunchCrashDiagnosticsTest {
         assertTrue(report.contains("no uncaught Java/Kotlin exception was captured"))
         assertTrue(report.contains("MainActivity.setContent returned"))
         assertTrue(report.contains("It is not a Java/Kotlin stack trace."))
+    }
+
+    @Test
+    fun interruptionReportIncludesAndroidExitReasonAndAvailableTrace() {
+        val report = LaunchCrashDiagnostics.formatInterruptedStartupReport(
+            lastCompletedStage = "MainActivity.onCreate entered",
+            systemExitSummary = "Reason: CRASH_NATIVE (5)",
+            nativeTraceBase64 = "AQID"
+        )
+
+        assertTrue(report.contains("Android historical process-exit record:"))
+        assertTrue(report.contains("Reason: CRASH_NATIVE"))
+        assertTrue(report.contains("AQID"))
+    }
+
+    @Test
+    fun newStartupStageStoresPidAndCanBeParsed() {
+        val stage = "2026-11-06T12:00:00Z | pid=29860 | MainActivity.onCreate entered"
+        assertEquals(29860, LaunchCrashDiagnostics.processIdFromStage(stage))
+    }
+
+    @Test
+    fun legacyRendererStageWithoutPidIsRecognizedAsMisordered() {
+        val legacy = "2026-11-06T12:00:00Z | Prismal pipeline forced to Standard"
+        val current = "2026-11-06T12:00:00Z | pid=29860 | Prismal pipeline forced to Standard"
+
+        assertTrue(LaunchCrashDiagnostics.isLegacyMisorderedRendererStage(legacy))
+        assertFalse(LaunchCrashDiagnostics.isLegacyMisorderedRendererStage(current))
+    }
+
+    @Test
+    fun onlyKnown021RendererReportIsSuppressed() {
+        val report = """
+            CurrentLens startup interruption report
+            App: 0.2.1-stability
+            Package: com.mangoloads.currentlens.stability
+            Last completed startup stage: 2026-11-06T12:57:34.848827Z | Prismal pipeline forced to Standard
+        """.trimIndent()
+        val unrelated = report.replace("0.2.1-stability", "0.2.2-stability")
+
+        assertTrue(LaunchCrashDiagnostics.isKnownLegacyFalsePositive(report))
+        assertFalse(LaunchCrashDiagnostics.isKnownLegacyFalsePositive(unrelated))
     }
 
     @Test
