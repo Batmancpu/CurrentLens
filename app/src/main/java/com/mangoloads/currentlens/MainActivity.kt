@@ -75,7 +75,6 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.ArrowBack
-import androidx.compose.material.icons.outlined.CalendarMonth
 import androidx.compose.material.icons.outlined.AccountCircle
 import androidx.compose.material.icons.outlined.Bookmark
 import androidx.compose.material.icons.outlined.BookmarkBorder
@@ -1924,7 +1923,7 @@ private fun GlassTabBar(
                     .padding(horizontal = 4.dp, vertical = 3.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                GlassTab(0, "Today", Icons.Outlined.CalendarMonth, onSelect, adaptiveContentColor)
+                GlassTab(0, "Today", Icons.Outlined.Today, onSelect, adaptiveContentColor)
                 GlassTab(1, "Explore", Icons.Outlined.Explore, onSelect, adaptiveContentColor)
                 GlassTab(2, "Search", Icons.Outlined.Search, onSelect, adaptiveContentColor)
                 GlassTab(3, "You", Icons.Outlined.AccountCircle, onSelect, adaptiveContentColor)
@@ -1936,7 +1935,7 @@ private fun GlassTabBar(
                     .graphicsLayer { alpha = barAlpha },
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                GlassTab(0, "Today", Icons.Outlined.CalendarMonth, onSelect, adaptiveContentColor)
+                GlassTab(0, "Today", Icons.Outlined.Today, onSelect, adaptiveContentColor)
                 GlassTab(1, "Explore", Icons.Outlined.Explore, onSelect, adaptiveContentColor)
                 GlassTab(2, "Search", Icons.Outlined.Search, onSelect, adaptiveContentColor, onSearchAnchor)
                 GlassTab(3, "You", Icons.Outlined.AccountCircle, onSelect, adaptiveContentColor)
@@ -2018,7 +2017,7 @@ private fun GlassTabBar(
         }
 
         val activeGlyph = when (highlightedIndex) {
-            0 -> Icons.Outlined.CalendarMonth
+            0 -> Icons.Outlined.Today
             1 -> Icons.Outlined.Explore
             2 -> Icons.Outlined.Search
             else -> Icons.Outlined.AccountCircle
