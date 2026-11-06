@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -16,24 +17,15 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.platform.LocalView
-import androidx.compose.ui.platform.LocalLifecycleOwner
-import androidx.compose.ui.unit.IntSize
-import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.runtime.withFrameNanos
 
 /**
- * A temporary first-launch isolation screen used only in Stability APKs.
+ * Temporary first-launch isolation screen used only in Stability APKs.
  *
  * It deliberately does not create Prismal backdrops, graphics-layer sampling,
  * glass drawing modifiers, blur or shader effects. The button then loads the
- * exact full app UI with Prismal's normal automatic pipeline enabled.
+ * full app UI with Prismal's normal automatic pipeline enabled.
  */
 @Composable
 internal fun StabilityLaunchProbe(onLaunchFullApp: () -> Unit) {
@@ -82,7 +74,7 @@ internal fun StabilityLaunchProbe(onLaunchFullApp: () -> Unit) {
         Spacer(Modifier.height(26.dp))
         Button(
             onClick = onLaunchFullApp,
-            modifier = Modifier.fillMaxSize(fraction = 0.0f).then(Modifier),
+            modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(18.dp)
         ) {
             Text("Open full brrrNews — Liquid Glass enabled")
