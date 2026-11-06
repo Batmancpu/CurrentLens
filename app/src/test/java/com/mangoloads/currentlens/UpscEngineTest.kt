@@ -48,6 +48,46 @@ class UpscEngineTest {
     }
 
     @Test
+    fun rbiMustMatchAsAStandaloneTermRatherThanInsideAnUnrelatedWord() {
+        val article = Article(
+            id = "arbitrary",
+            title = "Arbitrary changes to a local event schedule",
+            description = "Residents prepare for a neighbourhood gathering.",
+            url = "https://example.test/arbitrary",
+            source = "Test",
+            section = "Local",
+            published = "2026-11-03T10:00:00Z"
+        )
+
+        assertEquals("Unmapped", UpscEngine.classify(article).gsPaper)
+    }
+
+    @Test
+    fun mapsSpecificHealthAndDisasterThemesToTheirSyllabusPapers() {
+        val health = Article(
+            id = "health",
+            title = "National Health Mission expands maternal health coverage",
+            description = "The programme addresses public health outcomes.",
+            url = "https://example.test/health",
+            source = "Test",
+            section = "India",
+            published = "2026-11-03T10:00:00Z"
+        )
+        val disaster = Article(
+            id = "disaster",
+            title = "Cyclone early warning system upgraded along the coast",
+            description = "The disaster management authority reviews preparedness.",
+            url = "https://example.test/disaster",
+            source = "Test",
+            section = "India",
+            published = "2026-11-03T10:00:00Z"
+        )
+
+        assertEquals("GS II", UpscEngine.classify(health).gsPaper)
+        assertEquals("GS III", UpscEngine.classify(disaster).gsPaper)
+    }
+
+    @Test
     fun quizAlwaysContainsFiveQuestionsAndMarksAuthoredPromptsHonestly() {
         val article = Article(
             id = "general",

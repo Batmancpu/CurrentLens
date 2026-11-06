@@ -1442,7 +1442,7 @@ private fun NewsCard(
                 syllabusHint?.let { hint ->
                     Text(hint, style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.SemiBold,
-                        maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        maxLines = 2, overflow = TextOverflow.Ellipsis)
                 }
                 // The entire card is the reading target; a repeated CTA adds visual weight
                 // without introducing a second action.

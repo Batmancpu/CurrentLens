@@ -6,13 +6,13 @@ import org.junit.Test
 
 class ArticleCardMetaPolicyTest {
     @Test
-    fun showsOneConciseHintWhenClassifierHasMatchedTerms() {
+    fun showsTheGsMappingAndConcreteMatchedSignals() {
         assertEquals(
-            "Indicative · GS III · Internal Security",
+            "Indicative · GS III · Indian Economy\nSignal: rbi, inflation",
             ArticleCardMetaPolicy.syllabusHint(
                 gsPaper = "GS III",
-                subject = "Internal Security",
-                matchedTerms = listOf("security")
+                subject = "Indian Economy",
+                matchedTerms = listOf("rbi", "inflation", "monetary")
             )
         )
     }
