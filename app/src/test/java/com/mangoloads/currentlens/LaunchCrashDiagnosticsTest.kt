@@ -5,16 +5,20 @@ import org.junit.Test
 
 class LaunchCrashDiagnosticsTest {
     @Test
-    fun reportContainsDeviceThreadAndExceptionDetails() {
+    fun reportContainsDeviceThreadExceptionAndStartupStage() {
         val report = LaunchCrashDiagnostics.formatReport(
             threadName = "main",
-            throwable = IllegalStateException("first composition failed")
+            throwable = IllegalStateException("first composition failed"),
+            lastCompletedStage = "Application.attachBaseContext completed",
+            versionName = "0.2.0"
         )
 
-        assertTrue(report.contains("CurrentLens local crash report"))
+        assertTrue(report.contains("CurrentLens local startup crash report"))
         assertTrue(report.contains("Thread: main"))
         assertTrue(report.contains("IllegalStateException"))
         assertTrue(report.contains("first composition failed"))
+        assertTrue(report.contains("Application.attachBaseContext completed"))
+        assertTrue(report.contains("0.2.0"))
     }
 
     @Test
@@ -23,6 +27,6 @@ class LaunchCrashDiagnosticsTest {
             threadName = "main",
             throwable = IllegalStateException("x".repeat(60_000))
         )
-        assertTrue(report.length <= 30_000)
+        assertTrue(report.length <= LaunchCrashDiagnostics.MAX_REPORT_CHARS)
     }
 }

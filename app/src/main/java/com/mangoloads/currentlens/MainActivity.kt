@@ -208,8 +208,13 @@ private const val INDIA_ZONE = "Asia/Kolkata"
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: android.os.Bundle?) {
         super.onCreate(savedInstanceState)
-        LaunchCrashDiagnostics.install(applicationContext)
+        LaunchCrashDiagnostics.recordStage(applicationContext, "MainActivity.onCreate entered")
         val previousCrashReport = LaunchCrashDiagnostics.read(this)
+        if (previousCrashReport != null) {
+            showCrashRecoveryScreen(previousCrashReport)
+            return
+        }
+        LaunchCrashDiagnostics.recordStage(applicationContext, "MainActivity preparing Compose content")
         setContent {
             val dark = isSystemInDarkTheme()
             val colors = if (dark) {
@@ -268,67 +273,103 @@ class MainActivity : ComponentActivity() {
                 }
             }
             MaterialTheme(colorScheme = colors) {
-                if (previousCrashReport != null) {
-                    Surface(
-                        modifier = Modifier.fillMaxSize(),
-                        color = colors.background,
-                        contentColor = colors.onBackground
-                    ) {
-                        CrashRecoveryScreen(
-                            report = previousCrashReport,
-                            onRetry = {
-                                LaunchCrashDiagnostics.clear(this@MainActivity)
-                                recreate()
-                            }
-                        )
-                    }
-                } else {
-                    Surface(
-                        modifier = Modifier.fillMaxSize(),
-                        color = colors.background,
-                        contentColor = colors.onBackground
-                    ) { BrrrNewsApp() }
-                }
+                Surface(
+                    modifier = Modifier.fillMaxSize(),
+                    color = colors.background,
+                    contentColor = colors.onBackground
+                ) { BrrrNewsApp() }
             }
         }
+        LaunchCrashDiagnostics.recordStage(applicationContext, "MainActivity.setContent returned")
     }
 }
 
-@Composable
-private fun CrashRecoveryScreen(report: String, onRetry: () -> Unit) {
-    val context = LocalContext.current
-    Column(
-        Modifier.fillMaxSize().verticalScroll(rememberScrollState())
-            .padding(horizontal = 22.dp, vertical = 28.dp),
-        verticalArrangement = Arrangement.spacedBy(14.dp)
-    ) {
-        Text("brrrNews could not complete its previous launch",
-            style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
-        Text(
-            "A local crash report has been saved on this device. Copy it and send it with your next message so the exact failure can be fixed instead of guessed.",
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            Button(
-                onClick = {
-                    val clipboard = context.getSystemService(android.content.Context.CLIPBOARD_SERVICE)
-                        as? android.content.ClipboardManager
-                    clipboard?.setPrimaryClip(
-                        android.content.ClipData.newPlainText("brrrNews crash report", report)
-                    )
-                    android.widget.Toast.makeText(context, "Crash report copied", android.widget.Toast.LENGTH_SHORT).show()
-                },
-                modifier = Modifier.weight(1f)
-            ) { Text("Copy crash report") }
-            OutlinedButton(onClick = onRetry, modifier = Modifier.weight(1f)) { Text("Try again") }
-        }
-        Text("LOCAL DIAGNOSTICS", style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
-        Text(report.take(12_000), style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace)
+/**
+ * Uses framework Views deliberately: this screen must remain available if Compose or
+ * the Prismal graphics pipeline caused the preceding startup failure.
+ */
+private fun MainActivity.showCrashRecoveryScreen(report: String) {
+    val density = resources.displayMetrics.density
+    fun dp(value: Int): Int = (value * density).toInt()
+
+    val root = android.widget.LinearLayout(this).apply {
+        orientation = android.widget.LinearLayout.VERTICAL
+        setPadding(dp(22), dp(28), dp(22), dp(20))
+        setBackgroundColor(android.graphics.Color.rgb(13, 17, 24))
     }
+    val title = android.widget.TextView(this).apply {
+        text = "brrrNews could not complete its previous launch"
+        textSize = 24f
+        setTextColor(android.graphics.Color.WHITE)
+        typeface = android.graphics.Typeface.DEFAULT_BOLD
+    }
+    val description = android.widget.TextView(this).apply {
+        text = "A local crash report was saved on this device. Copy it and send it here so the failure can be traced to its exact stack frame."
+        textSize = 15f
+        setTextColor(android.graphics.Color.rgb(205, 215, 228))
+        setPadding(0, dp(12), 0, dp(14))
+    }
+    val reportLabel = android.widget.TextView(this).apply {
+        text = "LOCAL STARTUP DIAGNOSTICS"
+        textSize = 12f
+        setTextColor(android.graphics.Color.rgb(150, 190, 255))
+        typeface = android.graphics.Typeface.DEFAULT_BOLD
+        setPadding(0, dp(14), 0, dp(8))
+    }
+    val reportText = android.widget.TextView(this).apply {
+        text = report.take(LaunchCrashDiagnostics.MAX_REPORT_CHARS)
+        textSize = 11f
+        setTextColor(android.graphics.Color.rgb(220, 226, 235))
+        typeface = android.graphics.Typeface.MONOSPACE
+        setTextIsSelectable(true)
+        setPadding(dp(10), dp(10), dp(10), dp(10))
+        setBackgroundColor(android.graphics.Color.rgb(25, 33, 45))
+    }
+    val reportScroll = android.widget.ScrollView(this).apply {
+        isFillViewport = true
+        addView(reportText)
+    }
+    val actions = android.widget.LinearLayout(this).apply {
+        orientation = android.widget.LinearLayout.HORIZONTAL
+        gravity = android.view.Gravity.CENTER_VERTICAL
+    }
+    val copyButton = android.widget.Button(this).apply {
+        text = "Copy crash report"
+        setOnClickListener {
+            val clipboard = getSystemService(android.content.Context.CLIPBOARD_SERVICE)
+                as? android.content.ClipboardManager
+            clipboard?.setPrimaryClip(
+                android.content.ClipData.newPlainText("brrrNews crash report", report)
+            )
+            android.widget.Toast.makeText(
+                this@MainActivity,
+                "Crash report copied",
+                android.widget.Toast.LENGTH_LONG
+            ).show()
+        }
+    }
+    val retryButton = android.widget.Button(this).apply {
+        text = "Try normal launch"
+        setOnClickListener {
+            LaunchCrashDiagnostics.clear(this@MainActivity)
+            recreate()
+        }
+    }
+    actions.addView(copyButton, android.widget.LinearLayout.LayoutParams(0, dp(54), 1f))
+    actions.addView(retryButton, android.widget.LinearLayout.LayoutParams(0, dp(54), 1f))
+    root.addView(title)
+    root.addView(description)
+    root.addView(actions)
+    root.addView(reportLabel)
+    root.addView(
+        reportScroll,
+        android.widget.LinearLayout.LayoutParams(
+            android.widget.LinearLayout.LayoutParams.MATCH_PARENT,
+            0,
+            1f
+        )
+    )
+    setContentView(root)
 }
 
 private enum class YouPage { DASHBOARD, SAVED, READING_STATS, QUIZ_STATS }
@@ -344,6 +385,11 @@ private data class LocalAppSnapshot(
 @Composable
 private fun BrrrNewsApp() {
     val context = LocalContext.current
+    LaunchedEffect(Unit) {
+        LaunchCrashDiagnostics.recordStage(context, "BrrrNewsApp composition started")
+        repeat(3) { withFrameNanos { } }
+        LaunchCrashDiagnostics.markHealthy(context)
+    }
     val backdrop = rememberPrismalGlassLayer()
     val dark = isSystemInDarkTheme()
     // Restore larger persisted collections after the first frame; parsing 5,000
