@@ -25,14 +25,18 @@ object LocalStore {
     private const val MAX_DETAILED_QUIZ_ATTEMPTS = 500
 
     fun bookmarks(context: Context): Set<String> =
-        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-            .getStringSet(BOOKMARKS, emptySet())?.toSet() ?: emptySet()
+        runCatching {
+            context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+                .getStringSet(BOOKMARKS, emptySet())?.toSet() ?: emptySet()
+        }.getOrDefault(emptySet())
 
     fun isBookmarked(context: Context, url: String): Boolean = bookmarks(context).contains(url)
 
     fun toggleBookmark(context: Context, url: String): Boolean {
         val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-        val next = prefs.getStringSet(BOOKMARKS, emptySet())?.toMutableSet() ?: mutableSetOf()
+        val next = runCatching {
+            prefs.getStringSet(BOOKMARKS, emptySet())?.toMutableSet() ?: mutableSetOf()
+        }.getOrDefault(mutableSetOf())
         val added = if (next.contains(url)) {
             next.remove(url)
             false
@@ -45,19 +49,24 @@ object LocalStore {
     }
 
     fun readHistory(context: Context): Set<String> =
-        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-            .getStringSet(READ, emptySet())?.toSet() ?: emptySet()
+        runCatching {
+            context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+                .getStringSet(READ, emptySet())?.toSet() ?: emptySet()
+        }.getOrDefault(emptySet())
 
     fun markRead(context: Context, url: String) {
         val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-        val next = prefs.getStringSet(READ, emptySet())?.toMutableSet() ?: mutableSetOf()
+        val next = runCatching {
+            prefs.getStringSet(READ, emptySet())?.toMutableSet() ?: mutableSetOf()
+        }.getOrDefault(mutableSetOf())
         next.add(url)
         prefs.edit().putStringSet(READ, next.toSet()).apply()
     }
 
     fun cachedArticles(context: Context): List<Article> {
-        val raw = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-            .getString(ARTICLE_CACHE, null) ?: return emptyList()
+        val raw = runCatching {
+            context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getString(ARTICLE_CACHE, null)
+        }.getOrNull() ?: return emptyList()
         return runCatching {
             val array = JSONArray(raw)
             buildList {
@@ -203,8 +212,9 @@ object LocalStore {
     }
 
     internal fun readingSessions(context: Context): List<ReadingSession> {
-        val raw = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-            .getString(READING_SESSIONS, null) ?: return emptyList()
+        val raw = runCatching {
+            context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getString(READING_SESSIONS, null)
+        }.getOrNull() ?: return emptyList()
         return runCatching {
             val array = JSONArray(raw)
             buildList {
@@ -276,8 +286,9 @@ object LocalStore {
     }
 
     internal fun quizAttempts(context: Context): List<QuizAttempt> {
-        val raw = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-            .getString(QUIZ_ATTEMPTS, null) ?: return emptyList()
+        val raw = runCatching {
+            context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getString(QUIZ_ATTEMPTS, null)
+        }.getOrNull() ?: return emptyList()
         return runCatching {
             val array = JSONArray(raw)
             buildList {
@@ -403,8 +414,10 @@ object LocalStore {
     }
 
     fun glassAlpha(context: Context): Float =
-        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-            .getFloat(GLASS_ALPHA, DEFAULT_GLASS_ALPHA).coerceIn(0.12f, 0.55f)
+        runCatching {
+            context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+                .getFloat(GLASS_ALPHA, DEFAULT_GLASS_ALPHA).coerceIn(0.12f, 0.55f)
+        }.getOrDefault(DEFAULT_GLASS_ALPHA)
 
     fun saveGlassAlpha(context: Context, value: Float) {
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
