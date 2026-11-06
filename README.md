@@ -21,7 +21,7 @@ There is no Archive destination and no Saved bottom tab. **Saved** is a section 
 
 ## Liquid Glass rendering
 
-Navigation and Search share one foreground-only 8×8 luminance probe over a full-width 104 dp band at the bottom of the captured page. The region follows the root content height when the IME opens, so adaptive contrast reflects the scene immediately behind the floating controls rather than averaging unrelated content across the whole screen. Sampling retains PrismalAGSL v1.0.4's 600 ms RenderEffect / 1500 ms legacy cadence and adds no dependency.
+Navigation and Search share one foreground-only 8×8 luminance probe over a full-width 104 dp band at the bottom of the captured page. The region follows the root content height when the IME opens, so adaptive contrast reflects the scene immediately behind the floating controls rather than averaging unrelated content across the whole screen. Sampling is paused while the app is backgrounded or Reader/Settings is open; when active it runs at 1500 ms on API 31+ and 2500 ms on older Android versions. The probe adds no dependency and preserves the PrismalAGSL v1.0.4 implementation and MIT notice.
 
 ## Personal data and study statistics
 
