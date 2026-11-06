@@ -127,4 +127,12 @@ class UpscFeedPolicyTest {
         )))
     }
 
+    @Test
+    fun syntheticFalsePositiveNdmaAdministrativeUpdateIsNotEligible() {
+        assertFalse(UpscFeedPolicy.shouldInclude(article(
+            "NDMA reviews internal staffing arrangements",
+            "The authority discusses routine administrative matters."
+        )))
+    }
+
 }
