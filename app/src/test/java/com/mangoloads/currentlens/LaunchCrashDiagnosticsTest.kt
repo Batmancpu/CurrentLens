@@ -80,12 +80,21 @@ class LaunchCrashDiagnosticsTest {
             CurrentLens startup interruption report
             App: 0.2.1-stability
             Package: com.mangoloads.currentlens.stability
+            Report type: startup interrupted; no uncaught Java/Kotlin exception was captured
             Last completed startup stage: 2026-11-06T12:57:34.848827Z | Prismal pipeline forced to Standard
         """.trimIndent()
         val unrelated = report.replace("0.2.1-stability", "0.2.2-stability")
 
+        val genuineExceptionReport = report
+            .replace("CurrentLens startup interruption report", "CurrentLens local startup crash report")
+            .replace(
+                "Report type: startup interrupted; no uncaught Java/Kotlin exception was captured",
+                "Exception: java.lang.IllegalStateException"
+            )
+
         assertTrue(LaunchCrashDiagnostics.isKnownLegacyFalsePositive(report))
         assertFalse(LaunchCrashDiagnostics.isKnownLegacyFalsePositive(unrelated))
+        assertFalse(LaunchCrashDiagnostics.isKnownLegacyFalsePositive(genuineExceptionReport))
     }
 
     @Test
