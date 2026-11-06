@@ -544,6 +544,49 @@ private fun BrrrNewsApp() {
             if (searchExpanded) Color.Transparent else MaterialTheme.colorScheme.background
         )
     ) {
+        // Prismal's capture source must contain background pixels only. Capturing the
+        // complete UI subtree here would also record glass surfaces that sample this
+        // same layer, creating a self-referential GraphicsLayer render dependency.
+        // Keep the live glass surfaces as siblings above this isolated ambient source.
+        Box(
+            Modifier.fillMaxSize()
+                .prismalGlassLayer(backdrop)
+                .background(MaterialTheme.colorScheme.background)
+                .drawBehind {
+                    val topCenter = Offset(size.width * 0.82f, size.height * 0.12f)
+                    val lowerCenter = Offset(size.width * 0.14f, size.height * 0.78f)
+                    val glowRadius = size.width * 0.92f
+                    val topGlow = if (dark) {
+                        Color(0xFF5279B6).copy(alpha = 0.24f)
+                    } else {
+                        Color(0xFF8CB5F0).copy(alpha = 0.20f)
+                    }
+                    val lowerGlow = if (dark) {
+                        Color(0xFF315B79).copy(alpha = 0.16f)
+                    } else {
+                        Color(0xFFB7C9E8).copy(alpha = 0.18f)
+                    }
+                    drawCircle(
+                        brush = Brush.radialGradient(
+                            colors = listOf(topGlow, Color.Transparent),
+                            center = topCenter,
+                            radius = glowRadius
+                        ),
+                        radius = glowRadius,
+                        center = topCenter
+                    )
+                    drawCircle(
+                        brush = Brush.radialGradient(
+                            colors = listOf(lowerGlow, Color.Transparent),
+                            center = lowerCenter,
+                            radius = glowRadius * 0.82f
+                        ),
+                        radius = glowRadius * 0.82f,
+                        center = lowerCenter
+                    )
+                }
+        )
+
         val searchTransition = updateTransition(targetState = searchExpanded, label = "Search tab morph")
         val animatedSearchMorphProgress = searchTransition.animateFloat(
             transitionSpec = {
@@ -583,7 +626,6 @@ private fun BrrrNewsApp() {
         Column(
             Modifier.fillMaxSize()
                 .then(if (searchExpanded) Modifier.imePadding() else Modifier)
-                .prismalGlassLayer(backdrop)
                 .background(if (searchExpanded) Color.Transparent else MaterialTheme.colorScheme.background)
         ) {
             when {
