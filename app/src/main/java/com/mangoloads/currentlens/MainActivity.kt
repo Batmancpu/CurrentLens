@@ -910,7 +910,7 @@ private fun ExploreFeed(
     glassAlpha: Float,
     dark: Boolean
 ) {
-    val categories = listOf("All", "India", "World", "Politics", "Economy", "Environment", "Science", "Explained", "UPSC", "Opinion")
+    val categories = listOf("All", "India", "Geography", "World", "Politics", "Economy", "Environment", "Science", "Explained", "UPSC", "Opinion")
     val filtered = articles.filter { article -> ExploreFilters.matches(article, selectedCategory, "") }
     Column(Modifier.fillMaxSize()) {
         ExploreGlassCategories(
@@ -958,7 +958,7 @@ private fun SearchFeed(
     val filterSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val keyboardController = LocalSoftwareKeyboardController.current
     val eligibleArticles = remember(articles) { articles.filter(UpscFeedPolicy::shouldInclude) }
-    val categories = listOf("All", "India", "World", "Politics", "Economy", "Environment", "Science", "Explained", "UPSC", "Opinion")
+    val categories = listOf("All", "India", "Geography", "World", "Politics", "Economy", "Environment", "Science", "Explained", "UPSC", "Opinion")
     val subjects = remember(eligibleArticles) {
         listOf("All") + eligibleArticles.map { UpscEngine.classify(it).subject }.distinct().sorted()
     }
@@ -1553,11 +1553,12 @@ private fun NewsCard(
     val context = LocalContext.current
     val density = LocalDensity.current
     val relevance = remember(article.id) { UpscEngine.classify(article) }
-    val syllabusHint = remember(article.id, relevance.gsPaper, relevance.subject, relevance.matchedTerms) {
+    val syllabusHint = remember(article.id, relevance.gsPaper, relevance.subject, relevance.matchedTerms, relevance.syllabusLink) {
         ArticleCardMetaPolicy.syllabusHint(
             gsPaper = relevance.gsPaper,
             subject = relevance.subject,
-            matchedTerms = relevance.matchedTerms
+            matchedTerms = relevance.matchedTerms,
+            syllabusLink = relevance.syllabusLink
         )
     }
     val hasImage = !article.imageUrl.isNullOrBlank()
@@ -1638,7 +1639,7 @@ private fun NewsCard(
                     syllabusHint?.let { hint ->
                         Text(hint, style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.SemiBold,
-                            maxLines = 2, overflow = TextOverflow.Ellipsis)
+                            maxLines = 3, overflow = TextOverflow.Ellipsis)
                     }
                 }
             }
