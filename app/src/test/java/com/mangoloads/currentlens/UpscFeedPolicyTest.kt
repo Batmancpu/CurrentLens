@@ -135,4 +135,12 @@ class UpscFeedPolicyTest {
         )))
     }
 
+    @Test
+    fun specificLokSabhaBillHeadlineRemainsEligibleForGsII() {
+        assertTrue(UpscFeedPolicy.shouldInclude(article(
+            "Bill introduced in Lok Sabha on judicial appointments",
+            "The proposal is referred to the appropriate parliamentary process."
+        )))
+    }
+
 }
