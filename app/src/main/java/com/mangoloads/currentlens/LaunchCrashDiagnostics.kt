@@ -56,17 +56,21 @@ internal object LaunchCrashDiagnostics {
      * that fact even when Android killed it without a Java/Kotlin exception.
      */
     fun beginStartup(context: Context) {
-        val directory = context.applicationContext?.filesDir ?: context.filesDir
-        val previousStage = runCatching {
-            File(directory, STAGE_NAME).takeIf { it.isFile }?.readText(Charsets.UTF_8)
-        }.getOrNull()
-        val reportFile = File(directory, REPORT_NAME)
-        if (!reportFile.isFile && !previousStage.isNullOrBlank() &&
-            !previousStage.contains("First Compose frames completed")
-        ) {
-            runCatching { writeInterruptedStartupReport(context, previousStage) }
+        // Diagnostics must never become a new launch blocker if app-private storage
+        // is unavailable or the device is in an unusual early-boot state.
+        runCatching {
+            val directory = context.applicationContext?.filesDir ?: context.filesDir
+            val previousStage = runCatching {
+                File(directory, STAGE_NAME).takeIf { it.isFile }?.readText(Charsets.UTF_8)
+            }.getOrNull()
+            val reportFile = File(directory, REPORT_NAME)
+            if (!reportFile.isFile && !previousStage.isNullOrBlank() &&
+                !previousStage.contains("First Compose frames completed")
+            ) {
+                runCatching { writeInterruptedStartupReport(context, previousStage) }
+            }
+            recordStage(context, "Application.attachBaseContext completed")
         }
-        recordStage(context, "Application.attachBaseContext completed")
     }
 
     /** Record the last completed startup boundary for the next crash report. */

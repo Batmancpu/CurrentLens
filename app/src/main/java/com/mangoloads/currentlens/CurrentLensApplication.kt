@@ -12,8 +12,8 @@ import android.content.Context
 class CurrentLensApplication : Application() {
     override fun attachBaseContext(base: Context) {
         super.attachBaseContext(base)
-        LaunchCrashDiagnostics.install(base)
-        LaunchCrashDiagnostics.beginStartup(base)
+        runCatching { LaunchCrashDiagnostics.install(base) }
+        runCatching { LaunchCrashDiagnostics.beginStartup(base) }
     }
 
     override fun onCreate() {
