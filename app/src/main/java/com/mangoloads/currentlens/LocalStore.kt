@@ -6,6 +6,10 @@ import org.json.JSONObject
 import java.time.LocalDate
 import java.time.ZoneId
 import java.util.UUID
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withContext
 
 object LocalStore {
     private const val PREFS = "currentlens_local"
@@ -23,6 +27,9 @@ object LocalStore {
     private const val MAX_READER_POSITIONS = ReaderPositionPolicy.MAX_ENTRIES
     private const val MAX_QUIZ_ATTEMPTS = 5_000
     private const val MAX_DETAILED_QUIZ_ATTEMPTS = 500
+    // Serialize JSON read-modify-write operations for histories and reader positions.
+    private val historyWriteMutex = Mutex()
+    private val readerPositionWriteMutex = Mutex()
 
     fun bookmarks(context: Context): Set<String> =
         runCatching {
@@ -56,12 +63,23 @@ object LocalStore {
 
     fun markRead(context: Context, url: String) {
         val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-        val next = runCatching {
-            prefs.getStringSet(READ, emptySet())?.toMutableSet() ?: mutableSetOf()
-        }.getOrDefault(mutableSetOf())
-        next.add(url)
-        prefs.edit().putStringSet(READ, next.toSet()).apply()
+        val current = runCatching {
+            prefs.getStringSet(READ, emptySet())?.toSet() ?: emptySet()
+        }.getOrDefault(emptySet())
+        val next = ReadHistoryPolicy.add(current, url)
+        if (next != current) {
+            prefs.edit().putStringSet(READ, next).apply()
+        }
     }
+
+    /** Read markers are updated and reloaded on IO, never while opening an article on main. */
+    internal suspend fun markReadAndRead(context: Context, url: String): Set<String> =
+        withContext(Dispatchers.IO) {
+            historyWriteMutex.withLock {
+                markRead(context, url)
+                readHistory(context)
+            }
+        }
 
     fun cachedArticles(context: Context): List<Article> {
         val raw = runCatching {
@@ -173,6 +191,26 @@ object LocalStore {
         )
     }
 
+    /** Serialize reader-position JSON writes on IO; scroll callbacks must not parse it on main. */
+    internal suspend fun saveReaderPositionAndWrite(
+        context: Context,
+        articleUrl: String,
+        progress: Float,
+        updatedAtMillis: Long = System.currentTimeMillis()
+    ): Boolean = withContext(Dispatchers.IO) {
+        readerPositionWriteMutex.withLock {
+            saveReaderPosition(context, articleUrl, progress, updatedAtMillis)
+        }
+    }
+
+    /** A completed read clears the saved position after any earlier queued save. */
+    internal suspend fun clearReaderPositionAndWrite(context: Context, articleUrl: String) =
+        withContext(Dispatchers.IO) {
+            readerPositionWriteMutex.withLock {
+                clearReaderPosition(context, articleUrl)
+            }
+        }
+
     private fun savedReaderPositions(context: Context, nowMillis: Long): List<ReaderPosition> {
         val raw = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
             .getString(READER_POSITIONS, null) ?: return emptyList()
@@ -241,6 +279,23 @@ object LocalStore {
                 }
             }.sortedBy { it.startedAtMillis }
         }.getOrDefault(emptyList())
+    }
+
+    /**
+     * Persist and reload the bounded reading history on IO. The mutex prevents
+     * overlapping lifecycle flushes from overwriting one another's read-modify-write.
+     */
+    internal suspend fun recordReadingSessionAndRead(
+        context: Context,
+        article: Article,
+        startedAtMillis: Long,
+        durationMillis: Long
+    ): List<ReadingSession>? = withContext(Dispatchers.IO) {
+        historyWriteMutex.withLock {
+            if (recordReadingSession(context, article, startedAtMillis, durationMillis)) {
+                readingSessions(context)
+            } else null
+        }
     }
 
     internal fun recordReadingSession(
@@ -349,6 +404,21 @@ object LocalStore {
                 }
             }.sortedByDescending { it.submittedAtMillis }
         }.getOrDefault(emptyList())
+    }
+
+    /** Persist and reload quiz history off the UI thread, serialized with session writes. */
+    internal suspend fun recordQuizAttemptAndRead(
+        context: Context,
+        article: Article,
+        answers: Map<Int, Int>,
+        questions: List<QuizQuestion>,
+        submittedAtMillis: Long = System.currentTimeMillis()
+    ): List<QuizAttempt>? = withContext(Dispatchers.IO) {
+        historyWriteMutex.withLock {
+            if (recordQuizAttempt(context, article, answers, questions, submittedAtMillis) != null) {
+                quizAttempts(context)
+            } else null
+        }
     }
 
     internal fun recordQuizAttempt(
