@@ -178,4 +178,20 @@ class UpscEngineTest {
         assertEquals("Unmapped", UpscEngine.classify(article).gsPaper)
     }
 
+    @Test
+    fun specificLokSabhaBillPhraseRemainsMappedToConstitution() {
+        val article = Article(
+            id = "lok-sabha-bill",
+            title = "Bill introduced in Lok Sabha on judicial appointments",
+            description = "The proposal is referred to the appropriate parliamentary process.",
+            url = "https://example.test/lok-sabha-bill",
+            source = "Test",
+            section = "India",
+            published = "2026-11-07T10:00:00Z"
+        )
+
+        assertEquals("GS II", UpscEngine.classify(article).gsPaper)
+        assertEquals("Constitution", UpscEngine.classify(article).subject)
+    }
+
 }
