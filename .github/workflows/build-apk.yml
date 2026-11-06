@@ -3,19 +3,27 @@ name: Build Android APK
 on:
   push:
     branches: [ main ]
+  pull_request:
+    branches: [ main ]
+    types: [ opened, synchronize, reopened, ready_for_review ]
 
+# Build/test jobs never need repository write access. Release publishing is
+# isolated in a separate main-push-only job below.
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
-  group: currentlens-android-build
-  cancel-in-progress: false
+  group: currentlens-android-${{ github.event.pull_request.number || github.ref }}
+  # Superseded PR builds can be cancelled; main release builds are never cancelled.
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   build:
-    name: Build debug APK
+    name: Build and test debug APK
     runs-on: ubuntu-latest
     timeout-minutes: 40
+    permissions:
+      contents: read
     steps:
       - name: Checkout source
         uses: actions/checkout@v5
@@ -58,16 +66,31 @@ jobs:
             --min-unique-words 100000
           test -s app/src/main/assets/wordnet.db
 
-      - name: Compile APK
+      - name: Compile APK and run JVM tests
         run: gradle --no-daemon --stacktrace :app:testDebugUnitTest :app:assembleDebug
 
       - name: Upload installable APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: CurrentLens-v0.2.0-debug-apk
+          name: CurrentLens-debug-apk
           path: app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
           retention-days: 14
+
+  publish:
+    name: Publish main-branch testing release
+    if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - name: Download APK built and tested by this workflow run
+        uses: actions/download-artifact@v4
+        with:
+          name: CurrentLens-debug-apk
+          path: release-assets
 
       - name: Publish direct APK download in GitHub Releases
         uses: softprops/action-gh-release@v2
@@ -80,6 +103,6 @@ jobs:
             Includes the four-tab editorial redesign, Prismal AGSL glass controls, a 30-day local article metadata cache,
             Express Sunday Eye RSS, best-effort public-page extraction with in-app publisher fallback, offline WordNet definitions.
             Debug-signed APK for testing; not a production or Play Store release.
-          files: app/build/outputs/apk/debug/app-debug.apk
+          files: release-assets/app-debug.apk
           prerelease: true
           make_latest: false
