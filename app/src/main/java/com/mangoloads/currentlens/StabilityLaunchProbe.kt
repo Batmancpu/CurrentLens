@@ -196,37 +196,28 @@ private fun RootBackdropCaptureProbe(onBack: () -> Unit) {
 private fun SingleLiquidGlassProbe(onBack: () -> Unit) {
     val backdrop = rememberPrismalGlassLayer()
     val density = LocalDensity.current
-    Box(
-        Modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
-            .prismalGlassLayer(backdrop)
-    ) {
-        Column(
-            Modifier.fillMaxSize().padding(24.dp),
-            verticalArrangement = Arrangement.Center
-        ) {
+    val background = MaterialTheme.colorScheme.background
+    // Capture only the background. The glass surface is a sibling above this source,
+    // never a descendant of the GraphicsLayer that it samples.
+    Box(Modifier.fillMaxSize().background(background)) {
+        Box(Modifier.fillMaxSize().prismalGlassLayer(backdrop).background(background))
+        Column(Modifier.fillMaxSize().padding(24.dp), verticalArrangement = Arrangement.Center) {
             Text("Stage 2 · Single Liquid Glass surface", style = MaterialTheme.typography.headlineSmall)
             Spacer(Modifier.height(14.dp))
             Text(
-                "One root capture and one complete Prismal glass draw, using the normal automatic pipeline.",
+                "A background-only capture with one independent Prismal glass draw, using the normal automatic pipeline.",
                 color = MaterialTheme.colorScheme.secondary
             )
             Spacer(Modifier.height(24.dp))
             Box(
-                Modifier
-                    .fillMaxWidth()
-                    .height(180.dp)
+                Modifier.fillMaxWidth().height(180.dp)
                     .probeLiquidGlass(backdrop, density)
                     .background(Color(0x223D72C7), RoundedCornerShape(24.dp))
                     .padding(22.dp),
                 contentAlignment = Alignment.Center
             ) {
-                Text(
-                    "Liquid Glass rendering test",
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.SemiBold
-                )
+                Text("Liquid Glass rendering test", style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.SemiBold)
             }
             Spacer(Modifier.height(24.dp))
             ProbeActionButton("Back to test menu", onBack)

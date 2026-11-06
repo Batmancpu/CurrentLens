@@ -273,9 +273,10 @@ class MainActivity : ComponentActivity() {
                     }
                 }
             }
-            var showFullApp by remember {
-                mutableStateOf(!BuildConfig.STABILITY_TEST_BUILD)
-            }
+            // Stability packages now enter the complete app directly. The
+            // isolated rendering probes remain in source for engineering diagnosis,
+            // but are not part of the owner's ordinary launch experience.
+            var showFullApp by remember { mutableStateOf(true) }
             MaterialTheme(colorScheme = colors) {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
@@ -347,8 +348,8 @@ private fun MainActivity.showCrashRecoveryScreen(report: String) {
         addView(reportText)
     }
     val actions = android.widget.LinearLayout(this).apply {
-        orientation = android.widget.LinearLayout.HORIZONTAL
-        gravity = android.view.Gravity.CENTER_VERTICAL
+        orientation = android.widget.LinearLayout.VERTICAL
+        gravity = android.view.Gravity.CENTER_HORIZONTAL
     }
     val copyButton = android.widget.Button(this).apply {
         text = "Copy crash report"
@@ -366,14 +367,24 @@ private fun MainActivity.showCrashRecoveryScreen(report: String) {
         }
     }
     val retryButton = android.widget.Button(this).apply {
-        text = "Try normal launch"
+        text = "Continue to brrrNews"
         setOnClickListener {
             LaunchCrashDiagnostics.clear(activity)
             activity.recreate()
         }
     }
-    actions.addView(copyButton, android.widget.LinearLayout.LayoutParams(0, dp(54), 1f))
-    actions.addView(retryButton, android.widget.LinearLayout.LayoutParams(0, dp(54), 1f))
+    actions.addView(
+        copyButton,
+        android.widget.LinearLayout.LayoutParams(
+            android.widget.LinearLayout.LayoutParams.MATCH_PARENT, dp(48)
+        ).apply { bottomMargin = dp(8) }
+    )
+    actions.addView(
+        retryButton,
+        android.widget.LinearLayout.LayoutParams(
+            android.widget.LinearLayout.LayoutParams.MATCH_PARENT, dp(48)
+        )
+    )
     root.addView(title)
     root.addView(description)
     root.addView(actions)
@@ -1869,6 +1880,20 @@ private fun NewsCard(
                                 tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(21.dp))
                         }
                     }
+                    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                        Text(ArticlePublicationDatePolicy.compactLabel(article.publishedAtMillis),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.secondary,
+                            maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        Spacer(Modifier.weight(1f))
+                        Text(
+                            if (article.feedUrl.isBlank()) "Feed provenance unavailable"
+                            else "Publisher RSS · secondary source",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.secondary,
+                            maxLines = 1, overflow = TextOverflow.Ellipsis
+                        )
+                    }
                     SelectionContainer {
                         Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                             Text(article.title, style = MaterialTheme.typography.titleLarge,
@@ -2647,16 +2672,21 @@ private fun ReaderScreen(article: Article, backdrop: PrismalBackdrop, glassAlpha
                 }
             }
         }
-        if (reachedBottom) {
+        // Do not let the completion prompt occupy the dictionary popover's area.
+        // The prompt returns when the definition is dismissed.
+        if (reachedBottom && activeWord == null) {
             Card(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp),
                 shape = RoundedCornerShape(22.dp),
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)) {
                 Row(Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
                     Column(Modifier.weight(1f)) {
                         Text("Finished reading?", fontWeight = FontWeight.Bold)
-                        Text("Five practice questions based on the RSS headline/excerpt and indicative syllabus mapping.", fontSize = 12.sp)
+                        Text(
+                            "Five original practice prompts: headline, indicative GS mapping and answer-writing skills. Not official PYQs.",
+                            fontSize = 12.sp
+                        )
                     }
-                    Button(onClick = onQuiz) { Text("Test") }
+                    Button(onClick = onQuiz) { Text("Review") }
                 }
             }
         }
@@ -3222,32 +3252,113 @@ private fun DefinitionGlassOverlay(
 }
 
 @Composable
-private fun GlassSettingsScreen(backdrop: PrismalBackdrop, glassAlpha: Float, onGlassAlphaChange: (Float) -> Unit, onBack: () -> Unit) {
-    Column(Modifier.fillMaxSize().padding(horizontal = 18.dp)) {
-        Row(Modifier.fillMaxWidth().padding(vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
+private fun GlassSettingsScreen(
+    backdrop: PrismalBackdrop,
+    glassAlpha: Float,
+    onGlassAlphaChange: (Float) -> Unit,
+    onBack: () -> Unit
+) {
+    val dark = isSystemInDarkTheme()
+    val tint = if (dark) Color(0xFF30394B) else Color(0xFFEAF0FA)
+    val selectedPreset = when {
+        kotlin.math.abs(glassAlpha - 0.12f) < 0.015f -> "Clear"
+        kotlin.math.abs(glassAlpha - 0.32f) < 0.015f -> "Balanced"
+        kotlin.math.abs(glassAlpha - 0.55f) < 0.015f -> "Frosted"
+        else -> "Custom"
+    }
+    Column(
+        Modifier.fillMaxSize().verticalScroll(rememberScrollState())
+            .padding(horizontal = 18.dp).padding(bottom = 28.dp),
+        verticalArrangement = Arrangement.spacedBy(14.dp)
+    ) {
+        Row(Modifier.fillMaxWidth().padding(top = 8.dp), verticalAlignment = Alignment.CenterVertically) {
             IconButton(onClick = onBack) { Icon(Icons.Outlined.ArrowBack, contentDescription = "Back") }
-            Text("Appearance", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+            Column(verticalArrangement = Arrangement.spacedBy(1.dp)) {
+                Text("Appearance", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                Text("Personalise the reading surfaces", style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.secondary)
+            }
         }
-        PrismalGlassSurface(backdrop = backdrop, modifier = Modifier.fillMaxWidth(),
+        PrismalGlassSurface(
+            backdrop = backdrop, modifier = Modifier.fillMaxWidth(),
             shape = { PrismalRoundedRectangle(26.dp) }, blurRadius = 11.dp,
-            tint = if (isSystemInDarkTheme()) Color(0xFF30394B) else Color(0xFFEAF0FA), tintAlpha = glassAlpha) {
+            tint = tint, tintAlpha = glassAlpha
+        ) {
             Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(13.dp)) {
                 Text("Liquid Glass", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-                Text("Adjust the transparency of brrrNews glass surfaces.", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.secondary)
+                Text("Control how strongly the glass tint sits over the content beneath it.",
+                    style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.secondary)
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text("Clear", fontSize = 11.sp, color = MaterialTheme.colorScheme.secondary)
                     Spacer(Modifier.weight(1f))
-                    Text((glassAlpha * 100).toInt().toString() + "%", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                    Text((glassAlpha * 100).toInt().toString() + "%", fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary)
                     Spacer(Modifier.weight(1f))
                     Text("Frosted", fontSize = 11.sp, color = MaterialTheme.colorScheme.secondary)
                 }
-                PrismalGlassSlider(value = { glassAlpha }, onValueChange = onGlassAlphaChange,
-                    valueRange = 0.12f..0.55f, visibilityThreshold = 0.01f, backdrop = backdrop,
-                    modifier = Modifier.fillMaxWidth())
+                PrismalGlassSlider(
+                    value = { glassAlpha }, onValueChange = onGlassAlphaChange,
+                    valueRange = 0.12f..0.55f, visibilityThreshold = 0.01f,
+                    backdrop = backdrop, modifier = Modifier.fillMaxWidth()
+                )
             }
         }
-        Text("Four-tab navigation, editorial cards and adaptive glass effects. Heavy shader effects fall back on unsupported devices.",
-            style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.secondary, modifier = Modifier.padding(vertical = 16.dp))
+        Column(verticalArrangement = Arrangement.spacedBy(7.dp)) {
+            Text("Presets", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+            Text("Choose a starting point or fine-tune it with the slider.",
+                style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.secondary)
+            Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                FilterChip(selected = selectedPreset == "Clear", onClick = { onGlassAlphaChange(0.12f) },
+                    label = { Text("Clear") })
+                FilterChip(selected = selectedPreset == "Balanced", onClick = { onGlassAlphaChange(0.32f) },
+                    label = { Text("Balanced") })
+                FilterChip(selected = selectedPreset == "Frosted", onClick = { onGlassAlphaChange(0.55f) },
+                    label = { Text("Frosted") })
+            }
+        }
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text("Live preview", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+            Text("Sample feed card · appearance only", style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.secondary)
+            PrismalGlassSurface(
+                backdrop = backdrop, modifier = Modifier.fillMaxWidth(),
+                shape = { PrismalRoundedRectangle(24.dp) }, blurRadius = 9.dp,
+                tint = tint, tintAlpha = glassAlpha
+            ) {
+                Column(Modifier.padding(17.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text("THE HINDU", style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
+                        Spacer(Modifier.weight(1f))
+                        Text("GS II", style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.secondary)
+                    }
+                    Text("How a policy decision shapes India's federal balance",
+                        style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onSurface)
+                    Text("6 Nov 2026 · Publisher report · Indicative syllabus link",
+                        style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.secondary)
+                }
+            }
+        }
+        Card(
+            modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(20.dp),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+        ) {
+            Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) {
+                Text("Designed for reading first", fontWeight = FontWeight.SemiBold)
+                Text(
+                    "The app keeps text and article imagery readable while adapting the glass treatment. Your appearance choice is saved locally on this device.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+        Text(
+            "On devices without the required graphics support, unsupported shader effects fall back automatically. No cloud service is used for appearance settings.",
+            style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.secondary
+        )
     }
 }
 
@@ -3278,11 +3389,11 @@ private fun QuizScreen(
             Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) {
                 Text("Question-source note", fontWeight = FontWeight.Bold)
                 Text(
-                    "This quiz uses the publisher's RSS headline and excerpt only. Extracted full-text reader content is not yet used to generate questions.",
+                    "This review uses the publisher's RSS headline and excerpt for story context. It does not test the full article body.",
                     style = MaterialTheme.typography.bodySmall
                 )
                 Text(
-                    "Q1: headline comprehension · Q2: indicative syllabus keyword mapping · Q3–Q5: original general UPSC skill practice. No official PYQ is included.",
+                    "Q1: headline comprehension · Q2: indicative syllabus keyword mapping · Q3–Q5: original source-literacy and GS answer-framing practice. None is an official PYQ.",
                     style = MaterialTheme.typography.bodySmall
                 )
             }

@@ -339,3 +339,16 @@ Branch: `fix/early-startup-crash-diagnostics-2026-11-06`.
 - The PR branch CI build should verify WordNet generation, Gradle/JVM tests, APK compilation, signing and artifact upload. Those results must be reported independently.
 - Do not claim the native crash is definitively fixed from code or CI alone. Runtime causality remains unverified; a later owner-initiated normal launch is sufficient to supply the next evidence if they choose.
 - Work remains on existing draft PR #16. Main is not changed, no merge or Release is performed.
+
+## 7 November 2026 — recording-led probe and UI corrections
+- Reviewed the full 438.8-second user recording locally; no video or frame was copied to the public repository.
+- At ~25 seconds, the recovery screen identifies CRASH_NATIVE (5) / signal 11 and last requested stage Probe stage 2 requested — single full Liquid Glass surface.
+- This revises the earlier interpretation: the report is specific to the Stage 2 diagnostic probe. Later in the same recording the complete brrrNews app opens and the user navigates Today, Explore, Search, Reader, Appearance and You. Returning to launcher at the end is not proof of another crash.
+- The version is treated as 0.2.7-stability based on the owner's confirmation that this was the latest GitHub APK.
+- SingleLiquidGlassProbe captured a parent Column containing the test glass surface, while that surface sampled the same PrismalBackdrop. This recreated the self-referential GraphicsLayer capture/sampling architecture already removed from the main app. Stage 2 now captures a background-only sibling; the glass surface is drawn above/outside that source.
+- Stability build now starts the complete app directly; the diagnostic menu no longer interrupts normal launch.
+- NewsCard displays publisher publication date/time in Asia/Kolkata and labels configured RSS as secondary publisher reporting. Appearance adds Clear/Balanced/Frosted presets and a live glass preview. Reader hides the completion prompt while a dictionary definition overlay is open.
+- Quiz wording states that prompts use RSS summary context and original skills practice; it does not claim full-text comprehension or official PYQs.
+- Version advances to 0.2.8 / versionCode 10, retaining the Stability package suffix and signing identity.
+- Added a JVM test for compact IST date labels. CI must be checked before sharing the next APK.
+- No further user device-test round is requested. CI does not replace runtime evidence already present in the private recording. PR #16 remains draft/unmerged; main and Release state remain untouched.
