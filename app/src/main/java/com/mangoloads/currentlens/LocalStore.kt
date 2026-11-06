@@ -15,6 +15,8 @@ object LocalStore {
     private const val PREFS = "currentlens_local"
     private const val BOOKMARKS = "bookmarks"
     private const val READ = "read_history"
+    // New read markers are stored separately so the unordered legacy set can remain untouched.
+    private const val RECENT_READ = "read_history_recent_v1"
     private const val ARTICLE_CACHE = "article_cache"
     private const val GLASS_ALPHA = "glass_alpha"
     private const val MAX_CACHED_ARTICLES = 500
@@ -57,19 +59,49 @@ object LocalStore {
 
     fun readHistory(context: Context): Set<String> =
         runCatching {
-            context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-                .getStringSet(READ, emptySet())?.toSet() ?: emptySet()
+            val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+            // Preserve every pre-existing marker. The old StringSet has no ordering metadata,
+            // so it is frozen rather than arbitrarily truncated during migration.
+            val legacy = runCatching {
+                prefs.getStringSet(READ, emptySet())?.toSet() ?: emptySet()
+            }.getOrDefault(emptySet())
+            val recentRaw = runCatching { prefs.getString(RECENT_READ, null) }.getOrNull()
+            ReadHistoryPolicy.visibleHistory(legacy, parseRecentReadHistory(recentRaw) ?: emptyList())
         }.getOrDefault(emptySet())
 
     fun markRead(context: Context, url: String) {
-        val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-        val current = runCatching {
-            prefs.getStringSet(READ, emptySet())?.toSet() ?: emptySet()
-        }.getOrDefault(emptySet())
-        val next = ReadHistoryPolicy.add(current, url)
-        if (next != current) {
-            prefs.edit().putStringSet(READ, next).apply()
+        if (url.isBlank() || url.length > ReadHistoryPolicy.MAX_URL_LENGTH) return
+        runCatching {
+            val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+            val legacy = runCatching {
+                prefs.getStringSet(READ, emptySet())?.toSet() ?: emptySet()
+            }.getOrDefault(emptySet())
+            if (url in legacy) return@runCatching
+
+            // Do not overwrite a malformed or wrong-typed recent-history value.
+            val rawResult = runCatching { prefs.getString(RECENT_READ, null) }
+            if (rawResult.isFailure) return@runCatching
+            val current = parseRecentReadHistory(rawResult.getOrNull()) ?: return@runCatching
+            val next = ReadHistoryPolicy.add(current, url)
+            if (next == current) return@runCatching
+
+            val array = JSONArray()
+            next.forEach { array.put(it) }
+            prefs.edit().putString(RECENT_READ, array.toString()).apply()
         }
+    }
+
+    private fun parseRecentReadHistory(raw: String?): List<String>? {
+        if (raw == null) return emptyList()
+        return runCatching {
+            val array = JSONArray(raw)
+            buildList {
+                for (index in 0 until array.length()) {
+                    val url = array.optString(index)
+                    if (url.isNotBlank()) add(url)
+                }
+            }
+        }.getOrNull()?.let { ReadHistoryPolicy.retain(it) }
     }
 
     /** Read markers are updated and reloaded on IO, never while opening an article on main. */
