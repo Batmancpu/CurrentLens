@@ -52,6 +52,15 @@ class ReadHistoryPolicyTest {
     }
 
     @Test
+    fun visibleHistoryPreservesLegacyMarkersWhileBoundingRecentWindow() {
+        val legacy = setOf("legacy-a", "legacy-b")
+        assertEquals(
+            setOf("legacy-a", "legacy-b", "middle", "new"),
+            ReadHistoryPolicy.visibleHistory(legacy, listOf("old", "middle", "new"), maxEntries = 2)
+        )
+    }
+
+    @Test
     fun zeroCapacityRetainsNoRecentMarkers() {
         assertEquals(emptyList<String>(), ReadHistoryPolicy.add(listOf("old"), "new", maxEntries = 0))
     }
