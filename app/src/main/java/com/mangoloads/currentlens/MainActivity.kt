@@ -200,7 +200,9 @@ import java.time.format.DateTimeFormatter
 import java.util.Locale
 import kotlin.math.roundToInt
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 private const val INDIA_ZONE = "Asia/Kolkata"
@@ -344,6 +346,7 @@ private data class LocalAppSnapshot(
 @Composable
 private fun CurrentLensApp() {
     val context = LocalContext.current
+    val persistenceScope = rememberCoroutineScope()
     val backdrop = rememberPrismalGlassLayer()
     val dark = isSystemInDarkTheme()
     // Restore larger persisted collections after the first frame; parsing 5,000
@@ -528,19 +531,50 @@ private fun CurrentLensApp() {
                     article = selectedArticle!!,
                     onBack = { quizMode = false },
                     onSubmit = { answers, questions ->
-                        LocalStore.recordQuizAttempt(context, selectedArticle!!, answers, questions)
-                        quizAttempts = LocalStore.quizAttempts(context)
+                        val article = selectedArticle!!
+                        persistenceScope.launch {
+                            val updated = withContext(NonCancellable) {
+                                LocalStore.recordQuizAttemptAndRead(context, article, answers, questions)
+                            }
+                            if (updated != null) quizAttempts = updated
+                        }
                     }
                 )
-                selectedArticle != null -> ReaderScreen(
-                    article = selectedArticle!!,
-                    backdrop = backdrop,
-                    glassAlpha = glassAlpha,
-                    dark = dark,
-                    onBack = { selectedArticle = null },
-                    onQuiz = { quizMode = true },
-                    onSessionRecorded = { readingSessions = LocalStore.readingSessions(context) }
-                )
+                selectedArticle != null -> {
+                    val article = selectedArticle!!
+                    ReaderScreen(
+                        article = article,
+                        backdrop = backdrop,
+                        glassAlpha = glassAlpha,
+                        dark = dark,
+                        onBack = { selectedArticle = null },
+                        onQuiz = { quizMode = true },
+                        onSessionWindow = { window ->
+                            persistenceScope.launch {
+                                val updated = withContext(NonCancellable) {
+                                    LocalStore.recordReadingSessionAndRead(
+                                        context, article, window.startedAtMillis, window.durationMillis
+                                    )
+                                }
+                                if (updated != null) readingSessions = updated
+                            }
+                        },
+                        onSaveReaderPosition = { url, progress ->
+                            persistenceScope.launch {
+                                withContext(NonCancellable) {
+                                    LocalStore.saveReaderPositionAndWrite(context, url, progress)
+                                }
+                            }
+                        },
+                        onClearReaderPosition = { url ->
+                            persistenceScope.launch {
+                                withContext(NonCancellable) {
+                                    LocalStore.clearReaderPositionAndWrite(context, url)
+                                }
+                            }
+                        }
+                    )
+                }
                 showSettings -> GlassSettingsScreen(
                     backdrop = backdrop,
                     glassAlpha = glassAlpha,
@@ -2215,7 +2249,17 @@ private fun matchesSearchTerms(article: Article, query: String): Boolean =
     ExploreFilters.matchesSearchTerms(article, query)
 
 @Composable
-private fun ReaderScreen(article: Article, backdrop: PrismalBackdrop, glassAlpha: Float, dark: Boolean, onBack: () -> Unit, onQuiz: () -> Unit, onSessionRecorded: () -> Unit) {
+private fun ReaderScreen(
+    article: Article,
+    backdrop: PrismalBackdrop,
+    glassAlpha: Float,
+    dark: Boolean,
+    onBack: () -> Unit,
+    onQuiz: () -> Unit,
+    onSessionWindow: (ReadingSessionWindow) -> Unit,
+    onSaveReaderPosition: (String, Float) -> Unit,
+    onClearReaderPosition: (String) -> Unit
+) {
     val context = LocalContext.current
     val readerWebViewHolder = remember { mutableStateOf<ReaderWebView?>(null) }
     var savedReadingProgress by remember(article.url) {
@@ -2234,11 +2278,7 @@ private fun ReaderScreen(article: Article, backdrop: PrismalBackdrop, glassAlpha
             }
             fun flushSession() {
                 readerWebViewHolder.value?.flushReadingPosition()
-                clock.pause(SystemClock.elapsedRealtime())?.let { window ->
-                    if (LocalStore.recordReadingSession(context, article, window.startedAtMillis, window.durationMillis)) {
-                        onSessionRecorded()
-                    }
-                }
+                clock.pause(SystemClock.elapsedRealtime())?.let(onSessionWindow)
             }
             val observer = LifecycleEventObserver { _, event ->
                 when (event) {
@@ -2374,12 +2414,12 @@ private fun ReaderScreen(article: Article, backdrop: PrismalBackdrop, glassAlpha
                 update = { webView ->
                     val articleChanged = webView.beginArticle(article.url)
                     webView.onReadingProgressChanged = { progress ->
-                        val persisted = LocalStore.saveReaderPosition(context, article.url, progress)
-                        savedReadingProgress = if (persisted) progress else 0f
+                        savedReadingProgress = progress
+                        onSaveReaderPosition(article.url, progress)
                     }
                     webView.onReachedBottom = {
                         webView.markReadingPositionCompleted()
-                        LocalStore.clearReaderPosition(context, article.url)
+                        onClearReaderPosition(article.url)
                         savedReadingProgress = 0f
                         reachedBottom = true
                     }
