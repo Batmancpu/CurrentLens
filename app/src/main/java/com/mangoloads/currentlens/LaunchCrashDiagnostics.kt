@@ -109,10 +109,13 @@ internal object LaunchCrashDiagnostics {
     }
 
     /** A launch is considered healthy only after the first several Compose frames. */
-    fun markHealthy(context: Context) {
+    fun markHealthy(
+        context: Context,
+        completedStage: String = "First Compose frames completed"
+    ) {
         val directory = (context.applicationContext ?: context).filesDir
         runCatching { File(directory, REPORT_NAME).delete() }
-        recordStage(context, "First Compose frames completed")
+        recordStage(context, completedStage)
     }
 
     fun read(context: Context): String? = runCatching {
