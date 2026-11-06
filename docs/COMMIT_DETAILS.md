@@ -112,6 +112,11 @@ Files inspected: ArticleCardMetaPolicy, MainActivity, UpscEngine, UpscFeedPolicy
 - PR #3's recorded intended result: restrained glass toolbar, Explore chip band, selected icon drawn crisp above active lens, squircle image cards, skeleton loading, transparent Search/IME.
 - Important performance correction from PR #3: avoid drawing a second blurred image copy behind every card. Use the same Coil-loaded image, a one-time nine-point palette sample and light radial ambient tint.
 
+### c403d7f2597d — PR #3 design/performance refinement (PR branch commit, not a main commit index entry)
+- The inspected PR-branch diff included MainActivity and theme changes for Liquid Glass surfaces, system bars and image palette treatment.
+- This SHA does not appear in the current main commit list; it is recorded as a PR-branch implementation reference, not as a main commit.
+- Use PR #3's merged diff and supplied screenshot observations as the definitive evidence for all of its changes.
+
 ### 81de60cca96b — harden cold start and reduce rendering workload
 - Reduced the existing 8×8 adaptive glass readback cadence: API 31+ changed from 600ms to 1,500ms; older Android from 1,500ms to 2,500ms.
 - Changed startup restoration/feed filtering and moved hot-path work off main, per commit description and PR #7 body.
@@ -137,4 +142,4 @@ Files inspected: EditorialFeedIndexPolicy, LaunchCrashDiagnostics, LocalStore, M
 
 ## How to extend these notes
 
-This file currently explains selected high-impact commits whose diffs were inspected in this session. PR #3's merged PR description is also used as evidence for its screenshot-driven design outcomes; its original screenshots are not embedded here. MAIN_COMMIT_INDEX.md has every main commit SHA/date/subject. Future material commits must receive a full entry here or in SESSION_LEDGER.md, including changed files, exact behavioural changes, reason, tests, failure/fix chain, risks and verification. If an old commit has not been inspected, say so and link to its diff rather than inventing detail.
+This file currently explains selected high-impact commits whose diffs were inspected in this session. MAIN_COMMIT_INDEX.md has every main commit SHA/date/subject. Future material commits must receive a full entry here or in SESSION_LEDGER.md, including changed files, exact behavioural changes, reason, tests, failure/fix chain, risks and verification. If an old commit has not been inspected, say so and link to its diff rather than inventing detail.

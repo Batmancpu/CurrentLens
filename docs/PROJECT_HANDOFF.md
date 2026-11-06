@@ -95,7 +95,7 @@ These are stale branches based on ba06a8f and now diverged from latest main by 1
 - #11 date/cache integrity: 2 ahead/13 behind.
 - #12 Atom alternate link selection: 1 ahead/13 behind.
 - #13 adaptive glass contrast restoration: 1 ahead/13 behind.
-- #14 expanded ChatGPT continuation documentation: branch is being rebuilt on latest main; no README change.
+- #14 expanded ChatGPT continuation documentation: draft, branch docs/ai-agent-handoff-2026-11-06, head f819b3d839feb32c1d96fe16619835645e8e8602; based on main 73b8a0d1ba33503fede02db2c3c0af082d724a12; 3 commits ahead / 0 behind, 10 documentation files changed, mergeable at snapshot. README is not changed.
 
 Do not blindly merge. No PR branch CI result follows from Build #116.
 
@@ -109,6 +109,16 @@ Do not blindly merge. No PR branch CI result follows from Build #116.
 6. Measure Search keyboard gap/morph on device; fix only with geometry evidence.
 7. Validate Explore chip TalkBack/touch targets, font scaling, Reduce Motion, safe areas and adaptive glass contrast.
 8. Keep this memory current after each material session and refresh files uploaded to ChatGPT Project.
+
+## Continuity documentation PR #14 — exact branch state
+
+- PR: https://github.com/Batmancpu/CurrentLens/pull/14
+- State at snapshot: open draft, mergeable; base main SHA 73b8a0d1ba33503fede02db2c3c0af082d724a12; branch docs/ai-agent-handoff-2026-11-06; head f819b3d839feb32c1d96fe16619835645e8e8602.
+- Comparison: 3 commits ahead, 0 behind. Ten docs-only files, 1,080 additions, 0 deletions. README is absent from the diff.
+- Branch commits: c2603bfa34ba00874c64c863e47710273120bb97 (nine initial continuity docs); b30b1f75f87f0f7e779f4d1feaf8d5f1e8c0af6c (COMMIT_DETAILS.md); f819b3d839feb32c1d96fe16619835645e8e8602 (wire commit detail file into mandatory reading order and continuity docs).
+- The branch was rebuilt on latest main; the earlier two-commit docs branch based on ba06a8f was replaced and its README modification is not in this PR.
+- Verification: all ten files were fetched from the final branch; commit index contains 119 rows; PR diff paths were checked and README is absent. No CI run is available/expected because the workflow triggers only on pushes to main. No application/workflow source, permissions, assets or release files changed.
+- The only remaining human step is to review/merge PR #14 if desired. Merging will trigger the existing main-push workflow and publish a debug APK prerelease; see BUILD_AND_DEBUG.md.
 
 ## Session continuity
 

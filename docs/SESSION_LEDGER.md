@@ -161,3 +161,44 @@ At end of each material session:
 5. Update BUILD_AND_DEBUG after CI build failure/success.
 6. Add durable rules to DECISION_LOG.
 7. Keep README out unless specifically requested.
+
+
+## 2026-11-06 — Build same-user ChatGPT continuity memory (PR #14)
+
+### User intent
+The user clarified that they are not replacing the development owner or handing CurrentLens to another AI product. They switch ChatGPT conversations when a previous conversation reaches its context limit. The next conversation should resume with the complete history and not ask the user to restate it. They explicitly asked for extreme detail: original intent, every material change, commits, failures, exact causes/fixes, rejected approaches, what not to repeat, visual feedback and submitted image/photo details. README must remain a basic public app overview and was explicitly excluded from this work.
+
+### Implementation
+Created a durable, multi-document memory system:
+- AGENTS.md — continuity rulebook, mandatory reading order, no-main/no-merge/no-workflow-dispatch rules and mandatory per-change logging.
+- docs/CHATGPT_CONTINUITY.md — explains one ChatGPT Project per ongoing project, moving the current chat into it, adding files and instructions, and limitations of project-file sync.
+- docs/PROJECT_HANDOFF.md — dated live state, product, source architecture, current branch/PR/build state and priorities.
+- docs/SESSION_LEDGER.md — chronological product/feature phases, prior PRs, failure/fix history and this documentation session.
+- docs/MAIN_COMMIT_INDEX.md — all 119 main commits from GitHub's paginated API with UTC timestamp, full SHA link and subject.
+- docs/COMMIT_DETAILS.md — inspected diff-level summaries for major implementation milestones; unexpanded commits link to their canonical diffs.
+- docs/KNOWN_ISSUES.md — separates user-reported, verified, draft-PR and unverified defects.
+- docs/DESIGN_EVIDENCE.md — visual intent, image/icon source asset details, screenshot descriptions, naming discrepancy and future evidence protocol.
+- docs/BUILD_AND_DEBUG.md — current toolchain/workflow, Run #116 details, exact known failure patterns and what remains unverified.
+- docs/DECISION_LOG.md — durable product/engineering decisions and continuity decision.
+
+### Exact commits on the PR branch
+1. c2603bfa34ba00874c64c863e47710273120bb97 — initial nine continuity files; parent current main 73b8a0d1ba33503fede02db2c3c0af082d724a12.
+2. b30b1f75f87f0f7e779f4d1feaf8d5f1e8c0af6c — add docs/COMMIT_DETAILS.md.
+3. f819b3d839feb32c1d96fe16619835645e8e8602 — add COMMIT_DETAILS to mandatory reading order and Project/handoff instructions.
+
+### Final PR state at snapshot
+- PR #14: https://github.com/Batmancpu/CurrentLens/pull/14
+- Draft/open; branch docs/ai-agent-handoff-2026-11-06.
+- Base main 73b8a0d1ba33503fede02db2c3c0af082d724a12.
+- Head f819b3d839feb32c1d96fe16619835645e8e8602.
+- 3 commits ahead, 0 behind; 10 files; 1,080 additions, 0 deletions.
+- README not in diff. No application source, assets, permissions, dependencies or workflow config changed.
+- All ten files fetched/verified on final branch. Main commit index contains 119 rows. PR diff path list checked.
+- No PR CI run is available/expected because the single workflow triggers only on push to main. No build was dispatched/rerun and no release was published.
+- PR was left draft and unmerged. A merge will run the current main push workflow and publish a debug APK prerelease.
+
+### Limitations and next action
+- Original historical screenshots/video bytes are not in the repository; the docs preserve text observations from PR #3 and the recent icon discussion, but do not invent exact pixels.
+- Future image assets should be stored in the private CurrentLens ChatGPT Project or otherwise privately, with metadata in DESIGN_EVIDENCE.md. Do not upload personal screenshots into public GitHub without explicit approval.
+- The user must create/use a ChatGPT Project named CurrentLens, move this conversation into it if the Move to project option is available, add the ten docs as Project sources, and start future chats inside that Project. Project files should be refreshed after material repository updates.
+- README intentionally untouched.
