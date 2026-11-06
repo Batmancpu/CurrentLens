@@ -181,3 +181,20 @@ Do not blindly merge. No PR branch CI result follows from Build #116.
 ## Session continuity
 
 The user continues in ChatGPT and does not want to repeat project context. Start the next chat inside the CurrentLens ChatGPT Project. Read CHATGPT_CONTINUITY.md for setup. GitHub is canonical for code/history, but Project sources are copies and need refresh after updates. Upload COMMIT_DETAILS.md to the Project as well.
+
+
+## Live repository snapshot — 6 November 2026, supersedes older PR/branch counts above
+
+- `main`: `73b8a0d1ba33503fede02db2c3c0af082d724a12` (unchanged in this session).
+- Active crash work: PR #16, branch `fix/early-startup-crash-diagnostics-2026-11-06`; keep this as the single active integration branch for launch stabilisation.
+- PR #16 remains draft/open and unmerged. Its 0.2.5 full-app test still crashed after the plain probe; current root cause is not established.
+- Other open draft PRs with unique pending work: #6 Geography/editorial mapping, #8 off-main persistence, #11 publication/cache integrity, #12 Atom link selection, #13 adaptive glass contrast. Do not blindly merge or delete their branches.
+- Closed historical PRs #1/#2/#3/#5/#7/#9/#10 were merged; their remote branch refs are historical clutter. PR #14 is closed and its continuity docs were imported into PR #16. PR #15 is closed unmerged; its redirect work was consolidated into PR #16. PR #4 is closed unmerged and shares a branch with earlier UI work; inspect its unique commits before considering deletion.
+- Repository currently has 17 branch refs and automatic deletion of merged branches is disabled. Branch count does not affect installed APK runtime; it increases review/CI/continuity overhead. The available GitHub connection in this session can inspect and update branches/PRs but does not expose branch-ref deletion or repository-setting mutation. Do not claim refs were deleted. After reviewing unique commits, manually delete only stale refs in GitHub's Branches page; enable automatic deletion of merged branches in repository Settings → General → Pull Requests.
+- New engineering work should stay on PR #16; do not create a branch per chat/session/agent. Batch related files into one commit to avoid redundant CI runs.
+
+### Latest device evidence
+- Stability 0.2.5 report: native signal-11 crash after the user requested the full app from the stability probe. The short screen recording shows the plain Compose/Material probe renders, then the full-app transition returns to launcher/recovery.
+- Prismal Legacy still uses GraphicsLayer capture/draw. The failed Legacy attempt did not exonerate the shared layer path. Normal rendering remains full Liquid Glass.
+- Stability 0.2.6 is an incremental diagnostic APK, not a claimed fix. It tests backdrop capture, one Liquid Glass surface, merged tab capture, and full app separately. See root AGENTS.md and KL-017.
+

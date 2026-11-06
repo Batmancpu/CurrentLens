@@ -122,3 +122,21 @@ This section supersedes the earlier PR #16 snapshot above where its head, render
 
 ### Runtime acceptance is mandatory
 CI establishes that the code compiles and JVM tests pass. It cannot establish that the app launches on the owner's device. Use the acceptance sequence in root `AGENTS.md` and record the actual device result separately from CI.
+
+
+## Stability 0.2.5 — Build #161 and device result
+
+- Run #161: https://github.com/Batmancpu/CurrentLens/actions/runs/42240793437.
+- Commit: `5f478cab7865df9fda351a6de117c8d7cbf1d395`.
+- CI: WordNet generation, Gradle unit tests, APK compile, signing-key restore and artifact upload succeeded; Release publication was skipped.
+- Artifact: `CurrentLens-v0.2.5-stability-debug-apk`, ID `13517165145`, 14-day retention.
+- Owner tested 0.2.5. It still produced `CRASH_NATIVE (5)` / signal 11 after the checkpoint `Full brrrNews composition requested from stability probe`. The plain Compose/Material probe was visible in the supplied recording; the subsequent full-app transition returned to launcher/recovery. Root cause is not established.
+- The video and raw report remain private; no media or device identifiers were committed.
+
+## Stability 0.2.6 — staged rendering isolation build
+
+- Branch: the existing PR #16 branch only.
+- Adds incremental test modes: (1) a single root GraphicsLayer capture without a glass draw, (2) one full Prismal glass surface on that source, (3) the hidden second tab capture plus merged source, then (4) full app with existing effects.
+- Build version code/name: 8 / `0.2.6-stability`; same Stability signing key for update installation.
+- Workflow concurrency is scoped per Git ref and cancels older in-progress builds on the same ref only. A Stability push will not cancel a main-branch build.
+- CI result/artifact must be appended after run completion. This is a diagnostic build, not a fix claim.

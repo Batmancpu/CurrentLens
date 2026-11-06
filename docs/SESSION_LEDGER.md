@@ -294,3 +294,27 @@ Branch: `fix/early-startup-crash-diagnostics-2026-11-06`.
 - The downloaded artifact was extracted and confirmed present in the work container. APK SHA-256: `e44b8341d53a0e2fd41925f4d621ed6e0be5b25747a7ed8fbb0ea094d518abae`.
 - Physical device test has not yet happened. Build #158 does not prove the probe or complete Liquid Glass app survives cold launch. Do not state that the crash is fixed.
 - Keep PR #16 draft/unmerged. Main branch remains untouched.
+
+
+## 6 November 2026 — Stability 0.2.5 probe result and staged Prismal isolation
+
+### Owner evidence
+- User supplied a privacy-minimised 0.2.5 Stability report: `CRASH_NATIVE (5)`, signal 11, with last stage `Full brrrNews composition requested from stability probe`. The report excludes raw trace, device identifiers, process IDs and exact timestamps.
+- User supplied a 21.36-second screen recording. Visual review shows the plain Compose/Material probe is displayed; after the full-app transition, the process returns to the Android launcher and the crash-recovery screen is seen again. The recording is private evidence and is not copied to the public repo.
+- This supports the distinction “basic probe can render; full-app transition fails.” It does not prove whether the exact trigger is a Prismal layer, another Compose node, image decode, or another library/native finalizer.
+
+### Source review
+- The previous 0.2.3 Legacy override disabled AGSL and RenderEffect but still retained Prismal `GraphicsLayer` recording/sampling and `drawLayer`; failure under Legacy therefore did not exclude the backdrop-capture path.
+- Reviewed PrismalAGSL v1.0.6 source for `PrismalGlassLayer`, its modifier, merged sources and draw modifier. The layer path uses `rememberGraphicsLayer`, `GraphicsLayer.record`, and `drawLayer`; the draw node creates/releases a GraphicsLayer and may set an offscreen compositing strategy when RenderEffect is supported.
+- The ordinary production build and Stability full-app path remain on Prismal automatic pipeline with existing full visual effects. No visual downgrade is applied.
+
+### Change in this session
+- Extend the Stability-only probe to test one root GraphicsLayer capture, one full Prismal glass surface, a second hidden tab capture plus merged backdrop, then the complete app.
+- Each stage writes an app-private coarse checkpoint synchronously before changing Compose state. Three stable frames mark the stage complete. The exported report continues to omit device/build identifiers, PIDs/TIDs, timestamps, raw traces and exception messages.
+- Bump Stability-only build to 0.2.6 / versionCode 8. Production application ID/version behavior outside the Stability build is unchanged apart from the shared app version metadata.
+- Update Actions concurrency to cancel obsolete builds only within the same Git ref; this avoids a burst of commits creating redundant builds while not cancelling a main-branch build because the Stability branch was pushed.
+
+### Verification and limits
+- CI must run on the single existing PR #16 branch after this batched commit. Record exact unit-test/WordNet/build/artifact outcomes when the run completes.
+- No device launch or GPU verification is possible here. Do not claim the native crash is fixed; 0.2.6 is an isolation build.
+- Preserve the current main SHA and do not merge or publish a Release.

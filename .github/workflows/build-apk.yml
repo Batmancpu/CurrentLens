@@ -10,8 +10,8 @@ permissions:
   contents: write
 
 concurrency:
-  group: currentlens-android-build
-  cancel-in-progress: false
+  group: currentlens-android-build-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   build:
@@ -87,7 +87,7 @@ jobs:
       - name: Upload installable APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: CurrentLens-v0.2.5-stability-debug-apk
+          name: CurrentLens-v0.2.6-stability-debug-apk
           path: app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
           retention-days: 14
@@ -96,10 +96,10 @@ jobs:
         if: github.ref == 'refs/heads/main'
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v0.2.5-build-${{ github.run_number }}
-          name: CurrentLens v0.2.5 (Build ${{ github.run_number }})
+          tag_name: v0.2.6-build-${{ github.run_number }}
+          name: CurrentLens v0.2.6 (Build ${{ github.run_number }})
           body: |
-            CurrentLens v0.2.5 testing build.
+            CurrentLens v0.2.6 testing build.
             Package: com.mangoloads.currentlens
             Includes the four-tab editorial redesign, Prismal AGSL glass controls, a 30-day local article metadata cache,
             Express Sunday Eye RSS, best-effort public-page extraction with in-app publisher fallback, offline WordNet definitions.

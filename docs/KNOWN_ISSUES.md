@@ -133,3 +133,14 @@ Snapshot main: 73b8a0d1ba33503fede02db2c3c0af082d724a12 (6 Nov 2026).
 - Stability 0.2.5 adds a plain Compose/Material first-launch probe, then a manual transition to the full app with Prismal's normal pipeline. The automatic Legacy override was removed. Build #158 passed CI; physical-device result remains pending.
 - Required next test: confirm probe cold-launch, tap into the complete Liquid Glass app, then repeat at least five cold/warm launches. If failure occurs, note whether it happened before or after the full-app button using the privacy-minimised local report.
 - Do not publish raw traces, build fingerprints, device model/code, PIDs/TIDs, exact timestamps or memory addresses. See root `AGENTS.md`.
+
+
+### KL-017 — Full-app first-frame native crash after the plain probe (Stability 0.2.5)
+- Status: User-reproduced on physical device; source-level root cause unverified.
+- Shareable report: `CRASH_NATIVE (5)`, signal 11; last coarse startup stage: `Full brrrNews composition requested from stability probe`; no Java/Kotlin exception.
+- The attached 21.36-second recording shows the plain Compose/Material startup probe rendering; after the user transitions to the complete app, the process returns to the launcher/recovery flow. This narrows the failure to the full-app transition/initial composition or rendering path, not the plain probe.
+- The 0.2.3 Legacy attempt still crashed. Legacy disables AGSL and RenderEffect but retains Prismal's sampled GraphicsLayer capture/draw path; it therefore did not rule out GraphicsLayer capture, merged sources or offscreen composition.
+- Normal/production rendering remains on Prismal's automatic pipeline with full effects; no forced Legacy override is present in the current PR branch.
+- Stability 0.2.6 adds three isolated, incremental checks: root capture only; one full Liquid Glass surface; two captured layers plus merged tab backdrop. Full app remains a separate final button.
+- The 0.2.5 report and recording contain no raw identifiers in the repository. Do not upload the video or any raw tombstone to GitHub.
+- Root cause must remain “not established” until a failing stage is reproduced with a sanitised symbol-level trace or a code-level trigger and then verified on repeated device launches.
