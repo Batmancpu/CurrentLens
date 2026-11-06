@@ -1000,7 +1000,7 @@ private fun ExploreFeed(
     glassAlpha: Float,
     dark: Boolean
 ) {
-    val categories = listOf("All", "India", "World", "Politics", "Economy", "Environment", "Science", "Explained", "UPSC", "Opinion")
+    val categories = listOf("All", "India", "World", "Politics", "Geography", "Economy", "Environment", "Science", "Explained", "UPSC", "Opinion")
     val filtered = remember(articles, selectedCategory) {
         articles.filter { article -> ExploreFilters.matches(article, selectedCategory, "") }
     }
@@ -1055,7 +1055,7 @@ private fun SearchFeed(
     val eligibleArticles = articles
     val density = LocalDensity.current
     val glassSurfaceColor = MaterialTheme.colorScheme.surface
-    val categories = listOf("All", "India", "World", "Politics", "Economy", "Environment", "Science", "Explained", "UPSC", "Opinion")
+    val categories = listOf("All", "India", "World", "Politics", "Geography", "Economy", "Environment", "Science", "Explained", "UPSC", "Opinion")
     val subjects = remember(eligibleArticles) {
         listOf("All") + eligibleArticles.map { UpscEngine.classify(it).subject }.distinct().sorted()
     }
@@ -1691,7 +1691,8 @@ private fun NewsCard(
         ArticleCardMetaPolicy.syllabusHint(
             gsPaper = relevance.gsPaper,
             subject = relevance.subject,
-            matchedTerms = relevance.matchedTerms
+            matchedTerms = relevance.matchedTerms,
+            syllabusLink = relevance.syllabusLink
         )
     }
     val hasImage = !article.imageUrl.isNullOrBlank()
