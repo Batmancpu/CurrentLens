@@ -162,4 +162,20 @@ class UpscEngineTest {
         assertTrue(result.matchedTerms.contains("heat wave action plan"))
     }
 
+    @Test
+    fun syntheticFalsePositiveNdmaAdministrativeUpdateDoesNotMapToDisasterManagement() {
+        // An agency name alone is not a syllabus theme.
+        val article = Article(
+            id = "ndma-staffing",
+            title = "NDMA reviews internal staffing arrangements",
+            description = "The authority discusses routine administrative matters.",
+            url = "https://example.test/ndma-staffing",
+            source = "Test",
+            section = "India",
+            published = "2026-11-07T10:00:00Z"
+        )
+
+        assertEquals("Unmapped", UpscEngine.classify(article).gsPaper)
+    }
+
 }
