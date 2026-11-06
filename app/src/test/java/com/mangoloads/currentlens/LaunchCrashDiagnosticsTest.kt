@@ -31,7 +31,7 @@ class LaunchCrashDiagnosticsTest {
         assertTrue(report.contains("startup interrupted"))
         assertTrue(report.contains("no uncaught Java/Kotlin exception was captured"))
         assertTrue(report.contains("MainActivity.setContent returned"))
-        assertTrue(report.contains("This is not a Java/Kotlin stack trace."))
+        assertTrue(report.contains("It is not a Java/Kotlin stack trace."))
     }
 
     @Test
