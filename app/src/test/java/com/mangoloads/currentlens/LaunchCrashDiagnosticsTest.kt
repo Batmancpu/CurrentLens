@@ -24,7 +24,7 @@ class LaunchCrashDiagnosticsTest {
         assertFalse(report.contains("Device:"))
         assertFalse(report.contains("Build fingerprint:"))
         assertFalse(report.contains("Timestamp:"))
-        assertFalse(report.contains("Process id:")))
+        assertFalse(report.contains("Process id:"))
     }
 
     @Test
