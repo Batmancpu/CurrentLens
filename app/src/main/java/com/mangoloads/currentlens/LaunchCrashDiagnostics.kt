@@ -105,7 +105,8 @@ internal object LaunchCrashDiagnostics {
 
     internal fun formatInterruptedStartupReport(
         lastCompletedStage: String,
-        versionName: String? = null
+        versionName: String? = null,
+        processId: Int? = null
     ): String = buildString {
         appendLine("CurrentLens startup interruption report")
         appendLine("Timestamp: " + Instant.now().toString())
@@ -115,7 +116,7 @@ internal object LaunchCrashDiagnostics {
         appendLine("Device code: " + Build.DEVICE)
         appendLine("Android: " + Build.VERSION.RELEASE + " (API " + Build.VERSION.SDK_INT + ")")
         appendLine("Build fingerprint: " + Build.FINGERPRINT)
-        appendLine("Process id: " + runCatching { Process.myPid().toString() }.getOrDefault("unavailable"))
+        appendLine("Process id: " + (processId?.toString() ?: "unavailable"))
         appendLine("Report type: startup interrupted; no uncaught Java/Kotlin exception was captured")
         appendLine("Last completed startup stage: " + lastCompletedStage)
         appendLine()
@@ -130,7 +131,7 @@ internal object LaunchCrashDiagnostics {
         }.getOrNull()
         writeReportFile(
             context.filesDir,
-            formatInterruptedStartupReport(lastCompletedStage, versionName)
+            formatInterruptedStartupReport(lastCompletedStage, versionName, Process.myPid())
         )
     }
 
