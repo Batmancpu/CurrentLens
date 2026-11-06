@@ -409,7 +409,7 @@ private fun CurrentLensApp() {
         // Match the collapsed Search capsule to the selected tab's resting optical footprint.
         // The tab row is inset by 10dp outside and 4dp inside; its content height is 56dp.
         val sourceWidth = ((maxWidth - 28.dp) / 4f).coerceAtLeast(1.dp)
-        val sourceHeight = 56.dp
+        val sourceHeight = 64.dp
         val searchHeight = 52.dp
         val targetWidth = (maxWidth - 32.dp).coerceAtLeast(180.dp)
         val sourceWidthPx = with(density) { sourceWidth.toPx() }
