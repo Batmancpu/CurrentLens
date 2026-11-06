@@ -236,8 +236,8 @@ internal object LaunchCrashDiagnostics {
         appendLine("Status/signal: " + info.status)
         appendLine("Importance: " + info.importance)
         appendLine("PSS/RSS: " + info.pss + " KB / " + info.rss + " KB")
-        if (!info.description.isNullOrBlank()) {
-            appendLine("System description: " + info.description.take(1000))
+        info.description?.take(1000)?.let {
+            appendLine("System description: " + it)
         }
     }.trimEnd()
 
