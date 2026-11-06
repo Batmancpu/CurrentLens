@@ -108,4 +108,23 @@ class UpscFeedPolicyTest {
             "Entertainment"
         )))
     }
+    @Test
+    fun syntheticFalseNegativeNdmaHeatWaveActionPlanIsEligibleForGsIII() {
+        // Synthetic fixture grounded in NDMA's official heat-wave action-plan guidance.
+        assertTrue(UpscFeedPolicy.shouldInclude(article(
+            "NDMA updates heat wave action plan for vulnerable districts",
+            "The national authority coordinates preparedness and early response."
+        )))
+    }
+
+    @Test
+    fun syntheticFalsePositiveBillGatesFeatureIsNotEligibleAsConstitutionNews() {
+        // Synthetic false-positive fixture, not a live publisher article or UPSC PYQ.
+        assertFalse(UpscFeedPolicy.shouldInclude(article(
+            "Bill Gates visits a local community event",
+            "The philanthropist meets volunteers and foundation staff.",
+            "World"
+        )))
+    }
+
 }
