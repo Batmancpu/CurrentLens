@@ -225,13 +225,14 @@ Head: b66315c2f82f7785e7dfd96577d83d203770faad
 Base: main 73b8a0d1ba33503fede02db2c3c0af082d724a12
 Status: open draft; seven commits ahead, zero behind; five files changed.
 
-Six PR commits:
+Seven PR commits:
 1. e81939b32dca807abb59a987e33c739751550e30 — early Application handler, crash report and native recovery implementation.
 2. 356515458e9b689ac152a0f202113dfac324c365 — make early crash report formatting test-safe.
 3. d70caac2dd0f2247667df12226c2ff3cc845222b — detect a startup interruption even without a Java exception stack.
 4. e865c60473a19809a71d916bc7792bfd6861537a — avoid Android process API calls from pure report-formatting tests.
 5. d5e0bd8c42d1cec6f4707ef550340162493acc7c — make synthetic startup-diagnostic writing best-effort so diagnostics do not abort launch.
-6. b66315c2f82f7785e7dfd96577d83d203770faad — correct interruption-report test assertion to match exact report wording.
+6. 28a6950fe9e1c0e53f48deacc92cbcd7e89dc4e8 — correct interruption-report test assertion to match exact report wording.
+7. b66315c2f82f7785e7dfd96577d83d203770faad — keep Application diagnostic installation and startup checkpoint handling best-effort so diagnostics I/O cannot block launch.
 
 Files and effects:
 - app/src/main/AndroidManifest.xml — registers .CurrentLensApplication.
@@ -242,7 +243,7 @@ Files and effects:
 
 ### Verification / limitations
 - All five files were fetched and source-reviewed on the PR branch after the final commit.
-- GitHub compare against current main reported 6 commits ahead, 0 behind; only those five paths changed.
+- GitHub compare against current main reported 7 commits ahead, 0 behind; only those five paths changed.
 - Tests have been added but not executed. No local Gradle build was run. The final PR commit also made diagnostic setup/checkpoint I/O best-effort so a diagnostics failure cannot abort Application startup.
 - Existing workflow triggers only on push to main; it has no pull_request or workflow_dispatch trigger. No build was dispatched/rerun, no APK produced, no Release created.
 - No physical OPPO test is possible from this environment. PR #16 was left draft and unmerged.

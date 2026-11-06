@@ -126,8 +126,8 @@ Do not blindly merge. No PR branch CI result follows from Build #116.
 ## Continuity documentation PR #14 — exact branch state
 
 - PR: https://github.com/Batmancpu/CurrentLens/pull/14
-- State at snapshot: open draft, mergeable; base main SHA 73b8a0d1ba33503fede02db2c3c0af082d724a12; branch docs/ai-agent-handoff-2026-11-06; head f819b3d839feb32c1d96fe16619835645e8e8602.
-- Comparison at the previous checkpoint: 5 commits ahead, 0 behind. Ten docs-only files, 1,258 additions, 0 deletions. This current update adds a journal commit; re-fetch the live PR head for the latest count. README is absent from the diff.
+- State: open draft; base main SHA 73b8a0d1ba33503fede02db2c3c0af082d724a12; branch docs/ai-agent-handoff-2026-11-06.
+- It contains ten docs-only files; README is absent from the diff. Re-fetch PR #14 for the exact live head/count; this handoff is deliberately not self-referential about its own last commit.
 - The branch includes the initial continuity-doc commit, commit-details addition, mandatory-reading-order update, PR #14 state bookkeeping, and the 6 November launch-crash journal update. The GitHub branch history is canonical; do not rely on this file's prior head if the branch has advanced.
 - The branch was rebuilt on latest main; the earlier two-commit docs branch based on ba06a8f was replaced and its README modification is not in this PR.
 - Verification: all ten files were fetched from the final branch; commit index contains 119 rows; PR diff paths were checked and README is absent. No CI run is available/expected because the workflow triggers only on pushes to main. No application/workflow source, permissions, assets or release files changed.
@@ -137,7 +137,7 @@ Do not blindly merge. No PR branch CI result follows from Build #116.
 
 - URL: https://github.com/Batmancpu/CurrentLens/pull/16
 - State: open draft; branch fix/early-startup-crash-diagnostics-2026-11-06.
-- Branch head: b66315c2f82f7785e7dfd96577d83d203770faad; base main 73b8a0d1ba33503fede02db2c3c0af082d724a12; 6 ahead, 0 behind.
+- Branch head: b66315c2f82f7785e7dfd96577d83d203770faad; base main 73b8a0d1ba33503fede02db2c3c0af082d724a12; 7 ahead, 0 behind.
 - Files: AndroidManifest.xml, new CurrentLensApplication.kt, LaunchCrashDiagnostics.kt, MainActivity.kt, LaunchCrashDiagnosticsTest.kt.
 - Scope: early Java/Kotlin crash instrumentation and non-Compose recovery surface only; no Prismal version, feed logic, app navigation, permissions or workflow changes.
 - Tests added but not run; no CI run because the existing workflow triggers only on push to main. Diagnostic I/O/setup is wrapped best-effort to avoid adding a new launch blocker.
