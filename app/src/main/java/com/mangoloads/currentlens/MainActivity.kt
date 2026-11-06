@@ -3101,7 +3101,7 @@ private fun DefinitionGlassOverlay(
                     onCopy = {
                         definition?.let { current ->
                             val copiedText = DictionaryMeaningPolicy.copyText(word, current.meanings, current.synonyms)
-                            val clipboard = context.activity.getSystemService(android.content.Context.CLIPBOARD_SERVICE)
+                            val clipboard = context.getSystemService(android.content.Context.CLIPBOARD_SERVICE)
                                 as? android.content.ClipboardManager
                             clipboard?.setPrimaryClip(android.content.ClipData.newPlainText("Definition of $word", copiedText))
                             android.widget.Toast.makeText(context, "Definition copied", android.widget.Toast.LENGTH_SHORT).show()
