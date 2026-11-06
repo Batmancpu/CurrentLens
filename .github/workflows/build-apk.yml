@@ -45,14 +45,7 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p .ci
-          keytool -genkeypair -noprompt -v \\
-            -keystore .ci/stability-debug.keystore \\
-            -storetype JKS \\
-            -storepass currentlens-stability-test-only \\
-            -keypass currentlens-stability-test-only \\
-            -alias currentlens-stability \\
-            -keyalg RSA -keysize 2048 -validity 10000 \\
-            -dname "CN=CurrentLens Stability Debug,O=CurrentLens,C=IN"
+          keytool -genkeypair -noprompt -v -keystore .ci/stability-debug.keystore -storetype JKS -storepass currentlens-stability-test-only -keypass currentlens-stability-test-only -alias currentlens-stability -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=CurrentLens Stability Debug,O=CurrentLens,C=IN"
 
       - name: Install Android platform
         run: |
