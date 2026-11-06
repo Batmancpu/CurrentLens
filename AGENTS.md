@@ -10,10 +10,11 @@ Read these files in this order before proposing or making changes:
 2. docs/PROJECT_HANDOFF.md — latest known product/repository state and current priorities.
 3. docs/SESSION_LEDGER.md — chronological history, feature phases, PR history, failed attempts and corrections.
 4. docs/MAIN_COMMIT_INDEX.md — every commit on main, with SHA, timestamp and subject.
-5. docs/KNOWN_ISSUES.md — unresolved, proposed, reported and verified issues.
-6. docs/DESIGN_EVIDENCE.md — exact design intent, supplied-image register, user feedback and screenshot/video handling.
-7. docs/BUILD_AND_DEBUG.md — build configuration, workflow, test/release process and failure patterns.
-8. docs/DECISION_LOG.md — durable product/engineering decisions.
+5. docs/COMMIT_DETAILS.md — file-level implementation summaries for inspected high-impact commits and PR changes.
+6. docs/KNOWN_ISSUES.md — unresolved, proposed, reported and verified issues.
+7. docs/DESIGN_EVIDENCE.md — exact design intent, supplied-image register, user feedback and screenshot/video handling.
+8. docs/BUILD_AND_DEBUG.md — build configuration, workflow, test/release process and failure patterns.
+9. docs/DECISION_LOG.md — durable product/engineering decisions.
 9. THIRD_PARTY_NOTICES.md and relevant licence files before changing dependencies, assets or bundled data.
 
 Do not treat README as the engineering memory or full product specification. It is only a short public overview. Do not edit README during continuity-document work unless the user specifically asks.
@@ -30,7 +31,7 @@ Do not treat README as the engineering memory or full product specification. It 
 
 ## Mandatory logging for every material change
 
-Before finishing a material engineering session, update docs/SESSION_LEDGER.md and the relevant specialised register. For each code change/commit, record:
+Before finishing a material engineering session, update docs/SESSION_LEDGER.md, docs/COMMIT_DETAILS.md for non-trivial implementation changes, and the relevant specialised register. For each code change/commit, record:
 - Session date/time (IST and UTC when known), PR, branch, commit SHA and parent/base SHA.
 - Exact files changed and the purpose of each file.
 - User request or defect that motivated the work.
@@ -85,8 +86,9 @@ For conversation-only decisions that do not produce a commit, append a dated ses
 At the end of each material session:
 1. Refresh docs/PROJECT_HANDOFF.md with current main SHA, open PRs, builds, priorities and evidence.
 2. Append the detailed event to docs/SESSION_LEDGER.md.
-3. Update docs/KNOWN_ISSUES.md and/or docs/DESIGN_EVIDENCE.md when status or evidence changes.
+3. Update docs/COMMIT_DETAILS.md with file-level implementation notes and failed/fixed approaches.
+4. Update docs/KNOWN_ISSUES.md and/or docs/DESIGN_EVIDENCE.md when status or evidence changes.
 4. Add only durable decisions to docs/DECISION_LOG.md.
-5. Keep Project instructions and uploaded copies of these docs aligned with GitHub when they change.
+6. Keep Project instructions and uploaded copies of these docs aligned with GitHub when they change.
 
 Do not use this file as the entire history. It is the rulebook that forces every continuation chat to consult and maintain the complete history in the linked records.

@@ -18,6 +18,7 @@ Official reference: https://help.openai.com/en/articles/10169521-projects-in-cha
    - docs/PROJECT_HANDOFF.md
    - docs/SESSION_LEDGER.md
    - docs/MAIN_COMMIT_INDEX.md
+   - docs/COMMIT_DETAILS.md
    - docs/KNOWN_ISSUES.md
    - docs/DESIGN_EVIDENCE.md
    - docs/BUILD_AND_DEBUG.md
@@ -29,7 +30,7 @@ Official reference: https://help.openai.com/en/articles/10169521-projects-in-cha
 
 Copy into the Project instructions:
 
-> This Project is the ongoing development workspace for my CurrentLens Android app. I am the same owner continuing across ChatGPT conversations; do not treat this as an external developer handover and do not ask me to restate context. Before acting, read AGENTS.md and all linked project records, especially PROJECT_HANDOFF.md, SESSION_LEDGER.md, MAIN_COMMIT_INDEX.md, KNOWN_ISSUES.md, DESIGN_EVIDENCE.md, BUILD_AND_DEBUG.md and DECISION_LOG.md. Check live GitHub because the docs are snapshots. Preserve my exact product intent, visual feedback, previous failures, fixes and rejected approaches. After every material change, update the session ledger with exact files, reason, before/after behaviour, commit/PR, tests, failures, corrections, risks and verification status. Keep README a short public overview; do not turn it into project memory. Follow the no-direct-main/no-merge/no-workflow-dispatch/no-release rules in AGENTS.md.
+> This Project is the ongoing development workspace for my CurrentLens Android app. I am the same owner continuing across ChatGPT conversations; do not treat this as an external developer handover and do not ask me to restate context. Before acting, read AGENTS.md and all linked project records, especially PROJECT_HANDOFF.md, SESSION_LEDGER.md, MAIN_COMMIT_INDEX.md, COMMIT_DETAILS.md, KNOWN_ISSUES.md, DESIGN_EVIDENCE.md, BUILD_AND_DEBUG.md and DECISION_LOG.md. Check live GitHub because the docs are snapshots. Preserve my exact product intent, visual feedback, previous failures, fixes and rejected approaches. After every material change, update the session ledger with exact files, reason, before/after behaviour, commit/PR, tests, failures, corrections, risks and verification status. Keep README a short public overview; do not turn it into project memory. Follow the no-direct-main/no-merge/no-workflow-dispatch/no-release rules in AGENTS.md.
 
 ### What the Project does and does not do
 
@@ -43,4 +44,4 @@ Copy into the Project instructions:
 
 If a new chat is accidentally opened outside the Project, use:
 
-> Continue my CurrentLens project from its persistent GitHub/Project records. Read AGENTS.md, docs/PROJECT_HANDOFF.md, docs/SESSION_LEDGER.md, docs/MAIN_COMMIT_INDEX.md, docs/KNOWN_ISSUES.md, docs/DESIGN_EVIDENCE.md, docs/BUILD_AND_DEBUG.md and docs/DECISION_LOG.md before acting. I am continuing the same project, not handing it to an external developer. Do not make me restate context.
+> Continue my CurrentLens project from its persistent GitHub/Project records. Read AGENTS.md, docs/PROJECT_HANDOFF.md, docs/SESSION_LEDGER.md, docs/MAIN_COMMIT_INDEX.md, docs/COMMIT_DETAILS.md, docs/KNOWN_ISSUES.md, docs/DESIGN_EVIDENCE.md, docs/BUILD_AND_DEBUG.md and docs/DECISION_LOG.md before acting. I am continuing the same project, not handing it to an external developer. Do not make me restate context.

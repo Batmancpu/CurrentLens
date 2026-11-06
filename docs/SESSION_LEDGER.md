@@ -135,7 +135,7 @@ Open PRs #6/#8/#11/#12/#13 all base on old ba06a8f main snapshot and diverged fr
 
 ## Main commit history
 
-Every commit subject/SHA/timestamp is in docs/MAIN_COMMIT_INDEX.md (119 items captured from two GitHub API pages). Open diffs for exact file-by-file detail. This ledger groups commit phases; the index is canonical for chronology/SHA.
+Every commit subject/SHA/timestamp is in docs/MAIN_COMMIT_INDEX.md. File-level summaries for selected high-impact changes whose diffs were inspected are in docs/COMMIT_DETAILS.md; do not infer full intent for other commits from subject alone. (119 items captured from two GitHub API pages). Open diffs for exact file-by-file detail. This ledger groups commit phases; the index is canonical for chronology/SHA.
 
 ## CI failure chain and do-not-repeat list
 

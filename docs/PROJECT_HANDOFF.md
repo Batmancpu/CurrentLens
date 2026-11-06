@@ -40,6 +40,12 @@ Exactly Today / Explore / Search / You. Saved nested in You. No Archive.
 Today uses current Asia/Kolkata date. Explore is broader eligible retained feed. Search has headline/publisher/topic/subject/GS filters.
 Reading time counts only foreground reader sessions; grouped by Asia/Kolkata day. Quiz attempts persist only on submit. Legacy read URLs contribute unique count only, with no inferred historical time. WordNet is local SQLite, generated at build; no runtime dictionary access.
 
+## Commit-level memory
+
+- docs/MAIN_COMMIT_INDEX.md contains all 119 main-branch commit timestamps, SHAs and subjects captured at this snapshot.
+- docs/COMMIT_DETAILS.md contains file-level summaries for the high-impact commits whose diffs were actually inspected, including bootstrap/build evolution, Search/navigation, WordNet, You/study stats, reader security/cache, classifier, UI/performance, startup diagnostics and reversals.
+- Do not treat a commit subject as a full explanation. Open the linked diff for any unexpanded commit. The ledger explicitly marks any missing detail rather than inventing it.
+
 ## Source tree / architecture
 
 - app/src/main/java/com/mangoloads/currentlens/MainActivity.kt — main Compose UI/navigation/cards/reader/search; very large file (~160 KB).
@@ -106,4 +112,4 @@ Do not blindly merge. No PR branch CI result follows from Build #116.
 
 ## Session continuity
 
-The user continues in ChatGPT and does not want to repeat project context. Start the next chat inside the CurrentLens ChatGPT Project. Read CHATGPT_CONTINUITY.md for setup. GitHub is canonical for code/history, but Project sources are copies and need refresh after updates.
+The user continues in ChatGPT and does not want to repeat project context. Start the next chat inside the CurrentLens ChatGPT Project. Read CHATGPT_CONTINUITY.md for setup. GitHub is canonical for code/history, but Project sources are copies and need refresh after updates. Upload COMMIT_DETAILS.md to the Project as well.
