@@ -18,11 +18,23 @@ android {
         manifestPlaceholders["appLabel"] = if (stabilityTestBuild) "brrrNews Stability" else "brrrNews"
     }
 
+    signingConfigs {
+        if (stabilityTestBuild) {
+            create("stability") {
+                storeFile = rootProject.file(".ci/stability-debug.keystore")
+                storePassword = "currentlens-stability-test-only"
+                keyAlias = "currentlens-stability"
+                keyPassword = "currentlens-stability-test-only"
+            }
+        }
+    }
+
     buildTypes {
         getByName("debug") {
             if (stabilityTestBuild) {
                 applicationIdSuffix = ".stability"
                 versionNameSuffix = "-stability"
+                signingConfig = signingConfigs.getByName("stability")
             }
         }
     }
