@@ -81,7 +81,7 @@ object UpscEngine {
             listOf("climate", "environment", "biodiversity", "pollution", "forest", "wildlife", "emission", "renewable energy", "sustainability", "greenhouse gas", "environmental impact assessment", "air pollution", "water pollution", "climate change", "forest conservation", "wildlife protection")),
         Rule("disaster-management", "GS III", "Disaster Management",
             "Disaster and disaster management.",
-            listOf("disaster management", "earthquake", "cyclone", "flood", "drought", "landslide", "heatwave", "heat wave", "heat action plan", "heat wave action plan", "ndma", "national disaster management authority", "state disaster management authority", "early warning system")),
+            listOf("disaster management", "earthquake", "cyclone", "flood", "drought", "landslide", "heatwave", "heat wave", "heat action plan", "heat wave action plan", "early warning system")),
         Rule("science-tech", "GS III", "Science & Technology",
             "Science and technology developments and applications in everyday life.",
             listOf("artificial intelligence", "technology", "semiconductor", "space", "isro", "biotechnology", "quantum", "cyber", "digital", "genome", "satellite launch", "data protection", "deepfake", "digital public infrastructure")),
