@@ -63,12 +63,23 @@ object LocalStore {
 
     fun markRead(context: Context, url: String) {
         val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-        val next = runCatching {
-            prefs.getStringSet(READ, emptySet())?.toMutableSet() ?: mutableSetOf()
-        }.getOrDefault(mutableSetOf())
-        next.add(url)
-        prefs.edit().putStringSet(READ, next.toSet()).apply()
+        val current = runCatching {
+            prefs.getStringSet(READ, emptySet())?.toSet() ?: emptySet()
+        }.getOrDefault(emptySet())
+        val next = ReadHistoryPolicy.add(current, url)
+        if (next != current) {
+            prefs.edit().putStringSet(READ, next).apply()
+        }
     }
+
+    /** Read markers are updated and reloaded on IO, never while opening an article on main. */
+    internal suspend fun markReadAndRead(context: Context, url: String): Set<String> =
+        withContext(Dispatchers.IO) {
+            historyWriteMutex.withLock {
+                markRead(context, url)
+                readHistory(context)
+            }
+        }
 
     fun cachedArticles(context: Context): List<Article> {
         val raw = runCatching {

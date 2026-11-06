@@ -609,11 +609,15 @@ private fun CurrentLensApp() {
                     searchQuery = searchQuery,
                     searchExpanded = searchExpanded,
                     onSettings = { showSettings = true },
-                    onOpenArticle = {
+                    onOpenArticle = { article ->
                         searchExpanded = false
-                        LocalStore.markRead(context, it.url)
-                        readHistory = readHistory + it.url
-                        selectedArticle = it
+                        selectedArticle = article
+                        persistenceScope.launch {
+                            val updated = withContext(NonCancellable) {
+                                LocalStore.markReadAndRead(context, article.url)
+                            }
+                            readHistory = updated
+                        }
                     },
                     onToggleBookmark = {
                         val added = LocalStore.toggleBookmark(context, it.url)
