@@ -321,7 +321,7 @@ private fun MainActivity.showCrashRecoveryScreen(report: String) {
         typeface = android.graphics.Typeface.DEFAULT_BOLD
     }
     val description = android.widget.TextView(this).apply {
-        text = "A local crash report was saved on this device. Copy it and send it here so the failure can be traced to its exact stack frame."
+        text = "A privacy-minimised local report was saved on this device. Copy it and share it for diagnosis; it omits device identifiers and raw system traces."
         textSize = 15f
         setTextColor(android.graphics.Color.rgb(205, 215, 228))
         setPadding(0, dp(12), 0, dp(14))
