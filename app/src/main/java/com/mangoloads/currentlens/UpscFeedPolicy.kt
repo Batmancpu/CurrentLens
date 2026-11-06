@@ -76,7 +76,7 @@ internal object UpscFeedPolicy {
         "direct benefit transfer", "public service delivery", "lokpal",
         "comptroller and auditor general", "central vigilance commission",
         "disaster management", "earthquake", "cyclone", "flood", "drought",
-        "landslide", "heatwave", "heat wave", "heat action plan", "heat wave action plan", "ndma", "national disaster management authority", "state disaster management authority"
+        "landslide", "heatwave", "heat wave", "heat action plan", "heat wave action plan"
     )
 
     fun shouldInclude(article: Article): Boolean {
