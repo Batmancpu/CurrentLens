@@ -374,3 +374,13 @@ Branch: `fix/early-startup-crash-diagnostics-2026-11-06`.
 - **Previous CI evidence:** run #200 passed on parent SHA cfe0b3e8319374df5cb29423f04a79c77d4fe10e, artifact 13560769755; it does not validate this batch. Await the natural workflow for the new exact head; no manual dispatch/rerun.
 - **Risks / unverified:** no OPPO Reno10 5G runtime screenshot, launch, accessibility, Perfetto/frame-jank, GPU-overdraw, battery or thermal measurements. Do not claim measured performance improvement. The root background-only source remains shared; the existing tab glyph/merged source is unchanged.
 - **Next:** verify natural CI on the new exact head; then review Saved/stat filter surfaces and Quiz/Settings contextual controls. Re-read live branch graph before any further code change.
+
+
+## 2026-11-08 — Preserve genuine box-office taxation policy coverage
+
+- Updated existing draft PR #27, branch `fix/editorial-action-gate-blackbox-2026-11-07`; no duplicate branch or PR was created.
+- Defect: the hard-noise list rejected every headline containing “box office”, including a genuine ministry clarification of GST treatment. This contradicted the product rule to retain genuine institutional/regulatory developments even when they touch a noisy subject.
+- Fix: retain box-office wording as soft noise; add the specific syllabus-linked subject “GST on box office collections” and the explicit “clarifies/clarified” action forms. A generic box-office report still has no institutional-action exception and remains rejected.
+- Added a labelled synthetic false-negative recovery fixture for “Finance Ministry clarifies GST on box-office collections”; retained the existing false-positive fixture for a generic box-office/GST collections update.
+- Updated the official-baseline fixture register. This is synthetic regression coverage, not a live-feed precision/recall result or an official PYQ claim.
+- Verification at commit time: pending natural PR CI. No device/runtime claim.
