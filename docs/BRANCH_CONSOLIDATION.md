@@ -2,11 +2,13 @@
 
 **Repository:** `Batmancpu/CurrentLens`  
 **Chosen integration branch:** `black-box-bihar-news`  
-**Verified source HEAD before this batch:** `cfe0b3e8319374df5cb29423f04a79c77d4fe10e`; the low-effects batch is authored from this exact SHA.  
+**Verified source HEAD before the Saved/stat filter batch:** `2e2c15f5189ec6c60fa1f07f384bce4aa1734ea0`; the filter implementation and this audit are authored as one direct-child commit.  
 **Default branch:** `main` — unchanged at `73b8a0d1ba33503fede02db2c3c0af082d724a12`.  
-**Live branch inventory:** 28 refs (page 1: 28; page 2: 0) at 7 Nov 2026 11:38 IST; no branch was deleted.  
-**Latest completed validation before this batch:** Actions run [#200](https://github.com/Batmancpu/CurrentLens/actions/runs/42341245934), success on exact SHA `cfe0b3e8319374df5cb29423f04a79c77d4fe10e`; artifact `13560769755` (39,059,340 bytes). It validates the Reader resume-I/O parent, not the new low-effects commit.  
-**No feature-branch Release was published; the main-only publish job was skipped.** Existing latest Release remains `v0.2.0-build-116`. No manual workflow dispatch or rerun was used.
+**Live branch inventory:** 29 refs (page 1: 29; page 2: 0) at 7 Nov 2026 12:27 IST; no branch was deleted.  
+**Latest completed validation on the selected branch:** [Actions run #201](https://github.com/Batmancpu/CurrentLens/actions/runs/42346024924), success on exact SHA `2e2c15f5189ec6c60fa1f07f384bce4aa1734ea0`; artifact `13563139070` (39,067,369 bytes, SHA-256 `236b9611c925a8a3f9aae4f7a28b57ef76c7c488161ada7d2d84fd54bcce27fb`). This validates the reduced-transparency parent, not the new filter batch.  
+**Latest overall natural run:** #202, success on PR #25's child SHA `7a51c9c2c40aa89997db55194a6db3d0d65ac95d`; artifact `13563912571` (39,072,517 bytes). It is not a validation of the selected branch.  
+**Actions:** 202 runs, fully paginated (100 + 100 + 2 + 0); no queued or in-progress runs. The release job was skipped on both #201 and #202.  
+**No feature-branch Release was published;** latest published Release remains `v0.2.0-build-116`. No manual dispatch/rerun, merge to main, branch deletion or other-branch write occurred.
 
 The integration was started from PR #16's corrected stability/network baseline, then useful changes were merged or selectively reconciled. No older `MainActivity.kt`, `NewsRepository.kt`, `LocalStore.kt` or workflow was copied wholesale over the newer code.
 
@@ -257,3 +259,61 @@ The complete remote branch list was re-enumerated (28 refs; page 2 empty). Commi
 - Latest overall run #200: success on exact black-box SHA cfe0b3e8319374df5cb29423f04a79c77d4fe10e; build/test job completed checkout, Java, signing cache, Android SDK, platform install, Gradle, WordNet builder tests/database generation, :app:testDebugUnitTest, :app:assembleDebug and artifact upload. Publish job skipped.
 - Artifact 13560769755, CurrentLens-v0.2.8-stability-debug-apk, 39,059,340 bytes, 14-day retention. This is the non-main stability variant: application ID com.mangoloads.currentlens.stability, label brrrNews Stability; it installs separately from the normal app.
 - Latest published Release remains v0.2.0-build-116; no Release was created by run #200.
+
+
+## 9. Live branch graph and CI audit — 7 November 2026, 12:27 IST
+
+The full remote branch list was refreshed (29 branches; page 2 empty). Commit timestamps are GitHub committer timestamps in UTC. This table supersedes earlier inventory snapshots above; all source refs remain untouched.
+
+| Branch | Head SHA | Latest commit (UTC) | PR / status |
+|---|---|---|---|
+| `black-box-bihar-news` | `2e2c15f5189ec6c60fa1f07f384bce4aa1734ea0` | 2026-11-07 06:13:13 — app-wide reduced-transparency mode | Owner-selected active consolidation; no PR to main; source for this filter batch |
+| `brrrNEWS` | `e6fcfc25a4c8d5f363ced58f313552120aa7ff96` | 2026-11-07 04:13:30 — consolidate lightweight supporting glass surfaces | Divergent sibling; base of open PR #24; not selected |
+| `ci/read-only-pr-validation-isolated-release-write-2026-11-06` | `963118f0abe5f7e38f2aa66a49d4b8e74548660c` | 2026-11-06 17:18:53 — read-only PR validation | Open PR #18, base main; compatible design is represented in black-box workflow |
+| `ci/stacked-pr-validation-2026-11-07` | `5dc3179361835b77fb3186a99d9b5791301463fd` | 2026-11-06 21:41:27 — restore Android SDK setup before sdkmanager | PR #20 merged into black-box; source ref retained |
+| `docs/ai-agent-handoff-2026-11-06` | `73b8a0d1ba33503fede02db2c3c0af082d724a12` | 2026-11-06 11:16:35 — icon accessibility name | Now points at main; PR #14 closed unmerged at an older head |
+| `feat/gs1-geography-editorial-coverage` | `ca66fa1c865514a86c655a4b6c7eaf16b4681f81` | 2026-11-06 10:53:35 — refresh article card metadata | Open PR #6, base main; compatible editorial policy selectively represented |
+| `fix/atom-alternate-link-selection-2026-11-06` | `cdf4c3846dde1c05894284e48b8f7d69cb7541ad` | 2026-11-06 09:14:27 — deterministic Atom alternate links | Open PR #12, base main; equivalent FeedLinkPolicy is byte-identical in black-box |
+| `fix/cache-publication-date-integrity-2026-11-06` | `be5151e674c2bd4fa9beb166fc38ddf622781f84` | 2026-11-06 14:26:32 — publication date and provenance | Open PR #11, older black-box base; current policy equivalents already integrated |
+| `fix/early-startup-crash-diagnostics-2026-11-06` | `6ab1e6a02ac8e91027f21900d64d63b9f2e6a890` | 2026-11-06 19:33:20 — minimise shareable process-exit diagnostics | Open PR #16, base main; corrected stability/Prismal ancestor, 41 commits behind black-box |
+| `fix/editorial-heatwave-bill-signals-2026-11-07` | `89464104e300f48da10e3e32e33715cbe2405084` | 2026-11-06 22:05:40 — preserve a specific parliamentary bill signal | Open PR #21, base main; useful editorial rules reconciled, no wholesale port |
+| `fix/editorial-policy-exception-guard-2026-11-07` | `1f7a3c2a7b74cc02cfee6fe451f4576feb291acf` | 2026-11-07 04:46:47 — match policy action and target separately | Open PR #24, base brrrNEWS; three-file editorial-only PR diff, not ported |
+| `fix/editorial-signal-count-test` | `4738690d6e7f6c7c02a621742f25d5ebf1d631fb` | 2026-11-06 05:16:32 — align economy signal count | PR #2 merged into main |
+| `fix/editorial-token-boundaries-2026-11-06` | `0045c24637f162f1c13dceb1f8878f42f6eb15fd` | 2026-11-06 02:34:28 — tighten UPSC signal boundaries | PR #1 merged into main; old divergent branch not a baseline |
+| `fix/navigation-icon-imports-2026-11-06` | `fa8868940c08ed5b4a9def014a850e8a9dcb3490` | 2026-11-06 06:27:06 — supported calendar glyph | PR #5 merged into main; old divergent branch not a baseline |
+| `fix/parliamentary-syllabus-signal-gate-2026-11-07` | `9d754953a29c0355ce55306ce4fd5463193c9dbb` | 2026-11-07 03:49:44 — preserve Parliament headline variants | PR #23 merged into black-box; source ref retained |
+| `fix/publisher-redirect-allowlist-2026-11-06` | `83a94ac9c3fdc4e70f1ef35c65e9cf793aa9b306` | 2026-11-06 12:15:39 — validate RSS redirect hosts | PR #15 closed unmerged; equivalent safety guards retained in newer code |
+| `fix/rss-image-host-allowlist-2026-11-07` | `7a51c9c2c40aa89997db55194a6db3d0d65ac95d` | 2026-11-07 06:28:46 — cover publisher-only image resources | Open PR #25, base black-box at the pre-filter head; seven-commit privacy/network child, untouched |
+| `fix/rss-tracking-variant-dedup-2026-11-06` | `2093990be43a8a9b8eed43f8e4ec1e49c0b29f1b` | 2026-11-06 16:42:29 — deduplicate RSS tracking variants | Open PR #17, base main; URL identity policy ported selectively |
+| `fix/search-glass-theme-capture-2026-11-06` | `c514eff3d5fd266ce6b6ecec51a141055e5fa52e` | 2026-11-06 07:44:03 — capture Search tint before draw callback | PR #10 merged into main; older divergent branch |
+| `fix/startup-crash-diagnostics-feed-jank-2026-11-06` | `5da4e789b0f49c0eefda024410ade34c1e0f2a7c` | 2026-11-06 07:39:53 — startup diagnostics and feed indexing | PR #9 merged into main; older divergent branch |
+| `fix/startup-stability-performance-2026-11-06` | `654e660347de692ef88531dfa49c610269d69671` | 2026-11-06 07:18:06 — harden cold start and feed workload | PR #7 merged into main; older divergent branch |
+| `main` | `73b8a0d1ba33503fede02db2c3c0af082d724a12` | 2026-11-06 11:16:35 — icon accessibility name | Default branch; unchanged |
+| `perf/bounded-read-history-2026-11-07` | `910178af3f595993557533cb65d03e714bcd7760` | 2026-11-06 23:53:04 — verify legacy markers survive retention | Open PR #22, base PR #8; reconciled supplemental policy represented |
+| `perf/off-main-session-persistence-2026-11-06` | `ed91a3bfbcb3f12f6f6050ce72a120b3aafeae4a` | 2026-11-06 10:50:31 — move read-marker persistence off main | Open PR #8, base main; persistence changes reconciled into black-box |
+| `redesign/v0.3-search-reader` | `654cc89dee4f93fea98bb76df9d8cf88abf2f0d8` | 2026-11-03 15:31:48 — selection fallback JSON | Stale; 192 commits behind black-box |
+| `ui/foreground-adaptive-glass-contrast-2026-11-06` | `3dc0f3fb0eb4ca69facdfa44eeb26c00e9b55264` | 2026-11-06 10:56:16 — restore foreground adaptive contrast | Open PR #13, base main; original 1.5s/2.5s cadence deliberately not copied |
+| `ui/liquid-glass-performance-2026-11-06` | `2e9c7f62ca65a899e18d9026e1535392835b3724` | 2026-11-06 06:25:39 — bottom-nav glyph imports | Stale/diverged; PR #4 closed unmerged; earlier PR #3 merged into main |
+| `ui/liquid-glass-system-2026-11-07` | `1f7cd2e5ddc5d169d1443035a8334538e44efc40` | 2026-11-06 20:11:36 — record Reader selection guard | PR #19 merged into black-box; source ref retained |
+| `ui/liquid-glass-system-continuation-2026-11-07` | `f031bf21229f43a992384cc23fa0f4da57e547a1` | 2026-11-07 03:18:34 — syllabus and thin-film eligibility | Ancestor of black-box; no missing UI delta |
+
+### Current branch comparisons and dependency decisions
+
+- `main...black-box-bihar-news`: 98 ahead / 0 behind; merge base main. `fix/early-startup-crash-diagnostics...black-box-bihar-news`: 41 ahead / 0 behind. The selected branch retains the corrected background-only Prismal source and all owner-consolidated Reader/Search/feed-navigation changes.
+- `black-box-bihar-news...brrrNEWS`: diverged 4 ahead / 4 behind. `GlassSurfacePolicy.kt` and its JVM test are byte-identical; the supporting-glass implementation is already present. PR #24's own diff is editorial-only; its branch's remaining workflow/app-label metadata is not adopted.
+- PR #25 head is 7 ahead / 0 behind the pre-batch black-box head. Its asset allowlist/cached HTML changes are separate from this batch's Saved/stat filter call sites; do not merge or rewrite its branch. The two MainActivity diff regions are in NewsCard and Reader cache loading, not the filter screens.
+- PR #13's 1.5s/2.5s probe cadence is superseded by the conservative one-source 4s/6s policy, paused during feed scroll, Reader, Settings and background. PR #18's read-only workflow proposal is not copied blindly; the compatible PR #20 workflow is already in black-box. The workflow on main remains push-only with broader write permissions; this batch changes no workflow.
+- PR #11/12/17, PR #6/21 and PR #8/22 remain independent open source refs. Their useful cache/provenance, Atom link, URL identity, editorial and supplemental read-history policies were selectively reconciled; their divergent MainActivity/network/persistence files are not authoritative replacements.
+- Stale `ui/liquid-glass-performance` and `redesign/v0.3-search-reader` are not baselines. `ui/liquid-glass-system` and `ui/liquid-glass-system-continuation` are ancestors of the selected branch.
+
+### Natural CI and release state
+
+- Actions history: 202 runs (pages 100 + 100 + 2; next page empty); queue empty. Latest overall #202 is PR #25 on its exact child head, not this branch.
+- Run #201 on exact black-box SHA `2e2c15f` completed the build job successfully: Python WordNet builder ran 4 tests (OK), generated 151,456 unique words / 50,950,144-byte database, then `:app:testDebugUnitTest` and `:app:assembleDebug` succeeded (44 tasks; 32 executed, 12 cached). Artifact upload succeeded; publish job skipped.
+- Run #201 artifact: `13563139070`, `CurrentLens-v0.2.8-stability-debug-apk`, 39,067,369 bytes, SHA-256 `236b9611c925a8a3f9aae4f7a28b57ef76c7c488161ada7d2d84fd54bcce27fb`.
+- Run #202 on PR #25 exact SHA `7a51c9c` also passed WordNet generation, JVM tests, APK assembly and upload; artifact `13563912571`, 39,072,517 bytes, SHA-256 `ef86f304323ddbcac17db3bce426e18853fa8affd364d09dcfe870ba00b31f44`. It does not validate black-box.
+- No Release was created by #201/#202. Latest published Release remains `v0.2.0-build-116`. No main edit/merge, manual dispatch/rerun, other-branch write or ref deletion occurred.
+
+### Device/performance limitations
+
+No post-change OPPO Reno10 runtime launch, screenshot, TalkBack session, Reduce Motion verification, logcat/tombstone, Perfetto trace, GPU overdraw/frame-time, allocation/memory, thermal or battery evidence is available. Keep those checks **UNVERIFIED**; successful CI only establishes the tested source compiles, passes JVM tests and packages an APK.

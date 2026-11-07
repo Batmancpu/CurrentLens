@@ -64,6 +64,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.requiredHeight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -1029,10 +1030,24 @@ private fun HomeScreen(
                         onSettings = onSettings
                     )
                     YouPage.SAVED -> SavedFeed(
-                        allCachedArticles, bookmarks, readHistory, onOpenArticle, onToggleBookmark
+                        articles = allCachedArticles,
+                        bookmarks = bookmarks,
+                        readHistory = readHistory,
+                        onOpenArticle = onOpenArticle,
+                        onToggleBookmark = onToggleBookmark,
+                        backdrop = backdrop,
+                        glassAlpha = glassAlpha
                     )
-                    YouPage.READING_STATS -> ReadingStatsScreen(readingSessions)
-                    YouPage.QUIZ_STATS -> QuizStatsScreen(quizAttempts)
+                    YouPage.READING_STATS -> ReadingStatsScreen(
+                        sessions = readingSessions,
+                        backdrop = backdrop,
+                        glassAlpha = glassAlpha
+                    )
+                    YouPage.QUIZ_STATS -> QuizStatsScreen(
+                        attempts = quizAttempts,
+                        backdrop = backdrop,
+                        glassAlpha = glassAlpha
+                    )
                 }
             }
         }
@@ -1607,7 +1622,9 @@ private fun SavedFeed(
     bookmarks: Set<String>,
     readHistory: Set<String>,
     onOpenArticle: (Article) -> Unit,
-    onToggleBookmark: (Article) -> Unit
+    onToggleBookmark: (Article) -> Unit,
+    backdrop: PrismalBackdrop,
+    glassAlpha: Float
 ) {
     var dateRange by remember { mutableStateOf(StatsDateRange.ALL_TIME) }
     var selectedSubject by remember { mutableStateOf("All") }
@@ -1632,12 +1649,18 @@ private fun SavedFeed(
     }
 
     Column(Modifier.fillMaxSize()) {
-        FilterChipRow("Published", StatsDateRange.values().map { it.label }, dateRange.label) { label ->
-            dateRange = StatsDateRange.values().first { it.label == label }
+        GlassFilterGroup(backdrop = backdrop, glassAlpha = glassAlpha) {
+            CompactFilterRow("Published", StatsDateRange.values().map { it.label }, dateRange.label) { label ->
+                dateRange = StatsDateRange.values().first { it.label == label }
+            }
+            CompactFilterRow(
+                "GS paper",
+                listOf("All", "GS I", "GS II", "GS III", "GS IV", "Unmapped"),
+                selectedGsPaper,
+                { selectedGsPaper = it }
+            )
+            CompactFilterRow("Subject", subjects, selectedSubject) { selectedSubject = it }
         }
-        FilterChipRow("GS paper", listOf("All", "GS I", "GS II", "GS III", "GS IV", "Unmapped"),
-            selectedGsPaper, { selectedGsPaper = it })
-        FilterChipRow("Subject", subjects, selectedSubject, { selectedSubject = it })
         LazyColumn(
             Modifier.weight(1f),
             contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 110.dp),
@@ -1868,7 +1891,132 @@ private fun FilterChipRow(
 }
 
 @Composable
-private fun ReadingStatsScreen(sessions: List<ReadingSession>) {
+private fun GlassFilterGroup(
+    backdrop: PrismalBackdrop,
+    glassAlpha: Float,
+    content: @Composable () -> Unit
+) {
+    val density = LocalDensity.current
+    val dark = isSystemInDarkTheme()
+    val reduceTransparency = LocalGlassReduceTransparency.current
+    val surfaceColor = MaterialTheme.colorScheme.surface
+    Box(
+        Modifier.fillMaxWidth()
+            .padding(horizontal = 12.dp, vertical = 4.dp)
+            .drawPrismalGlass(
+                backdrop = backdrop,
+                shape = { PrismalRoundedRectangle(GlassSurfacePolicy.SUPPORTING_CORNER_RADIUS_DP.dp) },
+                effects = {
+                    applyPrismalGlassEffects(
+                        density = density,
+                        adaptiveLuminance = true,
+                        luminance = if (dark) 0.10f else 0.90f,
+                        blurRadiusPx = with(density) {
+                            GlassRenderingPolicy.blurDp(5f, reduceTransparency).dp.toPx()
+                        },
+                        refractionHeightPx = with(density) {
+                            GlassRenderingPolicy.refractionDp(2.5f, reduceTransparency).dp.toPx()
+                        },
+                        refractionAmountPx = with(density) {
+                            GlassRenderingPolicy.refractionDp(3.5f, reduceTransparency).dp.toPx()
+                        },
+                        depthEffect = GlassRenderingPolicy.depthEnabled(true, reduceTransparency),
+                        chromaticAberration = GlassRenderingPolicy.chromaticAberration(0.001f, reduceTransparency),
+                        adaptiveTuning = PrismalAdaptiveTuning.Subtle
+                    )
+                },
+                specular = {
+                    PrismalSpecular.Default.copy(
+                        width = 0.42.dp,
+                        blurRadius = 0.26.dp,
+                        alpha = GlassRenderingPolicy.specularAlpha(0.15f, reduceTransparency)
+                    )
+                },
+                depthShadow = {
+                    PrismalDepthShadow(
+                        radius = 8.dp,
+                        offset = DpOffset(0.dp, 1.dp),
+                        color = Color.Black.copy(alpha = 0.06f),
+                        alpha = GlassRenderingPolicy.shadowAlpha(0.10f, reduceTransparency)
+                    )
+                },
+                depthInset = {
+                    PrismalDepthInset(
+                        radius = 3.dp,
+                        offset = DpOffset(0.dp, 1.dp),
+                        color = Color.Black.copy(alpha = 0.04f),
+                        alpha = GlassRenderingPolicy.shadowAlpha(0.04f, reduceTransparency)
+                    )
+                },
+                onDrawSurface = {
+                    drawRect(
+                        surfaceColor.copy(
+                            alpha = GlassRenderingPolicy.tintAlpha(glassAlpha * 0.10f, reduceTransparency)
+                        )
+                    )
+                }
+            )
+    ) {
+        Column(
+            Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(3.dp)
+        ) {
+            content()
+        }
+    }
+}
+
+@Composable
+private fun CompactFilterRow(
+    title: String,
+    options: List<String>,
+    selected: String,
+    onSelected: (String) -> Unit
+) {
+    val distinctOptions = remember(options) { options.distinct() }
+    Row(
+        Modifier.fillMaxWidth().heightIn(min = 48.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        Text(
+            title,
+            modifier = Modifier.width(72.dp).padding(start = 4.dp),
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.secondary,
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis
+        )
+        Row(
+            Modifier.weight(1f).horizontalScroll(rememberScrollState()),
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            distinctOptions.forEach { option ->
+                FilterChip(
+                    selected = selected == option,
+                    onClick = { onSelected(option) },
+                    modifier = Modifier.widthIn(min = 48.dp).heightIn(min = 48.dp),
+                    label = {
+                        Text(
+                            option,
+                            fontSize = 11.sp,
+                            maxLines = 1,
+                            softWrap = false
+                        )
+                    }
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun ReadingStatsScreen(
+    sessions: List<ReadingSession>,
+    backdrop: PrismalBackdrop,
+    glassAlpha: Float
+) {
     var dateRange by remember { mutableStateOf(StatsDateRange.LAST_7_DAYS) }
     var selectedSubject by remember { mutableStateOf("All") }
     var selectedGsPaper by remember { mutableStateOf("All") }
@@ -1882,12 +2030,18 @@ private fun ReadingStatsScreen(sessions: List<ReadingSession>) {
         )
     }
     Column(Modifier.fillMaxSize()) {
-        FilterChipRow("Date", StatsDateRange.values().map { it.label }, dateRange.label) { label ->
-            dateRange = StatsDateRange.values().first { it.label == label }
+        GlassFilterGroup(backdrop = backdrop, glassAlpha = glassAlpha) {
+            CompactFilterRow("Date", StatsDateRange.values().map { it.label }, dateRange.label) { label ->
+                dateRange = StatsDateRange.values().first { it.label == label }
+            }
+            CompactFilterRow(
+                "GS paper",
+                listOf("All", "GS I", "GS II", "GS III", "GS IV", "Unmapped"),
+                selectedGsPaper,
+                { selectedGsPaper = it }
+            )
+            CompactFilterRow("Subject", subjects, selectedSubject) { selectedSubject = it }
         }
-        FilterChipRow("GS paper", listOf("All", "GS I", "GS II", "GS III", "GS IV", "Unmapped"),
-            selectedGsPaper, { selectedGsPaper = it })
-        FilterChipRow("Subject", subjects, selectedSubject, { selectedSubject = it })
         Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 7.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             MetricTile("Reading time", formatDuration(summary.totalDurationMillis), Modifier.weight(1f))
@@ -1927,7 +2081,11 @@ private fun ReadingStatsScreen(sessions: List<ReadingSession>) {
 }
 
 @Composable
-private fun QuizStatsScreen(attempts: List<QuizAttempt>) {
+private fun QuizStatsScreen(
+    attempts: List<QuizAttempt>,
+    backdrop: PrismalBackdrop,
+    glassAlpha: Float
+) {
     var dateRange by remember { mutableStateOf(StatsDateRange.ALL_TIME) }
     var selectedSubject by remember { mutableStateOf("All") }
     var selectedGsPaper by remember { mutableStateOf("All") }
@@ -1943,12 +2101,18 @@ private fun QuizStatsScreen(attempts: List<QuizAttempt>) {
     val accuracy = if (summary.answersAttempted == 0) "—" else
         ((summary.correctAnswers * 100f / summary.answersAttempted).toInt().toString() + "%")
     Column(Modifier.fillMaxSize()) {
-        FilterChipRow("Date", StatsDateRange.values().map { it.label }, dateRange.label) { label ->
-            dateRange = StatsDateRange.values().first { it.label == label }
+        GlassFilterGroup(backdrop = backdrop, glassAlpha = glassAlpha) {
+            CompactFilterRow("Date", StatsDateRange.values().map { it.label }, dateRange.label) { label ->
+                dateRange = StatsDateRange.values().first { it.label == label }
+            }
+            CompactFilterRow(
+                "GS paper",
+                listOf("All", "GS I", "GS II", "GS III", "GS IV", "Unmapped"),
+                selectedGsPaper,
+                { selectedGsPaper = it }
+            )
+            CompactFilterRow("Subject", subjects, selectedSubject) { selectedSubject = it }
         }
-        FilterChipRow("GS paper", listOf("All", "GS I", "GS II", "GS III", "GS IV", "Unmapped"),
-            selectedGsPaper, { selectedGsPaper = it })
-        FilterChipRow("Subject", subjects, selectedSubject, { selectedSubject = it })
         Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 7.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             MetricTile("Attempts", summary.attemptCount.toString(), Modifier.weight(1f))
