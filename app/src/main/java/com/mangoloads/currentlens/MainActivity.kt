@@ -1889,8 +1889,7 @@ private fun NewsCard(
                             maxLines = 1, overflow = TextOverflow.Ellipsis)
                         Spacer(Modifier.weight(1f))
                         Text(
-                            if (article.feedUrl.isBlank()) "Feed provenance unavailable"
-                            else "Publisher RSS · secondary source",
+                            ArticleProvenancePolicy.label(article.source, article.feedUrl),
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.secondary,
                             maxLines = 1, overflow = TextOverflow.Ellipsis

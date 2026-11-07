@@ -157,7 +157,10 @@ object NewsRepository {
         var title = ""
         var description = ""
         var link = ""
-        var published = ""
+        var rssPubDate = ""
+        var atomPublished = ""
+        var atomUpdated = ""
+        var genericDate = ""
         var image: String? = null
         while (event != XmlPullParser.END_DOCUMENT) {
             when (event) {
@@ -168,7 +171,10 @@ object NewsRepository {
                         title = ""
                         description = ""
                         link = ""
-                        published = ""
+                        rssPubDate = ""
+                        atomPublished = ""
+                        atomUpdated = ""
+                        genericDate = ""
                         image = null
                     } else if (inItem) {
                         when (tag) {
@@ -182,8 +188,10 @@ object NewsRepository {
                                 if (!href.isNullOrBlank()) link = href
                                 else if (link.isBlank()) link = runCatching { parser.nextText().trim() }.getOrDefault("")
                             }
-                            "pubdate", "published", "updated", "date" ->
-                                published = runCatching { parser.nextText().trim() }.getOrDefault("")
+                            "pubdate" -> rssPubDate = runCatching { parser.nextText().trim() }.getOrDefault("")
+                            "published" -> atomPublished = runCatching { parser.nextText().trim() }.getOrDefault("")
+                            "updated" -> atomUpdated = runCatching { parser.nextText().trim() }.getOrDefault("")
+                            "date" -> genericDate = runCatching { parser.nextText().trim() }.getOrDefault("")
                             "enclosure" -> image = parser.getAttributeValue(null, "url")
                             "thumbnail", "content" -> {
                                 val candidate = parser.getAttributeValue(null, "url")
@@ -204,7 +212,12 @@ object NewsRepository {
                                     url = link,
                                     source = source.name,
                                     section = source.section,
-                                    published = published,
+                                    published = FeedPublicationDatePolicy.select(
+                                        rssPubDate = rssPubDate,
+                                        atomPublished = atomPublished,
+                                        atomUpdated = atomUpdated,
+                                        genericDate = genericDate
+                                    ),
                                     imageUrl = image,
                                     weekendRead = source.weekendRead,
                                     feedUrl = source.url

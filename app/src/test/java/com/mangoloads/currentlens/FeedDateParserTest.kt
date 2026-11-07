@@ -44,6 +44,46 @@ class FeedDateParserTest {
     }
 
     @Test
+    fun rssPubDateAndAtomPublishedTakePrecedenceOverLaterUpdatedTimestamps() {
+        val rssPubDate = "Tue, 03 Nov 2026 10:00:00 +0530"
+        val atomPublished = "2026-11-03T04:30:00Z"
+        val atomUpdated = "2026-11-05T10:00:00Z"
+
+        assertEquals(
+            rssPubDate,
+            FeedPublicationDatePolicy.select(
+                rssPubDate = rssPubDate,
+                atomPublished = atomPublished,
+                atomUpdated = atomUpdated,
+                genericDate = ""
+            )
+        )
+        assertEquals(
+            atomPublished,
+            FeedPublicationDatePolicy.select(
+                rssPubDate = "",
+                atomPublished = atomPublished,
+                atomUpdated = atomUpdated,
+                genericDate = ""
+            )
+        )
+    }
+
+    @Test
+    fun updatedTimestampIsOnlyUsedWhenNoValidOriginalPublicationDateExists() {
+        val updated = "2026-11-05T10:00:00Z"
+        assertEquals(
+            updated,
+            FeedPublicationDatePolicy.select(
+                rssPubDate = "",
+                atomPublished = "malformed",
+                atomUpdated = updated,
+                genericDate = ""
+            )
+        )
+    }
+
+    @Test
     fun malformedAndEmptyValuesRemainUndated() {
         assertNull(FeedDateParser.parse(""))
         assertNull(FeedDateParser.parse("not a publisher date"))
