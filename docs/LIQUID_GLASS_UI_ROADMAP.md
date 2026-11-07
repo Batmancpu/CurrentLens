@@ -1,12 +1,12 @@
 # Liquid Glass UI Roadmap
 
-**Status:** Consolidated integration branch; incremental validation in progress  
+**Status:** Consolidated branch; current natural CI build is green  
 **Feature branch:** `black-box-bihar-news`  
-**Integration base:** PR #16 stability head `6ab1e6a02ac8e91027b21900d64d63b9f2e6a02`  
-**Current validated Reader/Search head:** `d80916691eb5e72ee5448bd543433cdabe2a1e5a`  
-**Current feed-navigation head:** `050f3ad7fc62b242c58419ee34bd7b54b5f9c8f2`  
+**Current HEAD:** `ebdfdd7b22c9164ab4ea24a6fa744e706081fc7f`  
+**Integration base:** PR #16 stability head `6ab1e6a02ac8e91027f21900d64d63b9f2e6a890`  
+**Latest successful run:** #187 on this exact HEAD; JVM tests, APK assembly and artifact upload passed.  
 **Main:** unchanged at `73b8a0d1ba33503fede02db2c3c0af082d724a12`.  
-**Dependency:** the integration branch preserves PR #16's background-only Prismal capture, startup diagnostics and redirect protections. No source branch has been deleted. Keep source branches until final review and test status are confirmed.
+**Safety:** no source branch has been deleted and no Release has been published. The user retains all source refs until review.
 
 ## Product and material principles
 
@@ -40,9 +40,9 @@ Recheck the entire branch graph, open PRs, merge state and exact source/base SHA
 |---|---|---|---|
 | Shared home header | Primary floating glass | Clear translucent header, restrained edge/specular, stable height across destinations | Existing Prismal glass; contrast/hierarchy polish remains |
 | Four-tab navigation | Primary floating glass | One droplet bar with selected glyph aligned to its hit region | Existing Prismal droplet, hidden glyph capture and merged source; no new sampler |
-| Compact feed navigation | Primary floating glass | Morph the same bar into one active-destination pill on eligible feed scroll only | Implemented; run #184 pending at time of note |
-| Search morph field | Interactive control glass | Preserve tab-to-IME geometry and focus; trailing clear affordance | Existing morph preserved; clear target is 48dp (run #183 passed) |
-| Explore category rail | Interactive control glass | One shared capsule; selected fill/border and >=48dp targets | 48dp minimum and selected-tab semantics integrated with Geography filter |
+| Compact feed navigation | Primary floating glass | Morph the same bar into one active-destination pill on eligible feed scroll only | Implemented; state policy validated in runs #186 and #187; physical animation still needs device validation |
+| Search morph field | Interactive control glass | Preserve tab-to-IME geometry and focus; trailing clear affordance | Existing morph/focus callback preserved; clear target is 48dp (run #183 and #187 passed) |
+| Explore category rail | Interactive control glass | One shared capsule; selected fill/border and >=48dp targets | 48dp target, selected semantics and Geography filter integrated |
 | Today / Explore / Search article cards | Editorial content | Continuous corners, clear typography, image-derived ambient colour; no live blur per card | Existing standard cards, single Coil request and same-bitmap palette |
 | You dashboard | Supporting surfaces | Consistent metric/destination geometry and restrained tint/edge hierarchy | Standard cards; geometry pass remains |
 | Saved | Interactive controls + editorial content | Clear filters; standard readable saved-story cards | Existing filters/cards; consistency pass remains |
@@ -122,20 +122,23 @@ The following work is represented on `black-box-bihar-news`; source PRs/branches
 | PR #8 + #22 persistence/history | IO + mutex wrappers and capped ordered recent markers; legacy StringSet preserved | Run #176, #182 and #183 passed |
 | PR #17 URL deduplication | Canonical comparison; exact bookmark/read URL variant wins before newest publication | Run #182 and #183 passed |
 | PR #6 + #21 editorial | GS I Geography, bill/Finance Bill, heat-wave; film/viral/sports safeguards; labelled synthetic tests | Run #182 and #183 passed |
-| PR #13 adaptive glass contrast | Shared 8×8 band probe, foreground/idle-only, 4s/6s cadence, pauses during feed motion, Reader, Settings and background | Run #184 pending at time of note; physical-device profile unverified |
-| Feed-only compact navigation | Same bar morphs to active-label pill only on Today/Explore/collapsed Search; hidden glyph/droplet omitted while compact | Run #184 pending at time of note |
+| PR #13 adaptive glass contrast | Shared 8×8 band probe, foreground/idle-only, 4s/6s cadence, pauses during feed motion, Reader, Settings and background | Run #187 passed; physical-device profile unverified |
+| Feed-only compact navigation | Same bar morphs to active-label pill only on Today/Explore/collapsed Search; You/nested surfaces remain expanded | Run #186 policy tests and #187 integration build passed; visual motion needs device validation |
 
 ### Deliberately excluded / superseded
 
 - Older `ui/liquid-glass-performance-2026-11-06` and `redesign/v0.3-search-reader` are stale; surviving useful changes are already present in merged ancestry or superseded.
-- The standalone PR #15 publisher-redirect branch is not copied wholesale because PR #16's newer per-hop/final host validation and cookie restrictions supersede its older implementation; confirm through the final full source diff before deleting it.
+- PR #15's per-hop RSS and article-page redirect validation is present in the integration code together with the publisher-host policy and focused tests. The branch was not copied wholesale; the equivalent safeguards are retained in the newer feed and Reader repositories.
 - No old `MainActivity.kt` was copied wholesale from PR #6/#11/#13/#17/#19/#22. Their independent policies and tests were reconciled while preserving the current Reader, redirect and backdrop code.
 - PR #13's original 1.5 s / 2.5 s readback cadence was rejected. The integrated probe is less frequent and idle-only; it still needs OPPO profiling.
 - A “bug-free” claim is not supported by CI. Physical-device launch, TalkBack, Reduce Motion, visual transitions, frame timing, memory, thermal and battery remain outstanding.
 
 ## Current validation record
 
-- Run #182, exact SHA `f031bf21229f43a992384cc23fa0f4da57e547a1`: success — JVM tests, APK assembly and artifact upload.
-- Run #183, exact SHA `d80916691eb5e72ee5448bd543433cdabe2a1e5a`: success — JVM tests, APK assembly and artifact upload. Validates Reader auto-hide policy and Search clear 48dp.
-- Run #184, exact SHA `050f3ad7fc62b242c58419ee34bd7b54b5f9c8f2`: queued/in progress at the time of writing; validates feed-only compact navigation if successful.
-- No manual dispatch/rerun; Release job is skipped off main.
+- Run #182, exact SHA `f031bf21229f43a992384cc23fa0f4da57e547a1`: passed JVM tests, APK assembly and artifact upload.
+- Run #183, exact SHA `d80916691eb5e72ee5448bd543433cdabe2a1e5a`: passed Reader auto-hide and Search clear-target work.
+- Runs #184/#185 exposed one threshold-boundary assertion in the new feed-nav policy test; the test was corrected to 43px + 1px without reducing the 44px threshold.
+- Run #186, exact SHA `6f15200325d3d333b3abff16c6f290fc81287b9c`: passed the corrected compact-navigation policy test suite and APK build.
+- **Run #187, exact SHA `ebdfdd7b22c9164ab4ea24a6fa744e706081fc7f`: passed** `:app:testDebugUnitTest`, `:app:assembleDebug` and artifact upload. Artifact ID `13559292205`, 39,052,427 bytes, expires 21 November 2026. [Open run #187](https://github.com/Batmancpu/CurrentLens/actions/runs/42334981467).
+- The Release job is skipped on the integration branch. No manual dispatch/rerun or main edit was made.
+- CI verifies build and JVM tests; physical-device launch, accessibility, animation smoothness and performance remain unverified.
