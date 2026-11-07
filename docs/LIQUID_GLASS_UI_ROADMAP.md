@@ -539,3 +539,25 @@ Next: after natural CI validates this exact head, perform the Appearance preview
 **Unverified / next**
 - OPPO Reno10 visual balance, metric clipping at large font scale, TalkBack traversal, minimum tap-target reachability, short-screen overflow, animation, launch, Perfetto/frame timing, GPU overdraw, allocations/memory, thermal and battery remain UNVERIFIED.
 - Next: inspect the exact natural run for the final documentation head, then continue the whole-app transient-control and shared-header spacing audit. Keep the one background-only Prismal capture, expanded-only tab glyph source, one Coil decode and foreground-idle adaptive-luminance cadence unchanged.
+
+## Search clear focus retention and opacity transition — 8 November 2026, 02:28 IST
+
+**Freshness and dependency gate**
+- Re-enumerated the full remote branch inventory: 39 branches (page 1 complete, page 2 empty), 36 pull requests (22 open, 14 closed), the default branch, current integration PR, Actions history/queue, workflow, exact run jobs/logs/artifacts and Releases.
+- Source is `black-box-bihar-news@4a7a8f8c1db651d8b06d636836c8221569938ff8`, 118 commits ahead / 0 behind `main@73b8a0d1ba33503fede02db2c3c0af082d724a12`; PR #34 remains open/draft, targeting main. The corrected PR #16 stability/background-only Prismal lineage and the consolidated Reader/Search/navigation work are ancestors of this branch.
+- New PR #36 is a direct child (3 ahead / 0 behind) adding an Asia/Kolkata midnight refresh policy and focused tests. Its exact PR head passed natural run #268, but it is a separate Today-date change and remains an independent open proposal; it was not merged or folded into this screen-sized Search pass. PR #35's bounded diagnostic reads remain a divergent startup-only proposal (6 ahead / 8 behind); no startup claim is made. PR #30 48dp targets, #31 off-main appearance restore and #29 serialized bookmark IO are already represented. PR #24's brrrNEWS-based material code is superseded by the current SupportingGlassCard/GlassSurfacePolicy implementation; the stale Liquid Glass and v0.3 branches remain non-baselines.
+- Exact active parent 4a7a8f8c1db651d8b06d636836c8221569938ff8 passed natural PR run [#267](https://github.com/Batmancpu/CurrentLens/actions/runs/42409496553) and push run [#266](https://github.com/Batmancpu/CurrentLens/actions/runs/42409492764). Run #267 completed WordNet builder tests (4/4), generated the 151,456-word offline dictionary, passed `:app:testDebugUnitTest` and `:app:assembleDebug`, and uploaded artifact `13588613947` (39,105,323 bytes; SHA-256 `383369cd4c23c227920f7e1dae2c7d2ca4c9e773f93e0ffb98988b5ed96a1090`). Full 203,194-character job log was inspected; only existing deprecation/packaging warnings remain. Publish job skipped.
+- Latest overall run #268 is PR #36's exact head, not the Search/UI branch. The Actions history has 268 runs (100 + 100 + 68), queue is empty; latest Release remains `v0.2.0-build-116`. No Release was published.
+
+**Implementation**
+- Kept the clear affordance inside the existing expanded SearchMorphField capsule and retained its 48dp target, TalkBack label and non-empty-query/active-morph visibility rule.
+- Reserved the 48dp trailing slot whenever the field is active, so clearing the query no longer changes the BasicTextField's available width or shifts its text/cursor. The icon now uses a small opacity-only enter/exit transition; Reduce Motion snaps the visibility change.
+- The existing root Reduce Motion state is passed into SearchMorphField. Clearing changes only `searchQuery`, then explicitly re-requests the existing FocusRequester and keyboard; Search remains expanded and GS/subject/category filters are untouched.
+- No new Prismal surface, backdrop capture, sampler/readback, blur/refraction pass, shader, image decode, network request, persistence operation or dependency was added. The only new animation is bounded to the 48dp clear control; the shared root background-only capture and IME morph geometry are unchanged.
+
+**Tests, CI and unverified checks**
+- No new JVM test was added for a Compose-only opacity/focus interaction. Existing Search morph, 48dp touch-target, feed-navigation and Reader-chrome policy tests remain in the suite. The exact new head must receive its own natural push/PR CI; do not dispatch or rerun Actions.
+- OPPO Reno10 keyboard retention, cursor stability, filter preservation, TalkBack announcement, Reduce Motion behaviour, font scaling and morph smoothness remain UNVERIFIED. No frame-time, GPU, memory, battery or thermal improvement is claimed from source inspection.
+
+**Next**
+- After the exact-head natural run completes, continue the shared-header/transient-control consistency audit and inspect Appearance preview fidelity against the actual shared material tokens. Preserve the one root backdrop source, expanded-only tab glyph source and existing 4s/6s foreground-idle adaptive luminance cadence.

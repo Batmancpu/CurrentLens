@@ -935,8 +935,13 @@ private fun BrrrNewsApp() {
                     focusRequester = searchFocusRequester,
                     enabled = searchExpanded && !searchCollapseRequested,
                     morphProgress = searchMorphProgress,
+                    reduceMotion = reduceMotion,
                     onSubmit = requestSearchCollapse,
-                    onClear = { searchQuery = "" }
+                    onClear = {
+                        searchQuery = ""
+                        searchFocusRequester.requestFocus()
+                        keyboardController?.show()
+                    }
                 )
             }
         }
@@ -1538,6 +1543,7 @@ private fun SearchMorphField(
     focusRequester: FocusRequester,
     enabled: Boolean,
     morphProgress: Float,
+    reduceMotion: Boolean,
     onSubmit: () -> Unit,
     onClear: () -> Unit
 ) {
@@ -1647,17 +1653,30 @@ private fun SearchMorphField(
                     }
                 }
             )
-            if (query.isNotBlank() && progress > 0.34f) {
-                IconButton(
-                    onClick = onClear,
-                    enabled = enabled,
-                    modifier = Modifier.size(48.dp).graphicsLayer { alpha = progress }
+            if (progress > 0.34f) {
+                // Reserve the trailing hit-target slot while expanded so clearing the
+                // query does not move the text field or cursor horizontally.
+                Box(
+                    modifier = Modifier.size(48.dp),
+                    contentAlignment = Alignment.Center
                 ) {
-                    Icon(
-                        Icons.Outlined.Close,
-                        contentDescription = "Clear search",
-                        tint = adaptiveContentColor
-                    )
+                    AnimatedVisibility(
+                        visible = query.isNotBlank(),
+                        enter = fadeIn(if (reduceMotion) snap() else tween(120)),
+                        exit = fadeOut(if (reduceMotion) snap() else tween(90))
+                    ) {
+                        IconButton(
+                            onClick = onClear,
+                            enabled = enabled,
+                            modifier = Modifier.size(48.dp)
+                        ) {
+                            Icon(
+                                Icons.Outlined.Close,
+                                contentDescription = "Clear search",
+                                tint = adaptiveContentColor
+                            )
+                        }
+                    }
                 }
             }
         }
