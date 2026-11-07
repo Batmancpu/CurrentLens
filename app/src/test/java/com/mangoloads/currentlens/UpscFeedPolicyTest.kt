@@ -186,6 +186,34 @@ class UpscFeedPolicyTest {
     }
 
     @Test
+    fun consumerProtectionAndMediaRegulationAreNotSuppressedByEntertainmentWords() {
+        assertSyllabusMapped(article(
+            "Central Consumer Protection Authority issues new guidelines on celebrity endorsements",
+            "The notification implements the Consumer Protection Act, 2019 and sets due-diligence requirements for endorsers.",
+            "India"
+        ), "GS II", "Governance")
+        assertSyllabusMapped(article(
+            "Ministry issues new broadcasting regulations for film trailers",
+            "The rules govern public broadcasting and media regulation rather than promoting a film.",
+            "India"
+        ), "GS II", "Governance")
+    }
+
+    @Test
+    fun explicitPromotionPhrasesRemainRejectedAfterNarrowingHardNoiseTerms() {
+        assertRejectedDespiteKeywordMatch(article(
+            "Official trailer released for a film about celebrity endorsements",
+            "The story promotes a film and its release rather than reporting a regulator's action.",
+            "Entertainment"
+        ))
+        assertRejectedDespiteKeywordMatch(article(
+            "Celebrity gossip column previews a reality show contestant feud",
+            "The feature discusses consumer protection rules and celebrity endorsements only in passing.",
+            "Entertainment"
+        ))
+    }
+
+    @Test
     fun heatWaveActionPlanRemainsARecoverableGsThreeDisasterManagementTheme() {
         assertSyllabusMapped(article(
             "Heat wave action plan adopted by NDMA",

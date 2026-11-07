@@ -25,17 +25,23 @@ internal object UpscFeedPolicy {
         "meme", "memes", "influencer feud", "influencer drama"
     )
 
-    // These headline-level signals are never overridden by a policy noun. They
-    // represent promotion, celebrity, routine-score or generic-viral coverage.
+    // Hard exclusions use unmistakable promotion/drama/result phrases. Single
+    // words such as "celebrity", "trailer", "premiere" and "contestant" can also
+    // occur in legitimate consumer/media-regulation headlines and are handled by
+    // the soft noise gate plus the strict institution-action-policy requirement.
     private val nonOverrideableNoiseTerms = listOf(
-        "celebrity", "celebrity news", "celebrity gossip", "gossip",
+        "celebrity gossip", "gossip column", "celebrity news",
         "box office", "box-office", "opening weekend",
-        "trailer", "teaser", "premiere", "premieres", "premiered",
-        "film release", "movie release", "streaming release",
-        "series premiere", "season premiere", "season finale", "show promotion",
-        "cast announcement", "red carpet", "paparazzi", "film review", "movie review",
-        "reality show", "reality tv", "reality television", "contestant", "bigg boss",
-        "tv show", "tv series", "television show", "television series",
+        "trailer launch", "trailer released", "official trailer",
+        "teaser launch", "teaser released", "official teaser",
+        "film release date", "movie release date", "streaming release",
+        "series premiere", "season premiere", "season finale",
+        "show promotion", "series promotion", "cast announcement",
+        "red carpet", "paparazzi", "film review", "movie review",
+        "reality show drama", "reality tv drama", "reality television drama",
+        "reality show contestant", "contestant feud", "contestant fight",
+        "bigg boss episode", "bigg boss contestant", "bigg boss drama",
+        "tv show promotion", "tv series promotion", "television show promotion", "television series promotion",
         "match result", "scorecard", "live score", "match highlights", "sports score",
         "transfer window", "player signs", "tournament result", "league table",
         "final score", "match score", "points table", "league standings", "medal tally",
@@ -50,20 +56,22 @@ internal object UpscFeedPolicy {
         "media regulation", "ott regulation", "copyright act", "press freedom",
         "entertainment tax", "gst on movie tickets", "gst on cinema tickets",
         "sports governance", "anti-doping", "national sports policy",
-        "sports ministry", "olympic charter", "sports federation reform"
+        "sports ministry", "olympic charter", "sports federation reform",
+        "consumer protection", "advertising regulation", "misleading advertisement",
+        "celebrity endorsement", "endorsement guidelines"
     )
 
     // Require an institution before an active action, or an explicit current-change
     // cue / named institution for passive headlines. A historical Act mention is not
     // itself evidence that a current policy action occurred.
     private val institutionalPolicyActionPattern = Regex(
-        """\b(?:union government|central government|state government|government|centre|central board of film certification|cbfc|censor board|ministry|department|parliament|lok sabha|rajya sabha|supreme court|high court|regulatory authority|regulator|commission|cabinet|sports ministry|standing committee|joint parliamentary committee|committee|bcci|sports federation|national anti doping agency|nada|wada)\b(?:\s+\w+){0,6}\s+\b(?:issues?|issued|notifies?|notified|introduces?|introduced|passes?|passed|amends?|amended|revises?|revised|adopts?|adopted|enacts?|enacted|reviews?|reviewed|debates?|debated|strikes down|struck down|quashes?|quashed|upholds?|upheld|orders?|ordered|directs?|directed|withdraws?|withdrawn|bans?|banned|prohibits?|prohibited|gazettes?|gazetted|announces?|announced|raises?|raised|hikes?|hiked|increases?|increased|cuts?|cut|reduces?|reduced|imposes?|imposed|levies?|levied|exempts?|exempted|repeals?|repealed|suspends?|suspended|extends?|extended|proposes?|proposed|clears?|cleared|approves?|approved|rejects?|rejected)\b(?:\s+\w+){0,4}\s+\b(?:rules?|regulations?|guidelines?|notifications?|bills?|acts?|amendments?|polic(?:y|ies)|frameworks?|charters?|bans?|orders?|tax|gst|licen[cs]es?|reforms?|laws?)\b"""
+        """\b(?:union government|central government|state government|government|centre|central board of film certification|cbfc|censor board|central consumer protection authority|ccpa|advertising standards council of india|asci|ministry|department|parliament|lok sabha|rajya sabha|supreme court|high court|regulatory authority|regulator|commission|cabinet|sports ministry|standing committee|joint parliamentary committee|committee|bcci|sports federation|national anti doping agency|nada|wada)\b(?:\s+\w+){0,6}\s+\b(?:issues?|issued|notifies?|notified|introduces?|introduced|passes?|passed|amends?|amended|revises?|revised|adopts?|adopted|enacts?|enacted|reviews?|reviewed|debates?|debated|strikes down|struck down|quashes?|quashed|upholds?|upheld|orders?|ordered|directs?|directed|withdraws?|withdrawn|bans?|banned|prohibits?|prohibited|gazettes?|gazetted|announces?|announced|raises?|raised|hikes?|hiked|increases?|increased|cuts?|cut|reduces?|reduced|imposes?|imposed|levies?|levied|exempts?|exempted|repeals?|repealed|suspends?|suspended|extends?|extended|proposes?|proposed|clears?|cleared|approves?|approved|rejects?|rejected)\b(?:\s+\w+){0,4}\s+\b(?:rules?|regulations?|guidelines?|notifications?|bills?|acts?|amendments?|polic(?:y|ies)|frameworks?|charters?|bans?|orders?|tax|gst|licen[cs]es?|reforms?|laws?)\b"""
     )
     private val currentPassivePolicyActionPattern = Regex(
         """\b(?:new|draft|revised|updated|fresh|proposed|final|recently|2025|2026|2027)\b(?:\s+\w+){0,3}\s+\b(?:rules?|regulations?|guidelines?|notifications?|bills?|amendments?|polic(?:y|ies)|frameworks?|charters?|bans?|orders?|tax|gst|licen[cs]es?|reforms?|laws?)\b(?:\s+\w+){0,2}\s+\b(?:issued|notified|gazetted|amended|revised|adopted|passed|introduced|quashed|struck down|upheld)\b"""
     )
     private val passivePolicyActionByInstitutionPattern = Regex(
-        """\b(?:rules?|regulations?|guidelines?|notifications?|bills?|amendments?|polic(?:y|ies)|frameworks?|charters?|bans?|orders?|tax|gst|licen[cs]es?|reforms?|laws?)\b(?:\s+\w+){0,3}\s+\b(?:issued|notified|gazetted|amended|revised|adopted|passed|introduced|quashed|struck down|upheld)\b(?:\s+\w+){0,3}\s+\bby\s+(?:the\s+)?(?:union government|central government|state government|government|centre|central board of film certification|cbfc|censor board|ministry|department|parliament|lok sabha|rajya sabha|supreme court|high court|regulatory authority|regulator|commission|cabinet|sports ministry|standing committee|joint parliamentary committee|committee|bcci|sports federation|national anti doping agency|nada|wada)\b"""
+        """\b(?:rules?|regulations?|guidelines?|notifications?|bills?|amendments?|polic(?:y|ies)|frameworks?|charters?|bans?|orders?|tax|gst|licen[cs]es?|reforms?|laws?)\b(?:\s+\w+){0,3}\s+\b(?:issued|notified|gazetted|amended|revised|adopted|passed|introduced|quashed|struck down|upheld)\b(?:\s+\w+){0,3}\s+\bby\s+(?:the\s+)?(?:union government|central government|state government|government|centre|central board of film certification|cbfc|censor board|central consumer protection authority|ccpa|advertising standards council of india|asci|ministry|department|parliament|lok sabha|rajya sabha|supreme court|high court|regulatory authority|regulator|commission|cabinet|sports ministry|standing committee|joint parliamentary committee|committee|bcci|sports federation|national anti doping agency|nada|wada)\b"""
     )
 
     private val specificSyllabusSignals = listOf(
@@ -97,7 +105,9 @@ internal object UpscFeedPolicy {
         "gender based violence", "scheduled castes", "scheduled tribes",
         "national education policy", "archaeological survey", "world heritage",
         "freedom struggle", "probity", "corruption", "conflict of interest",
-        "civil services reform", "foreign policy", "bilateral relations",
+        "civil services reform", "consumer protection", "misleading advertisement",
+        "advertising regulation", "celebrity endorsement", "endorsement guidelines",
+        "foreign policy", "bilateral relations",
         "united nations", "international treaty", "geopolitical",
         "right to information", "social audit", "e governance",
         "direct benefit transfer", "public service delivery", "lokpal",
