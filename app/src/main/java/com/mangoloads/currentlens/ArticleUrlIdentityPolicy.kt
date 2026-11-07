@@ -74,8 +74,10 @@ internal object ArticleUrlIdentityPolicy {
         bookmarkedUrls: Set<String>,
         readUrls: Set<String> = emptySet()
     ): List<Article> {
-        val bookmarkedKeys = bookmarkedUrls.mapTo(HashSet(), ::key)
-        val readKeys = readUrls.mapTo(HashSet(), ::key)
+        // Exact URL membership matters: canonical identity membership would mark every
+        // tracking-parameter variant as bookmarked/read and let the newer one win by date.
+        val bookmarkedVariants = bookmarkedUrls
+        val readVariants = readUrls
 
         data class Candidate(
             val article: Article,
@@ -91,8 +93,8 @@ internal object ArticleUrlIdentityPolicy {
             Candidate(
                 article = article,
                 identity = urlKey.ifBlank { article.id.ifBlank { article.title } },
-                bookmarked = urlKey.isNotBlank() && urlKey in bookmarkedKeys,
-                previouslyRead = urlKey.isNotBlank() && urlKey in readKeys,
+                bookmarked = article.url in bookmarkedVariants,
+                previouslyRead = article.url in readVariants,
                 publishedAt = article.publishedAtMillis ?: Long.MIN_VALUE,
                 originalIndex = index
             )
