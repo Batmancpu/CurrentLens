@@ -1446,32 +1446,55 @@ private fun SearchFeed(
         ModalBottomSheet(
             onDismissRequest = { showFilters = false },
             sheetState = filterSheetState,
-            containerColor = MaterialTheme.colorScheme.surface,
-            contentColor = MaterialTheme.colorScheme.onSurface
+            shape = RoundedCornerShape(28.dp),
+            containerColor = Color.Transparent,
+            contentColor = MaterialTheme.colorScheme.onSurface,
+            tonalElevation = 0.dp,
+            dragHandle = null
         ) {
-            Column(
-                Modifier.fillMaxWidth().padding(horizontal = 18.dp, vertical = 10.dp),
-                verticalArrangement = Arrangement.spacedBy(9.dp)
+            PrismalTransientSurface(
+                backdrop = backdrop,
+                modifier = Modifier.fillMaxWidth(),
+                glassAlpha = glassAlpha,
+                dark = dark,
+                cornerRadiusDp = 28f
             ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                        Text("Refine articles", style = MaterialTheme.typography.titleLarge,
-                            fontWeight = FontWeight.SemiBold)
-                        Text("Filters update the results immediately.",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.secondary)
+                Column(Modifier.fillMaxWidth()) {
+                    Box(
+                        Modifier.fillMaxWidth().padding(top = 10.dp, bottom = 4.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Box(
+                            Modifier.size(width = 32.dp, height = 4.dp)
+                                .clip(CircleShape)
+                                .background(MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.30f))
+                        )
                     }
-                    TextButton(onClick = {
-                        selectedCategory = "All"
-                        selectedGsPaper = "All"
-                        selectedSubject = "All"
-                    }) { Text("Reset") }
-                }
-                FilterChipRow("Topic", categories, selectedCategory, { selectedCategory = it })
-                FilterChipRow("GS paper", gsPapers, selectedGsPaper, { selectedGsPaper = it })
-                FilterChipRow("Subject", subjects, selectedSubject, { selectedSubject = it })
-                Button(onClick = { showFilters = false }, modifier = Modifier.fillMaxWidth()) {
-                    Text("Done")
+                    Column(
+                        Modifier.fillMaxWidth().padding(horizontal = 18.dp, vertical = 10.dp),
+                        verticalArrangement = Arrangement.spacedBy(9.dp)
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                                Text("Refine articles", style = MaterialTheme.typography.titleLarge,
+                                    fontWeight = FontWeight.SemiBold)
+                                Text("Filters update the results immediately.",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.secondary)
+                            }
+                            TextButton(onClick = {
+                                selectedCategory = "All"
+                                selectedGsPaper = "All"
+                                selectedSubject = "All"
+                            }) { Text("Reset") }
+                        }
+                        FilterChipRow("Topic", categories, selectedCategory, { selectedCategory = it })
+                        FilterChipRow("GS paper", gsPapers, selectedGsPaper, { selectedGsPaper = it })
+                        FilterChipRow("Subject", subjects, selectedSubject, { selectedSubject = it })
+                        Button(onClick = { showFilters = false }, modifier = Modifier.fillMaxWidth()) {
+                            Text("Done")
+                        }
+                    }
                 }
             }
         }
@@ -1890,6 +1913,41 @@ private fun FilterChipRow(
                 )
             }
         }
+    }
+}
+
+@Composable
+private fun PrismalTransientSurface(
+    backdrop: PrismalBackdrop,
+    modifier: Modifier = Modifier,
+    glassAlpha: Float,
+    dark: Boolean,
+    cornerRadiusDp: Float,
+    content: @Composable () -> Unit
+) {
+    val reduceTransparency = LocalGlassReduceTransparency.current
+    PrismalGlassSurface(
+        backdrop = backdrop,
+        modifier = modifier,
+        shape = { PrismalRoundedRectangle(cornerRadiusDp.dp) },
+        blurRadius = GlassRenderingPolicy.blurDp(
+            GlassSurfacePolicy.TRANSIENT_BLUR_DP, reduceTransparency
+        ).dp,
+        refractionHeightPx = GlassRenderingPolicy.refractionPx(
+            GlassSurfacePolicy.TRANSIENT_REFRACTION_HEIGHT_DP, reduceTransparency
+        ),
+        refractionAmountPx = GlassRenderingPolicy.refractionPx(
+            GlassSurfacePolicy.TRANSIENT_REFRACTION_AMOUNT_DP, reduceTransparency
+        ),
+        depthEffect = GlassRenderingPolicy.depthEnabled(true, reduceTransparency),
+        chromaticAberration = GlassRenderingPolicy.chromaticAberration(0.001f, reduceTransparency),
+        tint = if (dark) Color(0xFF26364B) else Color(0xFFEAF0FA),
+        tintAlpha = GlassRenderingPolicy.tintAlpha(
+            (glassAlpha * GlassSurfacePolicy.TRANSIENT_TINT_SCALE).coerceIn(0.05f, 0.22f),
+            reduceTransparency
+        )
+    ) {
+        content()
     }
 }
 
@@ -3268,31 +3326,46 @@ private fun ReaderGlassToolbar(
                 }
                 DropdownMenu(
                     expanded = textSizeMenuExpanded,
-                    onDismissRequest = { textSizeMenuExpanded = false }
+                    onDismissRequest = { textSizeMenuExpanded = false },
+                    modifier = Modifier.widthIn(min = 196.dp),
+                    shape = RoundedCornerShape(18.dp),
+                    containerColor = Color.Transparent,
+                    tonalElevation = 0.dp,
+                    shadowElevation = 0.dp
                 ) {
-                    DropdownMenuItem(
-                        text = { Text("Smaller text") },
-                        leadingIcon = { Icon(Icons.Outlined.TextDecrease, contentDescription = null) },
-                        enabled = fontSize > ReaderChromePolicy.MIN_FONT_SIZE_SP,
-                        onClick = {
-                            onFontSizeChange(ReaderChromePolicy.adjustFontSize(fontSize, -1))
-                            textSizeMenuExpanded = false
+                    PrismalTransientSurface(
+                        backdrop = backdrop,
+                        modifier = Modifier.fillMaxWidth(),
+                        glassAlpha = glassAlpha,
+                        dark = dark,
+                        cornerRadiusDp = 18f
+                    ) {
+                        Column(Modifier.fillMaxWidth()) {
+                            DropdownMenuItem(
+                                text = { Text("Smaller text") },
+                                leadingIcon = { Icon(Icons.Outlined.TextDecrease, contentDescription = null) },
+                                enabled = fontSize > ReaderChromePolicy.MIN_FONT_SIZE_SP,
+                                onClick = {
+                                    onFontSizeChange(ReaderChromePolicy.adjustFontSize(fontSize, -1))
+                                    textSizeMenuExpanded = false
+                                }
+                            )
+                            DropdownMenuItem(
+                                text = { Text("Larger text") },
+                                leadingIcon = { Icon(Icons.Outlined.TextIncrease, contentDescription = null) },
+                                enabled = fontSize < ReaderChromePolicy.MAX_FONT_SIZE_SP,
+                                onClick = {
+                                    onFontSizeChange(ReaderChromePolicy.adjustFontSize(fontSize, 1))
+                                    textSizeMenuExpanded = false
+                                }
+                            )
+                            DropdownMenuItem(
+                                text = { Text("Current size · $fontSize sp") },
+                                enabled = false,
+                                onClick = {}
+                            )
                         }
-                    )
-                    DropdownMenuItem(
-                        text = { Text("Larger text") },
-                        leadingIcon = { Icon(Icons.Outlined.TextIncrease, contentDescription = null) },
-                        enabled = fontSize < ReaderChromePolicy.MAX_FONT_SIZE_SP,
-                        onClick = {
-                            onFontSizeChange(ReaderChromePolicy.adjustFontSize(fontSize, 1))
-                            textSizeMenuExpanded = false
-                        }
-                    )
-                    DropdownMenuItem(
-                        text = { Text("Current size · $fontSize sp") },
-                        enabled = false,
-                        onClick = {}
-                    )
+                    }
                 }
             }
         }

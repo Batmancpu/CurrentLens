@@ -7,6 +7,10 @@ package com.mangoloads.currentlens
 internal object GlassSurfacePolicy {
     const val SUPPORTING_CORNER_RADIUS_DP = 22f
     const val SUPPORTING_VALUE_SIZE_SP = 20f
+    const val TRANSIENT_BLUR_DP = 5f
+    const val TRANSIENT_REFRACTION_HEIGHT_DP = 2.5f
+    const val TRANSIENT_REFRACTION_AMOUNT_DP = 3.5f
+    const val TRANSIENT_TINT_SCALE = 0.42f
 
     private const val SUPPORTING_SURFACE_ALPHA_DARK = 0.96f
     private const val SUPPORTING_SURFACE_ALPHA_LIGHT = 0.985f
