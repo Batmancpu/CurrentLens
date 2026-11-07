@@ -71,6 +71,10 @@ The fixtures are regression checks for this deterministic rule set. They do not 
 
 The current RSS registry is publisher-led (The Hindu, Indian Express, BBC, DW and Al Jazeera). The stored `feedUrl` records which publisher feed supplied an item; it does not prove that the report is supported by PIB, the Gazette of India, a ministry, Parliament, PRS, RBI, the Supreme Court or a statutory/regulatory body. Do not display publisher RSS metadata as an official primary source. Official-source feeds and per-story corroboration require endpoint validation and an explicit provenance model before being presented as verified.
 
+## Specific-signal false-negative recovery fixtures
+
+| Label | Headline fixture | Expected result | Reason |
+|---|---|---|---|
 | False-negative recovery | “Parliament debates a constitutional amendment” | Include — GS II, Constitution | The exact constitutional-amendment signal is part of the selected Constitution mapping. |
 | False-negative recovery | “National Education Policy review focuses on school education” | Include — GS II, Education & Human Resources | Education is an explicit GS II social-sector theme, not a generic governance keyword. |
 | False-negative recovery | “Government expands e-governance and public service delivery” | Include — GS II, Governance | The selected Governance rule recognises the specific e-governance/service-delivery signals. |
