@@ -48,7 +48,7 @@ class FeedNavigationPolicyTest {
     @Test
     fun trackerReportsOnlyCompactStateAndCanReset() {
         val tracker = FeedNavigationScrollTracker()
-        assertFalse(tracker.onScroll(44, 44, 16, eligible = true))
+        assertFalse(tracker.onScroll(43, 44, 16, eligible = true))
         assertTrue(tracker.onScroll(1, 44, 16, eligible = true))
         assertFalse(tracker.reset())
     }
