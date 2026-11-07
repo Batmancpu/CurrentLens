@@ -5,12 +5,12 @@ on:
     branches:
       - main
       - fix/early-startup-crash-diagnostics-2026-11-06
-      - black-box-bihar-news
+      - brrrNEWS
   pull_request:
     branches:
       - main
       - fix/early-startup-crash-diagnostics-2026-11-06
-      - black-box-bihar-news
+      - brrrNEWS
     types: [ opened, synchronize, reopened, ready_for_review ]
 
 # Build and test jobs are read-only. Release write access is isolated below.
@@ -97,7 +97,7 @@ jobs:
       - name: Upload installable APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: CurrentLens-v0.2.8-stability-debug-apk
+          name: brrrNEWS-v0.2.8-stability-debug-apk
           path: app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
           retention-days: 14
@@ -114,7 +114,7 @@ jobs:
       - name: Download APK built and tested by this workflow run
         uses: actions/download-artifact@v4
         with:
-          name: CurrentLens-v0.2.8-stability-debug-apk
+          name: brrrNEWS-v0.2.8-stability-debug-apk
           path: release-assets
 
       - name: Publish direct APK download in GitHub Releases
