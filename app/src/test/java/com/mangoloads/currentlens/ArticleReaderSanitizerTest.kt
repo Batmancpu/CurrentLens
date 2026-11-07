@@ -47,6 +47,28 @@ class ArticleReaderSanitizerTest {
     }
 
     @Test
+    fun filtersOffPublisherAndCleartextImagesBeforeSanitizingArticleMarkup() {
+        val readable = "This is a publicly accessible article paragraph about institutions, policy and public administration. ".repeat(9)
+        val html = """
+            <p>$readable</p>
+            <img src="https://th-i.thgim.com/public/story/image.jpg" alt="Publisher image" />
+            <img src="https://tracker.example.test/pixel.jpg" alt="Tracking pixel" />
+            <img src="http://www.thehindu.com/story/cleartext.jpg" alt="Cleartext image" />
+        """.trimIndent()
+
+        val publisherSafe = filterPublisherImageUrls(
+            bodyHtml = html,
+            baseUri = "https://www.thehindu.com/news/story",
+            source = "The Hindu"
+        )
+        val cleaned = sanitizeArticleHtml(publisherSafe, "https://www.thehindu.com/news/story")
+
+        assertTrue(cleaned.orEmpty().contains("th-i.thgim.com"))
+        assertFalse(cleaned.orEmpty().contains("tracker.example.test"))
+        assertFalse(cleaned.orEmpty().contains("cleartext.jpg"))
+    }
+
+    @Test
     fun wrapsThreeColumnTablesAfterSanitizingPublisherMarkup() {
         val readable = "A public article table row describing train services and the route distance. ".repeat(10)
         val html = """
