@@ -414,3 +414,13 @@ Branch: `fix/early-startup-crash-diagnostics-2026-11-06`.
 - **Tests:** added JVM coverage for prefix length, zero-length reads, oversized-report rejection, legacy metadata cleanup and normal-report retention. Natural run #246 reached SDK/Gradle setup and WordNet generation but was cancelled at compile when the continuity commit advanced the PR head. The final-head natural PR run is pending; no manual workflow dispatch/rerun.
 - **Risks / limits:** reports larger than the existing 30,000-character ceiling are deleted because diagnostics are disposable, not user content. The ActivityManager historical-exit query and all startup diagnostics are not moved off main. No physical-device logcat, tombstone, cold/warm launch, Perfetto, frame-time or memory measurement was available. This is not a native-crash fix claim.
 - **Repository safety:** no main edit, merge, workflow change, Release publication or source-branch deletion.
+
+
+## 2026-11-07 23:01 IST / 17:31 UTC — PR #35 exact-head CI verification
+
+- Draft PR [#35](https://github.com/Batmancpu/CurrentLens/pull/35), branch `perf/bound-startup-diagnostic-reads-2026-11-07), code/test head `80cf6dbd0a67a94d4ace883426d8293ba2716409), passed natural pull-request run [#248](https://github.com/Batmancpu/CurrentLens/actions/runs/42396503217).
+- WordNet builder tests: 4/4 passed; dictionary: 151,456 unique words. `:app:testDebugUnitTest`, `:app:assembleDebug` and artifact upload passed. Release job skipped.
+- Artifact `13584095153`: 39,095,814 bytes; expires 21 November 2026 17:31:06 UTC. It is a Stability debug APK, not a production Release.
+- Run #246 (code-only head) and #247 (first continuity-doc head) were cancelled when later commits superseded them. Run #248 validated the final code/test content and first continuity-doc state. A later documentation-only update follows; it does not change code/tests.
+- The bounded diagnostic-read change remains a memory/cold-start hardening measure only. No device logcat, tombstone, cold/warm launch or Perfetto proof is available; no native-crash fix is claimed.
+- At this verification point, PR #27's active-voice historical-enactment regression is under its own natural run #250. No manual dispatch/rerun.
