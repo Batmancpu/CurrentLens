@@ -77,7 +77,7 @@ internal object UpscFeedPolicy {
         }
         val finalWord = if (plural == last) Regex.escape(last)
             else "(?:${Regex.escape(last)}|${Regex.escape(plural)})"
-        return (words.dropLast(1).map { Regex.escape(it) } + finalWord).joinToString("\\\\s+")
+        return (words.dropLast(1).map { Regex.escape(it) } + finalWord).joinToString("\\s+")
     }
 
     private val policySubjectPattern = policyExceptions
