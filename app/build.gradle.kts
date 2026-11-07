@@ -15,7 +15,7 @@ android {
         targetSdk = 35
         versionCode = 10
         versionName = "0.2.8"
-        manifestPlaceholders["appLabel"] = if (stabilityTestBuild) "brrrNews Stability" else "brrrNews"
+        manifestPlaceholders["appLabel"] = if (stabilityTestBuild) "brrrNEWS Stability" else "brrrNEWS"
         buildConfigField("boolean", "STABILITY_TEST_BUILD", stabilityTestBuild.toString())
     }
 

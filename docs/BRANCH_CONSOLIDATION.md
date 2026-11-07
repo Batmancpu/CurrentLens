@@ -1,10 +1,10 @@
-# Black Box Bihar News — complete branch consolidation
+# brrrNEWS — consolidated branch
 
 **Repository:** `Batmancpu/CurrentLens`  
-**Chosen integration branch:** `black-box-bihar-news`  
-**Current HEAD at this audit:** `46c7d77f66a1a2eba87bad77e5345f2b0e1ec3b2`  
+**Chosen integration branch:** `brrrNEWS`  
+**Current HEAD:** follow the live `brrrNEWS` branch ref; this inventory is a maintenance snapshot.  
 **Default branch:** `main` — unchanged at `73b8a0d1ba33503fede02db2c3c0af082d724a12`  
-**Live branch inventory:** 26 refs (including `main` and this integration branch); no branch was deleted.  
+**Live branch inventory at this update:** 27 refs, including `main`, `brrrNEWS`, and the superseded `black-box-bihar-news` branch. No remote branch was deleted in this task.  
 **Latest completed validation:** Actions run [#190](https://github.com/Batmancpu/CurrentLens/actions/runs/42335940352), success on the documentation commit before the PR #23 merge. Natural post-merge run #192 is validating this exact HEAD.  
 **No Release was published.** No manual workflow dispatch or rerun was used.
 
@@ -52,14 +52,15 @@ The integration was started from PR #16's corrected stability/network baseline, 
 
 ## 2. Remote branch-by-branch disposition
 
-This is the live 25-ref inventory audited against the selected integration branch. “Integrated” means the useful code/policy/test is in this branch, not that the old source commit was merged into its Git ancestry. Source branches were deliberately retained.
+This is the live 27-ref inventory audited against the selected `brrrNEWS` integration branch. “Integrated” means the useful code/policy/test is in this branch, not that the old source commit was merged into its Git ancestry. Source branches were deliberately retained.
 
 | Remote branch | Disposition |
 |---|---|
-| `black-box-bihar-news` | **Selected active integration branch.** All future consolidation work goes here. |
+| `brrrNEWS` | **Selected active integration branch.** All future consolidation work goes here. |
+| `black-box-bihar-news` | Superseded pre-rename integration branch. Its content is retained as a rollback reference pending owner cleanup. |
 | `main` | Default branch; unchanged. Keep. |
 | `ci/read-only-pr-validation-isolated-release-write-2026-11-06` | PR #18 workflow intent integrated: read-only build/test permissions and a separately gated main-push-only Release job. Source PR #18 remains open/draft. |
-| `ci/stacked-pr-validation-2026-11-07` | PR #20 merged into `black-box-bihar-news`; natural validation for stacked work. Source PR #20 is closed/merged into this branch, not main. |
+| `ci/stacked-pr-validation-2026-11-07` | PR #20 merged into `brrrNEWS`; natural validation for stacked work. Source PR #20 is closed/merged into this branch, not main. |
 | `docs/ai-agent-handoff-2026-11-06` | Identical to the audited `main` SHA; no unique implementation. Redundant. |
 | `feat/gs1-geography-editorial-coverage` | Geography classifier/filter, syllabus metadata, feed eligibility and baseline docs/tests selectively integrated. PR #6 remains open/draft. |
 | `fix/atom-alternate-link-selection-2026-11-06` | Atom/RSS link candidate policy and parser regression tests integrated. PR #12 remains open/draft. |
@@ -80,15 +81,15 @@ This is the live 25-ref inventory audited against the selected integration branc
 | `redesign/v0.3-search-reader` | Very stale relative to PR #16/current Reader; no unique change justified replaying. Do not use as a base. |
 | `ui/foreground-adaptive-glass-contrast-2026-11-06` | Shared probe and activation policy integrated with a slower cadence and feed-scroll gating. PR #13 remains open/draft. |
 | `ui/liquid-glass-performance-2026-11-06` | Three older commits' useful header/category/skeleton/card/search/nav work is present in the newer PR #16/#19-derived UI; old version and icon treatment are superseded. |
-| `ui/liquid-glass-system-2026-11-07` | Reader UI PR #19 merged into `black-box-bihar-news`; it was not merged into main. |
+| `ui/liquid-glass-system-2026-11-07` | Reader UI PR #19 merged into `brrrNEWS`; it was not merged into main. |
 | `ui/liquid-glass-system-continuation-2026-11-07` | Earlier validated integration checkpoint (run #182); current branch is ahead of it, with no unique commit remaining. |
 
 ## 3. Pull-request state at the audit
 
-- PR #19 (Reader Liquid Glass), PR #20 (stacked read-only CI) and PR #23 (specific parliamentary syllabus gate) are **closed/merged into `black-box-bihar-news`**, not into main.
+- PR #19 (Reader Liquid Glass), PR #20 (stacked read-only CI) and PR #23 (specific parliamentary syllabus gate) are **closed/merged into `brrrNEWS`**, not into main.
 - PR #15 (publisher redirect allowlist) is closed/unmerged; its safe redirect behaviour is present in the integration branch.
 - PRs #6, #8, #11, #12, #13, #16, #17, #18, #21 and #22 remain open/draft. Their useful code is represented in the consolidated branch; they are source-history records, not independent implementation targets.
-- No source branch was deleted. The owner should review the consolidated PR/branch before deleting source refs. PR #11 is especially redundant because it was retargeted to the integration branch and its changes were separately reconciled there.
+- No source branch was deleted. The owner should review the `brrrNEWS` branch before deleting superseded source refs. This review did not delete remote refs. PR #11 is especially redundant because it was retargeted to the integration branch and its changes were separately reconciled there.
 
 ## 4. Validation record
 

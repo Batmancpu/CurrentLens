@@ -1,8 +1,8 @@
 # Liquid Glass UI Roadmap
 
 **Status:** Consolidated branch; current natural CI build is green  
-**Feature branch:** `black-box-bihar-news`  
-**Current HEAD:** `46c7d77f66a1a2eba87bad77e5345f2b0e1ec3b2`  
+**Feature branch:** `brrrNEWS`  
+**Current HEAD:** follow the live `brrrNEWS` branch ref.  
 **Integration base:** PR #16 stability head `6ab1e6a02ac8e91027f21900d64d63b9f2e6a890`  
 **Last completed successful run:** #190 passed the documentation commit; post-PR #23 merge run #192 is validating this current HEAD.  
 **Main:** unchanged at `73b8a0d1ba33503fede02db2c3c0af082d724a12`.  
@@ -29,7 +29,7 @@ The complete remote branch inventory contained 19 branches at the start of this 
 - `ui/liquid-glass-performance-2026-11-06` — `2e9c7f62ca65a899e18d9026e1535392835b3724`; diverged from PR #16 by 3 unique commits and 75 commits behind. Not used as a base. Its first material/UI commit was merged through PR #3; the Search source-height adjustment is already present in PR #16; the remaining icon-import change is superseded by current imports.
 - `redesign/v0.3-search-reader` — `654cc89dee4f93fea98bb76df9d8cf88abf2f0d8`; 151 commits behind PR #16. Stale and not used.
 - PR #13 / `ui/foreground-adaptive-glass-contrast-2026-11-06` — its shared 8×8 bottom-band luminance probe and linear-luminance policy are selectively integrated. The original 1.5 s / 2.5 s cadence was not retained: the consolidated implementation uses 4 s on Android 12+ / 6 s on older Android and suspends sampling during feed motion, Reader, Settings and background operation. It remains one shared root source; device-side jank/battery impact is unverified.
-- PR #18 / `ci/read-only-pr-validation-isolated-release-write-2026-11-06` and PR #20 / `ci/stacked-pr-validation-2026-11-07` — their compatible workflow intent is consolidated into the one workflow on `black-box-bihar-news`: read-only build job, separately gated main-push release job, and natural PR validation for main, PR #16 and this integration branch. Source branches are retained.
+- PR #18 / `ci/read-only-pr-validation-isolated-release-write-2026-11-06` and PR #20 / `ci/stacked-pr-validation-2026-11-07` — their compatible workflow intent is consolidated into the one workflow on `brrrNEWS`: read-only build job, separately gated main-push release job, and natural PR validation for main, PR #16 and this integration branch. Source branches are retained.
 - PRs #6 and #21 are reconciled into one editorial policy: GS I Geography, Finance Bill / parliamentary bill / heat-wave signals, entertainment and viral/sports false-positive suppression, narrow thin-film science exception, content-aware card metadata and labelled synthetic regression fixtures. PR #8 and #22 are reconciled into off-main local persistence with an ordered 5,000-entry window for new read markers while preserving the legacy unordered set. PR #11, #12 and #17 are selectively ported into the latest redirect-guarded feed code: publication-date precedence/cache/provenance, Atom alternate-link selection, tracking-URL identity and exact bookmark/read-variant preference. These changes were hand-reconciled, not blindly merged.
 
 Recheck the entire branch graph, open PRs, merge state and exact source/base SHAs before every subsequent implementation pass. Never reset, force-push, overwrite or discard another branch's commits.
@@ -110,7 +110,7 @@ Do not mark the redesign complete until every screen in the matrix has an intent
 
 ## Consolidation implementation log
 
-The following work is represented on `black-box-bihar-news`; source PRs/branches remain intact and must not be deleted until final review:
+The following work is represented on `brrrNEWS`; source PRs/branches remain intact and must not be deleted until final review:
 
 | Source work | Consolidated treatment | Verification |
 |---|---|---|
@@ -142,6 +142,6 @@ The following work is represented on `black-box-bihar-news`; source PRs/branches
 - Run #187, exact SHA `ebdfdd7b22c9164ab4ea24a6fa744e706081fc7f`: passed the UI, dashboard and Appearance preview integration; artifact ID `13559292205`, 39,052,427 bytes.
 - Run #189, PR #23 head `9d754953a29c0355ce55306ce4fd5463193c9dbb`: passed the more-specific parliamentary syllabus gate and regression tests.
 - Run #190, integration SHA `67d1f6a32b483535dcecf2d0f803e8ce5cac7e16`: passed after consolidation documentation update.
-- The parliamentary signal gate (PR #23) is merged into `black-box-bihar-news`; current merged head is `46c7d77f66a1a2eba87bad77e5345f2b0e1ec3b2`. Natural post-merge run #192 is in progress; wait for that exact run before claiming the newest head passed.
+- The parliamentary signal gate (PR #23) is merged into `brrrNEWS`. The post-merge consolidated head passed run #193; the follow-up `brrrNEWS` branch also includes the Reader saved-position IO fix and a branch-scoped CI workflow. Check the live Actions record for the exact validation SHA.
 - Release publishing is skipped off main. No manual dispatch/rerun; no main edit/merge.
 - CI does not verify physical-device launch, animation smoothness, accessibility or performance. These remain unverified.
