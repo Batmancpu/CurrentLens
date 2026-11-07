@@ -49,6 +49,8 @@ The unit-test fixtures are synthetic examples designed to expose classification 
 | False-negative recovery | “Parliament passes a bill to amend electoral rules” | Include — GS II, Constitution/Polity | A concrete legislative action and Representation of the People Act theme are explicit GS II signals | 
 | Positive | “Standing committee reviews a bill on parliamentary privileges” | Include — GS II, Constitution/Polity | Committee scrutiny and parliamentary privileges map to the syllabus’ functioning and powers themes |
 | False-positive rejection | Celebrity film-release story whose excerpt merely mentions film-certification rules | Exclude | A policy exception must be established by a concrete action in the headline itself |
+| False-positive rejection | “Cricket star's film on national sports policy releases Friday” | Exclude | A policy noun inside a promotional headline is not an institutional action on the policy |
+| Positive | “Government issues new broadcasting regulations for OTT platforms” | Include — GS II, Governance | A named government actor issues a concrete regulatory instrument |
 
 The fixtures are regression checks for this deterministic rule set. They do not establish precision/recall, validate a score, or predict examination questions.
 

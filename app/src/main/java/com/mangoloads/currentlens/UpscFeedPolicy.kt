@@ -34,14 +34,20 @@ internal object UpscFeedPolicy {
         "sports ministry", "olympic charter", "sports federation reform"
     )
 
-    // The exception must describe an actual rule, decision, review or institutional
-    // change in the headline, not a passing reference in the RSS excerpt.
-    private val policyActionTerms = listOf(
-        "act", "bill", "rule", "rules", "regulation", "regulations",
-        "notification", "order", "judgment", "judgement", "court",
-        "parliament", "amendment", "draft", "guideline", "guidelines",
-        "tax", "gst", "licence", "license", "policy", "reform",
-        "framework", "charter", "ban", "review", "overhaul"
+    // A policy noun is not an action: "Act", "policy", "rules" or "review" alone
+    // must not let a film/sports headline bypass the noise gate.
+    private val policyActorTerms = listOf(
+        "government", "centre", "central government", "union government", "state government",
+        "ministry", "department", "parliament", "lok sabha", "rajya sabha",
+        "supreme court", "high court", "cbfc", "central board of film certification",
+        "censor board", "regulator", "regulatory authority", "authority", "commission",
+        "committee", "sports ministry", "nada", "national anti-doping agency", "wada", "cabinet"
+    )
+    private val activePolicyActionPattern = Regex(
+        """\b(?:issues|issued|notifies|notified|introduces|introduced|passes|passed|amends|amended|revises|revised|adopts|adopted|enacts|enacted|reviews|reviewed|debates|debated|strikes down|struck down|quashes|quashed|upholds|upheld|orders|ordered|directs|directed|withdraws|withdrawn|bans|banned|prohibits|prohibited|gazettes|gazetted|announces|announced)\b(?:\s+\w+){0,3}\s+\b(?:rules?|regulations?|guidelines?|notifications?|bills?|acts?|amendments?|polic(?:y|ies)|frameworks?|charters?|bans?|orders?|tax|gst|licen[cs]es?|reforms?|laws?)\b"""
+    )
+    private val passivePolicyActionPattern = Regex(
+        """\b(?:rules?|regulations?|guidelines?|notifications?|bills?|acts?|amendments?|polic(?:y|ies)|frameworks?|charters?|bans?|orders?|tax|gst|licen[cs]es?|reforms?|laws?)\b(?:\s+\w+){0,2}\s+\b(?:issued|notified|gazetted|enacted|amended|revised|adopted|passed|introduced|quashed|struck down|upheld)\b"""
     )
 
     // GS-II lists Parliament's functions, not mere institutional mentions; require a concrete process or power.
@@ -101,7 +107,13 @@ internal object UpscFeedPolicy {
         val hasNoise = noiseTerms.any { EditorialTextMatcher.contains(text, it) }
         val hasPolicyException =
             policyExceptions.any { EditorialTextMatcher.contains(title, it) } &&
-                policyActionTerms.any { EditorialTextMatcher.contains(title, it) }
+                (
+                    (
+                        policyActorTerms.any { EditorialTextMatcher.contains(title, it) } &&
+                            activePolicyActionPattern.containsMatchIn(title)
+                    ) ||
+                        passivePolicyActionPattern.containsMatchIn(title)
+                )
         // Film promotion stays noise; only a clearly technical thin-film solar headline is exempt.
         val hasThinFilmScienceException =
             EditorialTextMatcher.contains(title, "thin film") &&
