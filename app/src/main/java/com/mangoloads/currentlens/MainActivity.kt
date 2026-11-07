@@ -2958,6 +2958,28 @@ private fun ReaderScreen(
                             override fun onReceivedError(view: WebView?, request: WebResourceRequest?, error: android.webkit.WebResourceError?) {
                                 if (request?.isForMainFrame == true) onReaderMainFrameError()
                             }
+                            override fun shouldInterceptRequest(
+                                view: WebView?,
+                                request: WebResourceRequest
+                            ): android.webkit.WebResourceResponse? {
+                                if (request.isForMainFrame) return null
+
+                                val reader = view as? ReaderWebView
+                                val allowed = request.method.equals("GET", ignoreCase = true) &&
+                                    reader?.allowReaderSubresource?.invoke(request.url.toString()) == true
+                                if (allowed) return null
+
+                                // WebView calls this for the initial resource URL, not every redirect hop.
+                                return android.webkit.WebResourceResponse(
+                                    "text/plain",
+                                    "UTF-8",
+                                    403,
+                                    "Blocked by CurrentLens",
+                                    mapOf("Cache-Control" to "no-store"),
+                                    java.io.ByteArrayInputStream(ByteArray(0))
+                                )
+                            }
+
                             override fun shouldOverrideUrlLoading(view: WebView?, request: WebResourceRequest): Boolean {
                                 if (!request.isForMainFrame) return false
                                 val target = request.url.toString()
@@ -3032,6 +3054,7 @@ private fun ReaderScreen(
                         publisherLoadFailed = true
                     }
                     webView.allowReaderNavigation = { target -> PublisherHostPolicy.allows(article.source, target) }
+                    webView.allowReaderSubresource = { target -> PublisherWebResourcePolicy.allows(article.source, target) }
                     webView.onOpenPublisherLink = { target -> openPublisherPage(context, article.source, target) }
                     val selectionBridgeEnabled = ReaderExecutionPolicy.javascriptEnabled(
                         hasSanitizedArticle = extractedHtml != null,
@@ -3329,6 +3352,7 @@ private class ReaderWebView(context: android.content.Context) : WebView(context)
     var onReaderPageFinished: () -> Unit = {}
     var onReaderMainFrameError: () -> Unit = {}
     var allowReaderNavigation: (String) -> Boolean = { false }
+    @Volatile var allowReaderSubresource: (String) -> Boolean = { false }
     var onOpenPublisherLink: (String) -> Unit = {}
     var onReadingProgressChanged: (Float) -> Unit = {}
     var onReaderChromeVisibilityChanged: (Boolean) -> Unit = {}
