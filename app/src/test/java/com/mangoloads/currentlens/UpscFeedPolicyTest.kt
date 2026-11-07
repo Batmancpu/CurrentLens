@@ -108,4 +108,37 @@ class UpscFeedPolicyTest {
             "Entertainment"
         )))
     }
+
+    @Test
+    fun promotionalStoriesCannotBorrowPolicyExceptionNounsToBypassNoise() {
+        assertFalse(UpscFeedPolicy.shouldInclude(article(
+            "A new film about the Cinematograph Act premieres Friday",
+            "The publisher promotes a forthcoming film.",
+            "Entertainment"
+        )))
+        assertFalse(UpscFeedPolicy.shouldInclude(article(
+            "Cricket star's film on national sports policy releases Friday",
+            "The story promotes a sports drama and its release date.",
+            "Entertainment"
+        )))
+        assertFalse(UpscFeedPolicy.shouldInclude(article(
+            "Actor explains film certification rules in a podcast",
+            "A promotional interview accompanies a film release.",
+            "Entertainment"
+        )))
+    }
+
+    @Test
+    fun policyExceptionsRequireAnInstitutionalActionOnThePolicyTarget() {
+        assertTrue(UpscFeedPolicy.shouldInclude(article(
+            "Government issues new broadcasting regulations for OTT platforms",
+            "The ministry notifies a regulatory change for digital broadcasting.",
+            "India"
+        )))
+        assertTrue(UpscFeedPolicy.shouldInclude(article(
+            "New film certification rules notified by the Ministry",
+            "The notification changes the statutory certification framework.",
+            "India"
+        )))
+    }
 }
