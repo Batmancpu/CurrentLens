@@ -58,6 +58,8 @@ The unit-test fixtures are synthetic examples designed to expose classification 
 
 | Positive | “CBFC issues new film certification guidelines for actors” | Include — GS II, Governance | A named statutory board announces a current certification-guideline change; the word “actors” does not negate an explicit institutional action. |
 
+Every automatically eligible item must also map through `UpscEngine` to a non-`Unmapped` GS paper and named syllabus theme, with matched headline/excerpt terms and a non-empty syllabus rationale. The card presents this as indicative evidence, not a numeric relevance score.
+
 The fixtures are regression checks for this deterministic rule set. They do not establish precision/recall, validate a score, or predict examination questions.
 
 ## Source-provenance limitation

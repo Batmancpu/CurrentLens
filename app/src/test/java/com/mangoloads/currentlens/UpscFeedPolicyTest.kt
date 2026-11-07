@@ -5,6 +5,29 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class UpscFeedPolicyTest {
+    private fun assertSyllabusMapped(article: Article, expectedPaper: String, expectedSubject: String) {
+        val relevance = UpscEngine.classify(article)
+        assertTrue("Unexpected GS paper for " + article.title, relevance.gsPaper == expectedPaper)
+        assertTrue("Unexpected syllabus theme for " + article.title, relevance.subject == expectedSubject)
+        assertTrue("Missing matched syllabus signal for " + article.title, relevance.matchedTerms.isNotEmpty())
+        assertTrue("Missing relevance explanation for " + article.title, relevance.syllabusLink.isNotBlank())
+        assertTrue(
+            "Missing explainable card metadata for " + article.title,
+            ArticleCardMetaPolicy.syllabusHint(
+                relevance.gsPaper,
+                relevance.subject,
+                relevance.matchedTerms,
+                relevance.syllabusLink
+            ) != null
+        )
+        assertTrue("Editorial gate rejected mapped article " + article.title, UpscFeedPolicy.shouldInclude(article))
+    }
+
+    private fun assertRejectedDespiteKeywordMatch(article: Article) {
+        assertTrue("Fixture must exercise a classifier match: " + article.title, UpscEngine.classify(article).matchedTerms.isNotEmpty())
+        assertFalse(UpscFeedPolicy.shouldInclude(article))
+    }
+
     private fun article(title: String, description: String, section: String = "India") = Article(
         id = title,
         title = title,
@@ -79,11 +102,11 @@ class UpscFeedPolicyTest {
 
     @Test
     fun pluralEntertainmentTermsRemainSuppressedWithoutSectionHelp() {
-        assertFalse(UpscFeedPolicy.shouldInclude(article(
+        assertRejectedDespiteKeywordMatch(article(
             "Actors prepare for an artificial intelligence role",
             "The feature profiles performers rather than a technology or public-policy development.",
             "India"
-        )))
+        ))
     }
 
     @Test
@@ -111,73 +134,82 @@ class UpscFeedPolicyTest {
 
     @Test
     fun boxOfficeAndHistoricalFilmHeadlinesCannotBorrowPolicyNouns() {
-        assertFalse(UpscFeedPolicy.shouldInclude(article(
+        assertRejectedDespiteKeywordMatch(article(
             "Box-office collection update: GST on movie tickets raises costs",
             "A box-office report discusses ticket pricing and collections.",
             "Entertainment"
-        )))
-        assertFalse(UpscFeedPolicy.shouldInclude(article(
+        ))
+        assertRejectedDespiteKeywordMatch(article(
             "A new film about the Cinematograph Act enacted in 1952",
             "A promotional film feature describes a historical law.",
             "Entertainment"
-        )))
-        assertFalse(UpscFeedPolicy.shouldInclude(article(
+        ))
+        assertRejectedDespiteKeywordMatch(article(
             "Cricket star's film on national sports policy releases Friday",
             "The story promotes a sports drama and its release date.",
             "Entertainment"
-        )))
-        assertFalse(UpscFeedPolicy.shouldInclude(article(
+        ))
+        assertRejectedDespiteKeywordMatch(article(
             "Actor explains film certification rules in a podcast",
             "A promotional interview accompanies a film release.",
             "Entertainment"
-        )))
+        ))
     }
 
     @Test
     fun policyExceptionsRequireAnOrderedInstitutionalActionOrCurrentPassiveChange() {
-        assertTrue(UpscFeedPolicy.shouldInclude(article(
+        assertSyllabusMapped(article(
             "Parliament reviews film certification rules under the Cinematograph Act",
             "The report concerns statutory powers, constitutional safeguards and media governance.",
             "Entertainment"
-        )))
-        assertTrue(UpscFeedPolicy.shouldInclude(article(
+        ), "GS II", "Governance")
+        assertSyllabusMapped(article(
             "Government issues new broadcasting regulations for OTT platforms",
             "The ministry notifies a regulatory change for digital broadcasting.",
             "India"
-        )))
-        assertTrue(UpscFeedPolicy.shouldInclude(article(
+        ), "GS II", "Governance")
+        assertSyllabusMapped(article(
             "New film certification rules notified by the Ministry",
             "The notification changes the statutory certification framework.",
             "Entertainment"
-        )))
-        assertTrue(UpscFeedPolicy.shouldInclude(article(
+        ), "GS II", "Governance")
+        assertSyllabusMapped(article(
             "Sports Ministry issues new anti-doping rules",
             "The policy changes sports governance and anti-doping compliance.",
             "Sports"
-        )))
-        assertTrue(UpscFeedPolicy.shouldInclude(article(
+        ), "GS II", "Governance")
+        assertSyllabusMapped(article(
             "CBFC issues new film certification guidelines for actors",
             "The statutory board announces a current certification-rule change.",
             "Entertainment"
-        )))
+        ), "GS II", "Governance")
     }
 
     @Test
     fun heatWaveActionPlanRemainsARecoverableGsThreeDisasterManagementTheme() {
-        assertTrue(UpscFeedPolicy.shouldInclude(article(
+        assertSyllabusMapped(article(
             "Heat wave action plan adopted by NDMA",
             "The action plan addresses heat-related disaster preparedness and public safety.",
             "India"
-        )))
+        ), "GS III", "Disaster Management")
+    }
+
+    @Test
+    fun currentGstPolicyActionMapsToGsThreeEconomyButBoxOfficeFramingIsRejected() {
+        assertSyllabusMapped(article(
+            "Government raises GST on movie tickets",
+            "The tax change affects the indirect-tax treatment of cinema tickets.",
+            "Economy"
+        ), "GS III", "Indian Economy")
     }
 
     @Test
     fun ambiguousPassivePolicyHeadlineWithoutCurrentCueOrInstitutionIsHeldBack() {
-        assertFalse(UpscFeedPolicy.shouldInclude(article(
+        assertRejectedDespiteKeywordMatch(article(
             "Film certification rules notified",
             "The headline omits the responsible institution and when the change occurred.",
             "Entertainment"
-        )))
+        ))
     }
 
 }
