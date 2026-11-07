@@ -53,6 +53,7 @@ The unit-test fixtures are synthetic examples designed to expose classification 
 
 | False-positive rejection | “Box-office collection update: GST on movie tickets raises costs” | Exclude | A box-office headline is a non-overridable promotion signal; a tax phrase alone cannot bypass it. |
 | False-positive rejection | “A new film about the Cinematograph Act enacted in 1952” | Exclude | A historical Act reference is not a current institutional action; passive matching cannot infer one from the word “enacted”. |
+| False-positive rejection | “A new film about the Cinematograph Act while Ministry issues new agricultural rules” | Exclude | An unrelated ministry action must not be combined with an entertainment subject to manufacture a policy exception. |
 | False-positive rejection | “Actor explains film certification rules in a podcast” | Exclude | A promotional/celebrity headline is not rescued by policy nouns. |
 | False-negative recovery | “Heat wave action plan adopted by NDMA” | Include — GS III, Disaster Management | Heat-wave action planning maps to the explicit disaster-management theme; NDMA alone remains insufficient. |
 | Conservative false-negative watch | “Film certification rules notified” | Hold out of automatic default feed pending a current-change cue or named institution | This ambiguous passive headline may describe a genuine notification, but lacks enough evidence for an automatic exception; manual/source review is safer than a broad regex. |
