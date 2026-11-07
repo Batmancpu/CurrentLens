@@ -3,8 +3,6 @@ package com.mangoloads.currentlens
 import android.text.Html
 import java.io.IOException
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.async
-import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.withContext
 import org.xmlpull.v1.XmlPullParser
 import org.xmlpull.v1.XmlPullParserFactory
@@ -58,8 +56,7 @@ object NewsRepository {
     )
 
     suspend fun fetchAll(): List<Article> = withContext(Dispatchers.IO) {
-        val fetched = feeds.map { source -> async { fetchOne(source) } }
-            .awaitAll()
+        val fetched = FeedFetchConcurrencyPolicy.map(feeds) { source -> fetchOne(source) }
             .flatten()
         ArticleUrlIdentityPolicy.deduplicate(fetched, bookmarkedUrls = emptySet()).take(250)
     }
