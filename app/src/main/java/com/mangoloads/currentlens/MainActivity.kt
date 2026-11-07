@@ -420,6 +420,7 @@ private fun MainActivity.showCrashRecoveryScreen(report: String) {
 private enum class YouPage { DASHBOARD, SAVED, READING_STATS, QUIZ_STATS }
 
 private data class LocalAppSnapshot(
+    val appearance: LocalAppearancePreferences,
     val articles: List<Article>,
     val bookmarks: Set<String>,
     val readHistory: Set<String>,
@@ -455,8 +456,10 @@ private fun BrrrNewsApp() {
     var selectedArticle by remember { mutableStateOf<Article?>(null) }
     var quizMode by remember { mutableStateOf(false) }
     var showSettings by remember { mutableStateOf(false) }
-    var glassAlpha by remember { mutableFloatStateOf(LocalStore.glassAlpha(context)) }
-    var reduceTransparency by remember { mutableStateOf(LocalStore.reduceTransparency(context)) }
+    // Do not make SharedPreferences' first (whole-file) load on the Compose/UI thread.
+    // The persisted values are restored with the rest of LocalAppSnapshot on Dispatchers.IO.
+    var glassAlpha by remember { mutableFloatStateOf(AppearancePreferencesPolicy.DEFAULT_GLASS_ALPHA) }
+    var reduceTransparency by remember { mutableStateOf(false) }
     var searchQuery by remember { mutableStateOf("") }
     var searchExpanded by remember { mutableStateOf(false) }
     var searchCollapseRequested by remember { mutableStateOf(false) }
@@ -596,6 +599,7 @@ private fun BrrrNewsApp() {
     LaunchedEffect(context) {
         val restored = withContext(Dispatchers.IO) {
             LocalAppSnapshot(
+                appearance = LocalStore.appearancePreferences(context),
                 articles = LocalStore.cachedArticles(context),
                 bookmarks = LocalStore.bookmarks(context),
                 readHistory = LocalStore.readHistory(context),
@@ -603,6 +607,8 @@ private fun BrrrNewsApp() {
                 quizAttempts = LocalStore.quizAttempts(context)
             )
         }
+        glassAlpha = restored.appearance.glassAlpha
+        reduceTransparency = restored.appearance.reduceTransparency
         articles = restored.articles
         bookmarks = restored.bookmarks
         readHistory = restored.readHistory
