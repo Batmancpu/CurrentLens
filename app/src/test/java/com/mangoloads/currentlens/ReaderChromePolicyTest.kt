@@ -28,4 +28,47 @@ class ReaderChromePolicyTest {
         assertFalse(ReaderChromePolicy.shouldShowCompletion(true, false, true))
         assertFalse(ReaderChromePolicy.shouldShowCompletion(true, false, false, selectionActive = true))
     }
+    @Test
+    fun downwardScrollHidesOnlyAfterLargerThreshold() {
+        var state = ReaderChromeScrollState()
+        state = ReaderChromePolicy.onScroll(state, 10, 24, 12, pinned = false, atTop = false)
+        assertTrue(state.visible)
+        state = ReaderChromePolicy.onScroll(state, 14, 24, 12, pinned = false, atTop = false)
+        assertFalse(state.visible)
+    }
+
+    @Test
+    fun upwardScrollRevealsAfterSmallerThresholdAndDirectionChangeResetsDistance() {
+        var state = ReaderChromeScrollState(visible = false)
+        state = ReaderChromePolicy.onScroll(state, 20, 24, 12, pinned = false, atTop = false)
+        assertFalse(state.visible)
+        state = ReaderChromePolicy.onScroll(state, -8, 24, 12, pinned = false, atTop = false)
+        assertFalse(state.visible)
+        assertEquals(8, state.accumulatedDeltaPx)
+        state = ReaderChromePolicy.onScroll(state, -4, 24, 12, pinned = false, atTop = false)
+        assertTrue(state.visible)
+    }
+
+    @Test
+    fun pinnedChromeAndFeedTopAlwaysRevealControls() {
+        val hidden = ReaderChromeScrollState(visible = false, direction = 1, accumulatedDeltaPx = 30)
+        assertTrue(
+            ReaderChromePolicy.onScroll(hidden, 4, 24, 12, pinned = true, atTop = false).visible
+        )
+        assertTrue(
+            ReaderChromePolicy.onScroll(hidden, 4, 24, 12, pinned = false, atTop = true).visible
+        )
+    }
+
+    @Test
+    fun repeatedSameDirectionBelowThresholdAccumulatesButDirectionChangeResets() {
+        var state = ReaderChromeScrollState()
+        state = ReaderChromePolicy.onScroll(state, 10, 24, 12, pinned = false, atTop = false)
+        state = ReaderChromePolicy.onScroll(state, 8, 24, 12, pinned = false, atTop = false)
+        assertEquals(18, state.accumulatedDeltaPx)
+        state = ReaderChromePolicy.onScroll(state, -4, 24, 12, pinned = false, atTop = false)
+        assertEquals(4, state.accumulatedDeltaPx)
+        assertEquals(-1, state.direction)
+    }
+
 }

@@ -15,6 +15,7 @@ import android.view.MenuItem
 import android.view.MotionEvent
 import android.view.View
 import android.view.ViewConfiguration
+import android.view.accessibility.AccessibilityManager
 import android.os.SystemClock
 import android.webkit.WebResourceRequest
 import android.webkit.CookieManager
@@ -1483,7 +1484,7 @@ private fun SearchMorphField(
                 IconButton(
                     onClick = onClear,
                     enabled = enabled,
-                    modifier = Modifier.size(38.dp).graphicsLayer { alpha = progress }
+                    modifier = Modifier.size(48.dp).graphicsLayer { alpha = progress }
                 ) {
                     Icon(
                         Icons.Outlined.Close,
@@ -2452,6 +2453,11 @@ private fun ReaderScreen(
     var fontSize by remember(article.url) { mutableIntStateOf(20) }
     var completionDismissed by remember(article.url) { mutableStateOf(false) }
     var selectionActionModeActive by remember(article.url) { mutableStateOf(false) }
+    var readerChromeVisible by remember(article.url) { mutableStateOf(true) }
+    val imeVisible = WindowInsets.ime.getBottom(LocalDensity.current) > 0
+    val accessibilityEnabled = context.getSystemService(AccessibilityManager::class.java)?.isEnabled == true
+    val readerChromePinned = activeWord != null || selectionActionModeActive || imeVisible || accessibilityEnabled
+    val readerChromeMotionMs = if (ValueAnimator.areAnimatorsEnabled()) 160 else 0
 
     LaunchedEffect(article.url) {
         extracting = true
@@ -2483,29 +2489,39 @@ private fun ReaderScreen(
     }
 
     Column(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
-        ReaderGlassToolbar(
-            article = article,
-            sourceStatus = readerSourceStatus,
-            backdrop = backdrop,
-            glassAlpha = glassAlpha,
-            dark = dark,
-            fontSize = fontSize,
-            onBack = {
-                readerWebViewHolder.value?.flushReadingPosition()
-                onBack()
-            },
-            onFontSizeChange = { fontSize = it }
-        )
-        if (savedReadingProgress > 0.005f && !reachedBottom) {
-            Box(
-                Modifier.fillMaxWidth().padding(horizontal = 18.dp, vertical = 2.dp)
-                    .height(2.dp).clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.outline.copy(alpha = 0.18f))
-            ) {
-                Box(
-                    Modifier.fillMaxWidth(savedReadingProgress.coerceIn(0f, 1f))
-                        .fillMaxSize().background(MaterialTheme.colorScheme.primary)
+        AnimatedVisibility(
+            visible = readerChromeVisible,
+            enter = fadeIn(animationSpec = tween(readerChromeMotionMs)) +
+                slideInVertically(animationSpec = tween(readerChromeMotionMs)) { -it / 4 },
+            exit = fadeOut(animationSpec = tween(readerChromeMotionMs)) +
+                slideOutVertically(animationSpec = tween(readerChromeMotionMs)) { -it / 4 }
+        ) {
+            Column {
+                ReaderGlassToolbar(
+                    article = article,
+                    sourceStatus = readerSourceStatus,
+                    backdrop = backdrop,
+                    glassAlpha = glassAlpha,
+                    dark = dark,
+                    fontSize = fontSize,
+                    onBack = {
+                        readerWebViewHolder.value?.flushReadingPosition()
+                        onBack()
+                    },
+                    onFontSizeChange = { fontSize = it }
                 )
+                if (savedReadingProgress > 0.005f && !reachedBottom) {
+                    Box(
+                        Modifier.fillMaxWidth().padding(horizontal = 18.dp, vertical = 2.dp)
+                            .height(2.dp).clip(CircleShape)
+                            .background(MaterialTheme.colorScheme.outline.copy(alpha = 0.18f))
+                    ) {
+                        Box(
+                            Modifier.fillMaxWidth(savedReadingProgress.coerceIn(0f, 1f))
+                                .fillMaxSize().background(MaterialTheme.colorScheme.primary)
+                        )
+                    }
+                }
             }
         }
         if (extracting || (!pageLoaded && (extractedHtml != null || fallbackToPublisher))) androidx.compose.material3.LinearProgressIndicator(Modifier.fillMaxWidth())
@@ -2576,6 +2592,10 @@ private fun ReaderScreen(
                         savedReadingProgress = progress
                         onSaveReaderPosition(article.url, progress)
                     }
+                    webView.onReaderChromeVisibilityChanged = { visible ->
+                        readerChromeVisible = visible
+                    }
+                    webView.setReaderChromePinned(readerChromePinned)
                     webView.onReachedBottom = {
                         webView.markReadingPositionCompleted()
                         onClearReaderPosition(article.url)
@@ -2718,7 +2738,7 @@ private fun ReaderScreen(
                 }
             }
         }
-        if (fallbackToPublisher && !extracting) {
+        if (readerChromeVisible && fallbackToPublisher && !extracting) {
             Row(
                 Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 5.dp),
                 verticalAlignment = Alignment.CenterVertically
@@ -2734,12 +2754,17 @@ private fun ReaderScreen(
                 }
             }
         }
-        if (ReaderChromePolicy.shouldShowCompletion(
+        AnimatedVisibility(
+            visible = readerChromeVisible && ReaderChromePolicy.shouldShowCompletion(
                 reachedBottom = reachedBottom,
                 definitionOpen = activeWord != null,
                 dismissed = completionDismissed,
                 selectionActive = selectionActionModeActive
-            )
+            ),
+            enter = fadeIn(animationSpec = tween(readerChromeMotionMs)) +
+                slideInVertically(animationSpec = tween(readerChromeMotionMs)) { it / 4 },
+            exit = fadeOut(animationSpec = tween(readerChromeMotionMs)) +
+                slideOutVertically(animationSpec = tween(readerChromeMotionMs)) { it / 4 }
         ) {
             PrismalGlassSurface(
                 backdrop = backdrop,
@@ -2918,6 +2943,7 @@ private class ReaderWebView(context: android.content.Context) : WebView(context)
     var allowReaderNavigation: (String) -> Boolean = { false }
     var onOpenPublisherLink: (String) -> Unit = {}
     var onReadingProgressChanged: (Float) -> Unit = {}
+    var onReaderChromeVisibilityChanged: (Boolean) -> Unit = {}
     var selectionBridgeEnabled: Boolean = false
         set(value) {
             if (field != value) {
@@ -2936,6 +2962,43 @@ private class ReaderWebView(context: android.content.Context) : WebView(context)
     private var stableRestoreSamples = 0
     private var restoringReadingPosition = false
     private var readingPositionCompleted = false
+    private var readerChromeVisible = true
+    private var readerChromePinned = false
+    private var readerChromeScrollState = ReaderChromeScrollState()
+    private var pendingReaderChromeHide: Runnable? = null
+
+    fun setReaderChromePinned(pinned: Boolean) {
+        if (readerChromePinned == pinned) return
+        readerChromePinned = pinned
+        readerChromeScrollState = ReaderChromeScrollState()
+        if (pinned) {
+            cancelPendingReaderChromeHide()
+            setReaderChromeVisible(true)
+        }
+    }
+
+    private fun setReaderChromeVisible(visible: Boolean) {
+        if (readerChromeVisible == visible) return
+        readerChromeVisible = visible
+        onReaderChromeVisibilityChanged(visible)
+    }
+
+    private fun cancelPendingReaderChromeHide() {
+        pendingReaderChromeHide?.let { removeCallbacks(it) }
+        pendingReaderChromeHide = null
+    }
+
+    private fun scheduleReaderChromeHide() {
+        cancelPendingReaderChromeHide()
+        val hide = Runnable {
+            pendingReaderChromeHide = null
+            if (!readerChromePinned && scrollY > 0 && !restoringReadingPosition) {
+                setReaderChromeVisible(false)
+            }
+        }
+        pendingReaderChromeHide = hide
+        postDelayed(hide, ReaderChromePolicy.HIDE_SETTLE_DELAY_MS)
+    }
 
     fun beginArticle(url: String): Boolean {
         val changed = progressGate.beginArticle(url)
@@ -2946,6 +3009,10 @@ private class ReaderWebView(context: android.content.Context) : WebView(context)
             cancelShortPageEndCheck(resetStability = true)
             cancelPendingAutoDefine()
             cancelReadingPositionRestore()
+            cancelPendingReaderChromeHide()
+            readerChromeScrollState = ReaderChromeScrollState()
+            readerChromePinned = false
+            setReaderChromeVisible(true)
             readingPositionCompleted = false
         }
         return changed
@@ -3093,6 +3160,7 @@ private class ReaderWebView(context: android.content.Context) : WebView(context)
         cancelReadingPositionRestore()
         cancelShortPageEndCheck(resetStability = true)
         cancelPendingAutoDefine()
+        cancelPendingReaderChromeHide()
         onSelectionActionModeChanged(false)
         super.onDetachedFromWindow()
     }
@@ -3303,7 +3371,27 @@ private class ReaderWebView(context: android.content.Context) : WebView(context)
 
     override fun onScrollChanged(scrollX: Int, scrollY: Int, oldScrollX: Int, oldScrollY: Int) {
         super.onScrollChanged(scrollX, scrollY, oldScrollX, oldScrollY)
-        if (scrollY != oldScrollY) scheduleReadingPositionSave()
+        val deltaY = scrollY - oldScrollY
+        if (deltaY != 0) {
+            scheduleReadingPositionSave()
+            if (deltaY < 0) cancelPendingReaderChromeHide()
+            readerChromeScrollState = ReaderChromePolicy.onScroll(
+                state = readerChromeScrollState,
+                deltaY = deltaY,
+                hideThresholdPx = (ReaderChromePolicy.HIDE_THRESHOLD_DP * resources.displayMetrics.density).roundToInt(),
+                showThresholdPx = (ReaderChromePolicy.SHOW_THRESHOLD_DP * resources.displayMetrics.density).roundToInt(),
+                pinned = readerChromePinned || restoringReadingPosition,
+                atTop = scrollY <= 0
+            )
+            if (readerChromeScrollState.visible) {
+                cancelPendingReaderChromeHide()
+                setReaderChromeVisible(true)
+            } else if (deltaY > 0 && !readerChromePinned && !restoringReadingPosition) {
+                // Only downward movement can schedule a hide; upward movement cancels it
+                // immediately and reveals chrome once the smaller threshold is crossed.
+                scheduleReaderChromeHide()
+            }
+        }
         val fullHeight = (contentHeight * scale).toInt()
         if (fullHeight > height + 120 &&
             ReaderEndDetector.isAtEnd(fullHeight, height, scrollY) &&

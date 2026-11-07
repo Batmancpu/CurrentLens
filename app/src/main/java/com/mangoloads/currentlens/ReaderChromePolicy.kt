@@ -1,7 +1,50 @@
 package com.mangoloads.currentlens
 
+/** Scroll-direction hysteresis state; Compose is notified only when visibility changes. */
+internal data class ReaderChromeScrollState(
+    val visible: Boolean = true,
+    val direction: Int = 0,
+    val accumulatedDeltaPx: Int = 0
+)
+
 /** Small, deterministic policies for Reader controls and completion presentation. */
 internal object ReaderChromePolicy {
+    const val HIDE_THRESHOLD_DP = 24
+    const val SHOW_THRESHOLD_DP = 12
+    const val HIDE_SETTLE_DELAY_MS = 160L
+
+    /**
+     * Downward document movement hides chrome after a larger threshold; upward movement
+     * reveals it after a smaller threshold. Direction changes reset accumulated distance.
+     * Pinning (selection/definition/IME/accessibility) and returning to the top always reveal.
+     */
+    fun onScroll(
+        state: ReaderChromeScrollState,
+        deltaY: Int,
+        hideThresholdPx: Int,
+        showThresholdPx: Int,
+        pinned: Boolean,
+        atTop: Boolean
+    ): ReaderChromeScrollState {
+        if (pinned || atTop) return ReaderChromeScrollState()
+        if (deltaY == 0) return state
+        val direction = if (deltaY > 0) 1 else -1
+        val magnitude = kotlin.math.abs(deltaY.toLong()).coerceAtMost(Int.MAX_VALUE.toLong()).toInt()
+        val accumulated = if (state.direction == direction) {
+            (state.accumulatedDeltaPx.toLong() + magnitude).coerceAtMost(Int.MAX_VALUE.toLong()).toInt()
+        } else {
+            magnitude
+        }
+        val threshold = (if (direction > 0) hideThresholdPx else showThresholdPx).coerceAtLeast(1)
+        if (accumulated < threshold) {
+            return ReaderChromeScrollState(
+                visible = state.visible,
+                direction = direction,
+                accumulatedDeltaPx = accumulated
+            )
+        }
+        return ReaderChromeScrollState(visible = direction < 0)
+    }
     const val MIN_FONT_SIZE_SP = 16
     const val MAX_FONT_SIZE_SP = 28
 
