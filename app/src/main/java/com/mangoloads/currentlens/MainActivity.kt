@@ -2024,9 +2024,14 @@ private fun NewsCard(
             syllabusLink = relevance.syllabusLink
         )
     }
-    val hasImage = !article.imageUrl.isNullOrBlank()
-    val imageRequest = remember(article.imageUrl) {
-        article.imageUrl?.let { url ->
+    // Cached legacy entries may predate RSS image host validation. Re-check at the
+    // rendering boundary so an untrusted image URL never reaches Coil.
+    val safeImageUrl = remember(article.source, article.imageUrl) {
+        article.imageUrl?.takeIf { PublisherAssetHostPolicy.allows(article.source, it) }
+    }
+    val hasImage = !safeImageUrl.isNullOrBlank()
+    val imageRequest = remember(safeImageUrl) {
+        safeImageUrl?.let { url ->
             ImageRequest.Builder(context).data(url)
                 .size(960, 640)
                 .allowHardware(false)
@@ -2034,7 +2039,7 @@ private fun NewsCard(
                 .build()
         }
     }
-    var imagePalette by remember(article.id, article.imageUrl) { mutableStateOf<Color?>(null) }
+    var imagePalette by remember(article.id, safeImageUrl) { mutableStateOf<Color?>(null) }
     val palette = imagePalette
 
     Box(
