@@ -1907,6 +1907,7 @@ private fun FilterChipRow(
     selected: String,
     onSelected: (String) -> Unit
 ) {
+    val distinctOptions = remember(options) { options.distinct() }
     Column(Modifier.fillMaxWidth().padding(top = 3.dp)) {
         Text(title, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.secondary,
             modifier = Modifier.padding(start = 16.dp, bottom = 2.dp))
@@ -1914,12 +1915,21 @@ private fun FilterChipRow(
             Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(horizontal = 13.dp, vertical = 3.dp),
             horizontalArrangement = Arrangement.spacedBy(6.dp)
         ) {
-            options.distinct().forEach { option ->
+            distinctOptions.forEach { option ->
+                val isSelected = selected == option
                 FilterChip(
-                    selected = selected == option,
+                    selected = isSelected,
                     onClick = { onSelected(option) },
-                    modifier = Modifier.heightIn(min = 48.dp),
-                    label = { Text(option, fontSize = 11.sp) }
+                    modifier = Modifier.widthIn(min = 48.dp).heightIn(min = 48.dp),
+                    label = {
+                        Text(
+                            option,
+                            fontSize = 12.sp,
+                            fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Medium,
+                            maxLines = 1,
+                            softWrap = false
+                        )
+                    }
                 )
             }
         }
@@ -2064,14 +2074,16 @@ private fun CompactFilterRow(
             verticalAlignment = Alignment.CenterVertically
         ) {
             distinctOptions.forEach { option ->
+                val isSelected = selected == option
                 FilterChip(
-                    selected = selected == option,
+                    selected = isSelected,
                     onClick = { onSelected(option) },
                     modifier = Modifier.widthIn(min = 48.dp).heightIn(min = 48.dp),
                     label = {
                         Text(
                             option,
-                            fontSize = 11.sp,
+                            fontSize = 12.sp,
+                            fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Medium,
                             maxLines = 1,
                             softWrap = false
                         )

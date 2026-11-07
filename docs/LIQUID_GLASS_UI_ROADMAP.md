@@ -1,14 +1,15 @@
 # Liquid Glass UI Roadmap
 
-**Status:** Shared Prismal coverage spans the primary shell, Reader auto-hide, Search clear, feed-only compact navigation, Appearance preview, supporting dashboard/stat materials and the unified Reader/Quiz transient tier. The Reader Aa menu now pins the toolbar while open and suppresses the completion dock until dismissal; no new render pass or backdrop capture is added.
-**Feature branch:** black-box-bihar-news — the sole active integration/UI branch by explicit owner direction.
-**Source baseline for this pass:** black-box-bihar-news@818afb47eaadc685f133eaffc3efd199392627e4 (2026-11-07T16:02:13Z); 109 commits ahead / 0 behind main@73b8a0d1ba33503fede02db2c3c0af082d724a12 and 52 ahead / 0 behind PR #16's corrected background-only Prismal/stability head 6ab1e6a02ac8e91027f21900d64d63b9f2e6a890.
-**Previous exact active-branch validation:** [PR run #243](https://github.com/Batmancpu/CurrentLens/actions/runs/42389283591) and [push run #242](https://github.com/Batmancpu/CurrentLens/actions/runs/42389254191) both succeeded on exact parent SHA 818afb47eaadc685f133eaffc3efd199392627e4. Job-step summaries confirm WordNet generation, :app:testDebugUnitTest, :app:assembleDebug and artifact upload passed. PR artifact 13580718014 (39,094,949 bytes; expires 21 Nov 2026 16:04:54Z); push artifact 13580578348 (39,094,947 bytes).
-**Latest overall natural run:** [#243](https://github.com/Batmancpu/CurrentLens/actions/runs/42389283591), successful PR #34 validation on the exact active-branch parent head; #242 is the matching successful push run. No queued or in-progress Actions jobs remain.
-**Actions history:** 243 runs fully paginated (pages 1–3; page 4 empty): 144 success, 58 failure, 41 cancelled; queue empty.
-**Workflow / Releases:** active workflow blob 6cef6ca19f3babd331c9deb59be9da0067c6fa66 uses read-only build/test permissions and a separate main-push-only Release-write job. Main workflow blob 37197497288d9f0a60f4d1cfa8453e3dee52a902 remains push-only; nevertheless the exact PR #34 event naturally ran as #243 and passed on the PR head. Latest Release remains v0.2.0-build-116; neither #242 nor #243 published a Release.
-**Branch graph:** 37 remote branches (page 1 complete, page 2 empty), 20 open PRs and 14 closed PRs. black-box-bihar-news is 109 ahead / 0 behind main and 52 ahead / 0 behind PR #16. brrrNEWS is divergent (4 ahead / 15 behind); its useful supporting-material implementation is already represented. PR #29/#30/#31 changes are also already represented; PR #27/#32/#33 remain independent editorial/feed candidates, and #25/#26 remain pending a combined publisher-resource security review. See the latest complete table in docs/BRANCH_CONSOLIDATION.md.
-**Safety / device status:** no main change, app/package identity change, workflow edit, manual dispatch/rerun, Release publication, PR merge, source-branch mutation or branch deletion. OPPO Reno10 launch, screenshots, transitions, TalkBack/Reduce Motion, Perfetto/frame timing, GPU overdraw, memory, thermal and battery remain UNVERIFIED.
+**Status:** Shared Prismal coverage spans the primary shell, Reader auto-hide, Search clear, feed-only compact navigation, Appearance preview, supporting dashboard/stat materials and unified Reader/Quiz transient controls. This pass improves grouped-filter legibility and caches the Search sheet's option de-duplication; no new glass surface or capture is introduced.
+**Feature branch:** `black-box-bihar-news` — the sole active integration/UI branch by explicit owner direction.
+**Source baseline for this pass:** `black-box-bihar-news@ed6c94190296c8d7af400b80f6fe26f2252fafe1` (2026-11-07T17:00:49Z); 110 commits ahead / 0 behind `main@73b8a0d1ba33503fede02db2c3c0af082d724a12` and 53 ahead / 0 behind PR #16's corrected background-only Prismal/stability head `6ab1e6a02ac8e91027f21900d64d63b9f2e6a890`.
+**Previous exact active-branch validation:** [PR run #245](https://github.com/Batmancpu/CurrentLens/actions/runs/42394162322) and [push run #244](https://github.com/Batmancpu/CurrentLens/actions/runs/42394156457) both succeeded on exact source SHA `ed6c94190296c8d7af400b80f6fe26f2252fafe1`. WordNet builder tests (4/4), 151,456-word offline database generation, `:app:testDebugUnitTest`, `:app:assembleDebug` and artifact upload passed. PR artifact `13582611557` (39,095,549 bytes; expires 21 Nov 2026 17:02:22 UTC); push artifact `13581944398` (39,095,549 bytes). Release jobs skipped.
+**Latest overall natural run:** [#251](https://github.com/Batmancpu/CurrentLens/actions/runs/42396975887) passed on PR #35's separate direct-child head `c4a977831846224182f16981b15e5c803761e26d`, not on the active branch; artifact `13584216067` (39,095,814 bytes). [#250](https://github.com/Batmancpu/CurrentLens/actions/runs/42396816439) passed on PR #27's separate editorial head. Neither run validates this filter-control commit.
+**Actions history:** 251 runs fully paginated (100 + 100 + 51): 149 success, 58 failure, 44 cancelled; no queued or in-progress runs.
+**Workflow / Releases:** `.github/workflows/build-apk.yml` on the integration branch uses read-only build/test permissions and a separate main-push-only Release-write job. Main's workflow remains push-only; PR #34's exact pull-request event nevertheless passed as run #245 using the integration branch's PR trigger. Latest Release remains `v0.2.0-build-116`; no new Release was published.
+**Branch graph:** 38 remote branches, 21 open PRs and 14 closed PRs. `black-box-bihar-news` is 110 ahead / 0 behind main and 53 ahead / 0 behind PR #16. PR #35 is a separate 6-ahead / 0-behind direct child with bounded diagnostic reads; PR #27 is editorial-only and diverged 28 ahead / 11 behind; PR #32/#33 are independent feed changes that both touch `NewsRepository.kt`; PR #25/#26 remain held for combined publisher-resource security review. PR #29/#30/#31 changes are already represented. See the new complete 38-branch table in `docs/BRANCH_CONSOLIDATION.md`.
+**Safety / device status:** no main write, merge, retarget, workflow edit, manual dispatch/rerun, Release publication, package/app identity change, source-branch mutation or branch deletion. OPPO Reno10 launch, screenshots, transitions, TalkBack/Reduce Motion, font scaling, Perfetto/frame timing, GPU overdraw, memory, thermal and battery remain **UNVERIFIED**.
+
 
 ## Historical branch freshness audit — 7 November 2026, 13:00 IST (superseded by the current run record)
 
@@ -462,3 +463,29 @@ Next: after natural CI validates this exact head, perform the Appearance preview
 **Unverified / next**
 - OPPO Reno10 screenshots, cold/warm launch, menu/toolbar collision, native selection, TalkBack, Reduce Motion, font scaling, animation smoothness, Perfetto/frame timing, GPU overdraw, allocation/memory, thermal and battery remain **UNVERIFIED**.
 - After the new exact head's natural CI completes, continue the transient-surface/accessibility audit; separately reconcile PR #27/#32/#33 only after full dependency review, and keep #25/#26 behind a combined publisher-host/subresource security review.
+
+
+## Grouped-filter legibility pass — 7 November 2026, 23:26 IST
+
+**Freshness and validation gate**
+- Re-enumerated all 38 remote branches and all 35 PRs (21 open, 14 closed), checked current `main`, the complete Actions history/queue, workflow, latest runs/jobs/logs/artifacts and Releases. Source parent is `black-box-bihar-news@ed6c94190296c8d7af400b80f6fe26f2252fafe1`; it remains the owner-selected line and a direct descendant of PR #16's corrected background-only Prismal/stability baseline.
+- The active branch's exact parent passed natural push run [#244](https://github.com/Batmancpu/CurrentLens/actions/runs/42394156457) and PR run [#245](https://github.com/Batmancpu/CurrentLens/actions/runs/42394162322). The latest overall run #251 belongs to PR #35's separate bounded-diagnostic branch; it is not treated as active-branch validation.
+- PR #30's 48dp target policy and PR #31's off-main appearance snapshot are already present in current source; PR #29 bookmark IO is also represented. Their source branches remain untouched. PR #35 is a direct child with six diagnostic-only commits and its own successful natural CI; it is not folded into this screen-sized pass. PR #27 remains editorial-only. PR #32/#33 both touch `NewsRepository.kt` and require joint reconciliation; PR #25/#26 remain behind a combined security review. No other branch is a safer UI baseline.
+
+**Implementation**
+- `FilterChipRow` (Search filter sheet) and `CompactFilterRow` (Saved, Reading Stats and Quiz Stats) now use 12sp labels instead of 11sp, semibold selected labels and medium unselected labels.
+- Both grouped filter implementations enforce at least 48dp width and height per chip. Existing `FilterChip` selected semantics, option order, callbacks, filters and saved-data meaning are unchanged.
+- `FilterChipRow` now memoizes its distinct option list with `remember(options)`, matching `CompactFilterRow`; this avoids rebuilding the same de-duplicated list on selected-filter recompositions.
+
+**Paired material/performance strategy**
+- Existing single `GlassFilterGroup` / Search-sheet `PrismalTransientSurface` ownership is unchanged. No new Prismal surface, blur/refraction pass, backdrop capture, sampler/readback, shader, graphics layer, image decode, dependency, timer, network request or persistence operation is added.
+- The filter chips remain controls within their existing shared glass group; article cards, statistics data and quiz questions remain high-contrast content surfaces. No per-chip blur or capture is introduced.
+- The list memoization is source-level allocation avoidance only; no frame-time, memory, GPU, battery or thermal improvement is claimed.
+
+**Tests / CI**
+- No new policy test was added for a typography/layout-only adjustment. Existing Compose/JVM source is unchanged outside the two filter composables; the new exact head must receive its own natural push/PR build and `:app:testDebugUnitTest` result.
+- Do not dispatch or rerun Actions. No CI result from #244/#245/#250/#251 validates the new commit.
+
+**Unverified / next**
+- OPPO Reno10 filter chip reachability, font scaling, horizontal scrolling, TalkBack focus, visual balance and animation remain **UNVERIFIED**. Device Perfetto/frame timing, GPU overdraw, allocation/memory, thermal and battery remain unmeasured.
+- Next pass: inspect Today skeleton/card proportions and shared header/navigation spacing against the supplied recording; keep repeated feed cards free of per-card live blur and preserve the one shared background-only Prismal source.
