@@ -159,7 +159,7 @@ object NewsRepository {
         var atomPublished = ""
         var atomUpdated = ""
         var genericDate = ""
-        var image: String? = null
+        val imageCandidates = mutableListOf<FeedImageCandidate>()
         while (event != XmlPullParser.END_DOCUMENT) {
             when (event) {
                 XmlPullParser.START_TAG -> {
@@ -173,7 +173,7 @@ object NewsRepository {
                         atomPublished = ""
                         atomUpdated = ""
                         genericDate = ""
-                        image = null
+                        imageCandidates.clear()
                     } else if (inItem) {
                         when (tag) {
                             "title" -> title = clean(runCatching { parser.nextText() }.getOrDefault(""))
@@ -200,10 +200,31 @@ object NewsRepository {
                             "published" -> atomPublished = runCatching { parser.nextText().trim() }.getOrDefault("")
                             "updated" -> atomUpdated = runCatching { parser.nextText().trim() }.getOrDefault("")
                             "date" -> genericDate = runCatching { parser.nextText().trim() }.getOrDefault("")
-                            "enclosure" -> image = parser.getAttributeValue(null, "url")
+                            "enclosure" -> {
+                                val candidate = parser.getAttributeValue(null, "url")
+                                if (!candidate.isNullOrBlank()) {
+                                    imageCandidates.add(
+                                        FeedImageCandidate(
+                                            url = candidate.trim(),
+                                            element = FeedImageElement.ENCLOSURE,
+                                            type = parser.getAttributeValue(null, "type").orEmpty(),
+                                            medium = parser.getAttributeValue(null, "medium").orEmpty()
+                                        )
+                                    )
+                                }
+                            }
                             "thumbnail", "content" -> {
                                 val candidate = parser.getAttributeValue(null, "url")
-                                if (candidate?.startsWith("http") == true) image = candidate
+                                if (!candidate.isNullOrBlank()) {
+                                    imageCandidates.add(
+                                        FeedImageCandidate(
+                                            url = candidate.trim(),
+                                            element = if (tag == "thumbnail") FeedImageElement.THUMBNAIL else FeedImageElement.CONTENT,
+                                            type = parser.getAttributeValue(null, "type").orEmpty(),
+                                            medium = parser.getAttributeValue(null, "medium").orEmpty()
+                                        )
+                                    )
+                                }
                             }
                         }
                     }
@@ -227,7 +248,7 @@ object NewsRepository {
                                         atomUpdated = atomUpdated,
                                         genericDate = genericDate
                                     ),
-                                    imageUrl = image,
+                                    imageUrl = FeedImagePolicy.select(source.name, imageCandidates),
                                     weekendRead = source.weekendRead,
                                     feedUrl = source.url
                                 )
