@@ -280,6 +280,46 @@ class UpscFeedPolicyTest {
     }
 
     @Test
+    fun institutionNameAloneCannotQualifyRoutineInstitutionNews() {
+        assertRejectedDespiteKeywordMatch(article(
+            "RBI celebrates foundation day with staff cultural programme",
+            "The event reports an internal celebration, not a monetary or financial-policy development."
+        ))
+        assertRejectedDespiteKeywordMatch(article(
+            "Supreme Court registry hosts annual cultural festival",
+            "The story concerns an internal staff event, not a constitutional or judicial issue."
+        ))
+        assertRejectedDespiteKeywordMatch(article(
+            "ISRO marks foundation day with employee event",
+            "The report covers an internal celebration without a science or space development."
+        ))
+        assertRejectedDespiteKeywordMatch(article(
+            "Election Commission celebrates foundation day",
+            "The item is an institutional anniversary without an electoral-process development."
+        ))
+    }
+
+    @Test
+    fun institutionalMentionsRemainEligibleWhenHeadlineNamesTheSyllabusIssue() {
+        assertSyllabusMapped(article(
+            "RBI holds repo rate as inflation remains a concern",
+            "The Reserve Bank reviews monetary policy and liquidity conditions."
+        ), "GS III", "Indian Economy")
+        assertSyllabusMapped(article(
+            "Supreme Court reviews a constitutional amendment affecting federalism",
+            "The case concerns constitutional structure and distribution of powers."
+        ), "GS II", "Constitution")
+        assertSyllabusMapped(article(
+            "ISRO announces a new space mission and quantum computing programme",
+            "The announcement covers scientific and technological applications."
+        ), "GS III", "Science & Technology")
+        assertSyllabusMapped(article(
+            "Election Commission enforces the Representation of the People Act during polls",
+            "The development concerns election law and the constitutional electoral framework."
+        ), "GS II", "Constitution")
+    }
+
+    @Test
     fun unrelatedSpecificSignalFromAnotherTopicCannotRescueBroadGovernanceMatch() {
         val item = article(
             "Government launches a new welfare scheme for public service reform",

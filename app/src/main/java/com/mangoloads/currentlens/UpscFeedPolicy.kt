@@ -111,6 +111,15 @@ internal object UpscFeedPolicy {
         """\b(?:$policySubjectPattern)\b(?:\s+\w+){0,4}\s+\b(?:$PASSIVE_POLICY_ACTION_PATTERN)\b(?:\s+\w+){0,3}\s+by\s+(?:the\s+)?(?:$POLICY_INSTITUTION_PATTERN)\b(?:\s+\w+){0,4}\s+\b(?:today|yesterday|recently|this week|this month|this year|20\d{2})\b"""
     )
 
+    // Institution names identify actors, not syllabus themes. A routine appointment,
+    // anniversary or staff event must not qualify merely because it mentions one.
+    // A second, non-institutional signal from the selected GS mapping is required.
+    private val institutionOnlySignals = setOf(
+        "supreme court", "high court", "election commission", "gst council",
+        "reserve bank", "rbi", "isro", "archaeological survey", "united nations",
+        "lokpal", "comptroller and auditor general", "central vigilance commission"
+    )
+
     private val specificSyllabusSignals = listOf(
         "supreme court", "high court", "constitution", "constitutional amendment",
         "election commission", "federalism", "centre-state",
@@ -186,7 +195,8 @@ internal object UpscFeedPolicy {
         // rescue a broad match from the selected GS mapping. The card explains
         // the selected mapping, so eligibility must be supported by that same rule.
         val hasSpecificSignalInSelectedMapping = relevance.matchedTerms.any { matchedTerm ->
-            specificSyllabusSignals.any { specificSignal -> specificSignal == matchedTerm }
+            matchedTerm !in institutionOnlySignals &&
+                specificSyllabusSignals.any { specificSignal -> specificSignal == matchedTerm }
         }
 
         return hasPolicyException || hasSpecificSignalInSelectedMapping
