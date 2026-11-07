@@ -260,6 +260,15 @@ class UpscFeedPolicyTest {
     }
 
     @Test
+    fun unrelatedInstitutionalActionCannotRescueAnEntertainmentSubject() {
+        assertRejectedDespiteKeywordMatch(article(
+            "A new film about the Cinematograph Act while Ministry issues new agricultural rules",
+            "A promotional feature concerns a historical film; the unrelated ministry action is about agriculture.",
+            "Entertainment"
+        ))
+    }
+
+    @Test
     fun ambiguousPassivePolicyHeadlineWithoutCurrentCueOrInstitutionIsHeldBack() {
         assertRejectedDespiteKeywordMatch(article(
             "Film certification rules notified",
