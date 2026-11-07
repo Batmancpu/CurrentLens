@@ -104,8 +104,11 @@ internal object UpscFeedPolicy {
         """\b(?:new|draft|revised|updated|fresh|proposed|final|recently|20\d{2})\b(?:\s+\w+){0,1}\s+\b(?:$policySubjectPattern)\b(?:\s+\w+){0,4}\s+\b(?:$PASSIVE_POLICY_ACTION_PATTERN)\b"""
     )
     // Passive with a named institution: policy subject -> action -> by institution.
+    // Passive actions attributed to an institution need a recency cue too.
+    // Without it, a retrospective such as "Cinematograph Act enacted by Parliament
+    // in 1952" can masquerade as a current policy development.
     private val passivePolicyActionByInstitutionPattern = Regex(
-        """\b(?:$policySubjectPattern)\b(?:\s+\w+){0,4}\s+\b(?:$PASSIVE_POLICY_ACTION_PATTERN)\b(?:\s+\w+){0,3}\s+by\s+(?:the\s+)?(?:$POLICY_INSTITUTION_PATTERN)\b"""
+        """\b(?:$policySubjectPattern)\b(?:\s+\w+){0,4}\s+\b(?:$PASSIVE_POLICY_ACTION_PATTERN)\b(?:\s+\w+){0,3}\s+by\s+(?:the\s+)?(?:$POLICY_INSTITUTION_PATTERN)\b(?:\s+\w+){0,4}\s+\b(?:today|yesterday|recently|this week|this month|this year|20\d{2})\b"""
     )
 
     private val specificSyllabusSignals = listOf(
