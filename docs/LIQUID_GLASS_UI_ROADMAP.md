@@ -1,10 +1,10 @@
 # Liquid Glass UI Roadmap
 
-**Status:** Active incremental redesign; current code commit awaits its natural CI run.  
+**Status:** Active incremental redesign; supporting-surface code and its documentation baseline have passed natural CI; the Reader resume-I/O batch in this iteration awaits its own natural CI run.  
 **Feature branch:** `black-box-bihar-news`  
-**Latest code commit:** `5e966a1b2d27bc08e01af3cd40e6573d6e8328be` (parent/source baseline `e411c394e8d48b3f547b6d6fb9039a8935bd05eb`).  
-**Integration lineage:** PR #16 stability head `6ab1e6a02ac8e91027f21900d64d63b9f2e6a890`; current branch is 37 commits ahead / 0 behind PR #16 and 94 ahead / 0 behind main.  
-**Last completed successful run:** #193, exact parent SHA `e411c394e8d48b3f547b6d6fb9039a8935bd05eb`, passed JVM tests, APK assembly and artifact upload; artifact `13559372948`. This does not validate commit `5e966a1`.  
+**Pre-iteration source HEAD:** `c8afed0a78c536a36567c286f19fdafcada1ac70`; follow the live `black-box-bihar-news` ref for this iteration's new HEAD.  
+**Integration lineage:** PR #16 stability head `6ab1e6a02ac8e91027f21900d64d63b9f2e6a890`; pre-iteration branch head is 39 commits ahead / 0 behind PR #16 and 96 ahead / 0 behind main.  
+**Last completed successful run:** #196, exact pre-iteration HEAD `c8afed0a78c536a36567c286f19fdafcada1ac70`, passed WordNet generation, `:app:testDebugUnitTest`, `:app:assembleDebug` and artifact upload; artifact `13560390670`. Run #195 also passed the exact supporting-glass code commit `5e966a1b2d27bc08e01af3cd40e6573d6e8328be`; these runs do not validate the new Reader resume-I/O commit.  
 **Main:** unchanged at `73b8a0d1ba33503fede02db2c3c0af082d724a12`.  
 **Safety:** no source branch has been deleted, no Release has been published, and no workflow has been manually dispatched or rerun.
 
@@ -163,3 +163,24 @@ The following work is represented on `black-box-bihar-news`; source PRs/branches
 **Rendering delta:** one cached vertical tint brush and one cached rim brush per composed supporting card; no new blur pass, root capture, tab-glyph capture, sampler/readback, graphics layer, bitmap work, network or persistent data change. Existing lazy composition remains bounded to visible list items. No measured frame-time or battery improvement is claimed.
 
 **Verification:** parent run #193 passed at exact SHA `e411c394e8d48b3f547b6d6fb9039a8935bd05eb`; artifact `13559372948`. It does not validate this new commit. Natural CI for `5e966a1` is pending. OPPO/TalkBack/visual/performance checks remain unverified.
+
+
+## Reader resume restoration off-main batch — 7 November 2026
+
+**Selected development branch:** `black-box-bihar-news`; source before this iteration `c8afed0a78c536a36567c286f19fdafcada1ac70`. This remains the single active consolidation branch under the owner's explicit branch instruction.
+
+**Fresh sibling-branch review:** `brrrNEWS@e6fcfc25a4c8d5f363ced58f313552120aa7ff96` is a newer, divergent rename/validation line (4 commits ahead / 2 behind `black-box-bihar-news`, common ancestor `e411c394e8d48b3f547b6d6fb9039a8935bd05eb`). Its commit `e161a9a53a3d85d06b4908eb690aecb02a716015` (“perf(reader): restore saved position off the UI thread”) was reviewed and selectively ported. Its other changes were not copied:
+- `d4f0458` changes the single workflow's branch filter and artifact naming to `brrrNEWS`; the active branch's read-only PR workflow remains unchanged.
+- `c9a1d53` changes the visible app label/docs to uppercase `brrrNEWS`; not adopted because this task preserves the existing app identity.
+- `e6fcfc2` repeats the supporting-glass implementation already present in `black-box-bihar-news` as `5e966a1`; no duplicate system was added.
+- PR #24 targets `brrrNEWS` and changes only `UpscFeedPolicy.kt`, its tests and editorial baseline documentation. It is editorial-only and was not ported into this UI pass.
+
+**Implementation:** `ReaderScreen` no longer reads and parses the saved Reader-position JSON synchronously during composition. A per-article `LaunchedEffect` restores the existing value on `Dispatchers.IO`, publishes it to Compose state, and only then allows the existing WebView content/fallback load to queue its resume point. The existing linear progress indicator remains visible while the resume point is being restored. Article-key scoping cancels stale restore work when the user changes articles.
+
+**Data and behaviour:** no preference key, JSON format, retention rule, WebView permission, publisher fallback, JavaScript/DOM-storage policy, scroll-save debounce, completion rule, selection bridge or quiz persistence semantics changed. The existing `ReaderPositionPolicy` and `ReaderPositionPolicyTest` remain the policy/geometry regression coverage; this batch adds coroutine sequencing rather than a new policy, so no wrapper-only test was added.
+
+**Paired performance strategy:** removes the bounded SharedPreferences/JSON lookup from the Reader composition path and performs one restore read on IO per article open. It adds no timer, polling, network request, bitmap decode, blur, shader, graphics layer, Prismal capture, sampler or readback. This is a source-level main-thread-work reduction, not a measured frame-time or battery result.
+
+**Verification:** pre-iteration run #196 passed on exact source SHA `c8afed0`; run #195 passed on `5e966a1`. The new Reader resume-I/O commit requires its own natural push workflow. OPPO Reno10 launch/scroll traces, restore timing, memory, thermal and battery remain **UNVERIFIED**.
+
+**Next implementation:** add an accessible low-effects/reduced-transparency preference that changes the real shared Prismal material parameters consistently, with a low-cost fallback and a restrained live preview; then consolidate Saved/stat filters and polish the Quiz action area. Preserve one root backdrop source and do not add a second sampler.

@@ -2582,8 +2582,18 @@ private fun ReaderScreen(
 ) {
     val context = LocalContext.current
     val readerWebViewHolder = remember { mutableStateOf<ReaderWebView?>(null) }
-    var savedReadingProgress by remember(article.url) {
-        mutableFloatStateOf(LocalStore.readerPosition(context, article.url)?.progress ?: 0f)
+    var savedReadingProgress by remember(article.url) { mutableFloatStateOf(0f) }
+    var readerPositionLoaded by remember(article.url) { mutableStateOf(false) }
+    LaunchedEffect(article.url) {
+        readerPositionLoaded = false
+        savedReadingProgress = 0f
+        val restoredProgress = withContext(Dispatchers.IO) {
+            runCatching {
+                LocalStore.readerPosition(context, article.url)?.progress ?: 0f
+            }.getOrDefault(0f)
+        }
+        savedReadingProgress = restoredProgress
+        readerPositionLoaded = true
     }
 
     var contentLoaded by remember(article.url) { mutableStateOf(false) }
@@ -2704,7 +2714,9 @@ private fun ReaderScreen(
                 }
             }
         }
-        if (extracting || (!pageLoaded && (extractedHtml != null || fallbackToPublisher))) androidx.compose.material3.LinearProgressIndicator(Modifier.fillMaxWidth())
+        if (extracting || !readerPositionLoaded ||
+            (!pageLoaded && (extractedHtml != null || fallbackToPublisher))
+        ) androidx.compose.material3.LinearProgressIndicator(Modifier.fillMaxWidth())
         Box(Modifier.weight(1f).fillMaxWidth().onGloballyPositioned { coordinates ->
             // Both this viewport and the WebView selection rectangle are converted
             // in window coordinates; mixing screen and window origins double-counts
@@ -2843,26 +2855,28 @@ private fun ReaderScreen(
                         activeWordAnchor = null
                         activeWordPreferAbove = false
                     }
-                    val cleanHtml = extractedHtml
-                    if (cleanHtml != null) {
-                        val key = "reader:" + article.url + ":" + fontSize + ":" + dark
-                        if (webView.loadedKey != key) {
-                            if (!articleChanged) webView.flushReadingPosition()
-                            webView.queueReadingPositionRestore(savedReadingProgress)
-                            webView.loadedKey = key
-                            pageLoaded = false
-                            contentLoaded = false
-                            webView.loadDataWithBaseURL(article.url, readerDocument(article, cleanHtml, fontSize, dark), "text/html", "UTF-8", null)
-                        }
-                    } else if (fallbackToPublisher) {
-                        val key = "publisher:" + article.url + ":" + fontSize
-                        if (webView.loadedKey != key) {
-                            if (!articleChanged) webView.flushReadingPosition()
-                            webView.queueReadingPositionRestore(savedReadingProgress)
-                            webView.loadedKey = key
-                            pageLoaded = false
-                            contentLoaded = false
-                            webView.loadUrl(article.url)
+                    if (readerPositionLoaded) {
+                        val cleanHtml = extractedHtml
+                        if (cleanHtml != null) {
+                            val key = "reader:" + article.url + ":" + fontSize + ":" + dark
+                            if (webView.loadedKey != key) {
+                                if (!articleChanged) webView.flushReadingPosition()
+                                webView.queueReadingPositionRestore(savedReadingProgress)
+                                webView.loadedKey = key
+                                pageLoaded = false
+                                contentLoaded = false
+                                webView.loadDataWithBaseURL(article.url, readerDocument(article, cleanHtml, fontSize, dark), "text/html", "UTF-8", null)
+                            }
+                        } else if (fallbackToPublisher) {
+                            val key = "publisher:" + article.url + ":" + fontSize
+                            if (webView.loadedKey != key) {
+                                if (!articleChanged) webView.flushReadingPosition()
+                                webView.queueReadingPositionRestore(savedReadingProgress)
+                                webView.loadedKey = key
+                                pageLoaded = false
+                                contentLoaded = false
+                                webView.loadUrl(article.url)
+                            }
                         }
                     }
                 }
