@@ -85,9 +85,9 @@ class LaunchCrashDiagnosticsTest {
 
     @Test
     fun legacyReportsWithDeviceIdentifiersAreDetectedForCleanup() {
-        val report = "Device: Example Brand Model\\nBuild fingerprint: private-build"
+        val report = "Device: Example Brand Model\nBuild fingerprint: private-build"
         assertTrue(LaunchCrashDiagnostics.hasLegacyDeviceMetadata(report))
-        assertFalse(LaunchCrashDiagnostics.hasLegacyDeviceMetadata("Android API: 35\\nReason: CRASH_NATIVE"))
+        assertFalse(LaunchCrashDiagnostics.hasLegacyDeviceMetadata("Android API: 35\nReason: CRASH_NATIVE"))
     }
 
     @Test
@@ -132,7 +132,7 @@ class LaunchCrashDiagnosticsTest {
     fun diagnosticFileReadsStopAtRequestedPrefix() {
         val file = File.createTempFile("currentlens-diagnostic", ".txt")
         try {
-            val content = "header\\n" + "x".repeat(100_000)
+            val content = "header\n" + "x".repeat(100_000)
             file.writeText(content, Charsets.UTF_8)
 
             assertEquals(content.take(128), LaunchCrashDiagnostics.readTextPrefix(file, 128))
@@ -153,13 +153,13 @@ class LaunchCrashDiagnosticsTest {
         assertTrue(
             LaunchCrashDiagnostics.shouldDiscardExistingReport(
                 64L,
-                "Device: Example\\nBuild fingerprint: private"
+                "Device: Example\nBuild fingerprint: private"
             )
         )
         assertFalse(
             LaunchCrashDiagnostics.shouldDiscardExistingReport(
                 64L,
-                "CurrentLens local startup crash report\\nReason: CRASH_NATIVE"
+                "CurrentLens local startup crash report\nReason: CRASH_NATIVE"
             )
         )
     }
