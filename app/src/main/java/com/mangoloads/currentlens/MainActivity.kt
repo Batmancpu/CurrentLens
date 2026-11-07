@@ -92,6 +92,8 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -2401,6 +2403,8 @@ private fun ReaderScreen(article: Article, backdrop: PrismalBackdrop, glassAlpha
     var readerViewportWindowOrigin by remember(article.url) { mutableStateOf(Offset.Zero) }
     var readerViewportHeightPx by remember(article.url) { mutableIntStateOf(0) }
     var fontSize by remember(article.url) { mutableIntStateOf(20) }
+    var completionDismissed by remember(article.url) { mutableStateOf(false) }
+    var selectionActionModeActive by remember(article.url) { mutableStateOf(false) }
 
     LaunchedEffect(article.url) {
         extracting = true
@@ -2424,30 +2428,38 @@ private fun ReaderScreen(article: Article, backdrop: PrismalBackdrop, glassAlpha
         }
     }
 
+    val readerSourceStatus = when {
+        extractedHtml != null && loadedFromCache -> "Saved public content · on this device"
+        extractedHtml != null -> "Public publisher content · attributed"
+        fallbackToPublisher -> "Publisher fallback · scripts disabled"
+        else -> "Public article unavailable"
+    }
+
     Column(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
-        Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 7.dp), verticalAlignment = Alignment.CenterVertically) {
-            IconButton(onClick = {
+        ReaderGlassToolbar(
+            article = article,
+            sourceStatus = readerSourceStatus,
+            backdrop = backdrop,
+            glassAlpha = glassAlpha,
+            dark = dark,
+            fontSize = fontSize,
+            onBack = {
                 readerWebViewHolder.value?.flushReadingPosition()
                 onBack()
-            }) { Icon(Icons.Outlined.ArrowBack, contentDescription = "Back") }
-            Column(Modifier.weight(1f)) {
-                Text(article.source, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
-                val readerSourceStatus = when {
-                    extractedHtml == null -> "In-app publisher view"
-                    loadedFromCache -> "Saved public content · on this device"
-                    else -> "Public publisher content · attributed"
-                }
-                Text(
-                    listOf(
-                        ArticlePublicationDatePolicy.label(article.publishedAtMillis),
-                        readerSourceStatus
-                    ).joinToString(" · "),
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.secondary
+            },
+            onFontSizeChange = { fontSize = it }
+        )
+        if (savedReadingProgress > 0.005f && !reachedBottom) {
+            Box(
+                Modifier.fillMaxWidth().padding(horizontal = 18.dp, vertical = 2.dp)
+                    .height(2.dp).clip(CircleShape)
+                    .background(MaterialTheme.colorScheme.outline.copy(alpha = 0.18f))
+            ) {
+                Box(
+                    Modifier.fillMaxWidth(savedReadingProgress.coerceIn(0f, 1f))
+                        .fillMaxSize().background(MaterialTheme.colorScheme.primary)
                 )
             }
-            IconButton(onClick = { fontSize = (fontSize - 1).coerceIn(16, 28) }) { Icon(Icons.Outlined.TextDecrease, contentDescription = "Smaller text") }
-            IconButton(onClick = { fontSize = (fontSize + 1).coerceIn(16, 28) }) { Icon(Icons.Outlined.TextIncrease, contentDescription = "Larger text") }
         }
         if (extracting || (!pageLoaded && (extractedHtml != null || fallbackToPublisher))) androidx.compose.material3.LinearProgressIndicator(Modifier.fillMaxWidth())
         Box(Modifier.weight(1f).fillMaxWidth().onGloballyPositioned { coordinates ->
@@ -2522,6 +2534,9 @@ private fun ReaderScreen(article: Article, backdrop: PrismalBackdrop, glassAlpha
                         LocalStore.clearReaderPosition(context, article.url)
                         savedReadingProgress = 0f
                         reachedBottom = true
+                    }
+                    webView.onSelectionActionModeChanged = { active ->
+                        selectionActionModeActive = active
                     }
                     webView.onDefineWord = { word, selectionRect ->
                         val webViewLocation = IntArray(2)
@@ -2672,21 +2687,149 @@ private fun ReaderScreen(article: Article, backdrop: PrismalBackdrop, glassAlpha
                 }
             }
         }
-        // Do not let the completion prompt occupy the dictionary popover's area.
-        // The prompt returns when the definition is dismissed.
-        if (reachedBottom && activeWord == null) {
-            Card(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp),
-                shape = RoundedCornerShape(22.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)) {
-                Row(Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Column(Modifier.weight(1f)) {
-                        Text("Finished reading?", fontWeight = FontWeight.Bold)
-                        Text(
-                            "Five original practice prompts: headline, indicative GS mapping and answer-writing skills. Not official PYQs.",
-                            fontSize = 12.sp
-                        )
+        if (ReaderChromePolicy.shouldShowCompletion(
+                reachedBottom = reachedBottom,
+                definitionOpen = activeWord != null,
+                dismissed = completionDismissed,
+                selectionActive = selectionActionModeActive
+            )
+        ) {
+            PrismalGlassSurface(
+                backdrop = backdrop,
+                modifier = Modifier.fillMaxWidth()
+                    .padding(horizontal = 12.dp, vertical = 8.dp)
+                    .navigationBarsPadding(),
+                shape = { PrismalRoundedRectangle(20.dp) },
+                blurRadius = 7.dp,
+                refractionHeightPx = 10f,
+                refractionAmountPx = 12f,
+                depthEffect = true,
+                chromaticAberration = 0.004f,
+                tint = if (dark) Color(0xFF25354A) else Color(0xFFEAF0FA),
+                tintAlpha = (glassAlpha * 0.34f).coerceIn(0.05f, 0.20f)
+            ) {
+                Row(
+                    Modifier.fillMaxWidth().padding(start = 14.dp, end = 4.dp, top = 4.dp, bottom = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(1.dp)) {
+                        Text("Reading complete", style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.SemiBold)
+                        Text("Five original prompts · not official PYQs",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.secondary,
+                            maxLines = 1, overflow = TextOverflow.Ellipsis)
                     }
-                    Button(onClick = onQuiz) { Text("Review") }
+                    TextButton(
+                        onClick = onQuiz,
+                        modifier = Modifier.heightIn(min = 48.dp),
+                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp)
+                    ) { Text("Try 5 questions") }
+                    IconButton(
+                        onClick = { completionDismissed = true },
+                        modifier = Modifier.size(48.dp)
+                    ) {
+                        Icon(Icons.Outlined.Close, contentDescription = "Dismiss completion")
+                    }
+                }
+            }
+        }
+    }
+}
+
+
+@Composable
+private fun ReaderGlassToolbar(
+    article: Article,
+    sourceStatus: String,
+    backdrop: PrismalBackdrop,
+    glassAlpha: Float,
+    dark: Boolean,
+    fontSize: Int,
+    onBack: () -> Unit,
+    onFontSizeChange: (Int) -> Unit
+) {
+    var textSizeMenuExpanded by remember(article.url) { mutableStateOf(false) }
+    val tint = if (dark) Color(0xFF26364B) else Color(0xFFEAF0FA)
+
+    PrismalGlassSurface(
+        backdrop = backdrop,
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 6.dp),
+        shape = { PrismalRoundedRectangle(22.dp) },
+        blurRadius = 8.dp,
+        refractionHeightPx = 13f,
+        refractionAmountPx = 15f,
+        depthEffect = true,
+        chromaticAberration = 0.006f,
+        tint = tint,
+        tintAlpha = (glassAlpha * 0.42f).coerceIn(0.05f, 0.24f)
+    ) {
+        Row(
+            Modifier.fillMaxWidth().heightIn(min = 60.dp)
+                .padding(start = 4.dp, end = 4.dp, top = 4.dp, bottom = 4.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            IconButton(onClick = onBack, modifier = Modifier.size(48.dp)) {
+                Icon(Icons.Outlined.ArrowBack, contentDescription = "Back to article list",
+                    modifier = Modifier.size(22.dp))
+            }
+            Column(
+                Modifier.weight(1f).padding(vertical = 3.dp),
+                verticalArrangement = Arrangement.spacedBy(2.dp)
+            ) {
+                Text(
+                    article.source,
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Text(
+                    "${ArticlePublicationDatePolicy.label(article.publishedAtMillis)} · $sourceStatus",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.secondary,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                    lineHeight = 14.sp
+                )
+            }
+            Box {
+                IconButton(
+                    onClick = { textSizeMenuExpanded = true },
+                    modifier = Modifier.size(48.dp).semantics {
+                        contentDescription = "Text size, $fontSize sp"
+                    }
+                ) {
+                    Text("Aa", style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                }
+                DropdownMenu(
+                    expanded = textSizeMenuExpanded,
+                    onDismissRequest = { textSizeMenuExpanded = false }
+                ) {
+                    DropdownMenuItem(
+                        text = { Text("Smaller text") },
+                        leadingIcon = { Icon(Icons.Outlined.TextDecrease, contentDescription = null) },
+                        enabled = fontSize > ReaderChromePolicy.MIN_FONT_SIZE_SP,
+                        onClick = {
+                            onFontSizeChange(ReaderChromePolicy.adjustFontSize(fontSize, -1))
+                            textSizeMenuExpanded = false
+                        }
+                    )
+                    DropdownMenuItem(
+                        text = { Text("Larger text") },
+                        leadingIcon = { Icon(Icons.Outlined.TextIncrease, contentDescription = null) },
+                        enabled = fontSize < ReaderChromePolicy.MAX_FONT_SIZE_SP,
+                        onClick = {
+                            onFontSizeChange(ReaderChromePolicy.adjustFontSize(fontSize, 1))
+                            textSizeMenuExpanded = false
+                        }
+                    )
+                    DropdownMenuItem(
+                        text = { Text("Current size · $fontSize sp") },
+                        enabled = false,
+                        onClick = {}
+                    )
                 }
             }
         }
@@ -2721,6 +2864,7 @@ private fun readerDocument(article: Article, content: String, fontSize: Int, dar
 private class ReaderWebView(context: android.content.Context) : WebView(context) {
     var loadedKey: String? = null
     var onReachedBottom: () -> Unit = {}
+    var onSelectionActionModeChanged: (Boolean) -> Unit = {}
     var onDefineWord: (String, RectF?) -> Unit = { _, _ -> }
     var onReaderPageFinished: () -> Unit = {}
     var onReaderMainFrameError: () -> Unit = {}
@@ -2902,6 +3046,7 @@ private class ReaderWebView(context: android.content.Context) : WebView(context)
         cancelReadingPositionRestore()
         cancelShortPageEndCheck(resetStability = true)
         cancelPendingAutoDefine()
+        onSelectionActionModeChanged(false)
         super.onDetachedFromWindow()
     }
 
@@ -2951,6 +3096,7 @@ private class ReaderWebView(context: android.content.Context) : WebView(context)
         object : ActionMode.Callback2() {
             override fun onCreateActionMode(mode: ActionMode, menu: Menu): Boolean {
                 val created = original.onCreateActionMode(mode, menu)
+                if (created) onSelectionActionModeChanged(true)
                 if (created && selectionBridgeEnabled) {
                     menu.add(0, MENU_DEFINE_WORD, menu.size(), "Define")
                         .setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS)
@@ -3016,6 +3162,7 @@ private class ReaderWebView(context: android.content.Context) : WebView(context)
 
             override fun onDestroyActionMode(mode: ActionMode) {
                 cancelPendingAutoDefine()
+                onSelectionActionModeChanged(false)
                 original.onDestroyActionMode(mode)
             }
 
