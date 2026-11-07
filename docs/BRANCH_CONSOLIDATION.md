@@ -2,11 +2,11 @@
 
 **Repository:** Batmancpu/CurrentLens  
 **Chosen integration branch:** `black-box-bihar-news` — owner-selected single active integration branch.  
-**Verified source HEAD before the transient-controls batch:** `16eb549c3235b321ecf7ef1c5c5270817e336489`; the new UI commit is a direct child, created with a fast-forward-only expected-head update.  
-**Default branch:** `main@73b8a0d1ba33503fede02db2c3c0af082d724a12`, unchanged. The active branch is 102 commits ahead / 0 behind main and 45 ahead / 0 behind PR #16's corrected stability head `6ab1e6a02ac8e91027f21900d64d63b9f2e6a890`.  
-**Live branch inventory before this batch:** 33 remote refs (all returned on page 1; page 2 empty), 15 open PRs and 14 closed PRs. No branch was deleted.  
-**Latest active-branch validation before this batch:** Actions run #213, success on exact SHA `16eb549c3235b321ecf7ef1c5c5270817e336489`; WordNet builder tests 4/4, database 151,456 unique words / 50,950,144 bytes, `:app:testDebugUnitTest`, `:app:assembleDebug` and artifact upload succeeded. Artifact `13568329178`, 39,082,053 bytes, SHA-256 `2a0af7c27ff5aff00b48c12d7659cb5b37b5103f6858ebf090be02b2cc9f0981`. Release job skipped.  
-**Actions history:** 213 runs fully paginated (100 + 100 + 13; page 4 empty): 127 success, 54 failure, 32 cancelled; no queued/in-progress runs.  
+**Verified source HEAD before the supporting-card material pass:** `ec86b2fef2f5e86c3b95f2a2a2269bfef6158053`; the next UI commit is a direct child, created with a fast-forward-only expected-head update.  
+**Default branch:** `main@73b8a0d1ba33503fede02db2c3c0af082d724a12`, unchanged. The active branch is 108 commits ahead / 0 behind main and 51 ahead / 0 behind PR #16's corrected stability head `6ab1e6a02ac8e91027f21900d64d63b9f2e6a890`.  
+**Live branch inventory before this batch:** 37 remote refs (all returned on page 1; page 2 empty), 19 open PRs and 14 closed PRs. No branch was deleted.  
+**Latest active-branch validation before this batch:** Actions run #241, success on exact SHA `ec86b2fef2f5e86c3b95f2a2a2269bfef6158053`; WordNet builder tests 4/4, database 151,456 unique words / 50,950,144 bytes, `:app:testDebugUnitTest`, `:app:assembleDebug` and artifact upload succeeded. Artifact `13579222899`, 39,094,929 bytes, SHA-256 `d60b7e0d261c0ccac6bb5b407a642bd54183cca7abf1601b9fae541645bc838f`. Release job skipped.  
+**Actions history:** 241 runs fully paginated (100 + 100 + 41; page 4 empty): 142 success, 58 failure, 41 cancelled; no queued/in-progress runs.  
 **Workflow:** active branch blob `6cef6ca19f3babd331c9deb59be9da0067c6fa66` has read-only build/test permissions, PR validation for main/PR #16/black-box, and a separate main-push-only Release job. Main workflow blob `37197497288d9f0a60f4d1cfa8453e3dee52a902` remains push-only with broader write permissions. A future draft PR to main will not have a natural PR-triggered validation until main's workflow is reconciled; branch push CI is not PR-to-main validation.  
 **Release:** latest published remains `v0.2.0-build-116`; no feature-branch Release was created. No manual dispatch/rerun, main edit/merge, source-branch write or branch deletion occurred.
 
@@ -687,7 +687,7 @@ Repository/default: `Batmancpu/CurrentLens`, default `main@73b8a0d1ba33503fede02
 | Remote branch | Head SHA | Latest commit UTC | Latest message | PR role |
 |---|---|---|---|---|
 | a11y/48dp-icon-targets-2026-11-07 | 25107ce905b70bde1a41282ffd1d606819ebf58d | 2026-11-07T11:02:12Z | test(a11y): cover minimum icon action target | head #30 |
-| black-box-bihar-news | 48b54808807f5b15e637b6177524fd923741e1f7 | 2026-11-07T14:03:38Z | a11y: enforce 48dp icon action targets | active; base #11,#25,#26,#27,#29,#30,#31,#32,#33 |
+| black-box-bihar-news | ec86b2fef2f5e86c3b95f2a2a2269bfef6158053 | 2026-11-07T15:09:39Z | perf(ui): unify Reader and Quiz transient glass chrome | active; base #11,#25,#26,#27,#29,#30,#31,#32,#33 |
 | brrrNEWS | e6fcfc25a4c8d5f363ced58f313552120aa7ff96 | 2026-11-07T04:13:30Z | ui: consolidate lightweight supporting glass surfaces | base #24; divergent sibling |
 | ci/read-only-pr-validation-isolated-release-write-2026-11-06 | 963118f0abe5f7e38f2aa66a49d4b8e74548660c | 2026-11-06T17:18:53Z | ci: validate pull requests with read-only build permissions | head #18 |
 | ci/stacked-pr-validation-2026-11-07 | 5dc3179361835b77fb3186a99d9b5791301463fd | 2026-11-06T21:41:27Z | ci: restore Android SDK setup before sdkmanager | head #20; closed/merged into active branch |
@@ -747,3 +747,14 @@ Repository/default: `Batmancpu/CurrentLens`, default `main@73b8a0d1ba33503fede02
 - Run #240: success on PR #33 head c97d6b960e2cc6b93ac6444ebf9ceb6eabd320a4; WordNet generation, JVM tests, APK assembly and artifact upload succeeded; artifact 13579255941, 39,097,729 bytes. It is not a selected-branch run.
 - Active workflow blob 6cef6ca19f3babd331c9deb59be9da0067c6fa66 has read-only build/test permissions and isolated main-push Release write. Main workflow blob 37197497288d9f0a60f4d1cfa8453e3dee52a902 remains push-only. Latest published Release is v0.2.0-build-116.
 - No workflow was edited, no manual dispatch/rerun was used, no Release was published, no PR was merged/retargeted, and no remote branch was modified/deleted by this audit.
+
+
+## 7 November 2026, 21:26 IST — supporting-material freshness and CI audit
+
+- Re-enumerated all 37 remote branches (page 1 complete; page 2 empty), all 19 open and 14 closed PRs, current branch/default/PR16 refs, workflow, all Actions pages and Releases. No branch was deleted.
+- `black-box-bihar-news@ec86b2fef2f5e86c3b95f2a2a2269bfef6158053` is 108 ahead / 0 behind `main@73b8a0d1ba33503fede02db2c3c0af082d724a12` and 51 ahead / 0 behind PR #16's corrected stability/Prismal head `6ab1e6a02ac8e91027f21900d64d63b9f2e6a890`. It remains the newest coherent owner-selected integration line; the current source is a direct descendant of PR #16 and includes the previously consolidated Reader, workflow and UI work.
+- Comparison checks against the current head: `brrrNEWS` 4 ahead / 14 behind (diverged); `ui/liquid-glass-system-continuation` 0 ahead / 24 behind; `ui/liquid-glass-performance` 3 ahead / 126 behind; PR #13 adaptive contrast 1 ahead / 121 behind; PR #32 RSS concurrency 2 ahead / 3 behind; PR #33 relative Atom parsing 4 ahead / 1 behind; PR #25 image-host 7 ahead / 10 behind; PR #26 WebView subresource 1 ahead / 9 behind; PR #27 editorial gate 26 ahead / 9 behind; PR #24 policy guard 9 ahead / 14 behind; PR #29 bookmark IO 1 ahead / 7 behind; PR #30 48dp 3 ahead / 4 behind; PR #31 appearance IO 5 ahead / 3 behind. All are non-ancestor/diverged candidates, not automatic baselines.
+- Useful PR #29/#30/#31 changes and PR #13's conservative adaptive-contrast policy are already represented by focused ports; brrrNEWS's supporting-card material is already in the integration line. PR #25/#26 remain unported pending a combined publisher asset-host/subresource review. PR #32/#33 are independent RSS performance/parser changes and were not mixed into this UI batch. PR #27/#24 are editorial and not UI baselines.
+- PR #16 and #18 remain open/draft; #19/#20/#23/#28 are closed/merged into black-box-bihar-news only. No PR was merged or retargeted in this audit.
+- Exact active-head run #241 passed on ec86b2fef2f5e86c3b95f2a2a2269bfef6158053; WordNet builder 4/4, 151,456 unique words, JVM tests, debug APK assembly and artifact upload succeeded. Artifact 13579222899, 39,094,929 bytes, SHA-256 d60b7e0d261c0ccac6bb5b407a642bd54183cca7abf1601b9fae541645bc838f. The next UI commit needs its own natural push run.
+- Active branch workflow `6cef6ca19f3babd331c9deb59be9da0067c6fa66` has read-only build/test permissions and a separate main-push-only Release-write job. Main workflow `37197497288d9f0a60f4d1cfa8453e3dee52a902` remains push-only. Latest Release is `v0.2.0-build-116`; no Release publication, manual dispatch/rerun, main write, PR merge or source-branch mutation occurred.

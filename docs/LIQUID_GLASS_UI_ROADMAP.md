@@ -1,13 +1,13 @@
 # Liquid Glass UI Roadmap
 
-**Status:** Shared Prismal coverage includes the primary shell, Reader auto-hide, Search clear, feed-only compact navigation, Appearance preview and supporting dashboard/stat materials. This pass consolidates Reader and Quiz transient chrome onto the existing bounded Prismal control tier; its new commit requires natural CI.
+**Status:** Shared Prismal coverage includes the primary shell, Reader auto-hide, Search clear, feed-only compact navigation, Appearance preview, supporting dashboard/stat materials and the unified Reader/Quiz transient tier. This pass strengthens the quiet supporting-card tint/rim without adding live blur or capture.
 **Feature branch:** black-box-bihar-news — the sole active integration/UI branch by explicit owner direction.
-**Source baseline for this pass:** black-box-bihar-news@48b54808807f5b15e637b6177524fd923741e1f7 (2026-11-07T14:03:38Z); 107 commits ahead / 0 behind main@73b8a0d1ba33503fede02db2c3c0af082d724a12 and 50 ahead / 0 behind PR #16's corrected background-only Prismal/stability head 6ab1e6a02ac8e91027f21900d64d63b9f2e6a890.
-**Previous exact active-branch validation:** [Actions run #239](https://github.com/Batmancpu/CurrentLens/actions/runs/42379803649), exact source SHA 48b54808807f5b15e637b6177524fd923741e1f7, success. WordNet builder tests passed; 151,456 unique words generated; :app:testDebugUnitTest, :app:assembleDebug and artifact upload succeeded. Artifact 13577371341, 39,096,477 bytes, SHA-256 e37f05a313fb96b959970579b86e6101b30256f202cec3db49d7a492521cd8d5, expires 21 Nov 2026 14:05:51Z.
-**Latest overall natural run:** [#240](https://github.com/Batmancpu/CurrentLens/actions/runs/42384192689) passed on PR #33's separate parser head c97d6b960e2cc6b93ac6444ebf9ceb6eabd320a4; artifact 13579255941 (39,097,729 bytes, SHA-256 38d3f133cfc2063501fa1d8c394a3d6338d7708369729eb543b08c120a5aafb9). It does not validate the active branch.
-**Actions history:** 240 runs fully paginated; 141 success, 58 failure, 41 cancelled; no queued or in-progress runs at audit time.
-**Workflow / Releases:** active workflow blob 6cef6ca19f3babd331c9deb59be9da0067c6fa66 has read-only build/test permissions and a separate main-push-only Release-write job. Main workflow blob 37197497288d9f0a60f4d1cfa8453e3dee52a902 remains push-only, so no PR-to-main validation is claimed. Latest Release remains v0.2.0-build-116; no Release was created.
-**Branch graph:** 37 remote branches, 19 open PRs and 14 closed PRs. The complete live head/timestamp/message/PR-role inventory and comparison dispositions are appended to docs/BRANCH_CONSOLIDATION.md. The selected branch is a direct descendant of PR #16; brrrNEWS is a divergent sibling (4 ahead / 13 behind) and is not a replacement baseline.
+**Source baseline for this pass:** black-box-bihar-news@ec86b2fef2f5e86c3b95f2a2a2269bfef6158053 (2026-11-07T15:09:39Z); 108 commits ahead / 0 behind main@73b8a0d1ba33503fede02db2c3c0af082d724a12 and 51 ahead / 0 behind PR #16's corrected background-only Prismal/stability head 6ab1e6a02ac8e91027f21900d64d63b9f2e6a890.
+**Previous exact active-branch validation:** [Actions run #241](https://github.com/Batmancpu/CurrentLens/actions/runs/42385017675), exact source SHA ec86b2fef2f5e86c3b95f2a2a2269bfef6158053, success. Four WordNet builder tests passed; 151,456 unique words generated; :app:testDebugUnitTest, :app:assembleDebug and artifact upload succeeded. Artifact 13579222899, 39,094,929 bytes, SHA-256 d60b7e0d261c0ccac6bb5b407a642bd54183cca7abf1601b9fae541645bc838f, expires 21 Nov 2026 15:11:49Z.
+**Latest overall natural run:** [#241](https://github.com/Batmancpu/CurrentLens/actions/runs/42385017675) is the same successful run on the active branch head; no active or queued Actions jobs remain.
+**Actions history:** 241 runs fully paginated; 142 success, 58 failure, 41 cancelled; queue empty.
+**Workflow / Releases:** active workflow blob 6cef6ca19f3babd331c9deb59be9da0067c6fa66 uses read-only build/test permissions and a separate main-push-only Release-write job. Main workflow blob 37197497288d9f0a60f4d1cfa8453e3dee52a902 remains push-only, so no PR-to-main validation is claimed. Latest Release remains v0.2.0-build-116; no Release was created.
+**Branch graph:** 37 remote branches (page 1 complete, page 2 empty), 19 open PRs and 14 closed PRs. black-box-bihar-news is 108 ahead / 0 behind main and 51 ahead / 0 behind PR #16. brrrNEWS is divergent (4 ahead / 14 behind); its useful supporting-material implementation is already represented. Newer independent parser/RSS/security/editorial branches remain separate and were not used as a UI baseline; see docs/BRANCH_CONSOLIDATION.md.
 **Safety / device status:** no main change, app/package identity change, workflow edit, manual dispatch/rerun, Release publication, PR merge, source-branch mutation or branch deletion. OPPO Reno10 launch, screenshots, transitions, TalkBack/Reduce Motion, Perfetto/frame timing, GPU overdraw, memory, thermal and battery remain UNVERIFIED.
 
 ## Historical branch freshness audit — 7 November 2026, 13:00 IST (superseded by the current run record)
@@ -75,9 +75,9 @@ Recheck every branch head and dependency before each future implementation commi
 | Search morph field | Interactive control glass | Preserve tab-to-IME geometry/focus; trailing clear affordance only for non-empty expanded query | 48dp clear target and existing onClear/focus path integrated; run #183 passed |
 | Explore category rail | Interactive control glass | One shared capsule; selected fill/border and >=48dp targets | 48dp target, selected semantics and Geography filter integrated |
 | Today / Explore / Search article cards | Editorial content | Continuous corners, clear typography, image-derived ambient colour; no live blur per card | Existing standard cards, single Coil request and same-bitmap palette |
-| You dashboard | Supporting glass | Shared non-blurred tinted/rim card, continuous 22dp geometry, single-line metric values | Integrated in code commit 5e966; OPPO contrast check unverified |
+| You dashboard | Supporting glass | Theme-aware translucent tint/rim, continuous 22dp geometry, single-line metric values | Shared policy tuned: dark surface/tint 0.93/0.11, light 0.965/0.07; no live blur; OPPO contrast unverified |
 | Saved | One shared interactive Prismal filter group + editorial cards | Date/GS/subject rails share one 22dp rounded control surface; story cards remain calm, high-contrast content | `GlassFilterGroup` batch authored; one panel, three 48dp horizontal rails; selected filters and existing saved data semantics unchanged |
-| Reading / Quiz Stats | One shared interactive Prismal filter group + supporting glass data cards | Date/GS/subject controls use one small live-glass group; metric/day/attempt values stay high contrast | Grouped rails reuse the root backdrop; supporting cards remain no-blur tint/rim; summaries memoized |
+| Reading / Quiz Stats | One shared interactive Prismal filter group + supporting glass data cards | Date/GS/subject controls use one small live-glass group; metric/day/attempt values stay high contrast | Supporting tint/rim tuned through shared policy; cards remain no-blur; summaries memoized |
 | Reader toolbar | Primary floating glass | Back, source/date/status and compact Aa control; direction-aware auto-hide | Implemented; pinned during selection, definition, IME and accessibility states; device motion unverified |
 | Reader progress | Minimal indicator | Reuse existing saved progress; no polling or animated readback | Implemented in this batch |
 | Reader article canvas | Editorial content | Clear, high-contrast text; responsive max width and paragraph rhythm | Existing responsive CSS; keep non-glass |
@@ -105,7 +105,7 @@ Recheck every branch head and dependency before each future implementation commi
 | Completion dock | One 7dp-blur surface, only after end detection | Render only when complete, not dismissed and no definition open | No large persistent panel; safe-area and collision checks still need device validation |
 | Definition popover | Existing anchored Prismal surface | Keep one existing popover; do not add another capture; action buttons use native Compose controls | Compact scroll bounds retained; selection/ActionMode requires device validation |
 | Search filter sheet / Reader Aa menu | One 5dp-blur, low-refraction transient surface while open | Shared `PrismalTransientSurface` consumes the existing background-only root backdrop; no extra capture/readback, no per-chip/item blur, and the two screens cannot show these surfaces together | `GlassRenderingPolicy` removes live optics for Reduce Transparency; policy constants covered by `GlassSurfacePolicyTest`; frame/GPU/memory/battery cost unmeasured |
-| You / stats supporting cards | No live blur; one cached gradient tint and rim on visible cards | Shared `GlassSurfacePolicy`; stable shape/brushes; memoized aggregates; existing LazyColumn composition | No capture/readback or image work added; frame/GPU/memory/battery cost not measured |
+| You / Reading / Quiz Stats supporting cards | No live blur; theme-aware translucent surface (0.93 dark / 0.965 light), tint (0.11 / 0.07) and restrained rim | Existing Card + remembered gradients/shapes; memoized aggregates; no per-card capture | No capture/readback/image work added; CI policy tests; device/frame/GPU/memory/battery cost unmeasured |
 | Saved / Reading / Quiz Stats filter group | One 5dp-blur / low-refraction Prismal surface per visible subpage, containing three compact 48dp rails | Reuses the one background-only root source; no per-row/per-chip blur, no new capture/readback; option de-duplication is remembered | Reduce Transparency routes blur/refraction through `GlassRenderingPolicy`; FilterChip keeps selected semantics and >=48dp width/height; GPU/frame/memory/battery cost unmeasured |
 | Appearance preview | One 5dp-blur / low-refraction `PrismalTransientSurface`; controls card and article sample are non-blurred | Reuse the root background-only backdrop and existing transient material tokens; remove the former second live-glass preview panel; slider state remains local until release/preset selection; no image decode or root-state update per drag tick | `GlassSurfacePolicyTest` bounds the transient tier and `GlassRenderingPolicyTest` covers zero-optics fallback; OPPO rendering, frame timing, memory, thermal and battery remain unverified |
 | Quiz chrome | Two small Prismal control surfaces (header + bottom dock) | Reuse the one background-only root source; 7–8dp bounded blur/refraction; no per-question glass, new capture or readback | Reduce Transparency uses GlassRenderingPolicy; 48dp actions and safe-area padding; device frame/GPU/battery cost unmeasured |
@@ -135,9 +135,9 @@ Recheck every branch head and dependency before each future implementation commi
 
 ## Next implementation sequence
 
-1. Await natural CI on this Quiz action-chrome commit; inspect the exact run, full logs and artifact before another UI batch.
-2. Review transient sheets/menus and any remaining quiz contextual actions; keep dense question, option and explanatory content on clear surfaces.
-3. Whole-app audit: reconcile header, filters, Reader, navigation, dashboard, Saved, stats and quiz resting/transient states; check light/dark, large text, TalkBack and Reduce Motion.
+1. Validate this supporting-material tone pass on its exact new head via natural push CI; inspect the complete job log and artifact before another UI batch.
+2. Audit remaining dialogs/sheets/menus and whole-app light/dark, large-text, TalkBack and Reduce Motion states without turning dense content into live glass.
+3. Keep the single draft consolidation review on black-box-bihar-news; main remains push-only, so branch CI must not be described as PR-to-main validation.
 4. Measure on OPPO Reno10 5G (or explicitly keep metrics unverified): startup, scroll jank/frame timing, allocation churn, GPU overdraw/layers, thermal and battery against the same base build.
 
 ## Consolidation implementation log
@@ -406,3 +406,32 @@ Next: after natural CI validates this exact head, perform the Appearance preview
 **Unverified / next**
 - OPPO Reno10 screenshots, visual contrast over live feed backdrops, toolbar/definition collision, Reduce Motion, TalkBack focus, frame timing, GPU overdraw, allocation churn, memory, thermal and battery remain UNVERIFIED.
 - After natural CI validates this exact commit, continue the whole-app optical/accessibility pass; retain the single background-only root capture, expanded-only tab glyph sampling and 4s/6s foreground-idle adaptive luminance cadence.
+
+
+## Supporting-card material tone pass — 7 November 2026, 21:26 IST
+
+**Freshness / dependency gate**
+- Re-enumerated all 37 remote branches (page 1 complete, page 2 empty), all 19 open and 14 closed PRs, the default branch, current branch refs, workflow, fully paginated Actions history/queue, latest run/jobs/log/artifact and Releases.
+- Implementation source is `black-box-bihar-news@ec86b2fef2f5e86c3b95f2a2a2269bfef6158053`, a direct child of `48b54808807f5b15e637b6177524fd923741e1f7`; it is 108 ahead / 0 behind `main@73b8a0d1ba33503fede02db2c3c0af082d724a12` and 51 ahead / 0 behind PR #16's corrected background-only Prismal/stability head `6ab1e6a02ac8e91027f21900d64d63b9f2e6a890`. The current head was re-read immediately before the fast-forward-only update.
+- `brrrNEWS@e6fcfc25a4c8d5f363ced58f313552120aa7ff96` remains divergent (4 ahead / 14 behind; merge base `e411c394e8d48b3f547b6d6fb9039a8935bd05eb`); its useful supporting-glass implementation is already represented. `ui/liquid-glass-system-continuation` is 24 behind; `ui/liquid-glass-performance` is 3 ahead / 126 behind; neither is a valid baseline.
+- PR #29/#30/#31's bookmark-IO, 48dp-target and appearance-restore changes remain selectively represented; their source branches/PRs are untouched. PR #13 adaptive contrast is already integrated with the conservative 4s/6s shared-probe policy. PR #32 RSS concurrency and PR #33 relative Atom parsing are separate non-UI deltas (2 ahead / 3 behind and 4 ahead / 1 behind respectively); they were not mixed into this visual pass. PR #25/#26 remain separate publisher-host/subresource security proposals (7 ahead / 10 behind and 1 ahead / 9 behind) pending one combined security review. PR #27/#24 are editorial/policy work, not UI baselines.
+- PR #16 remains open/draft and unmerged; PR #19/#20/#23/#28 are closed/merged into the integration branch only. No source branch was modified or deleted.
+
+**Implementation**
+- Tuned the existing shared `GlassSurfacePolicy` used by `SupportingGlassCard`: dark surface alpha 0.96→0.93 and tint 0.085→0.11; light surface alpha 0.985→0.965 and tint 0.045→0.07. Rim alpha is slightly moderated (dark 0.22→0.20; light 0.14→0.13) to keep the edge restrained as the body tint becomes more visible.
+- This applies consistently to You metrics, the practice-empty panel, library destination rows, Reading Stats metrics/day rows, Quiz Stats metrics/attempt rows and the Appearance explanatory surface. The existing 22dp continuous shape, typography, data, filter state and navigation remain unchanged.
+- Supporting surfaces remain ordinary Compose Cards with a static theme-aware tint and remembered gradient/rim brushes. Article cards, quiz questions/options, definition text and reading canvas remain clear content surfaces.
+
+**Paired rendering / performance strategy**
+- No PrismalGlassSurface, backdrop capture, blur, refraction, sampler/readback, shader, graphics layer, image decode, network request, timer, dependency or persistence operation was added. The one background-only root capture, hidden tab glyph source and existing active transient surfaces are unchanged.
+- The material change reuses the existing Card, one vertical tint brush and one border brush per composed card; aggregate calculations and list keys remain memoized/stable. No additional live effect or off-screen glass surface is introduced.
+- This is a source-level material-contrast adjustment, not a measured frame-time, GPU, memory, battery or thermal improvement.
+
+**Tests / CI**
+- Updated `GlassSurfacePolicyTest` to assert bounded near-opaque dark/light supporting surfaces, stronger but restrained theme-aware tint, a moderated rim and the unchanged bounded transient tier.
+- Parent head ec86b2fef2f5e86c3b95f2a2a2269bfef6158053 passed natural run [#241](https://github.com/Batmancpu/CurrentLens/actions/runs/42385017675): WordNet builder 4/4, 151,456 unique words, `:app:testDebugUnitTest`, `:app:assembleDebug` and artifact upload all succeeded. Artifact `13579222899`, 39,094,929 bytes, SHA-256 `d60b7e0d261c0ccac6bb5b407a642bd54183cca7abf1601b9fae541645bc838f`.
+- The new child commit must receive its own natural push run; no manual dispatch/rerun. The main workflow is still push-only, so a future PR-to-main does not receive a base-workflow PR check. No Release is published.
+
+**Unverified / next**
+- OPPO Reno10 screenshots, real light/dark contrast, large font scaling, TalkBack focus, Reduce Motion, card scrolling/jank, GPU overdraw, allocations/memory, startup, thermal and battery remain UNVERIFIED.
+- After this exact head's natural CI passes, continue the remaining transient-sheet/menu and whole-app consistency audit; retain the 8×8 adaptive probe's 4s/6s foreground-idle cadence and never add per-card capture/readback.

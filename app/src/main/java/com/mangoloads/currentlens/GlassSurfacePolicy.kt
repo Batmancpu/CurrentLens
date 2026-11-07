@@ -12,12 +12,12 @@ internal object GlassSurfacePolicy {
     const val TRANSIENT_REFRACTION_AMOUNT_DP = 3.5f
     const val TRANSIENT_TINT_SCALE = 0.42f
 
-    private const val SUPPORTING_SURFACE_ALPHA_DARK = 0.96f
-    private const val SUPPORTING_SURFACE_ALPHA_LIGHT = 0.985f
-    private const val SUPPORTING_TINT_ALPHA_DARK = 0.085f
-    private const val SUPPORTING_TINT_ALPHA_LIGHT = 0.045f
-    private const val SUPPORTING_RIM_ALPHA_DARK = 0.22f
-    private const val SUPPORTING_RIM_ALPHA_LIGHT = 0.14f
+    private const val SUPPORTING_SURFACE_ALPHA_DARK = 0.93f
+    private const val SUPPORTING_SURFACE_ALPHA_LIGHT = 0.965f
+    private const val SUPPORTING_TINT_ALPHA_DARK = 0.11f
+    private const val SUPPORTING_TINT_ALPHA_LIGHT = 0.07f
+    private const val SUPPORTING_RIM_ALPHA_DARK = 0.20f
+    private const val SUPPORTING_RIM_ALPHA_LIGHT = 0.13f
 
     fun supportingSurfaceAlpha(dark: Boolean): Float =
         if (dark) SUPPORTING_SURFACE_ALPHA_DARK else SUPPORTING_SURFACE_ALPHA_LIGHT

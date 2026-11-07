@@ -7,16 +7,16 @@ import org.junit.Test
 class GlassSurfacePolicyTest {
     @Test
     fun supportingContentRemainsNearlyOpaqueForReadability() {
-        assertTrue(GlassSurfacePolicy.supportingSurfaceAlpha(dark = true) >= 0.95f)
-        assertTrue(GlassSurfacePolicy.supportingSurfaceAlpha(dark = false) >= 0.98f)
+        assertTrue(GlassSurfacePolicy.supportingSurfaceAlpha(dark = true) in 0.92f..0.95f)
+        assertTrue(GlassSurfacePolicy.supportingSurfaceAlpha(dark = false) in 0.95f..0.98f)
     }
 
     @Test
     fun opticalTintAndRimStaySubtleAndBounded() {
-        assertTrue(GlassSurfacePolicy.supportingTintAlpha(dark = true) in 0f..0.10f)
-        assertTrue(GlassSurfacePolicy.supportingTintAlpha(dark = false) in 0f..0.06f)
-        assertTrue(GlassSurfacePolicy.supportingRimAlpha(dark = true) in 0f..0.25f)
-        assertTrue(GlassSurfacePolicy.supportingRimAlpha(dark = false) in 0f..0.16f)
+        assertTrue(GlassSurfacePolicy.supportingTintAlpha(dark = true) in 0f..0.12f)
+        assertTrue(GlassSurfacePolicy.supportingTintAlpha(dark = false) in 0f..0.08f)
+        assertTrue(GlassSurfacePolicy.supportingRimAlpha(dark = true) in 0.18f..0.22f)
+        assertTrue(GlassSurfacePolicy.supportingRimAlpha(dark = false) in 0.11f..0.15f)
         assertTrue(
             GlassSurfacePolicy.supportingTintAlpha(dark = true) >
                 GlassSurfacePolicy.supportingTintAlpha(dark = false)
