@@ -818,8 +818,8 @@ Repository/default: `Batmancpu/CurrentLens`, default `main@73b8a0d1ba33503fede02
 - **No source branch was modified, merged, retargeted or deleted.** Only the selected `black-box-bihar-news` branch may receive this UI batch; no main write, workflow edit, manual dispatch/rerun or Release publication is allowed.
 
 
-### 2026-11-07 22:51 IST — Bounded startup diagnostic reads
+### 2026-11-07 22:57 IST — Bounded startup diagnostic reads
 
 - Added isolated draft PR [#35](https://github.com/Batmancpu/CurrentLens/pull/35), branch `perf/bound-startup-diagnostic-reads-2026-11-07`, based on the active integration head `ed6c94190296c8d7af400b80f6fe26f2252fafe1`.
-- The change bounds startup-stage and local diagnostic-report reads and removes oversized legacy reports without materialising them. Focused JVM tests are added; natural PR CI is pending.
+- The change bounds startup-stage and local diagnostic-report reads and removes oversized legacy reports without materialising them. Focused JVM tests are added; the code-only natural run was cancelled when continuity docs advanced the head, and final-head natural CI is pending.
 - This does not claim to fix the reported native launch crash. No main, workflow, Release or existing source branch was modified.
