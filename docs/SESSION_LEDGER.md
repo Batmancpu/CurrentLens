@@ -384,3 +384,15 @@ Branch: `fix/early-startup-crash-diagnostics-2026-11-06`.
 - Added a labelled synthetic false-negative recovery fixture for “Finance Ministry clarifies GST on box-office collections”; retained the existing false-positive fixture for a generic box-office/GST collections update.
 - Updated the official-baseline fixture register. This is synthetic regression coverage, not a live-feed precision/recall result or an official PYQ claim.
 - Verification at commit time: pending natural PR CI. No device/runtime claim.
+
+
+### Commit and verification detail
+
+- Base branch: `black-box-bihar-news`; observed base head `ad16cecf06add374b3e19989d0829919d0055114`. PR #27's recorded base/merge-base is `3a08bb95b0f9a0fed8ec11dae055f0ac2817a523`; compare reports 32 commits ahead, 12 behind, diverged, and GitHub mergeable=false. Do not merge the stale branch without reconciliation.
+- Code commit: `e17926a6337fcceae6951d28242b36ee76dadcbc` — `UpscFeedPolicy.kt`.
+- Test commit: `c4c28ba3d9a2e32d84dbec3e5bf032e4f2152b54` — `UpscFeedPolicyTest.kt`.
+- Baseline fixture commit: `fa2eab8f3083c9466d62b4e49092ab09de64f438` — `docs/UPSC_EDITORIAL_BASELINE.md`.
+- Ledger entry commit: `fd18c98c7af5621bb81963dde4a15c8d5164e826` — `docs/SESSION_LEDGER.md`.
+- Baseline wording correction: `b08b0902f69d5fb4cbc11490ab9cec50103d3db2` — clarifies that generic box-office wording remains soft noise, not a hard exclusion.
+- Natural PR run #254 (`42402006467`) was still in progress at the last check, at `Compile APK and run JVM tests`. Its head `fa2eab8f` includes the code, test and initial baseline fixture commits; the later two commits are documentation-only. No result is claimed for the new code/test change yet. Prior green run #250 applies only to the earlier head `a5dddb3697b18167b195f79a60b4f14468f789c3`.
+- No device/runtime verification was available. No live-feed or official-PYQ claim is made.
