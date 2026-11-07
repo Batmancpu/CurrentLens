@@ -1,3 +1,34 @@
+## Live branch-graph audit — 8 November 2026, 05:24 IST
+
+- **Repository/default:** `Batmancpu/CurrentLens`, default `main@73b8a0d1ba33503fede02db2c3c0af082d724a12`.
+- **Authoritative integration:** `black-box-bihar-news@d9a4d1eac035172da0f8d7c40a984eb6c40c1b8b`, 121 ahead / 0 behind main (merge base main) and 64 ahead / 0 behind PR #16's corrected background-only Prismal/stability head `6ab1e6a02ac8e91027f21900d64d63b9f2e6a890`. PR #34 remains open/draft, head equal to the active branch, base main.
+- **Complete inventory:** 40 remote refs (page 1: 40, page 2: 0); 37 PRs (23 open, 14 closed). The branch-name set is unchanged from the complete 40-row inventory immediately below. Two heads advanced since that table: `black-box-bihar-news` and `fix/editorial-action-gate-blackbox-2026-11-07`; their exact current refs are recorded here. No source branch was modified or deleted.
+- **Head deltas since the 04:29 IST inventory:**
+
+| Branch | Current head | Latest commit UTC / subject | PR relationship |
+|---|---|---|---|
+| `black-box-bihar-news` | `d9a4d1eac035172da0f8d7c40a984eb6c40c1b8b` | 2026-11-07 23:05:34 — ui(glass): bind supporting surfaces to appearance intensity | #34 open/draft; active source; base main |
+| `fix/editorial-action-gate-blackbox-2026-11-07` | `0248121c6e19c556580c17ac72ce2aafe37169c2` | 2026-11-07 23:13:33 — docs: record editorial promotion-gate regression | #27 open/draft; editorial-only, diverged; not a UI baseline |
+
+- **Open-PR ancestry and treatment (all 23 checked against the active head):**
+  - #34 is the active integration PR; current source equals its head.
+  - #27 is 39 ahead / 22 behind (merge base `3a08bb95b0f9a0fed8ec11dae055f0ac2817a523`); its delta is `UpscEngine`, `UpscFeedPolicy`, tests and editorial docs only. Its later timestamp does not supersede the UI baseline.
+  - #37 is 6 ahead / 0 behind its own older base `d451d22518b8065e2865dae6b40679c3d7b41dc2`; compared with current integration it is 6 ahead / 2 behind. Its Box→Row RowScope compile repair is already present in current `SearchMorphField`; the separate source branch/PR remains untouched.
+  - #36 is 3 ahead / 3 behind current integration (merge base `4a7a8f8c1db651d8b06d636836c8221569938ff8`). It adds `AsiaKolkataDayPolicy`, a foreground IST-midnight Today-index refresh and tests; it changes `MainActivity.kt` on a diverged base. Its exact source passed run #268, but it is not integrated or claimed here.
+  - #35 is 6 ahead / 11 behind (merge base `ed6c94190296c8d7af400b80f6fe26f2252fafe1`); startup diagnostic read bounds only.
+  - #32 is 2 ahead / 16 behind (merge base `ee82dfde140aeb0d1ca80146379a0a2818c695df`) and #33 is 4 ahead / 14 behind (merge base `48b54808807f5b15e637b6177524fd923741e1f7`); both touch `NewsRepository.kt`, so retain as a joint parser/concurrency review.
+  - #25 is 7 ahead / 23 behind and #26 is 1 ahead / 22 behind; both affect publisher image/subresource security and remain a combined host-policy review.
+  - #31 (5 ahead / 16 behind), #30 (3 ahead / 17 behind) and #29 (1 ahead / 20 behind) contain appearance restore, 48dp target and bookmark IO work already represented in the active source; no wholesale replay.
+  - #24 is based on divergent `brrrNEWS` (9 ahead / 27 behind) and is editorial-only. #11 (3 ahead / 121 behind), #13 (1 ahead / 134 behind), #6 (10 ahead / 134 behind), #17 (1 ahead / 121 behind), #22 (9 ahead / 134 behind), #21 (11 ahead / 121 behind), #18 (1 ahead / 121 behind), #8 (3 ahead / 134 behind) and #12 (1 ahead / 134 behind) are independent older-line proposals whose compatible policies are already represented selectively or remain separately reviewed; none supersedes the active UI line.
+  - #16 is the ancestor (0 ahead / 64 behind). #19/#20/#23/#28 are closed and their approved work is already represented in black-box; #14/#15/#4 were closed without merge; #1/#2/#3/#5/#7/#9/#10 are merged into main.
+- **Other branches:** `brrrNEWS` is 4 ahead / 27 behind from merge base `e411c394e8d48b3f547b6d6fb9039a8935bd05eb`; its supporting-glass implementation is already represented, while its workflow/branding/formatting differences are not adopted. `ui/liquid-glass-performance-2026-11-06` is 3 ahead / 139 behind; `redesign/v0.3-search-reader` is 0 ahead / 215 behind; both remain stale. `ui/liquid-glass-system-2026-11-07` is 51 behind and its PR #19 work is represented; continuation is 37 behind. No branch is selected by timestamp alone.
+- **Actions / workflow:** 279 runs fully paginated (100 + 100 + 79): 166 success, 61 failure, 52 cancelled; no queued/in-progress run. Exact active head `d9a4d1e` passed natural PR #279 and push #278. Both build jobs completed WordNet 4/4, 151,456-word database generation, JVM tests, APK assembly and artifact upload; full logs inspected; release jobs skipped. The new reduced-motion commit must receive its own natural run.
+- **Artifacts:** PR #279 artifact `13594284223`, 39,107,398 bytes, SHA-256 `1959a089d31d4a96ee851749d5a3753b9b42e1a2283b381b50dd2462d2762803`; push #278 artifact `13594681752`, 39,107,393 bytes, SHA-256 `5fb4503525d5fa4f8a9b77213cc07f196345ae41cd7ae243ce3e746f4ad17000`. Latest Release remains `v0.2.0-build-116`; no Release published.
+- **Workflow:** active `.github/workflows/build-apk.yml` has read-only build/test permissions and a separate main-push-only Release-write job. Main's workflow remains push-only; do not claim a main-targeted PR check.
+- **Safety:** no main write, merge, retarget, workflow change, manual dispatch/rerun, Release publication, source-branch mutation or deletion.
+
+---
+
 ## Live branch-graph audit — 8 November 2026, 04:29 IST
 
 - **Repository/default:** `Batmancpu/CurrentLens`, default `main@73b8a0d1ba33503fede02db2c3c0af082d724a12`.

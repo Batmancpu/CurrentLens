@@ -221,6 +221,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 private val LocalGlassReduceTransparency = staticCompositionLocalOf { false }
+private val LocalGlassReduceMotion = staticCompositionLocalOf { false }
 private val LocalGlassIntensity = staticCompositionLocalOf {
     AppearancePreferencesPolicy.DEFAULT_GLASS_ALPHA
 }
@@ -649,6 +650,7 @@ private fun BrrrNewsApp() {
 
     CompositionLocalProvider(
         LocalGlassReduceTransparency provides reduceTransparency,
+        LocalGlassReduceMotion provides reduceMotion,
         LocalGlassIntensity provides glassAlpha
     ) {
         BoxWithConstraints(
@@ -982,6 +984,7 @@ private fun HomeScreen(
     onToggleBookmark: (Article) -> Unit
 ) {
     val today = LocalDate.now(ZoneId.of(INDIA_ZONE))
+    val reduceMotion = LocalGlassReduceMotion.current
     val dateLabel = remember(today) { today.format(DateTimeFormatter.ofPattern("EEEE, d MMMM", Locale.ENGLISH)) }
     var exploreCategory by remember { mutableStateOf("All") }
 
@@ -1024,7 +1027,10 @@ private fun HomeScreen(
 
         AnimatedContent(
             targetState = selectedTab to youPage,
-            transitionSpec = { fadeIn(tween(190)) togetherWith fadeOut(tween(120)) },
+            transitionSpec = {
+                if (reduceMotion) fadeIn(snap()) togetherWith fadeOut(snap())
+                else fadeIn(tween(190)) togetherWith fadeOut(tween(120))
+            },
             label = "brrrNews destination transition"
         ) { target ->
             val (tab, page) = target
@@ -2991,6 +2997,7 @@ private fun ReaderScreen(
     onClearReaderPosition: (String) -> Unit
 ) {
     val context = LocalContext.current
+    val reduceMotion = LocalGlassReduceMotion.current
     val readerWebViewHolder = remember { mutableStateOf<ReaderWebView?>(null) }
     var savedReadingProgress by remember(article.url) { mutableFloatStateOf(0f) }
     var readerPositionLoaded by remember(article.url) { mutableStateOf(false) }
@@ -3064,7 +3071,7 @@ private fun ReaderScreen(
         accessibilityEnabled = accessibilityEnabled,
         textSizeMenuExpanded = textSizeMenuExpanded
     )
-    val readerChromeMotionMs = if (ValueAnimator.areAnimatorsEnabled()) 160 else 0
+    val readerChromeMotionMs = if (reduceMotion) 0 else 160
 
     LaunchedEffect(article.url) {
         extracting = true
@@ -4042,6 +4049,7 @@ private fun DefinitionGlassOverlay(
 ) {
     val context = LocalContext.current
     val reduceTransparency = LocalGlassReduceTransparency.current
+    val reduceMotion = LocalGlassReduceMotion.current
     var result by remember(word) { mutableStateOf<Definition?>(null) }
     var loading by remember(word) { mutableStateOf(true) }
     var expanded by remember(word) { mutableStateOf(false) }
@@ -4057,11 +4065,11 @@ private fun DefinitionGlassOverlay(
     }
     val transition = updateTransition(visibilityState, label = "Definition glass morph")
     val expansion by transition.animateFloat(
-        transitionSpec = { spring(dampingRatio = 0.76f, stiffness = 480f) },
+        transitionSpec = { if (reduceMotion) snap() else spring(dampingRatio = 0.76f, stiffness = 480f) },
         label = "Definition morph progress"
     ) { visible -> if (visible) 1f else 0f }
     val opacity by transition.animateFloat(
-        transitionSpec = { tween(durationMillis = 115) },
+        transitionSpec = { tween(durationMillis = if (reduceMotion) 90 else 115) },
         label = "Definition opacity"
     ) { visible -> if (visible) 1f else 0f }
 
@@ -4080,7 +4088,7 @@ private fun DefinitionGlassOverlay(
             PrismalGlassSurface(
                 backdrop = backdrop,
                 modifier = Modifier.fillMaxWidth()
-                    .animateContentSize(spring(dampingRatio = 0.82f, stiffness = 480f)),
+                    .animateContentSize(if (reduceMotion) snap() else spring(dampingRatio = 0.82f, stiffness = 480f)),
                 shape = { PrismalRoundedRectangle(25.dp) },
                 blurRadius = GlassRenderingPolicy.blurDp(12f, reduceTransparency).dp,
                 refractionHeightPx = GlassRenderingPolicy.refractionPx(22f, reduceTransparency),

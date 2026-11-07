@@ -1,3 +1,15 @@
+## Live snapshot — 8 November 2026, 05:24 IST
+
+- **Main:** `73b8a0d1ba33503fede02db2c3c0af082d724a12`, unchanged.
+- **Active integration/UI:** `black-box-bihar-news@d9a4d1eac035172da0f8d7c40a984eb6c40c1b8b`; 121 ahead / 0 behind main and 64 ahead / 0 behind PR #16's corrected Prismal/stability head. PR #34 remains open/draft to main.
+- **Latest exact-head CI:** natural PR run #279 and push run #278 both passed on the exact active SHA. WordNet builder 4/4; 151,456-word offline dictionary; `:app:testDebugUnitTest`; `:app:assembleDebug`; APK artifact upload. Full logs inspected. PR artifact #13594284223 (39,107,398 bytes, SHA-256 `1959a089d31d4a96ee851749d5a3753b9b42e1a2283b381b50dd2462d2762803`); push artifact #13594681752 (39,107,393 bytes). Release jobs skipped.
+- **Freshness:** 40 branches and all 37 PRs re-enumerated. PR #27's newer timestamp is editorial-only and divergent; PR #37's Search RowScope fix is already in active code; PR #36's IST-midnight refresh remains a separate diverged MainActivity change; PR #35 diagnostics, #32/#33 feed changes and #25/#26 publisher security work remain separately reviewed. See `docs/BRANCH_CONSOLIDATION.md`.
+- **This pass:** system Reduce Motion is now shared through `LocalGlassReduceMotion`; Home destination transitions snap, Reader chrome uses zero-duration motion, and definition popover scale/content-size snap with a short fade. No additional Prismal capture, blur, readback, shader, graphics layer, decode or dependency.
+- **Next:** wait for natural CI on the new head, then continue the shared-header/transient-control consistency audit. Do not dispatch/rerun or publish a Release.
+- **Remaining limits:** no fresh OPPO Reno10 launch logcat/tombstone, screenshot, TalkBack/Reduce Motion runtime check, Perfetto trace or frame/GPU/memory/battery/thermal measurement. CI success does not establish device launch stability or smooth animation.
+
+---
+
 # CurrentLens — Latest project handoff (7 November 2026, 22:24 IST)
 
 ## Live snapshot — 7 November 2026, 22:24 IST
