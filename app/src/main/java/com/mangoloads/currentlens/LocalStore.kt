@@ -6,11 +6,17 @@ import org.json.JSONObject
 import java.time.LocalDate
 import java.time.ZoneId
 import java.util.UUID
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withContext
 
 object LocalStore {
     private const val PREFS = "currentlens_local"
     private const val BOOKMARKS = "bookmarks"
     private const val READ = "read_history"
+    // Ordered window for new markers; the legacy unordered set is preserved unchanged.
+    private const val RECENT_READ = "read_history_recent_v1"
     private const val ARTICLE_CACHE = "article_cache"
     private const val GLASS_ALPHA = "glass_alpha"
     private const val MAX_CACHED_ARTICLES = 500
@@ -23,6 +29,8 @@ object LocalStore {
     private const val MAX_READER_POSITIONS = ReaderPositionPolicy.MAX_ENTRIES
     private const val MAX_QUIZ_ATTEMPTS = 5_000
     private const val MAX_DETAILED_QUIZ_ATTEMPTS = 500
+    private val historyWriteMutex = Mutex()
+    private val readerPositionWriteMutex = Mutex()
 
     fun bookmarks(context: Context): Set<String> =
         runCatching {
@@ -50,18 +58,61 @@ object LocalStore {
 
     fun readHistory(context: Context): Set<String> =
         runCatching {
-            context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-                .getStringSet(READ, emptySet())?.toSet() ?: emptySet()
+            val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+            val legacy = runCatching {
+                prefs.getStringSet(READ, emptySet())?.toSet() ?: emptySet()
+            }.getOrDefault(emptySet())
+            val recentRaw = runCatching { prefs.getString(RECENT_READ, null) }.getOrNull()
+            ReadHistoryPolicy.visibleHistory(legacy, parseRecentReadHistory(recentRaw) ?: emptyList())
         }.getOrDefault(emptySet())
 
+    /**
+     * Legacy read markers remain frozen because their unordered StringSet has no timestamps.
+     * Only new reads enter the bounded, ordered JSON window.
+     */
     fun markRead(context: Context, url: String) {
-        val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-        val next = runCatching {
-            prefs.getStringSet(READ, emptySet())?.toMutableSet() ?: mutableSetOf()
-        }.getOrDefault(mutableSetOf())
-        next.add(url)
-        prefs.edit().putStringSet(READ, next.toSet()).apply()
+        if (url.isBlank() || url.length > ReadHistoryPolicy.MAX_URL_LENGTH) return
+        runCatching {
+            val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+            val legacy = runCatching {
+                prefs.getStringSet(READ, emptySet())?.toSet() ?: emptySet()
+            }.getOrDefault(emptySet())
+            if (url in legacy) return@runCatching
+
+            // A malformed or wrong-typed value is preserved for recovery, never overwritten.
+            val rawResult = runCatching { prefs.getString(RECENT_READ, null) }
+            if (rawResult.isFailure) return@runCatching
+            val current = parseRecentReadHistory(rawResult.getOrNull()) ?: return@runCatching
+            val next = ReadHistoryPolicy.add(current, url)
+            if (next == current) return@runCatching
+
+            val array = JSONArray()
+            next.forEach { array.put(it) }
+            prefs.edit().putString(RECENT_READ, array.toString()).apply()
+        }
     }
+
+    private fun parseRecentReadHistory(raw: String?): List<String>? {
+        if (raw == null) return emptyList()
+        return runCatching {
+            val array = JSONArray(raw)
+            buildList {
+                for (index in 0 until array.length()) {
+                    val url = array.optString(index)
+                    if (url.isNotBlank()) add(url)
+                }
+            }
+        }.getOrNull()?.let { ReadHistoryPolicy.retain(it) }
+    }
+
+    /** Updates read markers and returns the latest set off the article-opening UI path. */
+    internal suspend fun markReadAndRead(context: Context, url: String): Set<String> =
+        withContext(Dispatchers.IO) {
+            historyWriteMutex.withLock {
+                markRead(context, url)
+                readHistory(context)
+            }
+        }
 
     fun cachedArticles(context: Context): List<Article> {
         val raw = runCatching {
@@ -172,6 +223,26 @@ object LocalStore {
             now
         )
     }
+
+    /** Serialize reader-position JSON writes on IO; scroll callbacks do not parse preferences on main. */
+    internal suspend fun saveReaderPositionAndWrite(
+        context: Context,
+        articleUrl: String,
+        progress: Float,
+        updatedAtMillis: Long = System.currentTimeMillis()
+    ): Boolean = withContext(Dispatchers.IO) {
+        readerPositionWriteMutex.withLock {
+            saveReaderPosition(context, articleUrl, progress, updatedAtMillis)
+        }
+    }
+
+    /** A completed article clears its position only after earlier queued saves finish. */
+    internal suspend fun clearReaderPositionAndWrite(context: Context, articleUrl: String) =
+        withContext(Dispatchers.IO) {
+            readerPositionWriteMutex.withLock {
+                clearReaderPosition(context, articleUrl)
+            }
+        }
 
     private fun savedReaderPositions(context: Context, nowMillis: Long): List<ReaderPosition> {
         val raw = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
@@ -285,6 +356,20 @@ object LocalStore {
         return true
     }
 
+    /** Persist and reload bounded reading history on IO, serialized with quiz/read-marker writes. */
+    internal suspend fun recordReadingSessionAndRead(
+        context: Context,
+        article: Article,
+        startedAtMillis: Long,
+        durationMillis: Long
+    ): List<ReadingSession>? = withContext(Dispatchers.IO) {
+        historyWriteMutex.withLock {
+            if (recordReadingSession(context, article, startedAtMillis, durationMillis)) {
+                readingSessions(context)
+            } else null
+        }
+    }
+
     internal fun quizAttempts(context: Context): List<QuizAttempt> {
         val raw = runCatching {
             context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getString(QUIZ_ATTEMPTS, null)
@@ -349,6 +434,21 @@ object LocalStore {
                 }
             }.sortedByDescending { it.submittedAtMillis }
         }.getOrDefault(emptyList())
+    }
+
+    /** Persist and reload quiz history off main; quiz data remains submit-only. */
+    internal suspend fun recordQuizAttemptAndRead(
+        context: Context,
+        article: Article,
+        answers: Map<Int, Int>,
+        questions: List<QuizQuestion>,
+        submittedAtMillis: Long = System.currentTimeMillis()
+    ): List<QuizAttempt>? = withContext(Dispatchers.IO) {
+        historyWriteMutex.withLock {
+            if (recordQuizAttempt(context, article, answers, questions, submittedAtMillis) != null) {
+                quizAttempts(context)
+            } else null
+        }
     }
 
     internal fun recordQuizAttempt(
