@@ -8,7 +8,7 @@ class ArticleCardMetaPolicyTest {
     @Test
     fun showsTheGsMappingAndConcreteMatchedSignals() {
         assertEquals(
-            "Indicative · GS III · Indian Economy\nSignal: rbi, inflation",
+            "Indicative · GS III · Indian Economy\nSignals: rbi, inflation\\nSyllabus: Indian economy; mobilisation of resources, growth and development.",
             ArticleCardMetaPolicy.syllabusHint(
                 gsPaper = "GS III",
                 subject = "Indian Economy",
