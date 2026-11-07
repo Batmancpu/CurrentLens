@@ -22,7 +22,7 @@ object LocalStore {
     private const val REDUCE_TRANSPARENCY = "glass_reduce_transparency"
     private const val MAX_CACHED_ARTICLES = 500
     private const val CACHE_DAYS = 30
-    private const val DEFAULT_GLASS_ALPHA = 0.28f
+    private const val DEFAULT_GLASS_ALPHA = AppearancePreferencesPolicy.DEFAULT_GLASS_ALPHA
     private const val READING_SESSIONS = "reading_sessions"
     private const val READER_POSITIONS = "reader_positions"
     private const val QUIZ_ATTEMPTS = "quiz_attempts"
@@ -524,22 +524,27 @@ object LocalStore {
         return attempt
     }
 
-    fun glassAlpha(context: Context): Float =
+    fun glassAlpha(context: Context): Float = appearancePreferences(context).glassAlpha
+
+    /**
+     * Read both appearance preferences together. The first SharedPreferences access also
+     * loads the entire local XML file, so callers should use this from the startup IO restore.
+     */
+    internal fun appearancePreferences(context: Context): LocalAppearancePreferences =
         runCatching {
-            context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-                .getFloat(GLASS_ALPHA, DEFAULT_GLASS_ALPHA).coerceIn(0.12f, 0.55f)
-        }.getOrDefault(DEFAULT_GLASS_ALPHA)
+            val preferences = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+            AppearancePreferencesPolicy.create(
+                glassAlpha = preferences.getFloat(GLASS_ALPHA, DEFAULT_GLASS_ALPHA),
+                reduceTransparency = preferences.getBoolean(REDUCE_TRANSPARENCY, false)
+            )
+        }.getOrDefault(LocalAppearancePreferences())
 
     fun saveGlassAlpha(context: Context, value: Float) {
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-            .edit().putFloat(GLASS_ALPHA, value.coerceIn(0.12f, 0.55f)).apply()
+            .edit().putFloat(GLASS_ALPHA, AppearancePreferencesPolicy.normalizeGlassAlpha(value)).apply()
     }
 
-    fun reduceTransparency(context: Context): Boolean =
-        runCatching {
-            context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-                .getBoolean(REDUCE_TRANSPARENCY, false)
-        }.getOrDefault(false)
+    fun reduceTransparency(context: Context): Boolean = appearancePreferences(context).reduceTransparency
 
     fun saveReduceTransparency(context: Context, enabled: Boolean) {
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
