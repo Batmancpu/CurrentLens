@@ -350,3 +350,31 @@ Next: after natural CI validates this exact head, perform the Appearance preview
 
 **Next**
 - Verify the natural CI run on the exact new `black-box-bihar-news` head before another implementation batch. Next safe candidates are the narrowly scoped 48dp icon-target policy from PR #30 (3 ahead / 1 behind the active line; reapply against current code rather than fast-forward) and PR #32's bounded RSS concurrency policy (2 ahead / 0 behind; separate performance batch). Keep publisher asset/subresource proposals (#25/#26) out until their shared-host and redirect boundaries receive a full security review.
+
+
+## 48dp icon-action target batch — 7 November 2026
+
+**Freshness and integration source**
+- Re-enumerated all 36 remote branches (page 1 complete; page 2 empty), 18 open / 14 closed pull requests, latest `main`, workflow, Actions queue/history and Releases. Default `main` remains `73b8a0d1ba33503fede02db2c3c0af082d724a12`.
+- Continued on the owner-selected `black-box-bihar-news@d75723dd6368262c311b13912caf21a07804150a`, 106 commits ahead / 0 behind `main` and 49 ahead / 0 behind PR #16's corrected startup/Prismal base `6ab1e6a02ac8e91027f21900d64d63b9f2e6a890`. The background-only root capture remains present; glass surfaces are siblings and do not sample their own descendants.
+- PR #30 (`a11y/48dp-icon-targets-2026-11-07@25107ce905b70bde1a41282ffd1d606819ebf58d`) was reviewed in full. It is 3 commits ahead / 2 behind the active head from merge base `f7e10ab13e5098bd51f8c3ff3c03189ef0b72fbb`; its entire implementation is the three undersized icon targets plus a pure policy/test. The small changes were re-applied against current `MainActivity.kt`; the source branch and draft PR remain untouched. `brrrNEWS@e6fcfc25a4c8d5f363ced58f313552120aa7ff96` is divergent (12 ahead / 4 behind this active line) and was not used.
+- PR #31's appearance-preference IO work is already represented on this branch. PR #32's bounded RSS concurrency and PRs #25/#26's publisher resource/security changes remain separate; no unrelated code was ported. PR #27 is editorial-only and does not change the UI baseline.
+
+**Implementation**
+- Added `TouchTargetPolicy` with a 48dp minimum and applied it to the shared Home header Back action (44dp), Refresh action (46dp) and NewsCard bookmark action (40dp).
+- Search clear, Reader Back/Aa, completion dismiss, and Explore category chips already meet the 48dp minimum; the category rail retains selectable-tab semantics and horizontal scrolling.
+- Preserved existing action callbacks, bookmark IO/mutex path, header geometry, card content, four destinations, and Search/Reader state. The NewsCard still uses one Coil request and samples its palette from that same decoded bitmap.
+
+**Paired cost and rendering strategy**
+- No Prismal surface, blur/refraction pass, backdrop capture, sampler/readback, shader, graphics layer, image decode, network request or persistence change was added. Only the three existing hitboxes grow to 48dp; the NewsCard section label already ellipsizes, so the additional width does not alter article data or layout semantics.
+- The one background-only root capture and expanded-only tab glyph/droplet sampling remain unchanged. The compact navigation continues to use one shared surface rather than compositing two bars.
+
+**Tests and CI**
+- Added `TouchTargetPolicyTest`: 40/44/46dp requests clamp to 48dp; compliant 48/56dp requests are preserved.
+- Parent head `d75723dd6368262c311b13912caf21a07804150a` passed natural run [#236](https://github.com/Batmancpu/CurrentLens/actions/runs/42370605827): WordNet database generated with 151,456 unique words, `:app:testDebugUnitTest`, `:app:assembleDebug` and artifact upload all succeeded. Parent artifact `13573458582` (39,096,319 bytes; SHA-256 `625f7faafed71606a0ec6eb1c15705fe9f2bb94eed5a20fb74f37f0f6282559a`). This does not validate the new commit; await its natural push run.
+- Latest overall run [#238](https://github.com/Batmancpu/CurrentLens/actions/runs/42378821627) passed on PR #27's separate editorial head `627014500a7a983377b7c2fc82ca0cd238f776b9`; it is not a validation of this UI change. The full Actions history contains 238 runs (139 success, 58 failure, 41 cancelled), with no queued or in-progress runs at audit time.
+- Latest Release remains `v0.2.0-build-116`. The active branch workflow is read-only for build/test; main's workflow is still push-only, so no PR-to-main validation is claimed. No manual dispatch/rerun or Release publication.
+
+**Unverified / next**
+- OPPO Reno10 target reachability, visual spacing, TalkBack focus order, font scaling, launch stability, frame timing, GPU overdraw, allocations, thermal and battery remain **UNVERIFIED**. CI/JVM success cannot establish real-device usability or performance.
+- After this exact head's natural CI passes, continue the whole-app accessibility and optical-consistency audit; keep the 8×8 adaptive probe at its existing 4s/6s idle-only cadence and do not add per-card capture or readback.

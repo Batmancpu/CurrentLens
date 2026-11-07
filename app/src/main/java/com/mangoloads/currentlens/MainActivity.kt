@@ -1116,7 +1116,7 @@ private fun HomeGlassHeader(
     ) {
         Row(Modifier.fillMaxWidth().padding(start = 14.dp, end = 8.dp, top = 8.dp, bottom = 8.dp),
             verticalAlignment = Alignment.CenterVertically) {
-            if (showBack) IconButton(onClick = onBack, modifier = Modifier.size(44.dp)) {
+            if (showBack) IconButton(onClick = onBack, modifier = Modifier.size(TouchTargetPolicy.iconTargetDp(44).dp)) {
                 Icon(Icons.Outlined.ArrowBack, contentDescription = "Back to You", modifier = Modifier.size(23.dp))
             }
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(1.dp)) {
@@ -1125,7 +1125,7 @@ private fun HomeGlassHeader(
                 Text(subtitle, style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
-            if (showRefresh) IconButton(onClick = onRefresh, enabled = !refreshing, modifier = Modifier.size(46.dp)) {
+            if (showRefresh) IconButton(onClick = onRefresh, enabled = !refreshing, modifier = Modifier.size(TouchTargetPolicy.iconTargetDp(46).dp)) {
                 Icon(Icons.Outlined.Refresh, contentDescription = "Refresh news", modifier = Modifier.size(25.dp))
             }
         }
@@ -2323,7 +2323,7 @@ private fun NewsCard(
                         Text("  ·  " + article.section, color = MaterialTheme.colorScheme.secondary,
                             fontSize = 11.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
                         Spacer(Modifier.weight(1f))
-                        IconButton(onClick = { onToggleBookmark(article) }, modifier = Modifier.size(40.dp)) {
+                        IconButton(onClick = { onToggleBookmark(article) }, modifier = Modifier.size(TouchTargetPolicy.iconTargetDp(40).dp)) {
                             Icon(if (saved) Icons.Outlined.Bookmark else Icons.Outlined.BookmarkBorder,
                                 contentDescription = if (saved) "Remove bookmark" else "Save article",
                                 tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(21.dp))
