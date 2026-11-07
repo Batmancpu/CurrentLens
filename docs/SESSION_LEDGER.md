@@ -416,3 +416,6 @@ Branch: `fix/early-startup-crash-diagnostics-2026-11-06`.
 - **Latest Release:** `v0.2.0-build-116`; no new Release. Latest successful integration run before the compile regression was #267 on `4a7a8f8c`, with WordNet, JVM tests, APK assembly and artifact upload passed. Runs #269/#270 supersede that success for current integration head.
 - **Risks / unverified:** no device logcat/tombstone/Perfetto or screenshot. This compile repair is not a physical-device launch fix and makes no GPU/frame/battery claim. OPPO Reno10 cold/warm launch, TalkBack, font scaling, keyboard interaction, animation and mid-range scroll remain unverified.
 - **Safety:** no main edit, PR merge, workflow edit, manual dispatch/rerun or Release publication. New isolated draft PR targets `black-box-bihar-news` and exists only to repair this integration compile regression.
+
+
+- **Post-commit CI status:** after the required handoff snapshot advanced the PR head from `eed05ce` to `d05a790`, natural run #271 on the earlier head was cancelled by GitHub concurrency. Natural PR run #272 is pending with its build job queued on the final head `d05a79035a1c9a7676d855129ea4a960fa313ffe`. No compile/test result exists yet for the final PR head; no manual rerun/dispatch was made.
