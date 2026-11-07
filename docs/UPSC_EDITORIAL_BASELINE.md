@@ -30,7 +30,7 @@ This is a coverage baseline, **not** a frequency-weighted prediction model. The 
 
 1. A default-feed item must map to a defensible GS paper and a named syllabus theme.
 2. The card exposes the matched RSS terms and the syllabus connection as an **indicative reason**, not as proof that the full article is relevant.
-3. Entertainment, celebrity, box-office, reality-show, routine sports and generic viral noise is excluded unless the headline itself identifies a concrete law, regulatory action, institutional decision or policy change.
+3. Entertainment, celebrity, box-office, reality-show, routine sports and generic viral noise is excluded. Headline-level box-office, promotion, celebrity/reality-show, routine-score and generic-viral cues are hard exclusions and cannot be overridden by a policy noun. A soft entertainment/sports policy exception requires an institution before an action and policy instrument, or a passive policy-change phrase with a current-change cue or an explicit “by [institution]” actor. A historical Act mention is not a current action.
 4. Publisher RSS titles, excerpts, publication dates and feed URLs are publisher-supplied metadata. They are **not** primary-source corroboration.
 5. Verify material claims against the original public document. CurrentLens does not yet attach an independently verified official-source document to each publisher report.
 6. A question is labelled an official PYQ only after its year, paper and official UPSC source have been verified. Original practice prompts remain labelled as original or PYQ-style.
