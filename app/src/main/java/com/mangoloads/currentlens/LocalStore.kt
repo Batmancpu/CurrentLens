@@ -30,6 +30,7 @@ object LocalStore {
     private const val MAX_READER_POSITIONS = ReaderPositionPolicy.MAX_ENTRIES
     private const val MAX_QUIZ_ATTEMPTS = 5_000
     private const val MAX_DETAILED_QUIZ_ATTEMPTS = 500
+    private val bookmarkWriteMutex = Mutex()
     private val historyWriteMutex = Mutex()
     private val readerPositionWriteMutex = Mutex()
 
@@ -41,21 +42,24 @@ object LocalStore {
 
     fun isBookmarked(context: Context, url: String): Boolean = bookmarks(context).contains(url)
 
-    fun toggleBookmark(context: Context, url: String): Boolean {
-        val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-        val next = runCatching {
-            prefs.getStringSet(BOOKMARKS, emptySet())?.toMutableSet() ?: mutableSetOf()
-        }.getOrDefault(mutableSetOf())
-        val added = if (next.contains(url)) {
-            next.remove(url)
-            false
-        } else {
-            next.add(url)
-            true
+    /**
+     * Serialize the saved-URL read/modify/write on IO. Bookmarks are user-owned data:
+     * this deliberately preserves the complete set rather than applying lossy retention.
+     */
+    internal suspend fun toggleBookmark(context: Context, url: String): Boolean =
+        withContext(Dispatchers.IO) {
+            bookmarkWriteMutex.withLock {
+                val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+                val current = runCatching {
+                    prefs.getStringSet(BOOKMARKS, emptySet())?.toSet() ?: emptySet()
+                }.getOrDefault(emptySet())
+                val mutation = BookmarkSetPolicy.toggle(current, url)
+                if (mutation.changed) {
+                    prefs.edit().putStringSet(BOOKMARKS, mutation.savedUrls).apply()
+                }
+                mutation.added
+            }
         }
-        prefs.edit().putStringSet(BOOKMARKS, next.toSet()).apply()
-        return added
-    }
 
     fun readHistory(context: Context): Set<String> =
         runCatching {
