@@ -49,6 +49,7 @@ The unit-test fixtures are synthetic examples designed to expose classification 
 | False-negative recovery | “Parliament passes a bill to amend electoral rules” | Include — GS II, Constitution/Polity | A concrete legislative action and Representation of the People Act theme are explicit GS II signals | 
 | Positive | “Standing committee reviews a bill on parliamentary privileges” | Include — GS II, Constitution/Polity | Committee scrutiny and parliamentary privileges map to the syllabus’ functioning and powers themes |
 | False-positive rejection | Celebrity film-release story whose excerpt merely mentions film-certification rules | Exclude | A policy exception must be established by a concrete action in the headline itself |
+| False-positive rejection | “Government launches a new welfare scheme for public service reform”; an unrelated excerpt sentence mentions climate change | Exclude | A GS III environmental signal outside the selected GS II Governance mapping cannot validate a broad governance match |
 
 | False-positive rejection | “Box-office collection update: GST on movie tickets raises costs” | Exclude | A box-office headline is a non-overridable promotion signal; a tax phrase alone cannot bypass it. |
 | False-positive rejection | “A new film about the Cinematograph Act enacted in 1952” | Exclude | A historical Act reference is not a current institutional action; passive matching cannot infer one from the word “enacted”. |
