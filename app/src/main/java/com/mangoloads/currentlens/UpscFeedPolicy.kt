@@ -11,7 +11,7 @@ package com.mangoloads.currentlens
 internal object UpscFeedPolicy {
     private val noiseTerms = listOf(
         "ranbir kapoor", "salman khan", "celebrity", "celebrity news",
-        "box office", "box-office", "opening weekend", "entertainment", "film",
+        "opening weekend", "entertainment", "film",
         "movie", "cinema", "actor", "actress", "trailer", "teaser",
         "reality show", "reality tv", "reality television", "contestant", "bigg boss",
         "tv show", "tv series", "television show", "television series",
@@ -55,6 +55,7 @@ internal object UpscFeedPolicy {
         "central board of film certification", "broadcasting regulation",
         "media regulation", "ott regulation", "copyright act", "press freedom",
         "entertainment tax", "gst on movie tickets", "gst on cinema tickets",
+        "gst on box office collections",
         "sports governance", "anti-doping", "national sports policy",
         "sports ministry", "olympic charter", "sports federation reform",
         "consumer protection", "advertising regulation", "misleading advertisement",
@@ -90,7 +91,7 @@ internal object UpscFeedPolicy {
         """union government|central government|state government|government|centre|central board of film certification|cbfc|censor board|central consumer protection authority|ccpa|advertising standards council of india|asci|ministry|department|parliament|lok sabha|rajya sabha|supreme court|high court|regulatory authority|regulator|commission|cabinet|sports ministry|standing committee|joint parliamentary committee|committee|bcci|sports federation|national anti doping agency|nada|wada|international olympic committee|ioc"""
 
     private const val ACTIVE_POLICY_ACTION_PATTERN =
-        """issues?|issued|notifies?|notified|introduces?|introduced|passes?|passed|amends?|amended|revises?|revised|adopts?|adopted|enacts?|enacted|reviews?|reviewed|debates?|debated|strikes down|struck down|quashes?|quashed|upholds?|upheld|orders?|ordered|directs?|directed|withdraws?|withdrawn|bans?|banned|prohibits?|prohibited|gazettes?|gazetted|announces?|announced|raises?|raised|hikes?|hiked|increases?|increased|cuts?|cut|reduces?|reduced|imposes?|imposed|levies?|levied|exempts?|exempted|repeals?|repealed|suspends?|suspended|extends?|extended|proposes?|proposed|clears?|cleared|approves?|approved|rejects?|rejected"""
+        """issues?|issued|notifies?|notified|introduces?|introduced|passes?|passed|amends?|amended|revises?|revised|adopts?|adopted|enacts?|enacted|clarifies|clarified|reviews?|reviewed|debates?|debated|strikes down|struck down|quashes?|quashed|upholds?|upheld|orders?|ordered|directs?|directed|withdraws?|withdrawn|bans?|banned|prohibits?|prohibited|gazettes?|gazetted|announces?|announced|raises?|raised|hikes?|hiked|increases?|increased|cuts?|cut|reduces?|reduced|imposes?|imposed|levies?|levied|exempts?|exempted|repeals?|repealed|suspends?|suspended|extends?|extended|proposes?|proposed|clears?|cleared|approves?|approved|rejects?|rejected"""
 
     private const val PASSIVE_POLICY_ACTION_PATTERN =
         """issued|notified|gazetted|amended|revised|adopted|passed|introduced|quashed|struck down|upheld|proposed|approved|imposed|enacted|repealed|suspended"""
