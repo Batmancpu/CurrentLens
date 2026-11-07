@@ -1,11 +1,12 @@
 # Liquid Glass UI Roadmap
 
-**Status:** Active, incremental implementation  
-**Feature branch:** `ui/liquid-glass-system-2026-11-07`  
-**Source branch:** `fix/early-startup-crash-diagnostics-2026-11-06`  
-**Source SHA at branch creation:** `6ab1e6a02ac8e91027f21900d64d63b9f2e6a890`  
-**Draft PR base:** `fix/early-startup-crash-diagnostics-2026-11-06` (PR #16)  
-**Baseline check:** source was 57 commits ahead of `main` at `73b8a0d1ba33503fede02db2c3c0af082d724a12`, with zero commits behind. PR #16 is open, draft and unmerged. The source contains the background-only Prismal capture correction; this feature PR intentionally depends on PR #16 until that work is integrated.
+**Status:** Consolidated integration branch; incremental validation in progress  
+**Feature branch:** `black-box-bihar-news`  
+**Integration base:** PR #16 stability head `6ab1e6a02ac8e91027b21900d64d63b9f2e6a02`  
+**Current validated Reader/Search head:** `d80916691eb5e72ee5448bd543433cdabe2a1e5a`  
+**Current feed-navigation head:** `050f3ad7fc62b242c58419ee34bd7b54b5f9c8f2`  
+**Main:** unchanged at `73b8a0d1ba33503fede02db2c3c0af082d724a12`.  
+**Dependency:** the integration branch preserves PR #16's background-only Prismal capture, startup diagnostics and redirect protections. No source branch has been deleted. Keep source branches until final review and test status are confirmed.
 
 ## Product and material principles
 
@@ -27,9 +28,9 @@ The complete remote branch inventory contained 19 branches at the start of this 
 - `fix/early-startup-crash-diagnostics-2026-11-06` — PR #16 head `6ab1e6a02ac8e91027f21900d64d63b9f2e6a890`; 57 ahead / 0 behind main. Selected because it contains the latest corrected Prismal capture and launch/privacy work.
 - `ui/liquid-glass-performance-2026-11-06` — `2e9c7f62ca65a899e18d9026e1535392835b3724`; diverged from PR #16 by 3 unique commits and 75 commits behind. Not used as a base. Its first material/UI commit was merged through PR #3; the Search source-height adjustment is already present in PR #16; the remaining icon-import change is superseded by current imports.
 - `redesign/v0.3-search-reader` — `654cc89dee4f93fea98bb76df9d8cf88abf2f0d8`; 151 commits behind PR #16. Stale and not used.
-- PR #13 / `ui/foreground-adaptive-glass-contrast-2026-11-06` — one unique commit based on older code. It proposes an 8×8 GPU readback every 1.5 seconds on newer Android versions. Not ported: the current PR #16 shell deliberately uses theme-derived contrast to avoid recurring readback synchronization, and no OPPO trace demonstrates that the probe is a net improvement.
-- PR #18 / `ci/read-only-pr-validation-isolated-release-write-2026-11-06` — independent workflow-only change. Left untouched; this feature branch does not overwrite its read-only build/release separation proposal.
-- PRs #6, #8, #11, #12 and #17 contain independent editorial, persistence, date/provenance, Atom-link and URL-deduplication work. They are not assumed to be included in PR #16 and are not blindly cherry-picked into this UI branch. Review their current heads/dependencies before any future integration.
+- PR #13 / `ui/foreground-adaptive-glass-contrast-2026-11-06` — its shared 8×8 bottom-band luminance probe and linear-luminance policy are selectively integrated. The original 1.5 s / 2.5 s cadence was not retained: the consolidated implementation uses 4 s on Android 12+ / 6 s on older Android and suspends sampling during feed motion, Reader, Settings and background operation. It remains one shared root source; device-side jank/battery impact is unverified.
+- PR #18 / `ci/read-only-pr-validation-isolated-release-write-2026-11-06` and PR #20 / `ci/stacked-pr-validation-2026-11-07` — their compatible workflow intent is consolidated into the one workflow on `black-box-bihar-news`: read-only build job, separately gated main-push release job, and natural PR validation for main, PR #16 and this integration branch. Source branches are retained.
+- PRs #6 and #21 are reconciled into one editorial policy: GS I Geography, Finance Bill / parliamentary bill / heat-wave signals, entertainment and viral/sports false-positive suppression, narrow thin-film science exception, content-aware card metadata and labelled synthetic regression fixtures. PR #8 and #22 are reconciled into off-main local persistence with an ordered 5,000-entry window for new read markers while preserving the legacy unordered set. PR #11, #12 and #17 are selectively ported into the latest redirect-guarded feed code: publication-date precedence/cache/provenance, Atom alternate-link selection, tracking-URL identity and exact bookmark/read-variant preference. These changes were hand-reconciled, not blindly merged.
 
 Recheck the entire branch graph, open PRs, merge state and exact source/base SHAs before every subsequent implementation pass. Never reset, force-push, overwrite or discard another branch's commits.
 
@@ -39,9 +40,9 @@ Recheck the entire branch graph, open PRs, merge state and exact source/base SHA
 |---|---|---|---|
 | Shared home header | Primary floating glass | Clear translucent header, restrained edge/specular, stable height across destinations | Existing Prismal glass; contrast/hierarchy polish remains |
 | Four-tab navigation | Primary floating glass | One droplet bar with selected glyph aligned to its hit region | Existing Prismal droplet, hidden glyph capture and merged source; no new sampler |
-| Compact feed navigation | Primary floating glass | Morph the same bar into one active-destination pill on eligible feed scroll only | Planned; not implemented |
-| Search morph field | Interactive control glass | Preserve tab-to-IME geometry and focus; trailing clear affordance | Existing morph and clear callback; clear hit target still needs 48dp |
-| Explore category rail | Interactive control glass | One shared capsule; selected fill/border and >=48dp targets | Existing glass rail; touch-target/semantics polish remains |
+| Compact feed navigation | Primary floating glass | Morph the same bar into one active-destination pill on eligible feed scroll only | Implemented; run #184 pending at time of note |
+| Search morph field | Interactive control glass | Preserve tab-to-IME geometry and focus; trailing clear affordance | Existing morph preserved; clear target is 48dp (run #183 passed) |
+| Explore category rail | Interactive control glass | One shared capsule; selected fill/border and >=48dp targets | 48dp minimum and selected-tab semantics integrated with Geography filter |
 | Today / Explore / Search article cards | Editorial content | Continuous corners, clear typography, image-derived ambient colour; no live blur per card | Existing standard cards, single Coil request and same-bitmap palette |
 | You dashboard | Supporting surfaces | Consistent metric/destination geometry and restrained tint/edge hierarchy | Standard cards; geometry pass remains |
 | Saved | Interactive controls + editorial content | Clear filters; standard readable saved-story cards | Existing filters/cards; consistency pass remains |
@@ -105,3 +106,36 @@ Recheck the entire branch graph, open PRs, merge state and exact source/base SHA
 5. Whole-app consistency and measured performance/accessibility pass on representative screens.
 
 Do not mark the redesign complete until every screen in the matrix has an intentional material role, paired cost strategy, and verified or explicitly unverified accessibility/performance status.
+
+
+## Consolidation implementation log
+
+The following work is represented on `black-box-bihar-news`; source PRs/branches remain intact and must not be deleted until final review:
+
+| Source work | Consolidated treatment | Verification |
+|---|---|---|
+| PR #16 startup / network / Prismal | Integration ancestor; background-only capture and publisher guards retained | Run #172 baseline passed; prior PR #16 run #167 passed |
+| PR #20 + PR #18 workflow | Compatible read-only build / separately gated release workflow combined; branch PR validation enabled | Run #172 onward natural pushes; run #183 passed |
+| PR #19 Reader Liquid Glass | Reader toolbar, Aa, progress, completion dock and definition improvements integrated | Run #173 and #183 passed |
+| PR #11 dates/cache/provenance | Ported policy and parser precedence into current NewsRepository; publisher RSS clearly secondary | Run #174 and #183 passed |
+| PR #12 Atom alternate links | HTML alternate / RSS text / safe HTTP(S) link selection ported into current guarded parser | Run #175 and #183 passed |
+| PR #8 + #22 persistence/history | IO + mutex wrappers and capped ordered recent markers; legacy StringSet preserved | Run #176, #182 and #183 passed |
+| PR #17 URL deduplication | Canonical comparison; exact bookmark/read URL variant wins before newest publication | Run #182 and #183 passed |
+| PR #6 + #21 editorial | GS I Geography, bill/Finance Bill, heat-wave; film/viral/sports safeguards; labelled synthetic tests | Run #182 and #183 passed |
+| PR #13 adaptive glass contrast | Shared 8×8 band probe, foreground/idle-only, 4s/6s cadence, pauses during feed motion, Reader, Settings and background | Run #184 pending at time of note; physical-device profile unverified |
+| Feed-only compact navigation | Same bar morphs to active-label pill only on Today/Explore/collapsed Search; hidden glyph/droplet omitted while compact | Run #184 pending at time of note |
+
+### Deliberately excluded / superseded
+
+- Older `ui/liquid-glass-performance-2026-11-06` and `redesign/v0.3-search-reader` are stale; surviving useful changes are already present in merged ancestry or superseded.
+- The standalone PR #15 publisher-redirect branch is not copied wholesale because PR #16's newer per-hop/final host validation and cookie restrictions supersede its older implementation; confirm through the final full source diff before deleting it.
+- No old `MainActivity.kt` was copied wholesale from PR #6/#11/#13/#17/#19/#22. Their independent policies and tests were reconciled while preserving the current Reader, redirect and backdrop code.
+- PR #13's original 1.5 s / 2.5 s readback cadence was rejected. The integrated probe is less frequent and idle-only; it still needs OPPO profiling.
+- A “bug-free” claim is not supported by CI. Physical-device launch, TalkBack, Reduce Motion, visual transitions, frame timing, memory, thermal and battery remain outstanding.
+
+## Current validation record
+
+- Run #182, exact SHA `f031bf21229f43a992384cc23fa0f4da57e547a1`: success — JVM tests, APK assembly and artifact upload.
+- Run #183, exact SHA `d80916691eb5e72ee5448bd543433cdabe2a1e5a`: success — JVM tests, APK assembly and artifact upload. Validates Reader auto-hide policy and Search clear 48dp.
+- Run #184, exact SHA `050f3ad7fc62b242c58419ee34bd7b54b5f9c8f2`: queued/in progress at the time of writing; validates feed-only compact navigation if successful.
+- No manual dispatch/rerun; Release job is skipped off main.

@@ -209,6 +209,8 @@ import java.time.format.DateTimeFormatter
 import java.util.Locale
 import kotlin.math.roundToInt
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
@@ -461,6 +463,11 @@ private fun BrrrNewsApp() {
     // WindowInsets.ime is a composable local; capture it here before entering an effect.
     val imeInsets = WindowInsets.ime
     var compactNavigation by remember { mutableStateOf(false) }
+    var feedIsScrolling by remember { mutableStateOf(false) }
+    val feedScrollSettleJob = remember { arrayOfNulls<Job>(1) }
+    DisposableEffect(Unit) {
+        onDispose { feedScrollSettleJob[0]?.cancel() }
+    }
     val feedNavigationTracker = remember { FeedNavigationScrollTracker() }
     val feedNavigationEnabled = selectedArticle == null && !quizMode && !showSettings &&
         selectedTab in 0..2 && !searchExpanded
@@ -472,6 +479,14 @@ private fun BrrrNewsApp() {
                 source: NestedScrollSource
             ): Offset {
                 if (!feedNavigationEnabled) return Offset.Zero
+                if (consumed.y != 0f) {
+                    if (!feedIsScrolling) feedIsScrolling = true
+                    feedScrollSettleJob[0]?.cancel()
+                    feedScrollSettleJob[0] = persistenceScope.launch {
+                        delay(550L)
+                        feedIsScrolling = false
+                    }
+                }
                 // LazyColumn scrolls forward with positive consumed Y; pulling past its
                 // top edge leaves a negative unconsumed delta.
                 val atTopEdge = consumed.y == 0f && available.y < 0f
@@ -493,23 +508,43 @@ private fun BrrrNewsApp() {
     LaunchedEffect(selectedTab, searchExpanded, selectedArticle?.url, showSettings, quizMode) {
         feedNavigationTracker.reset()
         compactNavigation = false
+        feedIsScrolling = false
+        feedScrollSettleJob[0]?.cancel()
     }
     val lifecycleOwner = context as? LifecycleOwner
+    var appResumed by remember {
+        mutableStateOf(lifecycleOwner?.lifecycle?.currentState?.isAtLeast(Lifecycle.State.RESUMED) == true)
+    }
     var reduceMotion by remember { mutableStateOf(!ValueAnimator.areAnimatorsEnabled()) }
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
-            if (event == Lifecycle.Event.ON_RESUME) reduceMotion = !ValueAnimator.areAnimatorsEnabled()
+            when (event) {
+                Lifecycle.Event.ON_RESUME -> {
+                    appResumed = true
+                    reduceMotion = !ValueAnimator.areAnimatorsEnabled()
+                }
+                Lifecycle.Event.ON_PAUSE, Lifecycle.Event.ON_STOP -> appResumed = false
+                else -> Unit
+            }
         }
         lifecycleOwner?.lifecycle?.addObserver(observer)
         onDispose { lifecycleOwner?.lifecycle?.removeObserver(observer) }
     }
 
-    // Theme-derived contrast avoids recurring GPU readback synchronisation during flings.
-    val glassLuminance = remember(dark) {
-        GlassLuminanceState(if (dark) 0.08f else 0.92f).also {
-            it.contentColor = if (dark) Color.White else Color.Black
-        }
-    }
+    // One shared 8x8 bottom-band probe supplies Navigation and Search contrast.
+    // It pauses outside foreground home surfaces and during feed motion; the readback
+    // cadence is deliberately conservative to avoid synchronising with active flings.
+    val glassLuminance = rememberBottomBandGlassLuminance(
+        enabled = GlassLuminanceActivationPolicy.shouldSample(
+            isResumed = appResumed,
+            readerOpen = selectedArticle != null || quizMode,
+            settingsOpen = showSettings,
+            feedScrolling = feedIsScrolling
+        ),
+        source = backdrop,
+        isLightTheme = !dark,
+        bandHeight = 104.dp
+    )
     val todayDate = LocalDate.now(ZoneId.of(INDIA_ZONE))
     var feedIndex by remember {
         mutableStateOf(EditorialFeedIndex(emptyList(), emptyList(), emptyList()))
