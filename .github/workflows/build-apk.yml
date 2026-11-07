@@ -5,10 +5,12 @@ on:
     branches:
       - main
       - fix/early-startup-crash-diagnostics-2026-11-06
-      - ci/stacked-pr-validation-2026-11-07
+      - black-box-bihar-news
   pull_request:
     branches:
+      - main
       - fix/early-startup-crash-diagnostics-2026-11-06
+      - black-box-bihar-news
     types: [ opened, synchronize, reopened, ready_for_review ]
 
 # Build and test jobs are read-only. Release write access is isolated below.
