@@ -1656,10 +1656,14 @@ private fun SearchMorphField(
             if (progress > 0.34f) {
                 // Reserve the trailing hit-target slot while expanded so clearing the
                 // query does not move the text field or cursor horizontally.
-                Box(
+                Row(
                     modifier = Modifier.size(48.dp),
-                    contentAlignment = Alignment.Center
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center
                 ) {
+                    // AnimatedVisibility's RowScope overload requires a Row receiver.
+                    // The fixed outer slot preserves the text field's width while the
+                    // clear affordance fades in/out.
                     AnimatedVisibility(
                         visible = query.isNotBlank(),
                         enter = fadeIn(if (reduceMotion) snap() else tween(120)),
