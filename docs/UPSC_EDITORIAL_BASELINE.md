@@ -56,6 +56,8 @@ The unit-test fixtures are synthetic examples designed to expose classification 
 | False-negative recovery | “Heat wave action plan adopted by NDMA” | Include — GS III, Disaster Management | Heat-wave action planning maps to the explicit disaster-management theme; NDMA alone remains insufficient. |
 | Conservative false-negative watch | “Film certification rules notified” | Hold out of automatic default feed pending a current-change cue or named institution | This ambiguous passive headline may describe a genuine notification, but lacks enough evidence for an automatic exception; manual/source review is safer than a broad regex. |
 
+| Positive | “CBFC issues new film certification guidelines for actors” | Include — GS II, Governance | A named statutory board announces a current certification-guideline change; the word “actors” does not negate an explicit institutional action. |
+
 The fixtures are regression checks for this deterministic rule set. They do not establish precision/recall, validate a score, or predict examination questions.
 
 ## Source-provenance limitation

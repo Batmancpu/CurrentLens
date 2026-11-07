@@ -155,6 +155,11 @@ class UpscFeedPolicyTest {
             "The policy changes sports governance and anti-doping compliance.",
             "Sports"
         )))
+        assertTrue(UpscFeedPolicy.shouldInclude(article(
+            "CBFC issues new film certification guidelines for actors",
+            "The statutory board announces a current certification-rule change.",
+            "Entertainment"
+        )))
     }
 
     @Test

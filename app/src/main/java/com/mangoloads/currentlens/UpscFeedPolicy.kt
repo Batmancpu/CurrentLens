@@ -36,7 +36,6 @@ internal object UpscFeedPolicy {
         "cast announcement", "red carpet", "paparazzi", "film review", "movie review",
         "reality show", "reality tv", "reality television", "contestant", "bigg boss",
         "tv show", "tv series", "television show", "television series",
-        "actor", "actress",
         "match result", "scorecard", "live score", "match highlights", "sports score",
         "transfer window", "player signs", "tournament result", "league table",
         "final score", "match score", "points table", "league standings", "medal tally",
