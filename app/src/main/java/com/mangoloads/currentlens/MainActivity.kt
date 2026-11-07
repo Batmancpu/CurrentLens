@@ -2844,7 +2844,6 @@ private fun ReaderScreen(
     onClearReaderPosition: (String) -> Unit
 ) {
     val context = LocalContext.current
-    val reduceTransparency = LocalGlassReduceTransparency.current
     val readerWebViewHolder = remember { mutableStateOf<ReaderWebView?>(null) }
     var savedReadingProgress by remember(article.url) { mutableFloatStateOf(0f) }
     var readerPositionLoaded by remember(article.url) { mutableStateOf(false) }
@@ -3224,19 +3223,14 @@ private fun ReaderScreen(
             exit = fadeOut(animationSpec = tween(readerChromeMotionMs)) +
                 slideOutVertically(animationSpec = tween(readerChromeMotionMs)) { it / 4 }
         ) {
-            PrismalGlassSurface(
+            PrismalTransientSurface(
                 backdrop = backdrop,
                 modifier = Modifier.fillMaxWidth()
                     .padding(horizontal = 12.dp, vertical = 8.dp)
                     .navigationBarsPadding(),
-                shape = { PrismalRoundedRectangle(20.dp) },
-                blurRadius = GlassRenderingPolicy.blurDp(7f, reduceTransparency).dp,
-                refractionHeightPx = GlassRenderingPolicy.refractionPx(10f, reduceTransparency),
-                refractionAmountPx = GlassRenderingPolicy.refractionPx(12f, reduceTransparency),
-                depthEffect = GlassRenderingPolicy.depthEnabled(true, reduceTransparency),
-                chromaticAberration = GlassRenderingPolicy.chromaticAberration(0.004f, reduceTransparency),
-                tint = if (dark) Color(0xFF25354A) else Color(0xFFEAF0FA),
-                tintAlpha = GlassRenderingPolicy.tintAlpha((glassAlpha * 0.34f).coerceIn(0.05f, 0.20f), reduceTransparency)
+                glassAlpha = glassAlpha,
+                dark = dark,
+                cornerRadiusDp = 20f
             ) {
                 Row(
                     Modifier.fillMaxWidth().padding(start = 14.dp, end = 4.dp, top = 4.dp, bottom = 4.dp),
@@ -3279,21 +3273,14 @@ private fun ReaderGlassToolbar(
     onBack: () -> Unit,
     onFontSizeChange: (Int) -> Unit
 ) {
-    val reduceTransparency = LocalGlassReduceTransparency.current
     var textSizeMenuExpanded by remember(article.url) { mutableStateOf(false) }
-    val tint = if (dark) Color(0xFF26364B) else Color(0xFFEAF0FA)
 
-    PrismalGlassSurface(
+    PrismalTransientSurface(
         backdrop = backdrop,
         modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 6.dp),
-        shape = { PrismalRoundedRectangle(22.dp) },
-        blurRadius = GlassRenderingPolicy.blurDp(8f, reduceTransparency).dp,
-        refractionHeightPx = GlassRenderingPolicy.refractionPx(13f, reduceTransparency),
-        refractionAmountPx = GlassRenderingPolicy.refractionPx(15f, reduceTransparency),
-        depthEffect = GlassRenderingPolicy.depthEnabled(true, reduceTransparency),
-        chromaticAberration = GlassRenderingPolicy.chromaticAberration(0.006f, reduceTransparency),
-        tint = tint,
-        tintAlpha = GlassRenderingPolicy.tintAlpha((glassAlpha * 0.42f).coerceIn(0.05f, 0.24f), reduceTransparency)
+        glassAlpha = glassAlpha,
+        dark = dark,
+        cornerRadiusDp = 22f
     ) {
         Row(
             Modifier.fillMaxWidth().heightIn(min = 60.dp)
@@ -4361,23 +4348,14 @@ private fun QuizScreen(
         mutableStateOf(false)
     }
     val score = questions.indices.count { selected[it] == questions[it].correctIndex }
-    val reduceTransparency = LocalGlassReduceTransparency.current
-    val controlTint = if (dark) Color(0xFF26364B) else Color(0xFFEAF0FA)
 
     Column(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
-        PrismalGlassSurface(
+        PrismalTransientSurface(
             backdrop = backdrop,
             modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 6.dp),
-            shape = { PrismalRoundedRectangle(22.dp) },
-            blurRadius = GlassRenderingPolicy.blurDp(8f, reduceTransparency).dp,
-            refractionHeightPx = GlassRenderingPolicy.refractionPx(10f, reduceTransparency),
-            refractionAmountPx = GlassRenderingPolicy.refractionPx(12f, reduceTransparency),
-            depthEffect = GlassRenderingPolicy.depthEnabled(true, reduceTransparency),
-            chromaticAberration = GlassRenderingPolicy.chromaticAberration(0.003f, reduceTransparency),
-            tint = controlTint,
-            tintAlpha = GlassRenderingPolicy.tintAlpha(
-                (glassAlpha * 0.42f).coerceIn(0.05f, 0.24f), reduceTransparency
-            )
+            glassAlpha = glassAlpha,
+            dark = dark,
+            cornerRadiusDp = 22f
         ) {
             Row(
                 Modifier.fillMaxWidth().heightIn(min = 60.dp)
@@ -4501,19 +4479,12 @@ private fun QuizScreen(
             }
         }
         Box(Modifier.fillMaxWidth().navigationBarsPadding()) {
-            PrismalGlassSurface(
+            PrismalTransientSurface(
                 backdrop = backdrop,
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 6.dp),
-                shape = { PrismalRoundedRectangle(22.dp) },
-                blurRadius = GlassRenderingPolicy.blurDp(7f, reduceTransparency).dp,
-                refractionHeightPx = GlassRenderingPolicy.refractionPx(8f, reduceTransparency),
-                refractionAmountPx = GlassRenderingPolicy.refractionPx(10f, reduceTransparency),
-                depthEffect = GlassRenderingPolicy.depthEnabled(true, reduceTransparency),
-                chromaticAberration = GlassRenderingPolicy.chromaticAberration(0.002f, reduceTransparency),
-                tint = controlTint,
-                tintAlpha = GlassRenderingPolicy.tintAlpha(
-                    (glassAlpha * 0.36f).coerceIn(0.045f, 0.20f), reduceTransparency
-                )
+                glassAlpha = glassAlpha,
+                dark = dark,
+                cornerRadiusDp = 22f
             ) {
                 Column(
                     Modifier.fillMaxWidth().padding(horizontal = 10.dp, vertical = 9.dp),

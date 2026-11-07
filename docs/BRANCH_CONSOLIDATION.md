@@ -675,3 +675,75 @@ Repository/default: `Batmancpu/CurrentLens`, default `main@73b8a0d1ba33503fede02
 - Full decoded logs were inspected for #219, #227, #218 and #235 (1515, 1531, 1535 and 1534 lines respectively). Each build log ends with `BUILD SUCCESSFUL`; only non-blocking Node.js 20/action-runtime, `punycode` and `url.parse()` deprecation warnings were found. The source runs validate their exact source heads only; the new active commit must receive its own natural run.
 - Active workflow blob `6cef6ca19f3babd331c9deb59be9da0067c6fa66`: read-only build/test, push and pull_request triggers for main/PR #16/black-box, isolated main-push-only Release write. Main workflow blob `37197497288d9f0a60f4d1cfa8453e3dee52a902`: push-only and workflow-wide `contents: write`; no PR-to-main validation claim. Latest published Release remains `v0.2.0-build-116`.
 - No main write, workflow edit, manual dispatch/rerun, Release publication, PR merge, source-branch mutation or branch deletion occurred. OPPO device launch/visual/accessibility/performance, Perfetto, GPU, memory, thermal and battery remain **UNVERIFIED**.
+
+
+## Live branch graph audit — 7 November 2026, 20:30 IST
+
+**Repository:** Batmancpu/CurrentLens  
+**Default branch:** main@73b8a0d1ba33503fede02db2c3c0af082d724a12  
+**Owner-selected integration branch:** black-box-bihar-news@48b54808807f5b15e637b6177524fd923741e1f7 — 107 ahead / 0 behind main; 50 ahead / 0 behind PR #16 at 6ab1e6a02ac8e91027f21900d64d63b9f2e6a890. This is the only branch to receive further consolidation/UI commits.  
+**Inventory:** 37 remote branches (page 1 complete, page 2 empty), 19 open PRs and 14 closed PRs. The table records every live ref's head, latest commit timestamp/message and PR role.
+
+| Remote branch | Head SHA | Latest commit UTC | Latest message | PR role |
+|---|---|---|---|---|
+| a11y/48dp-icon-targets-2026-11-07 | 25107ce905b70bde1a41282ffd1d606819ebf58d | 2026-11-07T11:02:12Z | test(a11y): cover minimum icon action target | head #30 |
+| black-box-bihar-news | 48b54808807f5b15e637b6177524fd923741e1f7 | 2026-11-07T14:03:38Z | a11y: enforce 48dp icon action targets | active; base #11,#25,#26,#27,#29,#30,#31,#32,#33 |
+| brrrNEWS | e6fcfc25a4c8d5f363ced58f313552120aa7ff96 | 2026-11-07T04:13:30Z | ui: consolidate lightweight supporting glass surfaces | base #24; divergent sibling |
+| ci/read-only-pr-validation-isolated-release-write-2026-11-06 | 963118f0abe5f7e38f2aa66a49d4b8e74548660c | 2026-11-06T17:18:53Z | ci: validate pull requests with read-only build permissions | head #18 |
+| ci/stacked-pr-validation-2026-11-07 | 5dc3179361835b77fb3186a99d9b5791301463fd | 2026-11-06T21:41:27Z | ci: restore Android SDK setup before sdkmanager | head #20; closed/merged into active branch |
+| docs/ai-agent-handoff-2026-11-06 | 73b8a0d1ba33503fede02db2c3c0af082d724a12 | 2026-11-06T11:16:35Z | Correct icon artwork accessibility name to brrrNews | same as main; no PR |
+| feat/gs1-geography-editorial-coverage | ca66fa1c865514a86c655a4b6c7eaf16b4681f81 | 2026-11-06T10:53:35Z | fix: refresh article card metadata when feed content changes | head #6 |
+| fix/atom-alternate-link-selection-2026-11-06 | cdf4c3846dde1c05894284e48b8f7d69cb7541ad | 2026-11-06T09:14:27Z | fix: select Atom article alternate links deterministically | head #12 |
+| fix/cache-publication-date-integrity-2026-11-06 | be5151e674c2bd4fa9beb166fc38ddf622781f84 | 2026-11-06T14:26:32Z | feat: expose publication date and publisher RSS provenance on cards | head #11 |
+| fix/early-startup-crash-diagnostics-2026-11-06 | 6ab1e6a02ac8e91027f21900d64d63b9f2e6a890 | 2026-11-06T19:33:20Z | fix: minimise shareable process-exit diagnostics | head #16; corrected Prismal/stability parent |
+| fix/editorial-action-gate-blackbox-2026-11-07 | 627014500a7a983377b7c2fc82ca0cd238f776b9 | 2026-11-07T13:50:45Z | test(editorial): require a syllabus issue beyond institution names | head #27 |
+| fix/editorial-heatwave-bill-signals-2026-11-07 | 89464104e300f48da10e3e32e33715cbe2405084 | 2026-11-06T22:05:40Z | Verify a specific parliamentary bill remains eligible for the GS II feed | head #21 |
+| fix/editorial-policy-exception-guard-2026-11-07 | 1f7a3c2a7b74cc02cfee6fe451f4576feb291acf | 2026-11-07T04:46:47Z | fix(editorial): match policy action and target as separate words | head #24 |
+| fix/editorial-signal-count-test | 4738690d6e7f6c7c02a621742f25d5ebf1d631fb | 2026-11-06T05:16:32Z | test: align economy signal count with repo-rate mapping | closed/merged #2 |
+| fix/editorial-token-boundaries-2026-11-06 | 0045c24637f162f1c13dceb1f8878f42f6eb15fd | 2026-11-06T02:34:28Z | fix: tighten UPSC editorial signal matching | closed/merged #1 |
+| fix/navigation-icon-imports-2026-11-06 | fa8868940c08ed5b4a9def014a850e8a9dcb3490 | 2026-11-06T06:27:06Z | fix: use supported calendar navigation glyph | closed/merged #5 |
+| fix/parliamentary-syllabus-signal-gate-2026-11-07 | 9d754953a29c0355ce55306ce4fd5463193c9dbb | 2026-11-07T03:49:44Z | test: preserve Parliament bill headline variants | closed/merged #23 |
+| fix/publisher-redirect-allowlist-2026-11-06 | 83a94ac9c3fdc4e70f1ef35c65e9cf793aa9b306 | 2026-11-06T12:15:39Z | Validate RSS redirects against publisher allowlists | closed #15; safe policy present in active line |
+| fix/quiz-option-selected-semantics-compile-2026-11-07 | 6f9b3c1e1a484233721863d0b736734c0d282cd5 | 2026-11-07T08:12:10Z | fix(quiz): qualify selected semantics receiver | closed/merged #28 |
+| fix/resolve-relative-atom-links-2026-11-07 | c97d6b960e2cc6b93ac6444ebf9ceb6eabd320a4 | 2026-11-07T14:59:24Z | test(rss): correct relative xml base fixture | head #33 |
+| fix/rss-image-host-allowlist-2026-11-07 | 7a51c9c2c40aa89997db55194a6db3d0d65ac95d | 2026-11-07T06:28:46Z | test(reader): cover publisher-only image resources | head #25 |
+| fix/rss-tracking-variant-dedup-2026-11-06 | 2093990be43a8a9b8eed43f8e4ec1e49c0b29f1b | 2026-11-06T16:42:29Z | fix: deduplicate RSS tracking URL variants | head #17 |
+| fix/search-glass-theme-capture-2026-11-06 | c514eff3d5fd266ce6b6ecec51a141055e5fa52e | 2026-11-06T07:44:03Z | fix: capture Search glass tint before draw callback | closed/merged #10 |
+| fix/startup-crash-diagnostics-feed-jank-2026-11-06 | 5da4e789b0f49c0eefda024410ade34c1e0f2a7c | 2026-11-06T07:39:53Z | fix: diagnose launch crashes and move feed indexing off main | closed/merged #9 |
+| fix/startup-stability-performance-2026-11-06 | 654e660347de692ef88531dfa49c610269d69671 | 2026-11-06T07:18:06Z | fix: harden cold start and reduce feed rendering workload | closed/merged #7 |
+| main | 73b8a0d1ba33503fede02db2c3c0af082d724a12 | 2026-11-06T11:16:35Z | Correct icon artwork accessibility name to brrrNews | default; base #6,#8,#12,#13,#16,#17,#18,#21 |
+| perf/bounded-read-history-2026-11-07 | 910178af3f595993557533cb65d03e714bcd7760 | 2026-11-06T23:53:04Z | Verify legacy markers survive recent-history retention | head #22 |
+| perf/bounded-rss-fetch-concurrency-2026-11-07 | 8c56c98c83cc69451f128aa259df86a8ce28f43a | 2026-11-07T11:29:26Z | docs: record bounded RSS fetch review and CI state | head #32 |
+| perf/off-main-appearance-preferences-2026-11-07 | bc48daec98ff076c9db3c2c69084d9b08cd0bbce | 2026-11-07T11:11:45Z | fix(startup): keep appearance snapshot API module-internal | head #31 |
+| perf/off-main-bookmark-persistence-2026-11-07 | a64857b5efa62ea053c0c96e5f374fd35924b340 | 2026-11-07T09:05:25Z | perf(storage): move bookmark mutations off the UI thread | head #29 |
+| perf/off-main-session-persistence-2026-11-06 | ed91a3bfbcb3f12f6f6050ce72a120b3aafeae4a | 2026-11-06T10:50:31Z | perf: move read-marker persistence off main thread | head #8; base #22 |
+| privacy/webview-publisher-subresource-gate-2026-11-07 | b8d2ef9ff2413c378347986d00961c401dfa771d | 2026-11-07T07:27:22Z | privacy: block third-party publisher reader subresources | head #26 |
+| redesign/v0.3-search-reader | 654cc89dee4f93fea98bb76df9d8cf88abf2f0d8 | 2026-11-03T15:31:48Z | fix: make selection decoding fallback valid JSON | no PR; stale |
+| ui/foreground-adaptive-glass-contrast-2026-11-06 | 3dc0f3fb0eb4ca69facdfa44eeb26c00e9b55264 | 2026-11-06T10:56:16Z | ui: restore low-cadence foreground adaptive glass contrast | head #13 |
+| ui/liquid-glass-performance-2026-11-06 | 2e9c7f62ca65a899e18d9026e1535392835b3724 | 2026-11-06T06:25:39Z | fix: import bottom navigation glyphs | closed #4; earlier #3 merged from a prior head |
+| ui/liquid-glass-system-2026-11-07 | 1f7cd2e5ddc5d169d1443035a8334538e44efc40 | 2026-11-06T20:11:36Z | docs(reader): record native selection collision guard | closed/merged #19 |
+| ui/liquid-glass-system-continuation-2026-11-07 | f031bf21229f43a992384cc23fa0f4da57e547a1 | 2026-11-07T03:18:34Z | fix: finish syllabus metadata and thin-film feed eligibility | no PR; superseded checkpoint |
+
+### Pull-request state and source treatment
+
+**Open PRs (19):** #33, #32, #31, #30, #29, #27, #26, #25, #24, #22, #21, #18, #17, #16, #13, #12, #11, #8 and #6. All remain open/draft; none was merged or retargeted in this audit.
+
+**Closed PRs (14):** #28, #23, #20, #19, #10, #9, #7, #5, #3, #2 and #1 were merged into their stated targets; #15, #14 and #4 were closed without merge. PRs #19/#20/#23/#28 are represented in black-box-bihar-news only, not main.
+
+### Freshness and comparison decisions
+
+- black-box-bihar-news is a direct descendant of PR #16's corrected stability/Prismal baseline; no older UI branch supersedes it. Its latest exact natural push validation before this implementation was run #239 on 48b54808807f5b15e637b6177524fd923741e1f7.
+- brrrNEWS is a divergent sibling (4 ahead / 13 behind black-box-bihar-news). Its useful SupportingGlassCard/GlassSurfacePolicy, SavedFeed memoization and Reader-position IO changes are already represented in the selected branch. Its app-label, workflow and branch-documentation changes are not adopted. PR #24 remains based on brrrNEWS and is not part of this UI branch.
+- ui/liquid-glass-system-continuation is an older checkpoint (0 ahead / 23 behind selected branch). ui/liquid-glass-performance and redesign/v0.3-search-reader remain stale and are not used as baselines.
+- PR #30's 48dp target policy, PR #31's off-main appearance snapshot and PR #29's serialized off-main bookmark persistence have been selectively represented in black-box-bihar-news; source branches and PRs remain untouched.
+- PR #32's bounded RSS concurrency and PR #33's relative Atom-link resolution are independent non-UI changes. PR #33's exact head passed run #240, but that run does not validate the selected branch. Neither change is copied in this UI pass.
+- PRs #25/#26 remain separate publisher-resource/security proposals; do not port until redirect, asset-host and third-party subresource boundaries are reviewed together. PR #27 and other editorial/parser branches are not UI baselines.
+- PR #18/#20's compatible read-only build and isolated main-push Release-write workflow is present on the selected branch. The main workflow remains push-only; a future PR to main must not be described as PR-to-main CI validated until main's workflow changes.
+
+### Current Actions and Release evidence
+
+- Actions history: 240 runs, fully paginated; 141 success, 58 failure, 41 cancelled; queue empty.
+- Run #239: success on exact selected-branch head 48b54808807f5b15e637b6177524fd923741e1f7. WordNet builder: 4 tests passed, 151,456 unique words generated; :app:testDebugUnitTest and :app:assembleDebug succeeded; artifact 13577371341, 39,096,477 bytes, SHA-256 e37f05a313fb96b959970579b86e6101b30256f202cec3db49d7a492521cd8d5.
+- Run #240: success on PR #33 head c97d6b960e2cc6b93ac6444ebf9ceb6eabd320a4; WordNet generation, JVM tests, APK assembly and artifact upload succeeded; artifact 13579255941, 39,097,729 bytes. It is not a selected-branch run.
+- Active workflow blob 6cef6ca19f3babd331c9deb59be9da0067c6fa66 has read-only build/test permissions and isolated main-push Release write. Main workflow blob 37197497288d9f0a60f4d1cfa8453e3dee52a902 remains push-only. Latest published Release is v0.2.0-build-116.
+- No workflow was edited, no manual dispatch/rerun was used, no Release was published, no PR was merged/retargeted, and no remote branch was modified/deleted by this audit.
