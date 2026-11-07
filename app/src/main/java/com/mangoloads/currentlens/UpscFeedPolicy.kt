@@ -111,6 +111,16 @@ internal object UpscFeedPolicy {
         """\b(?:$policySubjectPattern)\b(?:\s+\w+){0,4}\s+\b(?:$PASSIVE_POLICY_ACTION_PATTERN)\b(?:\s+\w+){0,3}\s+by\s+(?:the\s+)?(?:$POLICY_INSTITUTION_PATTERN)\b(?:\s+\w+){0,4}\s+\b(?:today|yesterday|recently|this week|this month|this year|20\d{2})\b"""
     )
 
+    // An original enactment/passage dated to the 19th century or earlier 20th century
+    // is historical context, not a current regulatory action. A separate explicit
+    // current-time cue can still establish a present review or change in the same title.
+    private val historicalOriginalPolicyActionPattern = Regex(
+        """\b(?:$POLICY_INSTITUTION_PATTERN)\b(?:\s+\w+){0,6}\s+\b(?:enacted|passed|introduced|adopted)\b(?:\s+\w+){0,6}\s+\b(?:$policySubjectPattern)\b(?:\s+\w+){0,3}\s+\b(?:in|of)\s+(?:18|19)\d{2}\b"""
+    )
+    private val explicitCurrentTemporalCuePattern = Regex(
+        """\b(?:today|yesterday|recently|this week|this month|this year|20\d{2})\b"""
+    )
+
     // Institution names identify actors, not syllabus themes. A routine appointment,
     // anniversary or staff event must not qualify merely because it mentions one.
     // A second, non-institutional signal from the selected GS mapping is required.
@@ -177,10 +187,14 @@ internal object UpscFeedPolicy {
 
         val hasNoise = noiseTerms.any { EditorialTextMatcher.contains(text, it) }
         val hasHardNoise = nonOverrideableNoiseTerms.any { EditorialTextMatcher.contains(title, it) }
-        val hasPolicyException =
+        val historicalOriginalActionWithoutCurrentCue =
+            historicalOriginalPolicyActionPattern.containsMatchIn(title) &&
+                !explicitCurrentTemporalCuePattern.containsMatchIn(title)
+        val hasPolicyException = !historicalOriginalActionWithoutCurrentCue && (
             institutionalPolicyActionPattern.containsMatchIn(title) ||
                 currentPassivePolicyActionPattern.containsMatchIn(title) ||
                 passivePolicyActionByInstitutionPattern.containsMatchIn(title)
+            )
         // Film promotion stays noise; only a clearly technical thin-film solar headline is exempt.
         val hasThinFilmScienceException =
             EditorialTextMatcher.contains(title, "thin film") &&
