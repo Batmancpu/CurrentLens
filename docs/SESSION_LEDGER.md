@@ -404,3 +404,17 @@ Branch: `fix/early-startup-crash-diagnostics-2026-11-06`.
 - Root cause established from the exact source and failing fixture: the first edit removed “box office” from the **soft** `noiseTerms` list instead of from `nonOverrideableNoiseTerms`. The generic hard exclusion therefore remained and correctly blocked the new policy fixture. This was an implementation mistake in the proposed correction, not a Gradle/compiler/environment failure.
 - Corrective commit: `3d57f0714f06579955d6efba1ebee72002dda081`. Restores “box office”/“box-office” to soft noise and removes only those generic phrases from the hard-exclusion list. Generic box-office reporting remains rejected unless the headline satisfies the narrow institutional-action + exact GST-subject rule.
 - The positive fixture and existing generic box-office false-positive fixture are unchanged. Natural CI for the corrective code commit is pending; do not claim it passes until the run completes.
+
+
+## 2026-11-08 04:39 IST / 23:09 UTC — Close institutional film-promotion action-gate bypass
+
+- **Repository / branch:** Batmancpu/CurrentLens; fix/editorial-action-gate-blackbox-2026-11-07.
+- **PR:** [#27 — Port strict institutional-action gate to black-box integration](https://github.com/Batmancpu/CurrentLens/pull/27), targeting black-box-bihar-news. Main remains 73b8a0d1ba33503fede02db2c3c0af082d724a12 and is untouched.
+- **Code commit:** 67cc900e29d6687d7c13f388ec1658cdbf24c2ca, parent cef7f1267cf2ca67ceacaf2acd9cfcbfa7dbf6fc.
+- **Evidence:** the proposed strict gate's ordered regex could still match “Ministry announces new film highlighting the Cinematograph Act” as institution → action → policy subject. Its hard-noise list covered “film about/on” but not “film highlighting”. The same bypass applied to documentary promotion that highlighted celebrity-endorsement guidelines.
+- **Change:** add narrow hard-exclusion phrases for film/documentary/series/biopic content-highlighting, celebrating, depicting, featuring, starring, exploring or showcasing policy subjects. Keep the existing positive control for a Ministry issuing actual film-certification rules.
+- **Tests:** add two labelled synthetic false-positive fixtures that first assert the classifier has a mapping, then assert editorial rejection. Update docs/UPSC_EDITORIAL_BASELINE.md with the additional false-positive example. These are synthetic fixtures, not live-feed measurements or official PYQs.
+- **Verification:** no natural Actions run or check suite was created for code commit 67cc900e at the time of this ledger entry; commit status/check-runs returned zero checks. Do not claim the new tests passed. No manual workflow dispatch/rerun.
+- **Integration risk:** PR #27 is still diverged from its integration base and GitHub reports it unmergeable. The code change is not active in black-box-bihar-news until reconciled and validated on the current base.
+- **Scope / privacy:** no source feeds, network permissions, dependencies, storage schema, analytics, telemetry, main branch, workflow configuration or Release changed. Rollback is limited to the added hard-noise phrases and two fixtures.
+- **Next:** reconcile PR #27 with the latest integration branch, obtain natural CI on the combined head, and test adjacent promotional verbs against genuine regulatory headlines before calling the editorial gate ready.
