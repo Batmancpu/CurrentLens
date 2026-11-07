@@ -242,6 +242,34 @@ class UpscFeedPolicyTest {
     }
 
     @Test
+    fun specificSyllabusSignalsAreRecognizedByTheirSelectedGsMappings() {
+        assertSyllabusMapped(article(
+            "Parliament debates a constitutional amendment",
+            "The proposed amendment concerns constitutional provisions."
+        ), "GS II", "Constitution")
+        assertSyllabusMapped(article(
+            "National Education Policy review focuses on school education",
+            "The review examines education delivery and learning outcomes."
+        ), "GS II", "Education & Human Resources")
+        assertSyllabusMapped(article(
+            "Government expands e-governance and public service delivery",
+            "The programme strengthens transparent digital service delivery."
+        ), "GS II", "Governance")
+        assertSyllabusMapped(article(
+            "Gross domestic product growth slows as fiscal deficit widens and monetary policy changes",
+            "The official estimate reviews macroeconomic conditions."
+        ), "GS III", "Indian Economy")
+        assertSyllabusMapped(article(
+            "ISRO announces a new space mission and quantum computing programme",
+            "The announcement covers scientific and technological applications."
+        ), "GS III", "Science & Technology")
+        assertSyllabusMapped(article(
+            "Border security review strengthens management of the frontier",
+            "The review concerns border management and internal security."
+        ), "GS III", "Internal Security")
+    }
+
+    @Test
     fun unrelatedSpecificSignalFromAnotherTopicCannotRescueBroadGovernanceMatch() {
         val item = article(
             "Government launches a new welfare scheme for public service reform",
