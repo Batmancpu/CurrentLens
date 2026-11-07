@@ -35,6 +35,11 @@ internal object UpscFeedPolicy {
         "trailer launch", "trailer released", "official trailer",
         "teaser launch", "teaser released", "official teaser",
         "film release date", "movie release date", "streaming release",
+        // Content-about framing is promotional even when an institution announces it;
+        // the law or policy is the film's subject, not the object of a regulatory action.
+        "film about", "film on", "movie about", "movie on",
+        "documentary about", "documentary on", "series about", "series on",
+        "biopic about", "biopic on",
         "series premiere", "season premiere", "season finale",
         "show promotion", "series promotion", "cast announcement",
         "red carpet", "paparazzi", "film review", "movie review",

@@ -385,4 +385,27 @@ class UpscFeedPolicyTest {
         ))
     }
 
+
+    @Test
+    fun institutionalAnnouncementsCannotTurnPromotionalContentIntoPolicyActions() {
+        assertRejectedDespiteKeywordMatch(article(
+            "Government announces new film about the Cinematograph Act",
+            "The ministry promotes a feature film; no certification rule is changed.",
+            "Entertainment"
+        ))
+        assertRejectedDespiteKeywordMatch(article(
+            "Ministry announces documentary on celebrity endorsement guidelines",
+            "A documentary promotion, not a regulatory notification or consumer-protection action.",
+            "Entertainment"
+        ))
+        assertSyllabusMapped(
+            article(
+                "Government issues new film certification rules for OTT platforms",
+                "The notification changes statutory certification requirements.",
+                "Entertainment"
+            ),
+            "GS II",
+            "Governance"
+        )
+    }
 }
