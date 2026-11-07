@@ -101,7 +101,7 @@ internal object UpscFeedPolicy {
     )
     // Passive: a current-change cue -> policy subject -> action.
     private val currentPassivePolicyActionPattern = Regex(
-        """\b(?:new|draft|revised|updated|fresh|proposed|final|recently|20\d{2})\b(?:\s+\w+){0,3}\s+\b(?:$policySubjectPattern)\b(?:\s+\w+){0,4}\s+\b(?:$PASSIVE_POLICY_ACTION_PATTERN)\b"""
+        """\b(?:new|draft|revised|updated|fresh|proposed|final|recently|20\d{2})\b(?:\s+\w+){0,1}\s+\b(?:$policySubjectPattern)\b(?:\s+\w+){0,4}\s+\b(?:$PASSIVE_POLICY_ACTION_PATTERN)\b"""
     )
     // Passive with a named institution: policy subject -> action -> by institution.
     private val passivePolicyActionByInstitutionPattern = Regex(
