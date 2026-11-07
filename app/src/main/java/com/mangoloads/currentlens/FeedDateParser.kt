@@ -43,3 +43,20 @@ internal object FeedDateParser {
             }.getOrNull()
     }
 }
+
+
+/**
+ * Chooses the publisher's original publication timestamp before any later update timestamp.
+ * An updated timestamp is only a fallback when no valid original publication date exists.
+ */
+internal object FeedPublicationDatePolicy {
+    fun select(
+        rssPubDate: String,
+        atomPublished: String,
+        atomUpdated: String,
+        genericDate: String
+    ): String = listOf(rssPubDate, atomPublished, atomUpdated, genericDate)
+        .firstOrNull { FeedDateParser.parse(it) != null }
+        ?.trim()
+        .orEmpty()
+}

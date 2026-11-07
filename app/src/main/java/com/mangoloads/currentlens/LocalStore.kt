@@ -6,16 +6,23 @@ import org.json.JSONObject
 import java.time.LocalDate
 import java.time.ZoneId
 import java.util.UUID
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withContext
 
 object LocalStore {
     private const val PREFS = "currentlens_local"
     private const val BOOKMARKS = "bookmarks"
     private const val READ = "read_history"
+    // Ordered window for new markers; the legacy unordered set is preserved unchanged.
+    private const val RECENT_READ = "read_history_recent_v1"
     private const val ARTICLE_CACHE = "article_cache"
     private const val GLASS_ALPHA = "glass_alpha"
+    private const val REDUCE_TRANSPARENCY = "glass_reduce_transparency"
     private const val MAX_CACHED_ARTICLES = 500
     private const val CACHE_DAYS = 30
-    private const val DEFAULT_GLASS_ALPHA = 0.28f
+    private const val DEFAULT_GLASS_ALPHA = AppearancePreferencesPolicy.DEFAULT_GLASS_ALPHA
     private const val READING_SESSIONS = "reading_sessions"
     private const val READER_POSITIONS = "reader_positions"
     private const val QUIZ_ATTEMPTS = "quiz_attempts"
@@ -23,6 +30,9 @@ object LocalStore {
     private const val MAX_READER_POSITIONS = ReaderPositionPolicy.MAX_ENTRIES
     private const val MAX_QUIZ_ATTEMPTS = 5_000
     private const val MAX_DETAILED_QUIZ_ATTEMPTS = 500
+    private val bookmarkWriteMutex = Mutex()
+    private val historyWriteMutex = Mutex()
+    private val readerPositionWriteMutex = Mutex()
 
     fun bookmarks(context: Context): Set<String> =
         runCatching {
@@ -32,36 +42,82 @@ object LocalStore {
 
     fun isBookmarked(context: Context, url: String): Boolean = bookmarks(context).contains(url)
 
-    fun toggleBookmark(context: Context, url: String): Boolean {
-        val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-        val next = runCatching {
-            prefs.getStringSet(BOOKMARKS, emptySet())?.toMutableSet() ?: mutableSetOf()
-        }.getOrDefault(mutableSetOf())
-        val added = if (next.contains(url)) {
-            next.remove(url)
-            false
-        } else {
-            next.add(url)
-            true
+    /**
+     * Serialize the saved-URL read/modify/write on IO. Bookmarks are user-owned data:
+     * this deliberately preserves the complete set rather than applying lossy retention.
+     */
+    internal suspend fun toggleBookmark(context: Context, url: String): Boolean =
+        withContext(Dispatchers.IO) {
+            bookmarkWriteMutex.withLock {
+                val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+                val current = runCatching {
+                    prefs.getStringSet(BOOKMARKS, emptySet())?.toSet() ?: emptySet()
+                }.getOrDefault(emptySet())
+                val mutation = BookmarkSetPolicy.toggle(current, url)
+                if (mutation.changed) {
+                    prefs.edit().putStringSet(BOOKMARKS, mutation.savedUrls).apply()
+                }
+                mutation.added
+            }
         }
-        prefs.edit().putStringSet(BOOKMARKS, next.toSet()).apply()
-        return added
-    }
 
     fun readHistory(context: Context): Set<String> =
         runCatching {
-            context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-                .getStringSet(READ, emptySet())?.toSet() ?: emptySet()
+            val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+            val legacy = runCatching {
+                prefs.getStringSet(READ, emptySet())?.toSet() ?: emptySet()
+            }.getOrDefault(emptySet())
+            val recentRaw = runCatching { prefs.getString(RECENT_READ, null) }.getOrNull()
+            ReadHistoryPolicy.visibleHistory(legacy, parseRecentReadHistory(recentRaw) ?: emptyList())
         }.getOrDefault(emptySet())
 
+    /**
+     * Legacy read markers remain frozen because their unordered StringSet has no timestamps.
+     * Only new reads enter the bounded, ordered JSON window.
+     */
     fun markRead(context: Context, url: String) {
-        val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-        val next = runCatching {
-            prefs.getStringSet(READ, emptySet())?.toMutableSet() ?: mutableSetOf()
-        }.getOrDefault(mutableSetOf())
-        next.add(url)
-        prefs.edit().putStringSet(READ, next.toSet()).apply()
+        if (url.isBlank() || url.length > ReadHistoryPolicy.MAX_URL_LENGTH) return
+        runCatching {
+            val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+            val legacy = runCatching {
+                prefs.getStringSet(READ, emptySet())?.toSet() ?: emptySet()
+            }.getOrDefault(emptySet())
+            if (url in legacy) return@runCatching
+
+            // A malformed or wrong-typed value is preserved for recovery, never overwritten.
+            val rawResult = runCatching { prefs.getString(RECENT_READ, null) }
+            if (rawResult.isFailure) return@runCatching
+            val current = parseRecentReadHistory(rawResult.getOrNull()) ?: return@runCatching
+            val next = ReadHistoryPolicy.add(current, url)
+            if (next == current) return@runCatching
+
+            val array = JSONArray()
+            next.forEach { array.put(it) }
+            prefs.edit().putString(RECENT_READ, array.toString()).apply()
+        }
     }
+
+    private fun parseRecentReadHistory(raw: String?): List<String>? {
+        if (raw == null) return emptyList()
+        return runCatching {
+            val array = JSONArray(raw)
+            buildList {
+                for (index in 0 until array.length()) {
+                    val url = array.optString(index)
+                    if (url.isNotBlank()) add(url)
+                }
+            }
+        }.getOrNull()?.let { ReadHistoryPolicy.retain(it) }
+    }
+
+    /** Updates read markers and returns the latest set off the article-opening UI path. */
+    internal suspend fun markReadAndRead(context: Context, url: String): Set<String> =
+        withContext(Dispatchers.IO) {
+            historyWriteMutex.withLock {
+                markRead(context, url)
+                readHistory(context)
+            }
+        }
 
     fun cachedArticles(context: Context): List<Article> {
         val raw = runCatching {
@@ -99,8 +155,14 @@ object LocalStore {
         val zone = ZoneId.of("Asia/Kolkata")
         val cutoff = LocalDate.now(zone).minusDays(CACHE_DAYS.toLong())
             .atStartOfDay(zone).toInstant().toEpochMilli()
-        val merged = ArticleCachePolicy.retain(
+        val readUrls = readHistory(context)
+        val deduplicated = ArticleUrlIdentityPolicy.deduplicate(
             incoming + cachedArticles(context),
+            bookmarkedUrls = savedUrls,
+            readUrls = readUrls
+        )
+        val merged = ArticleCachePolicy.retain(
+            deduplicated,
             bookmarkedUrls = savedUrls,
             cutoffMillis = cutoff,
             maxArticles = MAX_CACHED_ARTICLES
@@ -172,6 +234,26 @@ object LocalStore {
             now
         )
     }
+
+    /** Serialize reader-position JSON writes on IO; scroll callbacks do not parse preferences on main. */
+    internal suspend fun saveReaderPositionAndWrite(
+        context: Context,
+        articleUrl: String,
+        progress: Float,
+        updatedAtMillis: Long = System.currentTimeMillis()
+    ): Boolean = withContext(Dispatchers.IO) {
+        readerPositionWriteMutex.withLock {
+            saveReaderPosition(context, articleUrl, progress, updatedAtMillis)
+        }
+    }
+
+    /** A completed article clears its position only after earlier queued saves finish. */
+    internal suspend fun clearReaderPositionAndWrite(context: Context, articleUrl: String) =
+        withContext(Dispatchers.IO) {
+            readerPositionWriteMutex.withLock {
+                clearReaderPosition(context, articleUrl)
+            }
+        }
 
     private fun savedReaderPositions(context: Context, nowMillis: Long): List<ReaderPosition> {
         val raw = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
@@ -285,6 +367,20 @@ object LocalStore {
         return true
     }
 
+    /** Persist and reload bounded reading history on IO, serialized with quiz/read-marker writes. */
+    internal suspend fun recordReadingSessionAndRead(
+        context: Context,
+        article: Article,
+        startedAtMillis: Long,
+        durationMillis: Long
+    ): List<ReadingSession>? = withContext(Dispatchers.IO) {
+        historyWriteMutex.withLock {
+            if (recordReadingSession(context, article, startedAtMillis, durationMillis)) {
+                readingSessions(context)
+            } else null
+        }
+    }
+
     internal fun quizAttempts(context: Context): List<QuizAttempt> {
         val raw = runCatching {
             context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getString(QUIZ_ATTEMPTS, null)
@@ -351,6 +447,21 @@ object LocalStore {
         }.getOrDefault(emptyList())
     }
 
+    /** Persist and reload quiz history off main; quiz data remains submit-only. */
+    internal suspend fun recordQuizAttemptAndRead(
+        context: Context,
+        article: Article,
+        answers: Map<Int, Int>,
+        questions: List<QuizQuestion>,
+        submittedAtMillis: Long = System.currentTimeMillis()
+    ): List<QuizAttempt>? = withContext(Dispatchers.IO) {
+        historyWriteMutex.withLock {
+            if (recordQuizAttempt(context, article, answers, questions, submittedAtMillis) != null) {
+                quizAttempts(context)
+            } else null
+        }
+    }
+
     internal fun recordQuizAttempt(
         context: Context,
         article: Article,
@@ -413,14 +524,30 @@ object LocalStore {
         return attempt
     }
 
-    fun glassAlpha(context: Context): Float =
+    fun glassAlpha(context: Context): Float = appearancePreferences(context).glassAlpha
+
+    /**
+     * Read both appearance preferences together. The first SharedPreferences access also
+     * loads the entire local XML file, so callers should use this from the startup IO restore.
+     */
+    internal fun appearancePreferences(context: Context): LocalAppearancePreferences =
         runCatching {
-            context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-                .getFloat(GLASS_ALPHA, DEFAULT_GLASS_ALPHA).coerceIn(0.12f, 0.55f)
-        }.getOrDefault(DEFAULT_GLASS_ALPHA)
+            val preferences = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+            AppearancePreferencesPolicy.create(
+                glassAlpha = preferences.getFloat(GLASS_ALPHA, DEFAULT_GLASS_ALPHA),
+                reduceTransparency = preferences.getBoolean(REDUCE_TRANSPARENCY, false)
+            )
+        }.getOrDefault(LocalAppearancePreferences())
 
     fun saveGlassAlpha(context: Context, value: Float) {
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-            .edit().putFloat(GLASS_ALPHA, value.coerceIn(0.12f, 0.55f)).apply()
+            .edit().putFloat(GLASS_ALPHA, AppearancePreferencesPolicy.normalizeGlassAlpha(value)).apply()
+    }
+
+    fun reduceTransparency(context: Context): Boolean = appearancePreferences(context).reduceTransparency
+
+    fun saveReduceTransparency(context: Context, enabled: Boolean) {
+        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+            .edit().putBoolean(REDUCE_TRANSPARENCY, enabled).apply()
     }
 }

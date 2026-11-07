@@ -4,15 +4,19 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.size
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Close
+import androidx.compose.material.icons.outlined.ContentCopy
+import androidx.compose.material.icons.outlined.ExpandLess
+import androidx.compose.material.icons.outlined.ExpandMore
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -54,25 +58,28 @@ internal fun DefinitionPopoverContent(
                 modifier = Modifier.weight(1f),
                 style = if (expanded) MaterialTheme.typography.titleLarge else MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.SemiBold,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
+                maxLines = 2,
+                softWrap = true,
+                overflow = TextOverflow.Clip,
+                lineHeight = if (expanded) 26.sp else 20.sp
             )
             if (DictionaryOverlayPolicy.shouldShowCopy(expanded, hasCopyableContent)) {
-                TextButton(onClick = onCopy, modifier = Modifier.heightIn(min = 32.dp),
-                    contentPadding = PaddingValues(horizontal = 6.dp, vertical = 0.dp)) {
-                    Text("Copy", fontSize = 12.sp)
+                IconButton(onClick = onCopy, modifier = Modifier.size(48.dp)) {
+                    Icon(Icons.Outlined.ContentCopy, contentDescription = "Copy definition",
+                        modifier = Modifier.size(19.dp))
                 }
             }
             if (hasEntry) {
-                TextButton(onClick = { onExpandedChange(!expanded) },
-                    modifier = Modifier.heightIn(min = 32.dp),
-                    contentPadding = PaddingValues(horizontal = 6.dp, vertical = 0.dp)) {
-                    Text(if (expanded) "Less" else "More", fontSize = 12.sp)
+                IconButton(onClick = { onExpandedChange(!expanded) }, modifier = Modifier.size(48.dp)) {
+                    Icon(
+                        if (expanded) Icons.Outlined.ExpandLess else Icons.Outlined.ExpandMore,
+                        contentDescription = if (expanded) "Show less" else "Show more",
+                        modifier = Modifier.size(22.dp)
+                    )
                 }
             }
-            TextButton(onClick = onClose, modifier = Modifier.heightIn(min = 32.dp),
-                contentPadding = PaddingValues(horizontal = 6.dp, vertical = 0.dp)) {
-                Text(closeLabel, fontSize = 12.sp)
+            IconButton(onClick = onClose, modifier = Modifier.size(48.dp)) {
+                Icon(Icons.Outlined.Close, contentDescription = closeLabel, modifier = Modifier.size(20.dp))
             }
         }
 

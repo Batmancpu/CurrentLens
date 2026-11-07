@@ -36,6 +36,8 @@ data class FeedSource(
     val weekendRead: Boolean = false
 )
 
+private val FEED_REDIRECT_STATUS_CODES = setOf(301, 302, 303, 307, 308)
+
 object NewsRepository {
     private val feeds = listOf(
         // Section feeds precede broad feeds so duplicate URLs keep useful labels.
@@ -56,34 +58,86 @@ object NewsRepository {
     )
 
     suspend fun fetchAll(): List<Article> = withContext(Dispatchers.IO) {
-        feeds.map { source -> async { fetchOne(source) } }
+        val fetched = feeds.map { source -> async { fetchOne(source) } }
             .awaitAll()
             .flatten()
-            .distinctBy { it.url.ifBlank { it.title } }
-            .sortedByDescending { it.publishedAtMillis ?: 0L }
-            .take(250)
+        ArticleUrlIdentityPolicy.deduplicate(fetched, bookmarkedUrls = emptySet()).take(250)
     }
 
-    private fun fetchOne(source: FeedSource): List<Article> = try {
-        val connection = (URL(source.url).openConnection() as HttpURLConnection).apply {
-            connectTimeout = 8000
-            readTimeout = 10000
-            requestMethod = "GET"
-            setRequestProperty("User-Agent", "CurrentLens/0.2 RSS reader")
-            setRequestProperty("Accept", "application/rss+xml, application/atom+xml, application/xml, text/xml")
-        }
-        try {
-            val tooLarge = connection.contentLengthLong > NetworkLimits.MAX_RSS_BYTES
-            val status = if (tooLarge) -1 else connection.responseCode
-            if (tooLarge || status !in 200..299) emptyList()
-            else connection.inputStream.use { input ->
-                parse(source, NetworkLimits.readUtf8Limited(input, NetworkLimits.MAX_RSS_BYTES))
+    private fun fetchOne(source: FeedSource): List<Article> {
+        return try {
+            val connection = openAllowedFeedConnection(source) ?: return emptyList()
+            try {
+                if (connection.contentLengthLong > NetworkLimits.MAX_RSS_BYTES) {
+                    emptyList()
+                } else {
+                    connection.inputStream.use { input ->
+                        parse(source, NetworkLimits.readUtf8Limited(input, NetworkLimits.MAX_RSS_BYTES))
+                    }
+                }
+            } finally {
+                connection.disconnect()
             }
-        } finally {
-            connection.disconnect()
+        } catch (_: Exception) {
+            emptyList()
         }
-    } catch (_: Exception) {
-        emptyList()
+    }
+
+    /**
+     * RSS feeds are network inputs too: disable automatic redirects and validate each
+     * destination against the feed's publisher before issuing the next request.
+     */
+    private fun openAllowedFeedConnection(source: FeedSource): HttpURLConnection? {
+        var currentUrl = source.url
+        var redirectsFollowed = 0
+
+        while (true) {
+            if (!PublisherHostPolicy.allows(source.name, currentUrl)) return null
+
+            val connection = (URL(currentUrl).openConnection() as HttpURLConnection).apply {
+                connectTimeout = 8000
+                readTimeout = 10000
+                requestMethod = "GET"
+                instanceFollowRedirects = false
+                setRequestProperty("User-Agent", "CurrentLens/0.2 RSS reader")
+                setRequestProperty(
+                    "Accept",
+                    "application/rss+xml, application/atom+xml, application/xml, text/xml"
+                )
+            }
+
+            val status = try {
+                connection.responseCode
+            } catch (error: Exception) {
+                connection.disconnect()
+                throw error
+            }
+
+            if (status in FEED_REDIRECT_STATUS_CODES) {
+                val nextUrl = connection.getHeaderField("Location")?.let { location ->
+                    PublisherRedirectPolicy.resolveAllowedTarget(
+                        source = source.name,
+                        currentUrl = currentUrl,
+                        location = location,
+                        redirectsFollowed = redirectsFollowed
+                    )
+                }
+                connection.disconnect()
+                if (nextUrl == null) return null
+                currentUrl = nextUrl
+                redirectsFollowed += 1
+                continue
+            }
+
+            if (status !in 200..299 ||
+                !PublisherHostPolicy.allows(source.name, connection.url.toExternalForm())
+            ) {
+                connection.disconnect()
+                return null
+            }
+
+            return connection
+        }
     }
 
     private fun clean(value: String): String =
@@ -100,8 +154,11 @@ object NewsRepository {
         var inItem = false
         var title = ""
         var description = ""
-        var link = ""
-        var published = ""
+        val links = mutableListOf<FeedLinkCandidate>()
+        var rssPubDate = ""
+        var atomPublished = ""
+        var atomUpdated = ""
+        var genericDate = ""
         var image: String? = null
         while (event != XmlPullParser.END_DOCUMENT) {
             when (event) {
@@ -111,8 +168,11 @@ object NewsRepository {
                         inItem = true
                         title = ""
                         description = ""
-                        link = ""
-                        published = ""
+                        links.clear()
+                        rssPubDate = ""
+                        atomPublished = ""
+                        atomUpdated = ""
+                        genericDate = ""
                         image = null
                     } else if (inItem) {
                         when (tag) {
@@ -123,11 +183,23 @@ object NewsRepository {
                             }
                             "link" -> {
                                 val href = parser.getAttributeValue(null, "href")
-                                if (!href.isNullOrBlank()) link = href
-                                else if (link.isBlank()) link = runCatching { parser.nextText().trim() }.getOrDefault("")
+                                if (!href.isNullOrBlank()) {
+                                    links.add(
+                                        FeedLinkCandidate(
+                                            href = href.trim(),
+                                            rel = parser.getAttributeValue(null, "rel").orEmpty(),
+                                            type = parser.getAttributeValue(null, "type").orEmpty()
+                                        )
+                                    )
+                                } else {
+                                    val textLink = runCatching { parser.nextText().trim() }.getOrDefault("")
+                                    if (textLink.isNotBlank()) links.add(FeedLinkCandidate(href = textLink))
+                                }
                             }
-                            "pubdate", "published", "updated", "date" ->
-                                published = runCatching { parser.nextText().trim() }.getOrDefault("")
+                            "pubdate" -> rssPubDate = runCatching { parser.nextText().trim() }.getOrDefault("")
+                            "published" -> atomPublished = runCatching { parser.nextText().trim() }.getOrDefault("")
+                            "updated" -> atomUpdated = runCatching { parser.nextText().trim() }.getOrDefault("")
+                            "date" -> genericDate = runCatching { parser.nextText().trim() }.getOrDefault("")
                             "enclosure" -> image = parser.getAttributeValue(null, "url")
                             "thumbnail", "content" -> {
                                 val candidate = parser.getAttributeValue(null, "url")
@@ -139,16 +211,22 @@ object NewsRepository {
                 XmlPullParser.END_TAG -> {
                     val tag = parser.name?.lowercase(Locale.ROOT).orEmpty()
                     if (tag == "item" || tag == "entry") {
-                        if (title.isNotBlank() && link.startsWith("http")) {
+                        val articleUrl = FeedLinkPolicy.select(links)
+                        if (title.isNotBlank() && articleUrl != null) {
                             result.add(
                                 Article(
-                                    id = link,
+                                    id = articleUrl,
                                     title = title,
                                     description = description.take(420),
-                                    url = link,
+                                    url = articleUrl,
                                     source = source.name,
                                     section = source.section,
-                                    published = published,
+                                    published = FeedPublicationDatePolicy.select(
+                                        rssPubDate = rssPubDate,
+                                        atomPublished = atomPublished,
+                                        atomUpdated = atomUpdated,
+                                        genericDate = genericDate
+                                    ),
                                     imageUrl = image,
                                     weekendRead = source.weekendRead,
                                     feedUrl = source.url

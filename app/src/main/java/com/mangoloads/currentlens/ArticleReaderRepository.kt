@@ -2,6 +2,7 @@ package com.mangoloads.currentlens
 
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import org.jsoup.Connection
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
 import org.jsoup.safety.Safelist
@@ -54,21 +55,18 @@ internal fun sanitizeArticleHtml(bodyHtml: String, baseUri: String): String? = r
 }.getOrNull()
 
 
+private val PUBLISHER_REDIRECT_STATUS_CODES = setOf(301, 302, 303, 307, 308)
+
 object ArticleReaderRepository {
     suspend fun extractAccessibleArticle(url: String, source: String): String? = withContext(Dispatchers.IO) {
         try {
             if (!PublisherHostPolicy.allows(source, url)) {
                 null
             } else {
-                val response = Jsoup.connect(url)
-                    .userAgent("CurrentLens/0.2 (Android; public article reader)")
-                    .timeout(12_000)
-                    .followRedirects(true)
-                    .ignoreHttpErrors(true)
-                    .maxBodySize(2 * 1024 * 1024)
-                    .execute()
+                val response = fetchAllowedPublisherResponse(url, source)
 
-                if (response.statusCode() !in 200..299 ||
+                if (response == null ||
+                    response.statusCode() !in 200..299 ||
                     !PublisherHostPolicy.allows(source, response.url().toExternalForm())
                 ) {
                     null
@@ -121,6 +119,48 @@ object ArticleReaderRepository {
             }
         } catch (_: Exception) {
             null
+        }
+    }
+
+    private fun fetchAllowedPublisherResponse(
+        initialUrl: String,
+        source: String
+    ): Connection.Response? {
+        var currentUrl = initialUrl
+        var redirectsFollowed = 0
+
+        while (true) {
+            // Validate before every request. Automatic redirects are deliberately disabled.
+            if (!PublisherHostPolicy.allows(source, currentUrl)) return null
+
+            val response = Jsoup.connect(currentUrl)
+                .userAgent("CurrentLens/0.2 (Android; public article reader)")
+                .timeout(12_000)
+                .followRedirects(false)
+                .ignoreHttpErrors(true)
+                .maxBodySize(2 * 1024 * 1024)
+                .execute()
+
+            if (response.statusCode() in PUBLISHER_REDIRECT_STATUS_CODES) {
+                val location = response.header("Location")?.takeIf { it.isNotBlank() } ?: return null
+                val nextUrl = PublisherRedirectPolicy.resolveAllowedTarget(
+                    source = source,
+                    currentUrl = currentUrl,
+                    location = location,
+                    redirectsFollowed = redirectsFollowed
+                ) ?: return null
+
+                currentUrl = nextUrl
+                redirectsFollowed += 1
+                continue
+            }
+
+            if (response.statusCode() !in 200..299 ||
+                !PublisherHostPolicy.allows(source, response.url().toExternalForm())
+            ) {
+                return null
+            }
+            return response
         }
     }
 

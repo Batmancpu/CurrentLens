@@ -8,24 +8,25 @@ class ArticleCardMetaPolicyTest {
     @Test
     fun showsTheGsMappingAndConcreteMatchedSignals() {
         assertEquals(
-            "Indicative · GS III · Indian Economy\nSignal: rbi, inflation",
+            "Indicative · GS III · Indian Economy\nSignals: rbi, inflation\nSyllabus: Indian economy; mobilisation of resources, growth and development.",
             ArticleCardMetaPolicy.syllabusHint(
                 gsPaper = "GS III",
                 subject = "Indian Economy",
-                matchedTerms = listOf("rbi", "inflation", "monetary")
+                matchedTerms = listOf("rbi", "inflation", "monetary"),
+                syllabusLink = "Indian economy; mobilisation of resources, growth and development."
             )
         )
     }
 
     @Test
     fun hidesUnmappedAndNegativeClassifierStates() {
-        assertNull(ArticleCardMetaPolicy.syllabusHint("Unmapped", "Unmapped", emptyList()))
-        assertNull(ArticleCardMetaPolicy.syllabusHint("GS II", "Governance", emptyList()))
+        assertNull(ArticleCardMetaPolicy.syllabusHint("Unmapped", "Unmapped", emptyList(), "No syllabus match"))
+        assertNull(ArticleCardMetaPolicy.syllabusHint("GS II", "Governance", emptyList(), "Governance and accountability"))
     }
 
     @Test
     fun hidesHintsWhenPaperOrSubjectIsMissing() {
-        assertNull(ArticleCardMetaPolicy.syllabusHint(" ", "Governance", listOf("law")))
-        assertNull(ArticleCardMetaPolicy.syllabusHint("GS II", "", listOf("law")))
+        assertNull(ArticleCardMetaPolicy.syllabusHint(" ", "Governance", listOf("law"), "Governance"))
+        assertNull(ArticleCardMetaPolicy.syllabusHint("GS II", "", listOf("law"), "Governance"))
     }
 }

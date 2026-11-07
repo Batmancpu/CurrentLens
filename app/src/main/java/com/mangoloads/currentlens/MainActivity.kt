@@ -15,8 +15,10 @@ import android.view.MenuItem
 import android.view.MotionEvent
 import android.view.View
 import android.view.ViewConfiguration
+import android.view.accessibility.AccessibilityManager
 import android.os.SystemClock
 import android.webkit.WebResourceRequest
+import android.webkit.CookieManager
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import androidx.activity.ComponentActivity
@@ -62,10 +64,12 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.requiredHeight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -91,6 +95,8 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -98,6 +104,8 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Slider
+import androidx.compose.material3.Switch
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -118,9 +126,13 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
+import androidx.compose.ui.input.nestedscroll.NestedScrollSource
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.Modifier
@@ -141,6 +153,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.platform.LocalFocusManager
@@ -181,7 +194,6 @@ import com.styropyr0.prismal.specular.PrismalSpecular
 import com.styropyr0.prismal.specular.PrismalSpecularStyle
 import com.styropyr0.prismal.components.LocalPrismalBottomTabHighlightedIndex
 import com.styropyr0.prismal.components.PrismalGlassBottomTab
-import com.styropyr0.prismal.components.PrismalGlassSlider
 import com.styropyr0.prismal.interactive.PrismalPressRipple
 import com.styropyr0.prismal.interactive.PrismalSpringMotion
 import com.styropyr0.prismal.shapes.PrismalCapsule
@@ -200,16 +212,27 @@ import java.time.format.DateTimeFormatter
 import java.util.Locale
 import kotlin.math.roundToInt
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+
+private val LocalGlassReduceTransparency = staticCompositionLocalOf { false }
 
 private const val INDIA_ZONE = "Asia/Kolkata"
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: android.os.Bundle?) {
         super.onCreate(savedInstanceState)
-        LaunchCrashDiagnostics.install(applicationContext)
+        LaunchCrashDiagnostics.recordStage(applicationContext, "MainActivity.onCreate entered")
         val previousCrashReport = LaunchCrashDiagnostics.read(this)
+        if (previousCrashReport != null) {
+            this.showCrashRecoveryScreen(previousCrashReport)
+            return
+        }
+        LaunchCrashDiagnostics.recordStage(applicationContext, "MainActivity preparing Compose content")
         setContent {
             val dark = isSystemInDarkTheme()
             val colors = if (dark) {
@@ -267,73 +290,137 @@ class MainActivity : ComponentActivity() {
                     }
                 }
             }
+            // Stability packages now enter the complete app directly. The
+            // isolated rendering probes remain in source for engineering diagnosis,
+            // but are not part of the owner's ordinary launch experience.
+            var showFullApp by remember { mutableStateOf(true) }
             MaterialTheme(colorScheme = colors) {
-                if (previousCrashReport != null) {
-                    Surface(
-                        modifier = Modifier.fillMaxSize(),
-                        color = colors.background,
-                        contentColor = colors.onBackground
-                    ) {
-                        CrashRecoveryScreen(
-                            report = previousCrashReport,
-                            onRetry = {
-                                LaunchCrashDiagnostics.clear(this@MainActivity)
-                                recreate()
-                            }
-                        )
+                Surface(
+                    modifier = Modifier.fillMaxSize(),
+                    color = colors.background,
+                    contentColor = colors.onBackground
+                ) {
+                    if (showFullApp) {
+                        BrrrNewsApp()
+                    } else {
+                        StabilityLaunchProbe {
+                            LaunchCrashDiagnostics.recordStage(
+                                applicationContext,
+                                "Full brrrNews composition requested from stability probe"
+                            )
+                            showFullApp = true
+                        }
                     }
-                } else {
-                    Surface(
-                        modifier = Modifier.fillMaxSize(),
-                        color = colors.background,
-                        contentColor = colors.onBackground
-                    ) { BrrrNewsApp() }
                 }
             }
         }
+        LaunchCrashDiagnostics.recordStage(applicationContext, "MainActivity.setContent returned")
     }
 }
 
-@Composable
-private fun CrashRecoveryScreen(report: String, onRetry: () -> Unit) {
-    val context = LocalContext.current
-    Column(
-        Modifier.fillMaxSize().verticalScroll(rememberScrollState())
-            .padding(horizontal = 22.dp, vertical = 28.dp),
-        verticalArrangement = Arrangement.spacedBy(14.dp)
-    ) {
-        Text("brrrNews could not complete its previous launch",
-            style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
-        Text(
-            "A local crash report has been saved on this device. Copy it and send it with your next message so the exact failure can be fixed instead of guessed.",
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            Button(
-                onClick = {
-                    val clipboard = context.getSystemService(android.content.Context.CLIPBOARD_SERVICE)
-                        as? android.content.ClipboardManager
-                    clipboard?.setPrimaryClip(
-                        android.content.ClipData.newPlainText("brrrNews crash report", report)
-                    )
-                    android.widget.Toast.makeText(context, "Crash report copied", android.widget.Toast.LENGTH_SHORT).show()
-                },
-                modifier = Modifier.weight(1f)
-            ) { Text("Copy crash report") }
-            OutlinedButton(onClick = onRetry, modifier = Modifier.weight(1f)) { Text("Try again") }
-        }
-        Text("LOCAL DIAGNOSTICS", style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
-        Text(report.take(12_000), style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace)
+/**
+ * Uses framework Views deliberately: this screen must remain available if Compose or
+ * the Prismal graphics pipeline caused the preceding startup failure.
+ */
+private fun MainActivity.showCrashRecoveryScreen(report: String) {
+    val activity = this
+    val density = resources.displayMetrics.density
+    fun dp(value: Int): Int = (value * density).toInt()
+
+    val root = android.widget.LinearLayout(this).apply {
+        orientation = android.widget.LinearLayout.VERTICAL
+        setPadding(dp(22), dp(28), dp(22), dp(20))
+        setBackgroundColor(android.graphics.Color.rgb(13, 17, 24))
     }
+    val title = android.widget.TextView(this).apply {
+        text = "brrrNews could not complete its previous launch"
+        textSize = 24f
+        setTextColor(android.graphics.Color.WHITE)
+        typeface = android.graphics.Typeface.DEFAULT_BOLD
+    }
+    val description = android.widget.TextView(this).apply {
+        text = "A privacy-minimised local report was saved on this device. Copy it and share it for diagnosis; it omits device identifiers and raw system traces."
+        textSize = 15f
+        setTextColor(android.graphics.Color.rgb(205, 215, 228))
+        setPadding(0, dp(12), 0, dp(14))
+    }
+    val reportLabel = android.widget.TextView(this).apply {
+        text = "LOCAL STARTUP DIAGNOSTICS"
+        textSize = 12f
+        setTextColor(android.graphics.Color.rgb(150, 190, 255))
+        typeface = android.graphics.Typeface.DEFAULT_BOLD
+        setPadding(0, dp(14), 0, dp(8))
+    }
+    val reportText = android.widget.TextView(this).apply {
+        text = report.take(LaunchCrashDiagnostics.MAX_REPORT_CHARS)
+        textSize = 11f
+        setTextColor(android.graphics.Color.rgb(220, 226, 235))
+        typeface = android.graphics.Typeface.MONOSPACE
+        setTextIsSelectable(true)
+        setPadding(dp(10), dp(10), dp(10), dp(10))
+        setBackgroundColor(android.graphics.Color.rgb(25, 33, 45))
+    }
+    val reportScroll = android.widget.ScrollView(this).apply {
+        isFillViewport = true
+        addView(reportText)
+    }
+    val actions = android.widget.LinearLayout(this).apply {
+        orientation = android.widget.LinearLayout.VERTICAL
+        gravity = android.view.Gravity.CENTER_HORIZONTAL
+    }
+    val copyButton = android.widget.Button(this).apply {
+        text = "Copy crash report"
+        setOnClickListener {
+            val clipboard = activity.getSystemService(android.content.Context.CLIPBOARD_SERVICE)
+                as? android.content.ClipboardManager
+            clipboard?.setPrimaryClip(
+                android.content.ClipData.newPlainText("brrrNews crash report", report)
+            )
+            android.widget.Toast.makeText(
+                activity,
+                "Crash report copied",
+                android.widget.Toast.LENGTH_LONG
+            ).show()
+        }
+    }
+    val retryButton = android.widget.Button(this).apply {
+        text = "Continue to brrrNews"
+        setOnClickListener {
+            LaunchCrashDiagnostics.clear(activity)
+            activity.recreate()
+        }
+    }
+    actions.addView(
+        copyButton,
+        android.widget.LinearLayout.LayoutParams(
+            android.widget.LinearLayout.LayoutParams.MATCH_PARENT, dp(48)
+        ).apply { bottomMargin = dp(8) }
+    )
+    actions.addView(
+        retryButton,
+        android.widget.LinearLayout.LayoutParams(
+            android.widget.LinearLayout.LayoutParams.MATCH_PARENT, dp(48)
+        )
+    )
+    root.addView(title)
+    root.addView(description)
+    root.addView(actions)
+    root.addView(reportLabel)
+    root.addView(
+        reportScroll,
+        android.widget.LinearLayout.LayoutParams(
+            android.widget.LinearLayout.LayoutParams.MATCH_PARENT,
+            0,
+            1f
+        )
+    )
+    setContentView(root)
 }
 
 private enum class YouPage { DASHBOARD, SAVED, READING_STATS, QUIZ_STATS }
 
 private data class LocalAppSnapshot(
+    val appearance: LocalAppearancePreferences,
     val articles: List<Article>,
     val bookmarks: Set<String>,
     val readHistory: Set<String>,
@@ -344,6 +431,12 @@ private data class LocalAppSnapshot(
 @Composable
 private fun BrrrNewsApp() {
     val context = LocalContext.current
+    val persistenceScope = rememberCoroutineScope()
+    LaunchedEffect(Unit) {
+        LaunchCrashDiagnostics.recordStage(context, "BrrrNewsApp composition started")
+        repeat(3) { withFrameNanos { } }
+        LaunchCrashDiagnostics.markHealthy(context)
+    }
     val backdrop = rememberPrismalGlassLayer()
     val dark = isSystemInDarkTheme()
     // Restore larger persisted collections after the first frame; parsing 5,000
@@ -363,7 +456,10 @@ private fun BrrrNewsApp() {
     var selectedArticle by remember { mutableStateOf<Article?>(null) }
     var quizMode by remember { mutableStateOf(false) }
     var showSettings by remember { mutableStateOf(false) }
-    var glassAlpha by remember { mutableFloatStateOf(LocalStore.glassAlpha(context)) }
+    // Do not make SharedPreferences' first (whole-file) load on the Compose/UI thread.
+    // The persisted values are restored with the rest of LocalAppSnapshot on Dispatchers.IO.
+    var glassAlpha by remember { mutableFloatStateOf(AppearancePreferencesPolicy.DEFAULT_GLASS_ALPHA) }
+    var reduceTransparency by remember { mutableStateOf(false) }
     var searchQuery by remember { mutableStateOf("") }
     var searchExpanded by remember { mutableStateOf(false) }
     var searchCollapseRequested by remember { mutableStateOf(false) }
@@ -375,22 +471,90 @@ private fun BrrrNewsApp() {
     val density = LocalDensity.current
     // WindowInsets.ime is a composable local; capture it here before entering an effect.
     val imeInsets = WindowInsets.ime
+    var compactNavigation by remember { mutableStateOf(false) }
+    var feedIsScrolling by remember { mutableStateOf(false) }
+    val feedScrollSettleJob = remember { arrayOfNulls<Job>(1) }
+    DisposableEffect(Unit) {
+        onDispose { feedScrollSettleJob[0]?.cancel() }
+    }
+    val feedNavigationTracker = remember { FeedNavigationScrollTracker() }
+    val feedNavigationEnabled = selectedArticle == null && !quizMode && !showSettings &&
+        selectedTab in 0..2 && !searchExpanded
+    val feedNavigationConnection = remember(feedNavigationEnabled) {
+        object : NestedScrollConnection {
+            override fun onPostScroll(
+                consumed: Offset,
+                available: Offset,
+                source: NestedScrollSource
+            ): Offset {
+                if (!feedNavigationEnabled) return Offset.Zero
+                if (consumed.y != 0f) {
+                    if (!feedIsScrolling) feedIsScrolling = true
+                    feedScrollSettleJob[0]?.cancel()
+                    feedScrollSettleJob[0] = persistenceScope.launch {
+                        delay(550L)
+                        feedIsScrolling = false
+                    }
+                }
+                // LazyColumn scrolls forward with positive consumed Y; pulling past its
+                // top edge leaves a negative unconsumed delta.
+                val atTopEdge = consumed.y == 0f && available.y < 0f
+                val nextCompact = when {
+                    atTopEdge -> feedNavigationTracker.reset()
+                    consumed.y != 0f -> feedNavigationTracker.onScroll(
+                        deltaPx = consumed.y.roundToInt(),
+                        hideThresholdPx = with(density) { FeedNavigationPolicy.HIDE_THRESHOLD_DP.dp.roundToPx() },
+                        showThresholdPx = with(density) { FeedNavigationPolicy.SHOW_THRESHOLD_DP.dp.roundToPx() },
+                        eligible = true
+                    )
+                    else -> compactNavigation
+                }
+                if (nextCompact != compactNavigation) compactNavigation = nextCompact
+                return Offset.Zero
+            }
+        }
+    }
+    LaunchedEffect(selectedTab, searchExpanded, selectedArticle?.url, showSettings, quizMode) {
+        feedNavigationTracker.reset()
+        compactNavigation = false
+        feedIsScrolling = false
+        feedScrollSettleJob[0]?.cancel()
+    }
     val lifecycleOwner = context as? LifecycleOwner
+    var appResumed by remember {
+        mutableStateOf(lifecycleOwner?.lifecycle?.currentState?.isAtLeast(Lifecycle.State.RESUMED) == true)
+    }
     var reduceMotion by remember { mutableStateOf(!ValueAnimator.areAnimatorsEnabled()) }
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
-            if (event == Lifecycle.Event.ON_RESUME) reduceMotion = !ValueAnimator.areAnimatorsEnabled()
+            when (event) {
+                Lifecycle.Event.ON_RESUME -> {
+                    appResumed = true
+                    reduceMotion = !ValueAnimator.areAnimatorsEnabled()
+                }
+                Lifecycle.Event.ON_PAUSE, Lifecycle.Event.ON_STOP -> appResumed = false
+                else -> Unit
+            }
         }
         lifecycleOwner?.lifecycle?.addObserver(observer)
         onDispose { lifecycleOwner?.lifecycle?.removeObserver(observer) }
     }
 
-    // Theme-derived contrast avoids recurring GPU readback synchronisation during flings.
-    val glassLuminance = remember(dark) {
-        GlassLuminanceState(if (dark) 0.08f else 0.92f).also {
-            it.contentColor = if (dark) Color.White else Color.Black
-        }
-    }
+    // One shared 8x8 bottom-band probe supplies Navigation and Search contrast.
+    // It pauses outside foreground home surfaces and during feed motion; the readback
+    // cadence is deliberately conservative to avoid synchronising with active flings.
+    val glassLuminance = rememberBottomBandGlassLuminance(
+        enabled = GlassLuminanceActivationPolicy.shouldSample(
+            isResumed = appResumed,
+            readerOpen = selectedArticle != null || quizMode,
+            settingsOpen = showSettings,
+            feedScrolling = feedIsScrolling,
+            reduceTransparency = reduceTransparency
+        ),
+        source = backdrop,
+        isLightTheme = !dark,
+        bandHeight = 104.dp
+    )
     val todayDate = LocalDate.now(ZoneId.of(INDIA_ZONE))
     var feedIndex by remember {
         mutableStateOf(EditorialFeedIndex(emptyList(), emptyList(), emptyList()))
@@ -435,6 +599,7 @@ private fun BrrrNewsApp() {
     LaunchedEffect(context) {
         val restored = withContext(Dispatchers.IO) {
             LocalAppSnapshot(
+                appearance = LocalStore.appearancePreferences(context),
                 articles = LocalStore.cachedArticles(context),
                 bookmarks = LocalStore.bookmarks(context),
                 readHistory = LocalStore.readHistory(context),
@@ -442,6 +607,8 @@ private fun BrrrNewsApp() {
                 quizAttempts = LocalStore.quizAttempts(context)
             )
         }
+        glassAlpha = restored.appearance.glassAlpha
+        reduceTransparency = restored.appearance.reduceTransparency
         articles = restored.articles
         bookmarks = restored.bookmarks
         readHistory = restored.readHistory
@@ -476,11 +643,55 @@ private fun BrrrNewsApp() {
         }
     }
 
-    BoxWithConstraints(
+    CompositionLocalProvider(LocalGlassReduceTransparency provides reduceTransparency) {
+        BoxWithConstraints(
         Modifier.fillMaxSize().background(
             if (searchExpanded) Color.Transparent else MaterialTheme.colorScheme.background
         )
     ) {
+        // Prismal's capture source must contain background pixels only. Capturing the
+        // complete UI subtree here would also record glass surfaces that sample this
+        // same layer, creating a self-referential GraphicsLayer render dependency.
+        // Keep the live glass surfaces as siblings above this isolated ambient source.
+        Box(
+            Modifier.fillMaxSize()
+                .prismalGlassLayer(backdrop)
+                .background(MaterialTheme.colorScheme.background)
+                .drawBehind {
+                    val topCenter = Offset(size.width * 0.82f, size.height * 0.12f)
+                    val lowerCenter = Offset(size.width * 0.14f, size.height * 0.78f)
+                    val glowRadius = size.width * 0.92f
+                    val topGlow = if (dark) {
+                        Color(0xFF5279B6).copy(alpha = 0.24f)
+                    } else {
+                        Color(0xFF8CB5F0).copy(alpha = 0.20f)
+                    }
+                    val lowerGlow = if (dark) {
+                        Color(0xFF315B79).copy(alpha = 0.16f)
+                    } else {
+                        Color(0xFFB7C9E8).copy(alpha = 0.18f)
+                    }
+                    drawCircle(
+                        brush = Brush.radialGradient(
+                            colors = listOf(topGlow, Color.Transparent),
+                            center = topCenter,
+                            radius = glowRadius
+                        ),
+                        radius = glowRadius,
+                        center = topCenter
+                    )
+                    drawCircle(
+                        brush = Brush.radialGradient(
+                            colors = listOf(lowerGlow, Color.Transparent),
+                            center = lowerCenter,
+                            radius = glowRadius * 0.82f
+                        ),
+                        radius = glowRadius * 0.82f,
+                        center = lowerCenter
+                    )
+                }
+        )
+
         val searchTransition = updateTransition(targetState = searchExpanded, label = "Search tab morph")
         val animatedSearchMorphProgress = searchTransition.animateFloat(
             transitionSpec = {
@@ -520,30 +731,69 @@ private fun BrrrNewsApp() {
         Column(
             Modifier.fillMaxSize()
                 .then(if (searchExpanded) Modifier.imePadding() else Modifier)
-                .prismalGlassLayer(backdrop)
+                .then(if (feedNavigationEnabled) Modifier.nestedScroll(feedNavigationConnection) else Modifier)
                 .background(if (searchExpanded) Color.Transparent else MaterialTheme.colorScheme.background)
         ) {
             when {
                 selectedArticle != null && quizMode -> QuizScreen(
                     article = selectedArticle!!,
-                    onBack = { quizMode = false },
-                    onSubmit = { answers, questions ->
-                        LocalStore.recordQuizAttempt(context, selectedArticle!!, answers, questions)
-                        quizAttempts = LocalStore.quizAttempts(context)
-                    }
-                )
-                selectedArticle != null -> ReaderScreen(
-                    article = selectedArticle!!,
                     backdrop = backdrop,
                     glassAlpha = glassAlpha,
                     dark = dark,
-                    onBack = { selectedArticle = null },
-                    onQuiz = { quizMode = true },
-                    onSessionRecorded = { readingSessions = LocalStore.readingSessions(context) }
+                    onBack = { quizMode = false },
+                    onSubmit = { answers, questions ->
+                        val article = selectedArticle!!
+                        persistenceScope.launch {
+                            val updated = withContext(NonCancellable) {
+                                LocalStore.recordQuizAttemptAndRead(context, article, answers, questions)
+                            }
+                            if (updated != null) quizAttempts = updated
+                        }
+                    }
                 )
+                selectedArticle != null -> {
+                    val article = selectedArticle!!
+                    ReaderScreen(
+                        article = article,
+                        backdrop = backdrop,
+                        glassAlpha = glassAlpha,
+                        dark = dark,
+                        onBack = { selectedArticle = null },
+                        onQuiz = { quizMode = true },
+                        onSessionWindow = { window ->
+                            persistenceScope.launch {
+                                val updated = withContext(NonCancellable) {
+                                    LocalStore.recordReadingSessionAndRead(
+                                        context, article, window.startedAtMillis, window.durationMillis
+                                    )
+                                }
+                                if (updated != null) readingSessions = updated
+                            }
+                        },
+                        onSaveReaderPosition = { url, progress ->
+                            persistenceScope.launch {
+                                withContext(NonCancellable) {
+                                    LocalStore.saveReaderPositionAndWrite(context, url, progress)
+                                }
+                            }
+                        },
+                        onClearReaderPosition = { url ->
+                            persistenceScope.launch {
+                                withContext(NonCancellable) {
+                                    LocalStore.clearReaderPositionAndWrite(context, url)
+                                }
+                            }
+                        }
+                    )
+                }
                 showSettings -> GlassSettingsScreen(
                     backdrop = backdrop,
                     glassAlpha = glassAlpha,
+                    reduceTransparency = reduceTransparency,
+                    onReduceTransparencyChange = { enabled ->
+                        reduceTransparency = enabled
+                        LocalStore.saveReduceTransparency(context, enabled)
+                    },
                     onGlassAlphaChange = {
                         glassAlpha = it
                         LocalStore.saveGlassAlpha(context, it)
@@ -575,15 +825,23 @@ private fun BrrrNewsApp() {
                     searchQuery = searchQuery,
                     searchExpanded = searchExpanded,
                     onSettings = { showSettings = true },
-                    onOpenArticle = {
+                    onOpenArticle = { article ->
                         searchExpanded = false
-                        LocalStore.markRead(context, it.url)
-                        readHistory = readHistory + it.url
-                        selectedArticle = it
+                        selectedArticle = article
+                        persistenceScope.launch {
+                            val updated = withContext(NonCancellable) {
+                                LocalStore.markReadAndRead(context, article.url)
+                            }
+                            readHistory = updated
+                        }
                     },
-                    onToggleBookmark = {
-                        val added = LocalStore.toggleBookmark(context, it.url)
-                        bookmarks = if (added) bookmarks + it.url else bookmarks - it.url
+                    onToggleBookmark = { article ->
+                        persistenceScope.launch {
+                            val added = withContext(NonCancellable) {
+                                LocalStore.toggleBookmark(context, article.url)
+                            }
+                            bookmarks = if (added) bookmarks + article.url else bookmarks - article.url
+                        }
                     }
                 )
             }
@@ -601,11 +859,20 @@ private fun BrrrNewsApp() {
                     luminance = glassLuminance.luminance,
                     adaptiveContentColor = glassLuminance.contentColor,
                     reduceMotion = reduceMotion,
+                    compact = compactNavigation && feedNavigationEnabled,
+                    onExpandCompact = {
+                        compactNavigation = false
+                        feedNavigationTracker.reset()
+                    },
                     morphProgress = if (selectedTab == SearchNavigationPolicy.SEARCH_TAB && searchMorphActive) {
                         searchMorphProgress
                     } else 0f,
                     onSearchAnchor = { searchTabAnchorState.value = it },
                     onSelect = { tab ->
+                        if (tab != selectedTab) {
+                            compactNavigation = false
+                            feedNavigationTracker.reset()
+                        }
                         val destination = SearchNavigationPolicy.selectTab(tab)
                         selectedTab = destination.selectedTab
                         searchExpanded = destination.searchExpanded
@@ -673,8 +940,8 @@ private fun BrrrNewsApp() {
             }
         }
     }
+    }
 }
-
 @Composable
 private fun HomeScreen(
     backdrop: PrismalBackdrop,
@@ -776,10 +1043,24 @@ private fun HomeScreen(
                         onSettings = onSettings
                     )
                     YouPage.SAVED -> SavedFeed(
-                        allCachedArticles, bookmarks, readHistory, onOpenArticle, onToggleBookmark
+                        articles = allCachedArticles,
+                        bookmarks = bookmarks,
+                        readHistory = readHistory,
+                        onOpenArticle = onOpenArticle,
+                        onToggleBookmark = onToggleBookmark,
+                        backdrop = backdrop,
+                        glassAlpha = glassAlpha
                     )
-                    YouPage.READING_STATS -> ReadingStatsScreen(readingSessions)
-                    YouPage.QUIZ_STATS -> QuizStatsScreen(quizAttempts)
+                    YouPage.READING_STATS -> ReadingStatsScreen(
+                        sessions = readingSessions,
+                        backdrop = backdrop,
+                        glassAlpha = glassAlpha
+                    )
+                    YouPage.QUIZ_STATS -> QuizStatsScreen(
+                        attempts = quizAttempts,
+                        backdrop = backdrop,
+                        glassAlpha = glassAlpha
+                    )
                 }
             }
         }
@@ -800,6 +1081,7 @@ private fun HomeGlassHeader(
     onBack: () -> Unit
 ) {
     val density = LocalDensity.current
+    val reduceTransparency = LocalGlassReduceTransparency.current
     val surfaceTint = MaterialTheme.colorScheme.surface
     val luminance = if (dark) 0.12f else 0.82f
     Box(
@@ -810,30 +1092,31 @@ private fun HomeGlassHeader(
                 effects = {
                     applyPrismalGlassEffects(
                         density = density, adaptiveLuminance = true, luminance = luminance,
-                        blurRadiusPx = with(density) { 13.dp.toPx() },
-                        refractionHeightPx = with(density) { 4.dp.toPx() },
-                        refractionAmountPx = with(density) { 6.dp.toPx() },
-                        depthEffect = true, chromaticAberration = 0.003f,
+                        blurRadiusPx = with(density) { GlassRenderingPolicy.blurDp(13f, reduceTransparency).dp.toPx() },
+                        refractionHeightPx = with(density) { GlassRenderingPolicy.refractionDp(4f, reduceTransparency).dp.toPx() },
+                        refractionAmountPx = with(density) { GlassRenderingPolicy.refractionDp(6f, reduceTransparency).dp.toPx() },
+                        depthEffect = GlassRenderingPolicy.depthEnabled(true, reduceTransparency),
+                        chromaticAberration = GlassRenderingPolicy.chromaticAberration(0.003f, reduceTransparency),
                         adaptiveTuning = PrismalAdaptiveTuning.Subtle
                     )
                 },
                 specular = {
-                    PrismalSpecular.Default.copy(width = 0.55.dp, blurRadius = 0.35.dp, alpha = 0.28f)
+                    PrismalSpecular.Default.copy(width = 0.55.dp, blurRadius = 0.35.dp, alpha = GlassRenderingPolicy.specularAlpha(0.28f, reduceTransparency))
                 },
                 depthShadow = {
                     PrismalDepthShadow(radius = 12.dp, offset = DpOffset(0.dp, 2.dp),
-                        color = Color.Black.copy(alpha = 0.09f), alpha = 0.20f)
+                        color = Color.Black.copy(alpha = 0.09f), alpha = GlassRenderingPolicy.shadowAlpha(0.20f, reduceTransparency))
                 },
                 depthInset = {
                     PrismalDepthInset(radius = 4.dp, offset = DpOffset(0.dp, 1.dp),
-                        color = Color.Black.copy(alpha = 0.05f), alpha = 0.05f)
+                        color = Color.Black.copy(alpha = 0.05f), alpha = GlassRenderingPolicy.shadowAlpha(0.05f, reduceTransparency))
                 },
-                onDrawSurface = { drawRect(surfaceTint.copy(alpha = glassAlpha * 0.13f)) }
+                onDrawSurface = { drawRect(surfaceTint.copy(alpha = GlassRenderingPolicy.tintAlpha(glassAlpha * 0.13f, reduceTransparency))) }
             )
     ) {
         Row(Modifier.fillMaxWidth().padding(start = 14.dp, end = 8.dp, top = 8.dp, bottom = 8.dp),
             verticalAlignment = Alignment.CenterVertically) {
-            if (showBack) IconButton(onClick = onBack, modifier = Modifier.size(44.dp)) {
+            if (showBack) IconButton(onClick = onBack, modifier = Modifier.size(TouchTargetPolicy.iconTargetDp(44).dp)) {
                 Icon(Icons.Outlined.ArrowBack, contentDescription = "Back to You", modifier = Modifier.size(23.dp))
             }
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(1.dp)) {
@@ -842,7 +1125,7 @@ private fun HomeGlassHeader(
                 Text(subtitle, style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
-            if (showRefresh) IconButton(onClick = onRefresh, enabled = !refreshing, modifier = Modifier.size(46.dp)) {
+            if (showRefresh) IconButton(onClick = onRefresh, enabled = !refreshing, modifier = Modifier.size(TouchTargetPolicy.iconTargetDp(46).dp)) {
                 Icon(Icons.Outlined.Refresh, contentDescription = "Refresh news", modifier = Modifier.size(25.dp))
             }
         }
@@ -859,6 +1142,7 @@ private fun ExploreGlassCategories(
     dark: Boolean
 ) {
     val density = LocalDensity.current
+    val reduceTransparency = LocalGlassReduceTransparency.current
     val surfaceTint = MaterialTheme.colorScheme.surface
     val luminance = if (dark) 0.14f else 0.80f
     val chipShape = ContinuousCornerShape(18.dp)
@@ -870,25 +1154,26 @@ private fun ExploreGlassCategories(
                 effects = {
                     applyPrismalGlassEffects(
                         density = density, adaptiveLuminance = true, luminance = luminance,
-                        blurRadiusPx = with(density) { 8.dp.toPx() },
-                        refractionHeightPx = with(density) { 3.dp.toPx() },
-                        refractionAmountPx = with(density) { 4.dp.toPx() },
-                        depthEffect = true, chromaticAberration = 0.0015f,
+                        blurRadiusPx = with(density) { GlassRenderingPolicy.blurDp(8f, reduceTransparency).dp.toPx() },
+                        refractionHeightPx = with(density) { GlassRenderingPolicy.refractionDp(3f, reduceTransparency).dp.toPx() },
+                        refractionAmountPx = with(density) { GlassRenderingPolicy.refractionDp(4f, reduceTransparency).dp.toPx() },
+                        depthEffect = GlassRenderingPolicy.depthEnabled(true, reduceTransparency),
+                        chromaticAberration = GlassRenderingPolicy.chromaticAberration(0.0015f, reduceTransparency),
                         adaptiveTuning = PrismalAdaptiveTuning.Subtle
                     )
                 },
                 specular = {
-                    PrismalSpecular.Default.copy(width = 0.45.dp, blurRadius = 0.30.dp, alpha = 0.20f)
+                    PrismalSpecular.Default.copy(width = 0.45.dp, blurRadius = 0.30.dp, alpha = GlassRenderingPolicy.specularAlpha(0.20f, reduceTransparency))
                 },
                 depthShadow = {
                     PrismalDepthShadow(radius = 9.dp, offset = DpOffset(0.dp, 1.dp),
-                        color = Color.Black.copy(alpha = 0.07f), alpha = 0.12f)
+                        color = Color.Black.copy(alpha = 0.07f), alpha = GlassRenderingPolicy.shadowAlpha(0.12f, reduceTransparency))
                 },
                 depthInset = {
                     PrismalDepthInset(radius = 3.dp, offset = DpOffset(0.dp, 1.dp),
-                        color = Color.Black.copy(alpha = 0.04f), alpha = 0.04f)
+                        color = Color.Black.copy(alpha = 0.04f), alpha = GlassRenderingPolicy.shadowAlpha(0.04f, reduceTransparency))
                 },
-                onDrawSurface = { drawRect(surfaceTint.copy(alpha = glassAlpha * 0.09f)) }
+                onDrawSurface = { drawRect(surfaceTint.copy(alpha = GlassRenderingPolicy.tintAlpha(glassAlpha * 0.09f, reduceTransparency))) }
             )
     ) {
         Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState())
@@ -903,7 +1188,8 @@ private fun ExploreGlassCategories(
                         .background(if (selected) MaterialTheme.colorScheme.primary.copy(alpha = 0.20f)
                             else surfaceTint.copy(alpha = 0.12f))
                         .border(1.dp, borderColor, chipShape)
-                        .clickable { onCategory(category) }
+                        .selectable(selected = selected, role = Role.Tab) { onCategory(category) }
+                        .heightIn(min = 48.dp)
                         .padding(horizontal = 14.dp, vertical = 8.dp)
                 ) {
                     Text(category, fontSize = 13.sp,
@@ -1000,7 +1286,7 @@ private fun ExploreFeed(
     glassAlpha: Float,
     dark: Boolean
 ) {
-    val categories = listOf("All", "India", "World", "Politics", "Economy", "Environment", "Science", "Explained", "UPSC", "Opinion")
+    val categories = listOf("All", "India", "World", "Politics", "Geography", "Economy", "Environment", "Science", "Explained", "UPSC", "Opinion")
     val filtered = remember(articles, selectedCategory) {
         articles.filter { article -> ExploreFilters.matches(article, selectedCategory, "") }
     }
@@ -1054,8 +1340,9 @@ private fun SearchFeed(
     val keyboardController = LocalSoftwareKeyboardController.current
     val eligibleArticles = articles
     val density = LocalDensity.current
+    val reduceTransparency = LocalGlassReduceTransparency.current
     val glassSurfaceColor = MaterialTheme.colorScheme.surface
-    val categories = listOf("All", "India", "World", "Politics", "Economy", "Environment", "Science", "Explained", "UPSC", "Opinion")
+    val categories = listOf("All", "India", "World", "Politics", "Geography", "Economy", "Environment", "Science", "Explained", "UPSC", "Opinion")
     val subjects = remember(eligibleArticles) {
         listOf("All") + eligibleArticles.map { UpscEngine.classify(it).subject }.distinct().sorted()
     }
@@ -1089,27 +1376,27 @@ private fun SearchFeed(
                             density = density,
                             adaptiveLuminance = true,
                             luminance = if (dark) 0.10f else 0.90f,
-                            blurRadiusPx = with(density) { 7.dp.toPx() },
-                            refractionHeightPx = with(density) { 3.dp.toPx() },
-                            refractionAmountPx = with(density) { 4.dp.toPx() },
-                            depthEffect = true,
-                            chromaticAberration = 0.001f,
+                            blurRadiusPx = with(density) { GlassRenderingPolicy.blurDp(7f, reduceTransparency).dp.toPx() },
+                            refractionHeightPx = with(density) { GlassRenderingPolicy.refractionDp(3f, reduceTransparency).dp.toPx() },
+                            refractionAmountPx = with(density) { GlassRenderingPolicy.refractionDp(4f, reduceTransparency).dp.toPx() },
+                            depthEffect = GlassRenderingPolicy.depthEnabled(true, reduceTransparency),
+                            chromaticAberration = GlassRenderingPolicy.chromaticAberration(0.001f, reduceTransparency),
                             adaptiveTuning = PrismalAdaptiveTuning.Subtle
                         )
                     },
                     specular = {
-                        PrismalSpecular.Default.copy(width = 0.42.dp, blurRadius = 0.28.dp, alpha = 0.19f)
+                        PrismalSpecular.Default.copy(width = 0.42.dp, blurRadius = 0.28.dp, alpha = GlassRenderingPolicy.specularAlpha(0.19f, reduceTransparency))
                     },
                     depthShadow = {
                         PrismalDepthShadow(radius = 8.dp, offset = DpOffset(0.dp, 1.dp),
-                            color = Color.Black.copy(alpha = 0.06f), alpha = 0.12f)
+                            color = Color.Black.copy(alpha = 0.06f), alpha = GlassRenderingPolicy.shadowAlpha(0.12f, reduceTransparency))
                     },
                     depthInset = {
                         PrismalDepthInset(radius = 3.dp, offset = DpOffset(0.dp, 1.dp),
-                            color = Color.Black.copy(alpha = 0.04f), alpha = 0.04f)
+                            color = Color.Black.copy(alpha = 0.04f), alpha = GlassRenderingPolicy.shadowAlpha(0.04f, reduceTransparency))
                     },
                     onDrawSurface = {
-                        drawRect(glassSurfaceColor.copy(alpha = glassAlpha * 0.10f))
+                        drawRect(glassSurfaceColor.copy(alpha = GlassRenderingPolicy.tintAlpha(glassAlpha * 0.10f, reduceTransparency)))
                     }
                 )
         ) {
@@ -1169,32 +1456,55 @@ private fun SearchFeed(
         ModalBottomSheet(
             onDismissRequest = { showFilters = false },
             sheetState = filterSheetState,
-            containerColor = MaterialTheme.colorScheme.surface,
-            contentColor = MaterialTheme.colorScheme.onSurface
+            shape = RoundedCornerShape(28.dp),
+            containerColor = Color.Transparent,
+            contentColor = MaterialTheme.colorScheme.onSurface,
+            tonalElevation = 0.dp,
+            dragHandle = null
         ) {
-            Column(
-                Modifier.fillMaxWidth().padding(horizontal = 18.dp, vertical = 10.dp),
-                verticalArrangement = Arrangement.spacedBy(9.dp)
+            PrismalTransientSurface(
+                backdrop = backdrop,
+                modifier = Modifier.fillMaxWidth(),
+                glassAlpha = glassAlpha,
+                dark = dark,
+                cornerRadiusDp = 28f
             ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                        Text("Refine articles", style = MaterialTheme.typography.titleLarge,
-                            fontWeight = FontWeight.SemiBold)
-                        Text("Filters update the results immediately.",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.secondary)
+                Column(Modifier.fillMaxWidth()) {
+                    Box(
+                        Modifier.fillMaxWidth().padding(top = 10.dp, bottom = 4.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Box(
+                            Modifier.size(width = 32.dp, height = 4.dp)
+                                .clip(CircleShape)
+                                .background(MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.30f))
+                        )
                     }
-                    TextButton(onClick = {
-                        selectedCategory = "All"
-                        selectedGsPaper = "All"
-                        selectedSubject = "All"
-                    }) { Text("Reset") }
-                }
-                FilterChipRow("Topic", categories, selectedCategory, { selectedCategory = it })
-                FilterChipRow("GS paper", gsPapers, selectedGsPaper, { selectedGsPaper = it })
-                FilterChipRow("Subject", subjects, selectedSubject, { selectedSubject = it })
-                Button(onClick = { showFilters = false }, modifier = Modifier.fillMaxWidth()) {
-                    Text("Done")
+                    Column(
+                        Modifier.fillMaxWidth().padding(horizontal = 18.dp, vertical = 10.dp),
+                        verticalArrangement = Arrangement.spacedBy(9.dp)
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                                Text("Refine articles", style = MaterialTheme.typography.titleLarge,
+                                    fontWeight = FontWeight.SemiBold)
+                                Text("Filters update the results immediately.",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.secondary)
+                            }
+                            TextButton(onClick = {
+                                selectedCategory = "All"
+                                selectedGsPaper = "All"
+                                selectedSubject = "All"
+                            }) { Text("Reset") }
+                        }
+                        FilterChipRow("Topic", categories, selectedCategory, { selectedCategory = it })
+                        FilterChipRow("GS paper", gsPapers, selectedGsPaper, { selectedGsPaper = it })
+                        FilterChipRow("Subject", subjects, selectedSubject, { selectedSubject = it })
+                        Button(onClick = { showFilters = false }, modifier = Modifier.fillMaxWidth()) {
+                            Text("Done")
+                        }
+                    }
                 }
             }
         }
@@ -1219,14 +1529,18 @@ private fun SearchMorphField(
     onClear: () -> Unit
 ) {
     val density = LocalDensity.current
+    val reduceTransparency = LocalGlassReduceTransparency.current
     val progress = morphProgress.coerceIn(0f, 1f)
     val optics = GlassOpticsPolicy.search(progress)
     val glassTint = if (adaptiveContentColor == Color.Black) Color(0xFFF5F8FC) else Color(0xFF202B3A)
-    val tintAlpha = GlassOpticsPolicy.adaptiveTintAlpha(
-        baseAlpha = glassAlpha * optics.tintAlpha,
-        luminance = luminance,
-        minAlpha = 0.04f,
-        maxAlpha = 0.12f
+    val tintAlpha = GlassRenderingPolicy.tintAlpha(
+        GlassOpticsPolicy.adaptiveTintAlpha(
+            baseAlpha = glassAlpha * optics.tintAlpha,
+            luminance = luminance,
+            minAlpha = 0.04f,
+            maxAlpha = 0.12f
+        ),
+        reduceTransparency
     )
     val iconOffset = with(density) {
         SearchMorphGeometryPolicy.iconOffset(collapsedIconOffsetPx, progress).toDp()
@@ -1244,11 +1558,11 @@ private fun SearchMorphField(
                         density = density,
                         adaptiveLuminance = true,
                         luminance = luminance,
-                        blurRadiusPx = with(density) { optics.blurDp.dp.toPx() },
-                        refractionHeightPx = with(density) { optics.refractionHeightDp.dp.toPx() },
-                        refractionAmountPx = with(density) { optics.refractionAmountDp.dp.toPx() },
-                        depthEffect = true,
-                        chromaticAberration = optics.chromaticAberration,
+                        blurRadiusPx = with(density) { GlassRenderingPolicy.blurDp(optics.blurDp, reduceTransparency).dp.toPx() },
+                        refractionHeightPx = with(density) { GlassRenderingPolicy.refractionDp(optics.refractionHeightDp, reduceTransparency).dp.toPx() },
+                        refractionAmountPx = with(density) { GlassRenderingPolicy.refractionDp(optics.refractionAmountDp, reduceTransparency).dp.toPx() },
+                        depthEffect = GlassRenderingPolicy.depthEnabled(true, reduceTransparency),
+                        chromaticAberration = GlassRenderingPolicy.chromaticAberration(optics.chromaticAberration, reduceTransparency),
                         adaptiveTuning = PrismalAdaptiveTuning.Subtle
                     )
                 },
@@ -1256,7 +1570,7 @@ private fun SearchMorphField(
                     PrismalSpecular.Default.copy(
                         width = (0.55f + 0.20f * progress).dp,
                         blurRadius = (0.30f + 0.15f * progress).dp,
-                        alpha = optics.specularAlpha
+                        alpha = GlassRenderingPolicy.specularAlpha(optics.specularAlpha, reduceTransparency)
                     )
                 },
                 depthShadow = {
@@ -1264,7 +1578,7 @@ private fun SearchMorphField(
                         radius = (12f + 6f * progress).dp,
                         offset = DpOffset(0.dp, (2f + progress).dp),
                         color = Color.Black.copy(alpha = 0.12f),
-                        alpha = optics.shadowAlpha
+                        alpha = GlassRenderingPolicy.shadowAlpha(optics.shadowAlpha, reduceTransparency)
                     )
                 },
                 depthInset = {
@@ -1272,7 +1586,7 @@ private fun SearchMorphField(
                         radius = (4f + progress).dp,
                         offset = DpOffset(0.dp, 1.dp),
                         color = Color.Black.copy(alpha = 0.07f),
-                        alpha = optics.insetAlpha
+                        alpha = GlassRenderingPolicy.shadowAlpha(optics.insetAlpha, reduceTransparency)
                     )
                 },
                 onDrawSurface = {
@@ -1324,7 +1638,7 @@ private fun SearchMorphField(
                 IconButton(
                     onClick = onClear,
                     enabled = enabled,
-                    modifier = Modifier.size(38.dp).graphicsLayer { alpha = progress }
+                    modifier = Modifier.size(48.dp).graphicsLayer { alpha = progress }
                 ) {
                     Icon(
                         Icons.Outlined.Close,
@@ -1344,31 +1658,45 @@ private fun SavedFeed(
     bookmarks: Set<String>,
     readHistory: Set<String>,
     onOpenArticle: (Article) -> Unit,
-    onToggleBookmark: (Article) -> Unit
+    onToggleBookmark: (Article) -> Unit,
+    backdrop: PrismalBackdrop,
+    glassAlpha: Float
 ) {
     var dateRange by remember { mutableStateOf(StatsDateRange.ALL_TIME) }
     var selectedSubject by remember { mutableStateOf("All") }
     var selectedGsPaper by remember { mutableStateOf("All") }
     val today = LocalDate.now(ZoneId.of(INDIA_ZONE))
-    val savedArticles = articles.filter { bookmarks.contains(it.url) }
+    val savedArticles = remember(articles, bookmarks) {
+        articles.filter { bookmarks.contains(it.url) }
+    }
     val subjects = remember(savedArticles) {
         listOf("All") + savedArticles.map { UpscEngine.classify(it).subject }.distinct().sorted()
     }
-    val filtered = StudyStatsPolicy.filterArticles(
-        savedArticles, dateRange, selectedSubject, selectedGsPaper, today
-    )
-    val previouslyOpened = articles.filter {
-        readHistory.contains(it.url) && !bookmarks.contains(it.url) && UpscFeedPolicy.shouldInclude(it)
+    val filtered = remember(savedArticles, dateRange, selectedSubject, selectedGsPaper, today) {
+        StudyStatsPolicy.filterArticles(
+            savedArticles, dateRange, selectedSubject, selectedGsPaper, today
+        )
     }
-        .sortedByDescending { it.publishedAtMillis ?: 0L }.take(15)
+    val previouslyOpened = remember(articles, readHistory, bookmarks) {
+        articles.filter {
+            readHistory.contains(it.url) && !bookmarks.contains(it.url) && UpscFeedPolicy.shouldInclude(it)
+        }
+            .sortedByDescending { it.publishedAtMillis ?: 0L }.take(15)
+    }
 
     Column(Modifier.fillMaxSize()) {
-        FilterChipRow("Published", StatsDateRange.values().map { it.label }, dateRange.label) { label ->
-            dateRange = StatsDateRange.values().first { it.label == label }
+        GlassFilterGroup(backdrop = backdrop, glassAlpha = glassAlpha) {
+            CompactFilterRow("Published", StatsDateRange.values().map { it.label }, dateRange.label) { label ->
+                dateRange = StatsDateRange.values().first { it.label == label }
+            }
+            CompactFilterRow(
+                "GS paper",
+                listOf("All", "GS I", "GS II", "GS III", "GS IV", "Unmapped"),
+                selectedGsPaper,
+                { selectedGsPaper = it }
+            )
+            CompactFilterRow("Subject", subjects, selectedSubject) { selectedSubject = it }
         }
-        FilterChipRow("GS paper", listOf("All", "GS I", "GS II", "GS III", "GS IV", "Unmapped"),
-            selectedGsPaper, { selectedGsPaper = it })
-        FilterChipRow("Subject", subjects, selectedSubject, { selectedSubject = it })
         LazyColumn(
             Modifier.weight(1f),
             contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 110.dp),
@@ -1412,8 +1740,8 @@ private fun YouDashboard(
     onQuizStats: () -> Unit,
     onSettings: () -> Unit
 ) {
-    val answersAttempted = attempts.sumOf { it.answeredCount }
-    val correctAnswers = attempts.sumOf { it.correctCount }
+    val answersAttempted = remember(attempts) { attempts.sumOf { it.answeredCount } }
+    val correctAnswers = remember(attempts) { attempts.sumOf { it.correctCount } }
     val accuracy = if (answersAttempted == 0) "—"
         else ((correctAnswers * 100f / answersAttempted).toInt().toString() + "%")
     LazyColumn(
@@ -1437,12 +1765,7 @@ private fun YouDashboard(
         }
         if (attempts.isEmpty()) {
             item {
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(21.dp),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
-                ) {
+                SupportingGlassCard(modifier = Modifier.fillMaxWidth()) {
                     Column(Modifier.fillMaxWidth().padding(17.dp),
                         verticalArrangement = Arrangement.spacedBy(5.dp)) {
                         Text("Practice when you're ready",
@@ -1485,35 +1808,94 @@ private fun YouDashboard(
 }
 
 @Composable
-private fun MetricTile(label: String, value: String, modifier: Modifier = Modifier) {
+private fun SupportingGlassCard(
+    modifier: Modifier = Modifier,
+    content: @Composable () -> Unit
+) {
+    val colors = MaterialTheme.colorScheme
+    val dark = isSystemInDarkTheme()
+    val shape = remember {
+        PrismalRoundedRectangle(GlassSurfacePolicy.SUPPORTING_CORNER_RADIUS_DP.dp)
+    }
+    val tintAlpha = GlassSurfacePolicy.supportingTintAlpha(dark)
+    val rimAlpha = GlassSurfacePolicy.supportingRimAlpha(dark)
+    val rimBrush = remember(colors.primary, colors.outline, dark) {
+        Brush.linearGradient(
+            colors = listOf(
+                Color.White.copy(alpha = if (dark) 0.24f else 0.64f),
+                colors.primary.copy(alpha = rimAlpha),
+                colors.outline.copy(alpha = if (dark) 0.30f else 0.18f)
+            )
+        )
+    }
+    val tintBrush = remember(colors.primary, colors.surface, dark) {
+        Brush.verticalGradient(
+            colors = listOf(
+                colors.primary.copy(alpha = tintAlpha),
+                Color.Transparent
+            )
+        )
+    }
     Card(
-        modifier = modifier,
-        shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+        modifier = modifier.border(1.dp, rimBrush, shape),
+        shape = shape,
+        colors = CardDefaults.cardColors(
+            containerColor = colors.surface.copy(
+                alpha = GlassSurfacePolicy.supportingSurfaceAlpha(dark)
+            )
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
-        Column(Modifier.padding(horizontal = 14.dp, vertical = 13.dp),
-            verticalArrangement = Arrangement.spacedBy(5.dp)) {
-            Text(value, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.primary)
-            Text(label, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.secondary)
+        Box(Modifier.fillMaxWidth().background(tintBrush)) {
+            content()
+        }
+    }
+}
+
+@Composable
+private fun MetricTile(label: String, value: String, modifier: Modifier = Modifier) {
+    SupportingGlassCard(modifier = modifier.heightIn(min = 82.dp)) {
+        Column(
+            Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 13.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            Text(
+                value,
+                style = MaterialTheme.typography.titleLarge,
+                fontSize = GlassSurfacePolicy.SUPPORTING_VALUE_SIZE_SP.sp,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.primary,
+                maxLines = 1,
+                softWrap = false,
+                overflow = TextOverflow.Ellipsis
+            )
+            Text(
+                label,
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.secondary,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis
+            )
         }
     }
 }
 
 @Composable
 private fun DestinationRow(title: String, description: String, trailing: String, onClick: () -> Unit) {
-    Card(
-        modifier = Modifier.fillMaxWidth().clickable(onClick = onClick),
-        shape = RoundedCornerShape(18.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
-    ) {
-        Row(Modifier.fillMaxWidth().padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+    SupportingGlassCard(modifier = Modifier.fillMaxWidth().heightIn(min = 72.dp)) {
+        Row(
+            Modifier.fillMaxWidth()
+                .clickable(role = Role.Button, onClick = onClick)
+                .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
                 Text(title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-                Text(description, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.secondary)
+                Text(description, style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.secondary)
             }
-            Text(trailing, style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.primary)
+            Text(trailing, style = MaterialTheme.typography.titleLarge,
+                color = MaterialTheme.colorScheme.primary, maxLines = 1, softWrap = false)
         }
     }
 }
@@ -1533,15 +1915,179 @@ private fun FilterChipRow(
             horizontalArrangement = Arrangement.spacedBy(6.dp)
         ) {
             options.distinct().forEach { option ->
-                FilterChip(selected = selected == option, onClick = { onSelected(option) },
-                    label = { Text(option, fontSize = 11.sp) })
+                FilterChip(
+                    selected = selected == option,
+                    onClick = { onSelected(option) },
+                    modifier = Modifier.heightIn(min = 48.dp),
+                    label = { Text(option, fontSize = 11.sp) }
+                )
             }
         }
     }
 }
 
 @Composable
-private fun ReadingStatsScreen(sessions: List<ReadingSession>) {
+private fun PrismalTransientSurface(
+    backdrop: PrismalBackdrop,
+    modifier: Modifier = Modifier,
+    glassAlpha: Float,
+    dark: Boolean,
+    cornerRadiusDp: Float,
+    content: @Composable () -> Unit
+) {
+    val reduceTransparency = LocalGlassReduceTransparency.current
+    PrismalGlassSurface(
+        backdrop = backdrop,
+        modifier = modifier,
+        shape = { PrismalRoundedRectangle(cornerRadiusDp.dp) },
+        blurRadius = GlassRenderingPolicy.blurDp(
+            GlassSurfacePolicy.TRANSIENT_BLUR_DP, reduceTransparency
+        ).dp,
+        refractionHeightPx = GlassRenderingPolicy.refractionPx(
+            GlassSurfacePolicy.TRANSIENT_REFRACTION_HEIGHT_DP, reduceTransparency
+        ),
+        refractionAmountPx = GlassRenderingPolicy.refractionPx(
+            GlassSurfacePolicy.TRANSIENT_REFRACTION_AMOUNT_DP, reduceTransparency
+        ),
+        depthEffect = GlassRenderingPolicy.depthEnabled(true, reduceTransparency),
+        chromaticAberration = GlassRenderingPolicy.chromaticAberration(0.001f, reduceTransparency),
+        tint = if (dark) Color(0xFF26364B) else Color(0xFFEAF0FA),
+        tintAlpha = GlassRenderingPolicy.tintAlpha(
+            (glassAlpha * GlassSurfacePolicy.TRANSIENT_TINT_SCALE).coerceIn(0.05f, 0.22f),
+            reduceTransparency
+        )
+    ) {
+        content()
+    }
+}
+
+@Composable
+private fun GlassFilterGroup(
+    backdrop: PrismalBackdrop,
+    glassAlpha: Float,
+    content: @Composable () -> Unit
+) {
+    val density = LocalDensity.current
+    val dark = isSystemInDarkTheme()
+    val reduceTransparency = LocalGlassReduceTransparency.current
+    val surfaceColor = MaterialTheme.colorScheme.surface
+    Box(
+        Modifier.fillMaxWidth()
+            .padding(horizontal = 12.dp, vertical = 4.dp)
+            .drawPrismalGlass(
+                backdrop = backdrop,
+                shape = { PrismalRoundedRectangle(GlassSurfacePolicy.SUPPORTING_CORNER_RADIUS_DP.dp) },
+                effects = {
+                    applyPrismalGlassEffects(
+                        density = density,
+                        adaptiveLuminance = true,
+                        luminance = if (dark) 0.10f else 0.90f,
+                        blurRadiusPx = with(density) {
+                            GlassRenderingPolicy.blurDp(5f, reduceTransparency).dp.toPx()
+                        },
+                        refractionHeightPx = with(density) {
+                            GlassRenderingPolicy.refractionDp(2.5f, reduceTransparency).dp.toPx()
+                        },
+                        refractionAmountPx = with(density) {
+                            GlassRenderingPolicy.refractionDp(3.5f, reduceTransparency).dp.toPx()
+                        },
+                        depthEffect = GlassRenderingPolicy.depthEnabled(true, reduceTransparency),
+                        chromaticAberration = GlassRenderingPolicy.chromaticAberration(0.001f, reduceTransparency),
+                        adaptiveTuning = PrismalAdaptiveTuning.Subtle
+                    )
+                },
+                specular = {
+                    PrismalSpecular.Default.copy(
+                        width = 0.42.dp,
+                        blurRadius = 0.26.dp,
+                        alpha = GlassRenderingPolicy.specularAlpha(0.15f, reduceTransparency)
+                    )
+                },
+                depthShadow = {
+                    PrismalDepthShadow(
+                        radius = 8.dp,
+                        offset = DpOffset(0.dp, 1.dp),
+                        color = Color.Black.copy(alpha = 0.06f),
+                        alpha = GlassRenderingPolicy.shadowAlpha(0.10f, reduceTransparency)
+                    )
+                },
+                depthInset = {
+                    PrismalDepthInset(
+                        radius = 3.dp,
+                        offset = DpOffset(0.dp, 1.dp),
+                        color = Color.Black.copy(alpha = 0.04f),
+                        alpha = GlassRenderingPolicy.shadowAlpha(0.04f, reduceTransparency)
+                    )
+                },
+                onDrawSurface = {
+                    drawRect(
+                        surfaceColor.copy(
+                            alpha = GlassRenderingPolicy.tintAlpha(glassAlpha * 0.10f, reduceTransparency)
+                        )
+                    )
+                }
+            )
+    ) {
+        Column(
+            Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(3.dp)
+        ) {
+            content()
+        }
+    }
+}
+
+@Composable
+private fun CompactFilterRow(
+    title: String,
+    options: List<String>,
+    selected: String,
+    onSelected: (String) -> Unit
+) {
+    val distinctOptions = remember(options) { options.distinct() }
+    Row(
+        Modifier.fillMaxWidth().heightIn(min = 48.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        Text(
+            title,
+            modifier = Modifier.width(72.dp).padding(start = 4.dp),
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.secondary,
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis
+        )
+        Row(
+            Modifier.weight(1f).horizontalScroll(rememberScrollState()),
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            distinctOptions.forEach { option ->
+                FilterChip(
+                    selected = selected == option,
+                    onClick = { onSelected(option) },
+                    modifier = Modifier.widthIn(min = 48.dp).heightIn(min = 48.dp),
+                    label = {
+                        Text(
+                            option,
+                            fontSize = 11.sp,
+                            maxLines = 1,
+                            softWrap = false
+                        )
+                    }
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun ReadingStatsScreen(
+    sessions: List<ReadingSession>,
+    backdrop: PrismalBackdrop,
+    glassAlpha: Float
+) {
     var dateRange by remember { mutableStateOf(StatsDateRange.LAST_7_DAYS) }
     var selectedSubject by remember { mutableStateOf("All") }
     var selectedGsPaper by remember { mutableStateOf("All") }
@@ -1549,16 +2095,24 @@ private fun ReadingStatsScreen(sessions: List<ReadingSession>) {
     val subjects = remember(sessions) {
         listOf("All") + sessions.map { it.subject }.distinct().sorted()
     }
-    val summary = StudyStatsPolicy.readingSummary(
-        sessions, dateRange, selectedSubject, selectedGsPaper, today
-    )
+    val summary = remember(sessions, dateRange, selectedSubject, selectedGsPaper, today) {
+        StudyStatsPolicy.readingSummary(
+            sessions, dateRange, selectedSubject, selectedGsPaper, today
+        )
+    }
     Column(Modifier.fillMaxSize()) {
-        FilterChipRow("Date", StatsDateRange.values().map { it.label }, dateRange.label) { label ->
-            dateRange = StatsDateRange.values().first { it.label == label }
+        GlassFilterGroup(backdrop = backdrop, glassAlpha = glassAlpha) {
+            CompactFilterRow("Date", StatsDateRange.values().map { it.label }, dateRange.label) { label ->
+                dateRange = StatsDateRange.values().first { it.label == label }
+            }
+            CompactFilterRow(
+                "GS paper",
+                listOf("All", "GS I", "GS II", "GS III", "GS IV", "Unmapped"),
+                selectedGsPaper,
+                { selectedGsPaper = it }
+            )
+            CompactFilterRow("Subject", subjects, selectedSubject) { selectedSubject = it }
         }
-        FilterChipRow("GS paper", listOf("All", "GS I", "GS II", "GS III", "GS IV", "Unmapped"),
-            selectedGsPaper, { selectedGsPaper = it })
-        FilterChipRow("Subject", subjects, selectedSubject, { selectedSubject = it })
         Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 7.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             MetricTile("Reading time", formatDuration(summary.totalDurationMillis), Modifier.weight(1f))
@@ -1579,8 +2133,7 @@ private fun ReadingStatsScreen(sessions: List<ReadingSession>) {
                         fontWeight = FontWeight.Bold, fontSize = 10.sp, letterSpacing = 1.3.sp)
                 }
                 items(summary.days, key = { it.date.toString() }) { day ->
-                    Card(shape = RoundedCornerShape(17.dp),
-                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
+                    SupportingGlassCard(modifier = Modifier.fillMaxWidth()) {
                         Row(Modifier.fillMaxWidth().padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
                             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
                                 Text(day.date.format(DateTimeFormatter.ofPattern("EEE, d MMM", Locale.ENGLISH)),
@@ -1599,7 +2152,11 @@ private fun ReadingStatsScreen(sessions: List<ReadingSession>) {
 }
 
 @Composable
-private fun QuizStatsScreen(attempts: List<QuizAttempt>) {
+private fun QuizStatsScreen(
+    attempts: List<QuizAttempt>,
+    backdrop: PrismalBackdrop,
+    glassAlpha: Float
+) {
     var dateRange by remember { mutableStateOf(StatsDateRange.ALL_TIME) }
     var selectedSubject by remember { mutableStateOf("All") }
     var selectedGsPaper by remember { mutableStateOf("All") }
@@ -1607,18 +2164,26 @@ private fun QuizStatsScreen(attempts: List<QuizAttempt>) {
     val subjects = remember(attempts) {
         listOf("All") + attempts.map { it.subject }.distinct().sorted()
     }
-    val summary = StudyStatsPolicy.quizSummary(
-        attempts, dateRange, selectedSubject, selectedGsPaper, today
-    )
+    val summary = remember(attempts, dateRange, selectedSubject, selectedGsPaper, today) {
+        StudyStatsPolicy.quizSummary(
+            attempts, dateRange, selectedSubject, selectedGsPaper, today
+        )
+    }
     val accuracy = if (summary.answersAttempted == 0) "—" else
         ((summary.correctAnswers * 100f / summary.answersAttempted).toInt().toString() + "%")
     Column(Modifier.fillMaxSize()) {
-        FilterChipRow("Date", StatsDateRange.values().map { it.label }, dateRange.label) { label ->
-            dateRange = StatsDateRange.values().first { it.label == label }
+        GlassFilterGroup(backdrop = backdrop, glassAlpha = glassAlpha) {
+            CompactFilterRow("Date", StatsDateRange.values().map { it.label }, dateRange.label) { label ->
+                dateRange = StatsDateRange.values().first { it.label == label }
+            }
+            CompactFilterRow(
+                "GS paper",
+                listOf("All", "GS I", "GS II", "GS III", "GS IV", "Unmapped"),
+                selectedGsPaper,
+                { selectedGsPaper = it }
+            )
+            CompactFilterRow("Subject", subjects, selectedSubject) { selectedSubject = it }
         }
-        FilterChipRow("GS paper", listOf("All", "GS I", "GS II", "GS III", "GS IV", "Unmapped"),
-            selectedGsPaper, { selectedGsPaper = it })
-        FilterChipRow("Subject", subjects, selectedSubject, { selectedSubject = it })
         Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 7.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             MetricTile("Attempts", summary.attemptCount.toString(), Modifier.weight(1f))
@@ -1640,8 +2205,7 @@ private fun QuizStatsScreen(attempts: List<QuizAttempt>) {
                 verticalArrangement = Arrangement.spacedBy(9.dp)
             ) {
                 items(summary.attempts, key = { it.id }) { attempt ->
-                    Card(shape = RoundedCornerShape(17.dp),
-                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
+                    SupportingGlassCard(modifier = Modifier.fillMaxWidth()) {
                         Column(Modifier.fillMaxWidth().padding(14.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) {
                             Text(attempt.articleTitle, fontWeight = FontWeight.SemiBold,
                                 maxLines = 2, overflow = TextOverflow.Ellipsis)
@@ -1686,12 +2250,13 @@ private fun NewsCard(
 ) {
     val context = LocalContext.current
     val density = LocalDensity.current
-    val relevance = remember(article.id) { UpscEngine.classify(article) }
-    val syllabusHint = remember(article.id, relevance.gsPaper, relevance.subject, relevance.matchedTerms) {
+    val relevance = remember(article.id, article.title, article.description) { UpscEngine.classify(article) }
+    val syllabusHint = remember(article.id, article.title, article.description, relevance.gsPaper, relevance.subject, relevance.matchedTerms, relevance.syllabusLink) {
         ArticleCardMetaPolicy.syllabusHint(
             gsPaper = relevance.gsPaper,
             subject = relevance.subject,
-            matchedTerms = relevance.matchedTerms
+            matchedTerms = relevance.matchedTerms,
+            syllabusLink = relevance.syllabusLink
         )
     }
     val hasImage = !article.imageUrl.isNullOrBlank()
@@ -1704,7 +2269,7 @@ private fun NewsCard(
                 .build()
         }
     }
-    var imagePalette by remember(article.id) { mutableStateOf<Color?>(null) }
+    var imagePalette by remember(article.id, article.imageUrl) { mutableStateOf<Color?>(null) }
     val palette = imagePalette
 
     Box(
@@ -1758,11 +2323,24 @@ private fun NewsCard(
                         Text("  ·  " + article.section, color = MaterialTheme.colorScheme.secondary,
                             fontSize = 11.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
                         Spacer(Modifier.weight(1f))
-                        IconButton(onClick = { onToggleBookmark(article) }, modifier = Modifier.size(40.dp)) {
+                        IconButton(onClick = { onToggleBookmark(article) }, modifier = Modifier.size(TouchTargetPolicy.iconTargetDp(40).dp)) {
                             Icon(if (saved) Icons.Outlined.Bookmark else Icons.Outlined.BookmarkBorder,
                                 contentDescription = if (saved) "Remove bookmark" else "Save article",
                                 tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(21.dp))
                         }
+                    }
+                    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                        Text(ArticlePublicationDatePolicy.compactLabel(article.publishedAtMillis),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.secondary,
+                            maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        Spacer(Modifier.weight(1f))
+                        Text(
+                            ArticleProvenancePolicy.label(article.source, article.feedUrl),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.secondary,
+                            maxLines = 1, overflow = TextOverflow.Ellipsis
+                        )
                     }
                     SelectionContainer {
                         Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -1778,7 +2356,7 @@ private fun NewsCard(
                     syllabusHint?.let { hint ->
                         Text(hint, style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.SemiBold,
-                            maxLines = 2, overflow = TextOverflow.Ellipsis)
+                            maxLines = 4, overflow = TextOverflow.Ellipsis)
                     }
                 }
             }
@@ -1897,38 +2475,53 @@ private fun GlassTabBar(
     luminance: Float,
     adaptiveContentColor: Color,
     reduceMotion: Boolean,
+    compact: Boolean,
+    onExpandCompact: () -> Unit,
     morphProgress: Float,
     onSearchAnchor: (Offset) -> Unit,
     onSelect: (Int) -> Unit
 ) {
     val density = LocalDensity.current
+    val reduceTransparency = LocalGlassReduceTransparency.current
     val isLtr = LocalLayoutDirection.current == LayoutDirection.Ltr
     val animationScope = rememberCoroutineScope()
     val latestOnSelect = rememberUpdatedState(onSelect)
+    // These sources are reused by the expanded state; the compact state does not
+    // read or render the hidden glyph capture or selected droplet.
     val tabsBackdrop = rememberPrismalGlassLayer()
     val dropletBackdrop = rememberPrismalMergedSource(backdrop, tabsBackdrop)
-    tabsBackdrop.readSamplingState()
-    val barAlpha = SearchMorphGeometryPolicy.tabBarAlpha(morphProgress)
     val glassTint = if (adaptiveContentColor == Color.Black) Color(0xFFEAF0FA) else Color(0xFF1C2E49)
-    val baseTintAlpha = GlassOpticsPolicy.adaptiveTintAlpha(
-        baseAlpha = glassAlpha * 0.12f,
-        luminance = luminance,
-        minAlpha = 0.035f,
-        maxAlpha = 0.13f
+    val baseTintAlpha = GlassRenderingPolicy.tintAlpha(
+        GlassOpticsPolicy.adaptiveTintAlpha(
+            baseAlpha = glassAlpha * 0.12f,
+            luminance = luminance,
+            minAlpha = 0.035f,
+            maxAlpha = 0.13f
+        ),
+        reduceTransparency
     )
+    val compactTransition = updateTransition(targetState = compact, label = "Feed navigation compact morph")
+    val compactProgress = compactTransition.animateFloat(
+        transitionSpec = { if (reduceMotion) snap() else tween(180) },
+        label = "Feed navigation compact progress"
+    ) { if (it) 1f else 0f }.value.coerceIn(0f, 1f)
 
     BoxWithConstraints(
-        modifier = Modifier.fillMaxWidth().height(70.dp),
-        contentAlignment = Alignment.CenterStart
+        modifier = Modifier.fillMaxWidth()
+            .height(70.dp + (54.dp - 70.dp) * compactProgress),
+        contentAlignment = Alignment.Center
     ) {
-        val tabWidthPx = (
-            constraints.maxWidth.toFloat() - with(density) { 8.dp.toPx() }
-        ).div(4f).coerceAtLeast(1f)
-        val tabWidth = with(density) { tabWidthPx.toDp() }
-        val contentStartPx = with(density) { 4.dp.toPx() }
-        val contentHeight = 64.dp
+        val fullWidth = maxWidth
+        val compactWidth = 148.dp.coerceAtMost(maxWidth)
+        val barWidth = fullWidth + (compactWidth - fullWidth) * compactProgress
+        val barHeight = 70.dp + (54.dp - 70.dp) * compactProgress
+        val barWidthPx = with(density) { barWidth.toPx() }
+        val barHeightPx = with(density) { barHeight.toPx() }
+        val barOffsetXPx = (constraints.maxWidth.toFloat() - barWidthPx) / 2f
+        val tabWidthPx = (barWidthPx - with(density) { 8.dp.toPx() }).div(4f).coerceAtLeast(1f)
+        val contentStartPx = barOffsetXPx + with(density) { 4.dp.toPx() }
+        val contentHeight = 64.dp + (48.dp - 64.dp) * compactProgress
         val contentHeightPx = with(density) { contentHeight.toPx() }
-        val barHeightPx = with(density) { 70.dp.toPx() }
         val dropletWidth = with(density) {
             GlassTabGeometryPolicy.expandedDimension(tabWidthPx, 12.dp.toPx()).toDp()
         }
@@ -1958,15 +2551,13 @@ private fun GlassTabBar(
                 },
                 onDrag = { _, delta ->
                     val direction = if (isLtr) 1f else -1f
-                    val next = (targetValue + delta.x / tabWidthPx * direction)
-                        .coerceIn(0f, 3f)
+                    val next = (targetValue + delta.x / tabWidthPx * direction).coerceIn(0f, 3f)
                     if (reduceMotion) snapToValue(next) else updateValue(next)
                     dragHighlightIndex = next.roundToInt().coerceIn(0, 3)
                 }
             )
         }
-
-        LaunchedEffect(selectedTab, reduceMotion) {
+        LaunchedEffect(selectedTab, reduceMotion, compact) {
             dragHighlightIndex = null
             if (reduceMotion) motion.snapToValue(selectedTab.toFloat())
             else motion.animateToValue(selectedTab.toFloat())
@@ -1975,206 +2566,232 @@ private fun GlassTabBar(
         val highlightedIndex = dragHighlightIndex ?: selectedTab
         val pillPress = GlassOpticsPolicy.interactionProgress(motion.pressProgress, reduceMotion)
         val pillVelocity = if (reduceMotion) 0f else motion.velocity.coerceIn(-2f, 2f)
-        val contentTopPx = (barHeightPx - contentHeightPx) / 2f
         val dropletOptics = GlassOpticsPolicy.droplet(pillPress, reduceMotion)
         val dropletTint = if (adaptiveContentColor == Color.Black) Color(0xFFE8F1FF) else Color(0xFF1C2E49)
-        val dropletTintAlpha = GlassOpticsPolicy.adaptiveTintAlpha(
-            baseAlpha = glassAlpha * dropletOptics.tintAlpha,
-            luminance = luminance,
-            minAlpha = 0.045f,
-            maxAlpha = 0.14f
+        val dropletTintAlpha = GlassRenderingPolicy.tintAlpha(
+            GlassOpticsPolicy.adaptiveTintAlpha(
+                baseAlpha = glassAlpha * dropletOptics.tintAlpha,
+                luminance = luminance,
+                minAlpha = 0.045f,
+                maxAlpha = 0.14f
+            ),
+            reduceTransparency
         )
 
-        // Reuse Prismal's touch ripple and keep it on the expanded optical droplet.
-        // The ripple is drawn over the base material; its centre follows the selected tab.
         val tabRipple = remember(animationScope, tabWidthPx, contentStartPx) {
             PrismalPressRipple(animationScope) { size, _ ->
-                val center = GlassTabGeometryPolicy.tabCenterPx(
-                    contentStartPx, motion.value, tabWidthPx
-                )
+                val center = GlassTabGeometryPolicy.tabCenterPx(contentStartPx, motion.value, tabWidthPx)
                 Offset(center, size.height / 2f)
             }
         }
-        // Prismal's pre-33 fallback is a flat white flash, not a shader ripple.
-        // Keep spring/lens feedback on those devices without that visual regression.
         val rippleEnabled = GlassOpticsPolicy.rippleEnabled(Build.VERSION.SDK_INT, reduceMotion)
-        val rippleDrawModifier = if (rippleEnabled) tabRipple.modifier else Modifier
-        val rippleGestureModifier = if (rippleEnabled) tabRipple.gestureModifier else Modifier
+        val rippleDrawModifier = if (rippleEnabled && !compact) tabRipple.modifier else Modifier
+        val rippleGestureModifier = if (rippleEnabled && !compact) tabRipple.gestureModifier else Modifier
+        val barAlpha = SearchMorphGeometryPolicy.tabBarAlpha(morphProgress)
 
-        // The sampled root includes the page background and content, but excludes this
-        // overlay bar; the tab-content layer is merged only for the selected droplet.
+        // One shared Prismal surface changes bounds with the existing bar. No duplicate
+        // expanded/compact layer is composed; live blur remains restricted to this small control.
         Box(
-            Modifier.fillMaxSize().graphicsLayer { alpha = barAlpha }.drawPrismalGlass(
-                backdrop = backdrop,
-                shape = { PrismalCapsule() },
-                effects = {
-                    applyPrismalGlassEffects(
-                        density = density,
-                        adaptiveLuminance = true,
-                        luminance = luminance,
-                        blurRadiusPx = with(density) { 6.dp.toPx() },
-                        refractionHeightPx = with(density) { 14.dp.toPx() },
-                        refractionAmountPx = with(density) { 20.dp.toPx() },
-                        depthEffect = true,
-                        chromaticAberration = 0.015f,
-                        adaptiveTuning = PrismalAdaptiveTuning.Subtle
-                    )
-                },
-                specular = {
-                    PrismalSpecular.Default.copy(
-                        width = 0.6.dp,
-                        blurRadius = 0.4.dp,
-                        alpha = 0.48f
-                    )
-                },
-                depthShadow = {
-                    PrismalDepthShadow(
-                        radius = 18.dp,
-                        offset = DpOffset(0.dp, 3.dp),
-                        color = Color.Black.copy(alpha = 0.10f),
-                        alpha = 0.28f
-                    )
-                },
-                depthInset = {
-                    PrismalDepthInset(
-                        radius = 4.dp,
-                        offset = DpOffset(0.dp, 1.dp),
-                        color = Color.Black.copy(alpha = 0.06f),
-                        alpha = 0.06f
-                    )
-                },
-                onDrawSurface = {
-                    drawRect(glassTint.copy(alpha = baseTintAlpha))
-                }
-            )
-        )
-        Box(Modifier.fillMaxSize().clip(PrismalCapsule()).then(rippleDrawModifier)) {}
-
-        CompositionLocalProvider(
-            LocalPrismalBottomTabHighlightedIndex provides { highlightedIndex }
-        ) {
-            // Capture the tab glyphs once as a second source; keep this hidden layer
-            // out of the accessibility tree so each destination is announced only once.
-            Row(
-                Modifier.graphicsLayer { alpha = 0f }
-                    .clearAndSetSemantics {}
-                    .prismalGlassLayer(tabsBackdrop)
-                    .fillMaxSize()
-                    .padding(horizontal = 4.dp, vertical = 3.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                GlassTab(0, "Today", Icons.Outlined.Today, onSelect, adaptiveContentColor)
-                GlassTab(1, "Explore", Icons.Outlined.Explore, onSelect, adaptiveContentColor)
-                GlassTab(2, "Search", Icons.Outlined.Search, onSelect, adaptiveContentColor)
-                GlassTab(3, "You", Icons.Outlined.Person, onSelect, adaptiveContentColor)
-            }
-
-            Row(
-                Modifier.fillMaxSize()
-                    .padding(horizontal = 4.dp, vertical = 3.dp)
-                    .graphicsLayer { alpha = barAlpha },
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                GlassTab(0, "Today", Icons.Outlined.Today, onSelect, adaptiveContentColor)
-                GlassTab(1, "Explore", Icons.Outlined.Explore, onSelect, adaptiveContentColor)
-                GlassTab(2, "Search", Icons.Outlined.Search, onSelect, adaptiveContentColor, onSearchAnchor)
-                GlassTab(3, "You", Icons.Outlined.Person, onSelect, adaptiveContentColor)
-            }
-        }
-
-        // The expanded droplet itself is the drag target. Its touch bounds now match
-        // the refracted rim rather than a narrower, visually detached tab-cell target.
-
-        Box(
-            Modifier.offset {
-                val center = GlassTabGeometryPolicy.tabCenterPx(
-                    contentStartPx, motion.value, tabWidthPx
-                )
-                IntOffset(
-                    GlassTabGeometryPolicy.leftPx(center, dropletWidthPx).roundToInt(),
-                    GlassTabGeometryPolicy.topPx(barHeightPx, dropletHeightPx).roundToInt()
-                )
-            }
-                .size(dropletWidth, dropletHeight)
-                .graphicsLayer {
-                    alpha = barAlpha
-                    val velocity = (pillVelocity / 10f).coerceIn(-0.2f, 0.2f)
-                    scaleX = GlassTabGeometryPolicy.horizontalScale(restingScaleX, motion.scaleX, velocity)
-                    scaleY = GlassTabGeometryPolicy.verticalScale(restingScaleY, motion.scaleY, velocity)
-                    clip = false
-                }
-                .then(rippleGestureModifier)
-                .then(motion.modifier)
-        ) {
-            Box(
-                Modifier.fillMaxSize().drawPrismalGlass(
-                    backdrop = dropletBackdrop,
+            Modifier.align(Alignment.Center).width(barWidth).height(barHeight)
+                .graphicsLayer { alpha = barAlpha }
+                .drawPrismalGlass(
+                    backdrop = backdrop,
                     shape = { PrismalCapsule() },
                     effects = {
                         applyPrismalGlassEffects(
                             density = density,
                             adaptiveLuminance = true,
                             luminance = luminance,
-                            blurRadiusPx = with(density) { dropletOptics.blurDp.dp.toPx() },
-                            refractionHeightPx = with(density) { dropletOptics.refractionHeightDp.dp.toPx() },
-                            refractionAmountPx = with(density) { dropletOptics.refractionAmountDp.dp.toPx() },
-                            depthEffect = true,
-                            chromaticAberration = dropletOptics.chromaticAberration,
+                            blurRadiusPx = with(density) { GlassRenderingPolicy.blurDp(6f - 2f * compactProgress, reduceTransparency).dp.toPx() },
+                            refractionHeightPx = with(density) { GlassRenderingPolicy.refractionDp(14f - 6f * compactProgress, reduceTransparency).dp.toPx() },
+                            refractionAmountPx = with(density) { GlassRenderingPolicy.refractionDp(20f - 10f * compactProgress, reduceTransparency).dp.toPx() },
+                            depthEffect = GlassRenderingPolicy.depthEnabled(true, reduceTransparency),
+                            chromaticAberration = GlassRenderingPolicy.chromaticAberration(0.015f * (1f - compactProgress), reduceTransparency),
                             adaptiveTuning = PrismalAdaptiveTuning.Subtle
                         )
                     },
                     specular = {
                         PrismalSpecular.Default.copy(
-                            width = 0.7.dp,
+                            width = 0.6.dp,
                             blurRadius = 0.4.dp,
-                            alpha = dropletOptics.specularAlpha,
-                            style = PrismalSpecularStyle.Default(
-                                angle = GlassOpticsPolicy.specularAngle(pillVelocity, reduceMotion)
-                            )
+                            alpha = GlassRenderingPolicy.specularAlpha(0.48f * (1f - 0.18f * compactProgress), reduceTransparency)
                         )
                     },
                     depthShadow = {
                         PrismalDepthShadow(
-                            radius = 12.dp,
-                            offset = DpOffset(0.dp, 2.dp),
-                            color = Color.Black.copy(alpha = 0.12f),
-                            alpha = dropletOptics.shadowAlpha
+                            radius = 18.dp - 4.dp * compactProgress,
+                            offset = DpOffset(0.dp, 3.dp),
+                            color = Color.Black.copy(alpha = 0.10f),
+                            alpha = GlassRenderingPolicy.shadowAlpha(0.28f, reduceTransparency)
                         )
                     },
                     depthInset = {
                         PrismalDepthInset(
-                            radius = 5.dp,
+                            radius = 4.dp,
                             offset = DpOffset(0.dp, 1.dp),
-                            color = Color.Black.copy(alpha = 0.08f),
-                            alpha = dropletOptics.insetAlpha
+                            color = Color.Black.copy(alpha = 0.06f),
+                            alpha = GlassRenderingPolicy.shadowAlpha(0.06f, reduceTransparency)
                         )
                     },
-                    onDrawSurface = {
-                        drawRect(dropletTint.copy(alpha = dropletTintAlpha))
-                    }
+                    onDrawSurface = { drawRect(glassTint.copy(alpha = baseTintAlpha)) }
                 )
-            )
-        }
+        )
 
-        val activeGlyph = when (highlightedIndex) {
-            0 -> Icons.Outlined.Today
-            1 -> Icons.Outlined.Explore
-            2 -> Icons.Outlined.Search
-            else -> Icons.Outlined.Person
-        }
-        Box(
-            Modifier.offset {
-                val center = GlassTabGeometryPolicy.tabCenterPx(contentStartPx, motion.value, tabWidthPx)
-                val iconSizePx = with(density) { 29.dp.toPx() }
-                IntOffset((center - iconSizePx / 2f).roundToInt(),
-                    ((barHeightPx - iconSizePx) / 2f).roundToInt())
+        if (!compact) {
+            Box(
+                Modifier.align(Alignment.Center).width(barWidth).height(barHeight)
+                    .clip(PrismalCapsule()).then(rippleDrawModifier)
+            )
+            tabsBackdrop.readSamplingState()
+            CompositionLocalProvider(
+                LocalPrismalBottomTabHighlightedIndex provides { highlightedIndex }
+            ) {
+                // Hidden glyph capture is active only in expanded navigation. Compact mode
+                // draws no glyph source, droplet, or merged-source sampling layer.
+                Row(
+                    Modifier.align(Alignment.Center).width(barWidth).height(barHeight)
+                        .graphicsLayer { alpha = 0f }
+                        .clearAndSetSemantics {}
+                        .prismalGlassLayer(tabsBackdrop)
+                        .padding(horizontal = 4.dp, vertical = 3.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    GlassTab(0, "Today", Icons.Outlined.Today, onSelect, adaptiveContentColor)
+                    GlassTab(1, "Explore", Icons.Outlined.Explore, onSelect, adaptiveContentColor)
+                    GlassTab(2, "Search", Icons.Outlined.Search, onSelect, adaptiveContentColor)
+                    GlassTab(3, "You", Icons.Outlined.Person, onSelect, adaptiveContentColor)
+                }
+
+                Row(
+                    Modifier.align(Alignment.Center).width(barWidth).height(barHeight)
+                        .padding(horizontal = 4.dp, vertical = 3.dp)
+                        .graphicsLayer { alpha = barAlpha },
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    GlassTab(0, "Today", Icons.Outlined.Today, onSelect, adaptiveContentColor)
+                    GlassTab(1, "Explore", Icons.Outlined.Explore, onSelect, adaptiveContentColor)
+                    GlassTab(2, "Search", Icons.Outlined.Search, onSelect, adaptiveContentColor, onSearchAnchor)
+                    GlassTab(3, "You", Icons.Outlined.Person, onSelect, adaptiveContentColor)
+                }
             }
-                .size(29.dp)
-                .clearAndSetSemantics {},
-            contentAlignment = Alignment.Center
-        ) {
-            Icon(activeGlyph, contentDescription = null, tint = adaptiveContentColor,
-                modifier = Modifier.size(29.dp))
+
+            val dropletTopPx = (barHeightPx - dropletHeightPx) / 2f
+            Box(
+                Modifier.offset {
+                    val center = GlassTabGeometryPolicy.tabCenterPx(contentStartPx, motion.value, tabWidthPx)
+                    IntOffset(
+                        GlassTabGeometryPolicy.leftPx(center, dropletWidthPx).roundToInt(),
+                        dropletTopPx.roundToInt()
+                    )
+                }
+                    .size(dropletWidth, dropletHeight)
+                    .graphicsLayer {
+                        alpha = barAlpha
+                        val velocity = (pillVelocity / 10f).coerceIn(-0.2f, 0.2f)
+                        scaleX = GlassTabGeometryPolicy.horizontalScale(restingScaleX, motion.scaleX, velocity)
+                        scaleY = GlassTabGeometryPolicy.verticalScale(restingScaleY, motion.scaleY, velocity)
+                        clip = false
+                    }
+                    .then(rippleGestureModifier)
+                    .then(motion.modifier)
+            ) {
+                Box(
+                    Modifier.fillMaxSize().drawPrismalGlass(
+                        backdrop = dropletBackdrop,
+                        shape = { PrismalCapsule() },
+                        effects = {
+                            applyPrismalGlassEffects(
+                                density = density,
+                                adaptiveLuminance = true,
+                                luminance = luminance,
+                                blurRadiusPx = with(density) { GlassRenderingPolicy.blurDp(dropletOptics.blurDp, reduceTransparency).dp.toPx() },
+                                refractionHeightPx = with(density) { GlassRenderingPolicy.refractionDp(dropletOptics.refractionHeightDp, reduceTransparency).dp.toPx() },
+                                refractionAmountPx = with(density) { GlassRenderingPolicy.refractionDp(dropletOptics.refractionAmountDp, reduceTransparency).dp.toPx() },
+                                depthEffect = GlassRenderingPolicy.depthEnabled(true, reduceTransparency),
+                                chromaticAberration = GlassRenderingPolicy.chromaticAberration(dropletOptics.chromaticAberration, reduceTransparency),
+                                adaptiveTuning = PrismalAdaptiveTuning.Subtle
+                            )
+                        },
+                        specular = {
+                            PrismalSpecular.Default.copy(
+                                width = 0.7.dp,
+                                blurRadius = 0.4.dp,
+                                alpha = GlassRenderingPolicy.specularAlpha(dropletOptics.specularAlpha, reduceTransparency),
+                                style = PrismalSpecularStyle.Default(
+                                    angle = GlassOpticsPolicy.specularAngle(pillVelocity, reduceMotion)
+                                )
+                            )
+                        },
+                        depthShadow = {
+                            PrismalDepthShadow(
+                                radius = 12.dp,
+                                offset = DpOffset(0.dp, 2.dp),
+                                color = Color.Black.copy(alpha = 0.12f),
+                                alpha = GlassRenderingPolicy.shadowAlpha(dropletOptics.shadowAlpha, reduceTransparency)
+                            )
+                        },
+                        depthInset = {
+                            PrismalDepthInset(
+                                radius = 5.dp,
+                                offset = DpOffset(0.dp, 1.dp),
+                                color = Color.Black.copy(alpha = 0.08f),
+                                alpha = GlassRenderingPolicy.shadowAlpha(dropletOptics.insetAlpha, reduceTransparency)
+                            )
+                        },
+                        onDrawSurface = { drawRect(dropletTint.copy(alpha = dropletTintAlpha)) }
+                    )
+                )
+            }
+
+            val activeGlyph = when (highlightedIndex) {
+                0 -> Icons.Outlined.Today
+                1 -> Icons.Outlined.Explore
+                2 -> Icons.Outlined.Search
+                else -> Icons.Outlined.Person
+            }
+            Box(
+                Modifier.offset {
+                    val center = GlassTabGeometryPolicy.tabCenterPx(contentStartPx, motion.value, tabWidthPx)
+                    val iconSizePx = with(density) { 29.dp.toPx() }
+                    IntOffset((center - iconSizePx / 2f).roundToInt(),
+                        ((barHeightPx - iconSizePx) / 2f).roundToInt())
+                }
+                    .size(29.dp)
+                    .clearAndSetSemantics {},
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(activeGlyph, contentDescription = null, tint = adaptiveContentColor,
+                    modifier = Modifier.size(29.dp))
+            }
+        } else {
+            val activeLabel = when (selectedTab) {
+                0 -> "Today"
+                1 -> "Explore"
+                2 -> "Search"
+                else -> "You"
+            }
+            val activeIcon = when (selectedTab) {
+                0 -> Icons.Outlined.Today
+                1 -> Icons.Outlined.Explore
+                2 -> Icons.Outlined.Search
+                else -> Icons.Outlined.Person
+            }
+            Row(
+                Modifier.align(Alignment.Center).width(barWidth).height(barHeight)
+                    .clip(PrismalCapsule())
+                    .clickable(onClick = onExpandCompact, role = Role.Button)
+                    .semantics(mergeDescendants = true) {
+                        contentDescription = "$activeLabel navigation, compact. Expand navigation."
+                    }
+                    .padding(horizontal = 18.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Center
+            ) {
+                Icon(activeIcon, contentDescription = null, tint = adaptiveContentColor, modifier = Modifier.size(20.dp))
+                Spacer(Modifier.width(9.dp))
+                Text(activeLabel, color = adaptiveContentColor, style = MaterialTheme.typography.labelLarge,
+                    fontWeight = FontWeight.SemiBold, maxLines = 1)
+            }
         }
     }
 }
@@ -2215,11 +2832,31 @@ private fun matchesSearchTerms(article: Article, query: String): Boolean =
     ExploreFilters.matchesSearchTerms(article, query)
 
 @Composable
-private fun ReaderScreen(article: Article, backdrop: PrismalBackdrop, glassAlpha: Float, dark: Boolean, onBack: () -> Unit, onQuiz: () -> Unit, onSessionRecorded: () -> Unit) {
+private fun ReaderScreen(
+    article: Article,
+    backdrop: PrismalBackdrop,
+    glassAlpha: Float,
+    dark: Boolean,
+    onBack: () -> Unit,
+    onQuiz: () -> Unit,
+    onSessionWindow: (ReadingSessionWindow) -> Unit,
+    onSaveReaderPosition: (String, Float) -> Unit,
+    onClearReaderPosition: (String) -> Unit
+) {
     val context = LocalContext.current
     val readerWebViewHolder = remember { mutableStateOf<ReaderWebView?>(null) }
-    var savedReadingProgress by remember(article.url) {
-        mutableFloatStateOf(LocalStore.readerPosition(context, article.url)?.progress ?: 0f)
+    var savedReadingProgress by remember(article.url) { mutableFloatStateOf(0f) }
+    var readerPositionLoaded by remember(article.url) { mutableStateOf(false) }
+    LaunchedEffect(article.url) {
+        readerPositionLoaded = false
+        savedReadingProgress = 0f
+        val restoredProgress = withContext(Dispatchers.IO) {
+            runCatching {
+                LocalStore.readerPosition(context, article.url)?.progress ?: 0f
+            }.getOrDefault(0f)
+        }
+        savedReadingProgress = restoredProgress
+        readerPositionLoaded = true
     }
 
     var contentLoaded by remember(article.url) { mutableStateOf(false) }
@@ -2234,11 +2871,7 @@ private fun ReaderScreen(article: Article, backdrop: PrismalBackdrop, glassAlpha
             }
             fun flushSession() {
                 readerWebViewHolder.value?.flushReadingPosition()
-                clock.pause(SystemClock.elapsedRealtime())?.let { window ->
-                    if (LocalStore.recordReadingSession(context, article, window.startedAtMillis, window.durationMillis)) {
-                        onSessionRecorded()
-                    }
-                }
+                clock.pause(SystemClock.elapsedRealtime())?.let(onSessionWindow)
             }
             val observer = LifecycleEventObserver { _, event ->
                 when (event) {
@@ -2271,6 +2904,20 @@ private fun ReaderScreen(article: Article, backdrop: PrismalBackdrop, glassAlpha
     var readerViewportWindowOrigin by remember(article.url) { mutableStateOf(Offset.Zero) }
     var readerViewportHeightPx by remember(article.url) { mutableIntStateOf(0) }
     var fontSize by remember(article.url) { mutableIntStateOf(20) }
+    var textSizeMenuExpanded by remember(article.url) { mutableStateOf(false) }
+    var completionDismissed by remember(article.url) { mutableStateOf(false) }
+    var selectionActionModeActive by remember(article.url) { mutableStateOf(false) }
+    var readerChromeVisible by remember(article.url) { mutableStateOf(true) }
+    val imeVisible = WindowInsets.ime.getBottom(LocalDensity.current) > 0
+    val accessibilityEnabled = context.getSystemService(AccessibilityManager::class.java)?.isEnabled == true
+    val readerChromePinned = ReaderChromePolicy.shouldPinChrome(
+        definitionOpen = activeWord != null,
+        selectionActive = selectionActionModeActive,
+        imeVisible = imeVisible,
+        accessibilityEnabled = accessibilityEnabled,
+        textSizeMenuExpanded = textSizeMenuExpanded
+    )
+    val readerChromeMotionMs = if (ValueAnimator.areAnimatorsEnabled()) 160 else 0
 
     LaunchedEffect(article.url) {
         extracting = true
@@ -2294,32 +2941,54 @@ private fun ReaderScreen(article: Article, backdrop: PrismalBackdrop, glassAlpha
         }
     }
 
+    val readerSourceStatus = when {
+        extractedHtml != null && loadedFromCache -> "Saved public content · on this device"
+        extractedHtml != null -> "Public publisher content · attributed"
+        fallbackToPublisher -> "Publisher fallback · scripts disabled"
+        else -> "Public article unavailable"
+    }
+
     Column(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
-        Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 7.dp), verticalAlignment = Alignment.CenterVertically) {
-            IconButton(onClick = {
-                readerWebViewHolder.value?.flushReadingPosition()
-                onBack()
-            }) { Icon(Icons.Outlined.ArrowBack, contentDescription = "Back") }
-            Column(Modifier.weight(1f)) {
-                Text(article.source, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
-                val readerSourceStatus = when {
-                    extractedHtml == null -> "In-app publisher view"
-                    loadedFromCache -> "Saved public content · on this device"
-                    else -> "Public publisher content · attributed"
-                }
-                Text(
-                    listOf(
-                        ArticlePublicationDatePolicy.label(article.publishedAtMillis),
-                        readerSourceStatus
-                    ).joinToString(" · "),
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.secondary
+        AnimatedVisibility(
+            visible = readerChromeVisible,
+            enter = fadeIn(animationSpec = tween(readerChromeMotionMs)) +
+                slideInVertically(animationSpec = tween(readerChromeMotionMs)) { -it / 4 },
+            exit = fadeOut(animationSpec = tween(readerChromeMotionMs)) +
+                slideOutVertically(animationSpec = tween(readerChromeMotionMs)) { -it / 4 }
+        ) {
+            Column {
+                ReaderGlassToolbar(
+                    article = article,
+                    sourceStatus = readerSourceStatus,
+                    backdrop = backdrop,
+                    glassAlpha = glassAlpha,
+                    dark = dark,
+                    fontSize = fontSize,
+                    textSizeMenuExpanded = textSizeMenuExpanded,
+                    onTextSizeMenuExpandedChange = { textSizeMenuExpanded = it },
+                    onBack = {
+                        readerWebViewHolder.value?.flushReadingPosition()
+                        onBack()
+                    },
+                    onFontSizeChange = { fontSize = it }
                 )
+                if (savedReadingProgress > 0.005f && !reachedBottom) {
+                    Box(
+                        Modifier.fillMaxWidth().padding(horizontal = 18.dp, vertical = 2.dp)
+                            .height(2.dp).clip(CircleShape)
+                            .background(MaterialTheme.colorScheme.outline.copy(alpha = 0.18f))
+                    ) {
+                        Box(
+                            Modifier.fillMaxWidth(savedReadingProgress.coerceIn(0f, 1f))
+                                .fillMaxSize().background(MaterialTheme.colorScheme.primary)
+                        )
+                    }
+                }
             }
-            IconButton(onClick = { fontSize = (fontSize - 1).coerceIn(16, 28) }) { Icon(Icons.Outlined.TextDecrease, contentDescription = "Smaller text") }
-            IconButton(onClick = { fontSize = (fontSize + 1).coerceIn(16, 28) }) { Icon(Icons.Outlined.TextIncrease, contentDescription = "Larger text") }
         }
-        if (extracting || (!pageLoaded && (extractedHtml != null || fallbackToPublisher))) androidx.compose.material3.LinearProgressIndicator(Modifier.fillMaxWidth())
+        if (extracting || !readerPositionLoaded ||
+            (!pageLoaded && (extractedHtml != null || fallbackToPublisher))
+        ) androidx.compose.material3.LinearProgressIndicator(Modifier.fillMaxWidth())
         Box(Modifier.weight(1f).fillMaxWidth().onGloballyPositioned { coordinates ->
             // Both this viewport and the WebView selection rectangle are converted
             // in window coordinates; mixing screen and window origins double-counts
@@ -2332,6 +3001,16 @@ private fun ReaderScreen(article: Article, backdrop: PrismalBackdrop, glassAlpha
                 factory = { ctx ->
                     ReaderWebView(ctx).apply {
                         readerWebViewHolder.value = this
+                        // Public-page reading is intentionally stateless: never reuse
+                        // publisher login/tracking cookies from an earlier WebView session.
+                        val cookieManager = CookieManager.getInstance()
+                        ReaderCookiePolicy.enforce(
+                            setAcceptCookie = cookieManager::setAcceptCookie,
+                            setAcceptThirdPartyCookies = { accept ->
+                                cookieManager.setAcceptThirdPartyCookies(this, accept)
+                            },
+                            clearCookies = { cookieManager.removeAllCookies(null) }
+                        )
                         settings.javaScriptEnabled = false
                         settings.domStorageEnabled = false
                         settings.loadsImagesAutomatically = true
@@ -2374,14 +3053,21 @@ private fun ReaderScreen(article: Article, backdrop: PrismalBackdrop, glassAlpha
                 update = { webView ->
                     val articleChanged = webView.beginArticle(article.url)
                     webView.onReadingProgressChanged = { progress ->
-                        val persisted = LocalStore.saveReaderPosition(context, article.url, progress)
-                        savedReadingProgress = if (persisted) progress else 0f
+                        savedReadingProgress = progress
+                        onSaveReaderPosition(article.url, progress)
                     }
+                    webView.onReaderChromeVisibilityChanged = { visible ->
+                        readerChromeVisible = visible
+                    }
+                    webView.setReaderChromePinned(readerChromePinned)
                     webView.onReachedBottom = {
                         webView.markReadingPositionCompleted()
-                        LocalStore.clearReaderPosition(context, article.url)
+                        onClearReaderPosition(article.url)
                         savedReadingProgress = 0f
                         reachedBottom = true
+                    }
+                    webView.onSelectionActionModeChanged = { active ->
+                        selectionActionModeActive = active
                     }
                     webView.onDefineWord = { word, selectionRect ->
                         val webViewLocation = IntArray(2)
@@ -2441,26 +3127,28 @@ private fun ReaderScreen(article: Article, backdrop: PrismalBackdrop, glassAlpha
                         activeWordAnchor = null
                         activeWordPreferAbove = false
                     }
-                    val cleanHtml = extractedHtml
-                    if (cleanHtml != null) {
-                        val key = "reader:" + article.url + ":" + fontSize + ":" + dark
-                        if (webView.loadedKey != key) {
-                            if (!articleChanged) webView.flushReadingPosition()
-                            webView.queueReadingPositionRestore(savedReadingProgress)
-                            webView.loadedKey = key
-                            pageLoaded = false
-                            contentLoaded = false
-                            webView.loadDataWithBaseURL(article.url, readerDocument(article, cleanHtml, fontSize, dark), "text/html", "UTF-8", null)
-                        }
-                    } else if (fallbackToPublisher) {
-                        val key = "publisher:" + article.url + ":" + fontSize
-                        if (webView.loadedKey != key) {
-                            if (!articleChanged) webView.flushReadingPosition()
-                            webView.queueReadingPositionRestore(savedReadingProgress)
-                            webView.loadedKey = key
-                            pageLoaded = false
-                            contentLoaded = false
-                            webView.loadUrl(article.url)
+                    if (readerPositionLoaded) {
+                        val cleanHtml = extractedHtml
+                        if (cleanHtml != null) {
+                            val key = "reader:" + article.url + ":" + fontSize + ":" + dark
+                            if (webView.loadedKey != key) {
+                                if (!articleChanged) webView.flushReadingPosition()
+                                webView.queueReadingPositionRestore(savedReadingProgress)
+                                webView.loadedKey = key
+                                pageLoaded = false
+                                contentLoaded = false
+                                webView.loadDataWithBaseURL(article.url, readerDocument(article, cleanHtml, fontSize, dark), "text/html", "UTF-8", null)
+                            }
+                        } else if (fallbackToPublisher) {
+                            val key = "publisher:" + article.url + ":" + fontSize
+                            if (webView.loadedKey != key) {
+                                if (!articleChanged) webView.flushReadingPosition()
+                                webView.queueReadingPositionRestore(savedReadingProgress)
+                                webView.loadedKey = key
+                                pageLoaded = false
+                                contentLoaded = false
+                                webView.loadUrl(article.url)
+                            }
                         }
                     }
                 }
@@ -2516,7 +3204,7 @@ private fun ReaderScreen(article: Article, backdrop: PrismalBackdrop, glassAlpha
                 }
             }
         }
-        if (fallbackToPublisher && !extracting) {
+        if (readerChromeVisible && fallbackToPublisher && !extracting) {
             Row(
                 Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 5.dp),
                 verticalAlignment = Alignment.CenterVertically
@@ -2532,16 +3220,159 @@ private fun ReaderScreen(article: Article, backdrop: PrismalBackdrop, glassAlpha
                 }
             }
         }
-        if (reachedBottom) {
-            Card(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp),
-                shape = RoundedCornerShape(22.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)) {
-                Row(Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Column(Modifier.weight(1f)) {
-                        Text("Finished reading?", fontWeight = FontWeight.Bold)
-                        Text("Five practice questions based on the RSS headline/excerpt and indicative syllabus mapping.", fontSize = 12.sp)
+        AnimatedVisibility(
+            visible = readerChromeVisible && ReaderChromePolicy.shouldShowCompletion(
+                reachedBottom = reachedBottom,
+                definitionOpen = activeWord != null,
+                dismissed = completionDismissed,
+                selectionActive = selectionActionModeActive,
+                transientControlOpen = textSizeMenuExpanded
+            ),
+            enter = fadeIn(animationSpec = tween(readerChromeMotionMs)) +
+                slideInVertically(animationSpec = tween(readerChromeMotionMs)) { it / 4 },
+            exit = fadeOut(animationSpec = tween(readerChromeMotionMs)) +
+                slideOutVertically(animationSpec = tween(readerChromeMotionMs)) { it / 4 }
+        ) {
+            PrismalTransientSurface(
+                backdrop = backdrop,
+                modifier = Modifier.fillMaxWidth()
+                    .padding(horizontal = 12.dp, vertical = 8.dp)
+                    .navigationBarsPadding(),
+                glassAlpha = glassAlpha,
+                dark = dark,
+                cornerRadiusDp = 20f
+            ) {
+                Row(
+                    Modifier.fillMaxWidth().padding(start = 14.dp, end = 4.dp, top = 4.dp, bottom = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(1.dp)) {
+                        Text("Reading complete", style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.SemiBold)
+                        Text("Five original prompts · not official PYQs",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.secondary,
+                            maxLines = 1, overflow = TextOverflow.Ellipsis)
                     }
-                    Button(onClick = onQuiz) { Text("Test") }
+                    TextButton(
+                        onClick = onQuiz,
+                        modifier = Modifier.heightIn(min = 48.dp),
+                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp)
+                    ) { Text("Try 5 questions") }
+                    IconButton(
+                        onClick = { completionDismissed = true },
+                        modifier = Modifier.size(48.dp)
+                    ) {
+                        Icon(Icons.Outlined.Close, contentDescription = "Dismiss completion")
+                    }
+                }
+            }
+        }
+    }
+}
+
+
+@Composable
+private fun ReaderGlassToolbar(
+    article: Article,
+    sourceStatus: String,
+    backdrop: PrismalBackdrop,
+    glassAlpha: Float,
+    dark: Boolean,
+    fontSize: Int,
+    textSizeMenuExpanded: Boolean,
+    onTextSizeMenuExpandedChange: (Boolean) -> Unit,
+    onBack: () -> Unit,
+    onFontSizeChange: (Int) -> Unit
+) {
+    PrismalTransientSurface(
+        backdrop = backdrop,
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 6.dp),
+        glassAlpha = glassAlpha,
+        dark = dark,
+        cornerRadiusDp = 22f
+    ) {
+        Row(
+            Modifier.fillMaxWidth().heightIn(min = 60.dp)
+                .padding(start = 4.dp, end = 4.dp, top = 4.dp, bottom = 4.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            IconButton(onClick = onBack, modifier = Modifier.size(48.dp)) {
+                Icon(Icons.Outlined.ArrowBack, contentDescription = "Back to article list",
+                    modifier = Modifier.size(22.dp))
+            }
+            Column(
+                Modifier.weight(1f).padding(vertical = 3.dp),
+                verticalArrangement = Arrangement.spacedBy(2.dp)
+            ) {
+                Text(
+                    article.source,
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Text(
+                    "${ArticlePublicationDatePolicy.label(article.publishedAtMillis)} · $sourceStatus",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.secondary,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                    lineHeight = 14.sp
+                )
+            }
+            Box {
+                IconButton(
+                    onClick = { onTextSizeMenuExpandedChange(true) },
+                    modifier = Modifier.size(48.dp).semantics {
+                        contentDescription = "Text size, $fontSize sp"
+                    }
+                ) {
+                    Text("Aa", style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                }
+                DropdownMenu(
+                    expanded = textSizeMenuExpanded,
+                    onDismissRequest = { onTextSizeMenuExpandedChange(false) },
+                    modifier = Modifier.widthIn(min = 196.dp),
+                    shape = RoundedCornerShape(18.dp),
+                    containerColor = Color.Transparent,
+                    tonalElevation = 0.dp,
+                    shadowElevation = 0.dp
+                ) {
+                    PrismalTransientSurface(
+                        backdrop = backdrop,
+                        modifier = Modifier.fillMaxWidth(),
+                        glassAlpha = glassAlpha,
+                        dark = dark,
+                        cornerRadiusDp = 18f
+                    ) {
+                        Column(Modifier.fillMaxWidth()) {
+                            DropdownMenuItem(
+                                text = { Text("Smaller text") },
+                                leadingIcon = { Icon(Icons.Outlined.TextDecrease, contentDescription = null) },
+                                enabled = fontSize > ReaderChromePolicy.MIN_FONT_SIZE_SP,
+                                onClick = {
+                                    onFontSizeChange(ReaderChromePolicy.adjustFontSize(fontSize, -1))
+                                    onTextSizeMenuExpandedChange(false)
+                                }
+                            )
+                            DropdownMenuItem(
+                                text = { Text("Larger text") },
+                                leadingIcon = { Icon(Icons.Outlined.TextIncrease, contentDescription = null) },
+                                enabled = fontSize < ReaderChromePolicy.MAX_FONT_SIZE_SP,
+                                onClick = {
+                                    onFontSizeChange(ReaderChromePolicy.adjustFontSize(fontSize, 1))
+                                    onTextSizeMenuExpandedChange(false)
+                                }
+                            )
+                            DropdownMenuItem(
+                                text = { Text("Current size · $fontSize sp") },
+                                enabled = false,
+                                onClick = {}
+                            )
+                        }
+                    }
                 }
             }
         }
@@ -2576,12 +3407,14 @@ private fun readerDocument(article: Article, content: String, fontSize: Int, dar
 private class ReaderWebView(context: android.content.Context) : WebView(context) {
     var loadedKey: String? = null
     var onReachedBottom: () -> Unit = {}
+    var onSelectionActionModeChanged: (Boolean) -> Unit = {}
     var onDefineWord: (String, RectF?) -> Unit = { _, _ -> }
     var onReaderPageFinished: () -> Unit = {}
     var onReaderMainFrameError: () -> Unit = {}
     var allowReaderNavigation: (String) -> Boolean = { false }
     var onOpenPublisherLink: (String) -> Unit = {}
     var onReadingProgressChanged: (Float) -> Unit = {}
+    var onReaderChromeVisibilityChanged: (Boolean) -> Unit = {}
     var selectionBridgeEnabled: Boolean = false
         set(value) {
             if (field != value) {
@@ -2600,6 +3433,43 @@ private class ReaderWebView(context: android.content.Context) : WebView(context)
     private var stableRestoreSamples = 0
     private var restoringReadingPosition = false
     private var readingPositionCompleted = false
+    private var readerChromeVisible = true
+    private var readerChromePinned = false
+    private var readerChromeScrollState = ReaderChromeScrollState()
+    private var pendingReaderChromeHide: Runnable? = null
+
+    fun setReaderChromePinned(pinned: Boolean) {
+        if (readerChromePinned == pinned) return
+        readerChromePinned = pinned
+        readerChromeScrollState = ReaderChromeScrollState()
+        if (pinned) {
+            cancelPendingReaderChromeHide()
+            setReaderChromeVisible(true)
+        }
+    }
+
+    private fun setReaderChromeVisible(visible: Boolean) {
+        if (readerChromeVisible == visible) return
+        readerChromeVisible = visible
+        onReaderChromeVisibilityChanged(visible)
+    }
+
+    private fun cancelPendingReaderChromeHide() {
+        pendingReaderChromeHide?.let { removeCallbacks(it) }
+        pendingReaderChromeHide = null
+    }
+
+    private fun scheduleReaderChromeHide() {
+        cancelPendingReaderChromeHide()
+        val hide = Runnable {
+            pendingReaderChromeHide = null
+            if (!readerChromePinned && scrollY > 0 && !restoringReadingPosition) {
+                setReaderChromeVisible(false)
+            }
+        }
+        pendingReaderChromeHide = hide
+        postDelayed(hide, ReaderChromePolicy.HIDE_SETTLE_DELAY_MS)
+    }
 
     fun beginArticle(url: String): Boolean {
         val changed = progressGate.beginArticle(url)
@@ -2610,6 +3480,10 @@ private class ReaderWebView(context: android.content.Context) : WebView(context)
             cancelShortPageEndCheck(resetStability = true)
             cancelPendingAutoDefine()
             cancelReadingPositionRestore()
+            cancelPendingReaderChromeHide()
+            readerChromeScrollState = ReaderChromeScrollState()
+            readerChromePinned = false
+            setReaderChromeVisible(true)
             readingPositionCompleted = false
         }
         return changed
@@ -2757,6 +3631,8 @@ private class ReaderWebView(context: android.content.Context) : WebView(context)
         cancelReadingPositionRestore()
         cancelShortPageEndCheck(resetStability = true)
         cancelPendingAutoDefine()
+        cancelPendingReaderChromeHide()
+        onSelectionActionModeChanged(false)
         super.onDetachedFromWindow()
     }
 
@@ -2806,6 +3682,7 @@ private class ReaderWebView(context: android.content.Context) : WebView(context)
         object : ActionMode.Callback2() {
             override fun onCreateActionMode(mode: ActionMode, menu: Menu): Boolean {
                 val created = original.onCreateActionMode(mode, menu)
+                if (created) onSelectionActionModeChanged(true)
                 if (created && selectionBridgeEnabled) {
                     menu.add(0, MENU_DEFINE_WORD, menu.size(), "Define")
                         .setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS)
@@ -2871,6 +3748,7 @@ private class ReaderWebView(context: android.content.Context) : WebView(context)
 
             override fun onDestroyActionMode(mode: ActionMode) {
                 cancelPendingAutoDefine()
+                onSelectionActionModeChanged(false)
                 original.onDestroyActionMode(mode)
             }
 
@@ -2964,7 +3842,27 @@ private class ReaderWebView(context: android.content.Context) : WebView(context)
 
     override fun onScrollChanged(scrollX: Int, scrollY: Int, oldScrollX: Int, oldScrollY: Int) {
         super.onScrollChanged(scrollX, scrollY, oldScrollX, oldScrollY)
-        if (scrollY != oldScrollY) scheduleReadingPositionSave()
+        val deltaY = scrollY - oldScrollY
+        if (deltaY != 0) {
+            scheduleReadingPositionSave()
+            if (deltaY < 0) cancelPendingReaderChromeHide()
+            readerChromeScrollState = ReaderChromePolicy.onScroll(
+                state = readerChromeScrollState,
+                deltaY = deltaY,
+                hideThresholdPx = (ReaderChromePolicy.HIDE_THRESHOLD_DP * resources.displayMetrics.density).roundToInt(),
+                showThresholdPx = (ReaderChromePolicy.SHOW_THRESHOLD_DP * resources.displayMetrics.density).roundToInt(),
+                pinned = readerChromePinned || restoringReadingPosition,
+                atTop = scrollY <= 0
+            )
+            if (readerChromeScrollState.visible) {
+                cancelPendingReaderChromeHide()
+                setReaderChromeVisible(true)
+            } else if (deltaY > 0 && !readerChromePinned && !restoringReadingPosition) {
+                // Only downward movement can schedule a hide; upward movement cancels it
+                // immediately and reveals chrome once the smaller threshold is crossed.
+                scheduleReaderChromeHide()
+            }
+        }
         val fullHeight = (contentHeight * scale).toInt()
         if (fullHeight > height + 120 &&
             ReaderEndDetector.isAtEnd(fullHeight, height, scrollY) &&
@@ -2996,6 +3894,7 @@ private fun DefinitionGlassOverlay(
     onClose: () -> Unit
 ) {
     val context = LocalContext.current
+    val reduceTransparency = LocalGlassReduceTransparency.current
     var result by remember(word) { mutableStateOf<Definition?>(null) }
     var loading by remember(word) { mutableStateOf(true) }
     var expanded by remember(word) { mutableStateOf(false) }
@@ -3036,13 +3935,13 @@ private fun DefinitionGlassOverlay(
                 modifier = Modifier.fillMaxWidth()
                     .animateContentSize(spring(dampingRatio = 0.82f, stiffness = 480f)),
                 shape = { PrismalRoundedRectangle(25.dp) },
-                blurRadius = 12.dp,
-                refractionHeightPx = 22f,
-                refractionAmountPx = 24f,
-                depthEffect = true,
-                chromaticAberration = 0.015f,
+                blurRadius = GlassRenderingPolicy.blurDp(12f, reduceTransparency).dp,
+                refractionHeightPx = GlassRenderingPolicy.refractionPx(22f, reduceTransparency),
+                refractionAmountPx = GlassRenderingPolicy.refractionPx(24f, reduceTransparency),
+                depthEffect = GlassRenderingPolicy.depthEnabled(true, reduceTransparency),
+                chromaticAberration = GlassRenderingPolicy.chromaticAberration(0.015f, reduceTransparency),
                 tint = if (isSystemInDarkTheme()) Color(0xFF263247) else Color(0xFFEAF0FA),
-                tintAlpha = (glassAlpha * 0.62f).coerceIn(0.08f, 0.34f)
+                tintAlpha = GlassRenderingPolicy.tintAlpha((glassAlpha * 0.62f).coerceIn(0.08f, 0.34f), reduceTransparency)
             ) {
                 DefinitionPopoverContent(
                     word = word,
@@ -3107,67 +4006,419 @@ private fun DefinitionGlassOverlay(
 }
 
 @Composable
-private fun GlassSettingsScreen(backdrop: PrismalBackdrop, glassAlpha: Float, onGlassAlphaChange: (Float) -> Unit, onBack: () -> Unit) {
-    Column(Modifier.fillMaxSize().padding(horizontal = 18.dp)) {
-        Row(Modifier.fillMaxWidth().padding(vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
-            IconButton(onClick = onBack) { Icon(Icons.Outlined.ArrowBack, contentDescription = "Back") }
-            Text("Appearance", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-        }
-        PrismalGlassSurface(backdrop = backdrop, modifier = Modifier.fillMaxWidth(),
-            shape = { PrismalRoundedRectangle(26.dp) }, blurRadius = 11.dp,
-            tint = if (isSystemInDarkTheme()) Color(0xFF30394B) else Color(0xFFEAF0FA), tintAlpha = glassAlpha) {
-            Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(13.dp)) {
-                Text("Liquid Glass", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-                Text("Adjust the transparency of brrrNews glass surfaces.", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.secondary)
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text("Clear", fontSize = 11.sp, color = MaterialTheme.colorScheme.secondary)
-                    Spacer(Modifier.weight(1f))
-                    Text((glassAlpha * 100).toInt().toString() + "%", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
-                    Spacer(Modifier.weight(1f))
-                    Text("Frosted", fontSize = 11.sp, color = MaterialTheme.colorScheme.secondary)
-                }
-                PrismalGlassSlider(value = { glassAlpha }, onValueChange = onGlassAlphaChange,
-                    valueRange = 0.12f..0.55f, visibilityThreshold = 0.01f, backdrop = backdrop,
-                    modifier = Modifier.fillMaxWidth())
+private fun GlassSettingsScreen(
+    backdrop: PrismalBackdrop,
+    glassAlpha: Float,
+    reduceTransparency: Boolean,
+    onReduceTransparencyChange: (Boolean) -> Unit,
+    onGlassAlphaChange: (Float) -> Unit,
+    onBack: () -> Unit
+) {
+    Column(
+        Modifier.fillMaxSize().verticalScroll(rememberScrollState())
+            .padding(horizontal = 18.dp).padding(bottom = 28.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        Row(
+            Modifier.fillMaxWidth().padding(top = 8.dp).heightIn(min = 52.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            IconButton(onClick = onBack) {
+                Icon(Icons.Outlined.ArrowBack, contentDescription = "Back")
+            }
+            Column(verticalArrangement = Arrangement.spacedBy(1.dp)) {
+                Text("Appearance", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                Text(
+                    "Personalise controls and reading surfaces",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.secondary
+                )
             }
         }
-        Text("Four-tab navigation, editorial cards and adaptive glass effects. Heavy shader effects fall back on unsupported devices.",
-            style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.secondary, modifier = Modifier.padding(vertical = 16.dp))
+
+        AppearanceGlassEditor(
+            backdrop = backdrop,
+            glassAlpha = glassAlpha,
+            reduceTransparency = reduceTransparency,
+            dark = isSystemInDarkTheme(),
+            onReduceTransparencyChange = onReduceTransparencyChange,
+            onGlassAlphaChange = onGlassAlphaChange
+        )
+
+        SupportingGlassCard(modifier = Modifier.fillMaxWidth()) {
+            Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) {
+                Text("Designed for reading first", fontWeight = FontWeight.SemiBold)
+                Text(
+                    "Navigation and controls borrow the glass material; article text, imagery and study data stay clear and high-contrast. Your appearance choice is saved locally on this device.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+        Text(
+            "Unsupported shader effects fall back automatically. Reduce transparency removes live blur and refraction; appearance settings use no cloud service.",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.secondary
+        )
     }
 }
 
 @Composable
+private fun AppearanceGlassEditor(
+    backdrop: PrismalBackdrop,
+    glassAlpha: Float,
+    reduceTransparency: Boolean,
+    dark: Boolean,
+    onReduceTransparencyChange: (Boolean) -> Unit,
+    onGlassAlphaChange: (Float) -> Unit
+) {
+    // Preview state is deliberately scoped to this child. Dragging the slider updates
+    // only this editor; the app-wide material preference is committed on release.
+    var previewGlassAlpha by remember { mutableFloatStateOf(glassAlpha) }
+    LaunchedEffect(glassAlpha) { previewGlassAlpha = glassAlpha }
+    val selectedPreset = when {
+        kotlin.math.abs(previewGlassAlpha - 0.12f) < 0.015f -> "Clear"
+        kotlin.math.abs(previewGlassAlpha - 0.32f) < 0.015f -> "Balanced"
+        kotlin.math.abs(previewGlassAlpha - 0.55f) < 0.015f -> "Frosted"
+        else -> "Custom"
+    }
+    val previewTabs = remember {
+        listOf(
+            "Today" to Icons.Outlined.Today,
+            "Explore" to Icons.Outlined.Explore,
+            "Search" to Icons.Outlined.Search,
+            "You" to Icons.Outlined.Person
+        )
+    }
+    val applyPreset: (Float) -> Unit = { value ->
+        previewGlassAlpha = value
+        onGlassAlphaChange(value)
+    }
+
+    Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(24.dp),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+        ) {
+            Column(Modifier.fillMaxWidth().padding(18.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                    Text("Liquid Glass", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                    Text(
+                        "Tune the shared tint used by navigation, search, filters and contextual controls.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                    Text("Clear", style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.secondary)
+                    Spacer(Modifier.weight(1f))
+                    Text(
+                        "${(previewGlassAlpha * 100).roundToInt()}%",
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    Spacer(Modifier.weight(1f))
+                    Text("Frosted", style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.secondary)
+                }
+                Slider(
+                    value = previewGlassAlpha,
+                    onValueChange = { previewGlassAlpha = it },
+                    onValueChangeFinished = { onGlassAlphaChange(previewGlassAlpha) },
+                    valueRange = 0.12f..0.55f,
+                    modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp).semantics {
+                        contentDescription = "Glass intensity from clear to frosted"
+                    }
+                )
+                Row(
+                    Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    FilterChip(
+                        selected = selectedPreset == "Clear",
+                        onClick = { applyPreset(0.12f) },
+                        modifier = Modifier.heightIn(min = 48.dp),
+                        label = { Text("Clear") }
+                    )
+                    FilterChip(
+                        selected = selectedPreset == "Balanced",
+                        onClick = { applyPreset(0.32f) },
+                        modifier = Modifier.heightIn(min = 48.dp),
+                        label = { Text("Balanced") }
+                    )
+                    FilterChip(
+                        selected = selectedPreset == "Frosted",
+                        onClick = { applyPreset(0.55f) },
+                        modifier = Modifier.heightIn(min = 48.dp),
+                        label = { Text("Frosted") }
+                    )
+                }
+                Row(
+                    Modifier.fillMaxWidth().heightIn(min = 56.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                        Text(
+                            "Reduce transparency & effects",
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                        Text(
+                            "Raises control opacity and removes blur, refraction and adaptive sampling.",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    Switch(
+                        checked = reduceTransparency,
+                        onCheckedChange = onReduceTransparencyChange,
+                        modifier = Modifier.semantics {
+                            contentDescription = "Reduce transparency and effects"
+                        }
+                    )
+                }
+            }
+        }
+
+        Column(verticalArrangement = Arrangement.spacedBy(7.dp)) {
+            Text("Live preview", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+            Text(
+                "One shared control material responds to the slider; the article surface stays readable.",
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.secondary
+            )
+            // A single small Prismal surface replaces the previous two independently
+            // blurred panels. Search and navigation are simple tinted children, not
+            // nested live-glass surfaces or additional backdrop consumers.
+            PrismalTransientSurface(
+                backdrop = backdrop,
+                modifier = Modifier.fillMaxWidth(),
+                glassAlpha = previewGlassAlpha,
+                dark = dark,
+                cornerRadiusDp = 26f
+            ) {
+                Column(
+                    Modifier.fillMaxWidth().padding(14.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    Row(
+                        Modifier.fillMaxWidth().heightIn(min = 42.dp).padding(horizontal = 3.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(verticalArrangement = Arrangement.spacedBy(1.dp)) {
+                            Text(
+                                "brrrNEWS",
+                                style = MaterialTheme.typography.titleSmall,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                            Text(
+                                "CURRENT AFFAIRS",
+                                style = MaterialTheme.typography.labelSmall,
+                                letterSpacing = 0.8.sp,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        Spacer(Modifier.weight(1f))
+                        Text(
+                            "TODAY",
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
+
+                    val searchShape = RoundedCornerShape(16.dp)
+                    Row(
+                        Modifier.fillMaxWidth().heightIn(min = 44.dp)
+                            .clip(searchShape)
+                            .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.56f))
+                            .border(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.20f), searchShape)
+                            .padding(horizontal = 12.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            Icons.Outlined.Search,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(Modifier.width(9.dp))
+                        Text(
+                            "Search articles",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Spacer(Modifier.weight(1f))
+                        Text(
+                            "Filters",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
+
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(18.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.96f)
+                        ),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+                    ) {
+                        Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text(
+                                    "THE HINDU",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.primary,
+                                    fontWeight = FontWeight.Bold
+                                )
+                                Spacer(Modifier.weight(1f))
+                                Text(
+                                    "GS II",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.secondary
+                                )
+                            }
+                            Text(
+                                "How a policy decision shapes India's federal balance",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.SemiBold,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                            Text(
+                                "Publisher report · GS II connection",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+
+                    Row(
+                        Modifier.fillMaxWidth().heightIn(min = 58.dp),
+                        horizontalArrangement = Arrangement.spacedBy(3.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        previewTabs.forEachIndexed { index, (label, icon) ->
+                            val selected = index == 0
+                            Column(
+                                Modifier.weight(1f).heightIn(min = 48.dp)
+                                    .clip(CircleShape)
+                                    .background(
+                                        if (selected) MaterialTheme.colorScheme.primary.copy(alpha = 0.13f)
+                                        else Color.Transparent
+                                    )
+                                    .padding(vertical = 4.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.Center
+                            ) {
+                                Icon(
+                                    icon,
+                                    contentDescription = null,
+                                    tint = if (selected) MaterialTheme.colorScheme.primary
+                                    else MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                                Text(
+                                    label,
+                                    fontSize = 9.sp,
+                                    color = if (selected) MaterialTheme.colorScheme.primary
+                                    else MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+@Composable
 private fun QuizScreen(
     article: Article,
+    backdrop: PrismalBackdrop,
+    glassAlpha: Float,
+    dark: Boolean,
     onBack: () -> Unit,
     onSubmit: (Map<Int, Int>, List<QuizQuestion>) -> Unit
 ) {
-    val relevance = remember(article.id) { UpscEngine.classify(article) }
-    val questions = remember(article.id) { UpscEngine.questions(article, relevance) }
-    var selected by remember(article.id) { mutableStateOf<Map<Int, Int>>(emptyMap()) }
-    var submitted by remember(article.id) { mutableStateOf(false) }
+    val relevance = remember(article.id, article.title, article.description) {
+        UpscEngine.classify(article)
+    }
+    val questions = remember(article.id, article.title, article.description, relevance) {
+        UpscEngine.questions(article, relevance)
+    }
+    var selected by remember(article.id, article.title, article.description) {
+        mutableStateOf<Map<Int, Int>>(emptyMap())
+    }
+    var submitted by remember(article.id, article.title, article.description) {
+        mutableStateOf(false)
+    }
     val score = questions.indices.count { selected[it] == questions[it].correctIndex }
 
     Column(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
-        Row(Modifier.fillMaxWidth().padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
-            IconButton(onClick = onBack) { Icon(Icons.Outlined.ArrowBack, contentDescription = "Back to article") }
-            Text("Your reading check", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+        PrismalTransientSurface(
+            backdrop = backdrop,
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 6.dp),
+            glassAlpha = glassAlpha,
+            dark = dark,
+            cornerRadiusDp = 22f
+        ) {
+            Row(
+                Modifier.fillMaxWidth().heightIn(min = 60.dp)
+                    .padding(horizontal = 4.dp, vertical = 4.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                IconButton(onClick = onBack, modifier = Modifier.size(48.dp)) {
+                    Icon(Icons.Outlined.ArrowBack, contentDescription = "Back to article")
+                }
+                Column(
+                    Modifier.weight(1f).padding(vertical = 3.dp),
+                    verticalArrangement = Arrangement.spacedBy(2.dp)
+                ) {
+                    Text(
+                        "Your reading check",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                    Text(
+                        "Five questions · Basic to application",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.secondary,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+                Text(
+                    selected.size.toString() + "/" + questions.size,
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.primary,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(horizontal = 10.dp).semantics {
+                        contentDescription = "Answered " + selected.size + " of " +
+                            questions.size + " questions"
+                    }
+                )
+            }
         }
-        Text("Five questions · Basic to application", color = MaterialTheme.colorScheme.secondary,
-            modifier = Modifier.padding(horizontal = 20.dp))
         Card(
             modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer),
-            shape = RoundedCornerShape(16.dp)
+            shape = ContinuousCornerShape(22.dp)
         ) {
             Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) {
                 Text("Question-source note", fontWeight = FontWeight.Bold)
                 Text(
-                    "This quiz uses the publisher's RSS headline and excerpt only. Extracted full-text reader content is not yet used to generate questions.",
+                    "This review uses the publisher's RSS headline and excerpt for story context. It does not test the full article body.",
                     style = MaterialTheme.typography.bodySmall
                 )
                 Text(
-                    "Q1: headline comprehension · Q2: indicative syllabus keyword mapping · Q3–Q5: original general UPSC skill practice. No official PYQ is included.",
+                    "Q1: headline comprehension · Q2: indicative syllabus keyword mapping · Q3–Q5: original source-literacy and GS answer-framing practice. None is an official PYQ.",
                     style = MaterialTheme.typography.bodySmall
                 )
             }
@@ -3188,7 +4439,7 @@ private fun QuizScreen(
             }
             items(questions.size) { index ->
                 val question = questions[index]
-                Card(shape = RoundedCornerShape(18.dp),
+                Card(shape = ContinuousCornerShape(22.dp),
                     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
                     Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(9.dp)) {
                         Text(question.level + " / " + question.type.uppercase(),
@@ -3199,7 +4450,9 @@ private fun QuizScreen(
                             val correct = submitted && optionIndex == question.correctIndex
                             OutlinedButton(
                                 onClick = { if (!submitted) selected = selected + (index to optionIndex) },
-                                modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(13.dp),
+                                modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)
+                                    .semantics { this.selected = chosen },
+                                shape = ContinuousCornerShape(16.dp),
                                 enabled = !submitted
                             ) {
                                 Text((if (chosen) "●  " else "○  ") + option,
@@ -3221,7 +4474,10 @@ private fun QuizScreen(
                 }
             }
             if (submitted) item {
-                Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)) {
+                Card(
+                    shape = ContinuousCornerShape(22.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
+                ) {
                     Column(Modifier.padding(17.dp)) {
                         Text("Your result: " + score + "/" + questions.size,
                             style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
@@ -3232,18 +4488,47 @@ private fun QuizScreen(
                 }
             }
         }
-        Row(Modifier.fillMaxWidth().padding(14.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            OutlinedButton(onClick = onBack, modifier = Modifier.weight(1f)) { Text("Done") }
-            Button(
-                onClick = {
-                    if (!submitted) {
-                        submitted = true
-                        onSubmit(selected.toMap(), questions)
+        Box(Modifier.fillMaxWidth().navigationBarsPadding()) {
+            PrismalTransientSurface(
+                backdrop = backdrop,
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 6.dp),
+                glassAlpha = glassAlpha,
+                dark = dark,
+                cornerRadiusDp = 22f
+            ) {
+                Column(
+                    Modifier.fillMaxWidth().padding(horizontal = 10.dp, vertical = 9.dp),
+                    verticalArrangement = Arrangement.spacedBy(7.dp)
+                ) {
+                    Text(
+                        selected.size.toString() + " of " + questions.size + " answered",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.secondary,
+                        modifier = Modifier.padding(start = 4.dp)
+                    )
+                    Row(
+                        Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        OutlinedButton(
+                            onClick = onBack,
+                            modifier = Modifier.weight(1f).heightIn(min = 48.dp),
+                            shape = ContinuousCornerShape(16.dp)
+                        ) { Text("Done") }
+                        Button(
+                            onClick = {
+                                if (!submitted) {
+                                    submitted = true
+                                    onSubmit(selected.toMap(), questions)
+                                }
+                            },
+                            modifier = Modifier.weight(1f).heightIn(min = 48.dp),
+                            shape = ContinuousCornerShape(16.dp),
+                            enabled = selected.isNotEmpty() && !submitted
+                        ) { Text(if (submitted) "Submitted" else "Submit answers") }
                     }
-                },
-                modifier = Modifier.weight(1f),
-                enabled = selected.isNotEmpty() && !submitted
-            ) { Text("Submit answers") }
+                }
+            }
         }
     }
 }
