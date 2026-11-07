@@ -88,7 +88,7 @@ internal object UpscFeedPolicy {
         "natural resource distribution", "resource distribution", "mineral resources",
         "industrial location", "location of industries", "rainfall distribution",
         "groundwater aquifer", "geomorphology", "landform", "geophysical phenomena",
-        "weathering", "desertification"
+        "weathering", "desertification", "photovoltaic", "solar cell", "thin film"
     )
 
     fun shouldInclude(article: Article): Boolean {
