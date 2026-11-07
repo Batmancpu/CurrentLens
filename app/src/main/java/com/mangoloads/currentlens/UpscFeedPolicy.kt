@@ -147,7 +147,13 @@ internal object UpscFeedPolicy {
         val relevance = UpscEngine.classify(article)
         if (relevance.gsPaper == "Unmapped" || relevance.matchedTerms.isEmpty()) return false
 
-        return hasPolicyException ||
-            specificSyllabusSignals.any { EditorialTextMatcher.contains(text, it) }
+        // A specific signal from an unrelated topic in the excerpt must not
+        // rescue a broad match from the selected GS mapping. The card explains
+        // the selected mapping, so eligibility must be supported by that same rule.
+        val hasSpecificSignalInSelectedMapping = relevance.matchedTerms.any { matchedTerm ->
+            specificSyllabusSignals.any { specificSignal -> specificSignal == matchedTerm }
+        }
+
+        return hasPolicyException || hasSpecificSignalInSelectedMapping
     }
 }
