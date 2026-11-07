@@ -4235,7 +4235,7 @@ private fun QuizScreen(
                             OutlinedButton(
                                 onClick = { if (!submitted) selected = selected + (index to optionIndex) },
                                 modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)
-                                    .semantics { selected = chosen },
+                                    .semantics { this.selected = chosen },
                                 shape = ContinuousCornerShape(16.dp),
                                 enabled = !submitted
                             ) {
