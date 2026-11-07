@@ -4011,8 +4011,66 @@ private fun GlassSettingsScreen(
     onGlassAlphaChange: (Float) -> Unit,
     onBack: () -> Unit
 ) {
-    val dark = isSystemInDarkTheme()
-    val tint = if (dark) Color(0xFF30394B) else Color(0xFFEAF0FA)
+    Column(
+        Modifier.fillMaxSize().verticalScroll(rememberScrollState())
+            .padding(horizontal = 18.dp).padding(bottom = 28.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        Row(
+            Modifier.fillMaxWidth().padding(top = 8.dp).heightIn(min = 52.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            IconButton(onClick = onBack) {
+                Icon(Icons.Outlined.ArrowBack, contentDescription = "Back")
+            }
+            Column(verticalArrangement = Arrangement.spacedBy(1.dp)) {
+                Text("Appearance", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                Text(
+                    "Personalise controls and reading surfaces",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.secondary
+                )
+            }
+        }
+
+        AppearanceGlassEditor(
+            backdrop = backdrop,
+            glassAlpha = glassAlpha,
+            reduceTransparency = reduceTransparency,
+            dark = isSystemInDarkTheme(),
+            onReduceTransparencyChange = onReduceTransparencyChange,
+            onGlassAlphaChange = onGlassAlphaChange
+        )
+
+        SupportingGlassCard(modifier = Modifier.fillMaxWidth()) {
+            Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) {
+                Text("Designed for reading first", fontWeight = FontWeight.SemiBold)
+                Text(
+                    "Navigation and controls borrow the glass material; article text, imagery and study data stay clear and high-contrast. Your appearance choice is saved locally on this device.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+        Text(
+            "Unsupported shader effects fall back automatically. Reduce transparency removes live blur and refraction; appearance settings use no cloud service.",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.secondary
+        )
+    }
+}
+
+@Composable
+private fun AppearanceGlassEditor(
+    backdrop: PrismalBackdrop,
+    glassAlpha: Float,
+    reduceTransparency: Boolean,
+    dark: Boolean,
+    onReduceTransparencyChange: (Boolean) -> Unit,
+    onGlassAlphaChange: (Float) -> Unit
+) {
+    // Preview state is deliberately scoped to this child. Dragging the slider updates
+    // only this editor; the app-wide material preference is committed on release.
     var previewGlassAlpha by remember { mutableFloatStateOf(glassAlpha) }
     LaunchedEffect(glassAlpha) { previewGlassAlpha = glassAlpha }
     val selectedPreset = when {
@@ -4021,54 +4079,95 @@ private fun GlassSettingsScreen(
         kotlin.math.abs(previewGlassAlpha - 0.55f) < 0.015f -> "Frosted"
         else -> "Custom"
     }
-    Column(
-        Modifier.fillMaxSize().verticalScroll(rememberScrollState())
-            .padding(horizontal = 18.dp).padding(bottom = 28.dp),
-        verticalArrangement = Arrangement.spacedBy(14.dp)
-    ) {
-        Row(Modifier.fillMaxWidth().padding(top = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-            IconButton(onClick = onBack) { Icon(Icons.Outlined.ArrowBack, contentDescription = "Back") }
-            Column(verticalArrangement = Arrangement.spacedBy(1.dp)) {
-                Text("Appearance", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-                Text("Personalise controls and reading surfaces", style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.secondary)
-            }
-        }
-        PrismalGlassSurface(
-            backdrop = backdrop, modifier = Modifier.fillMaxWidth(),
-            shape = { PrismalRoundedRectangle(26.dp) },
-            blurRadius = GlassRenderingPolicy.blurDp(11f, reduceTransparency).dp,
-            tint = tint, tintAlpha = GlassRenderingPolicy.tintAlpha(previewGlassAlpha, reduceTransparency)
+    val previewTabs = remember {
+        listOf(
+            "Today" to Icons.Outlined.Today,
+            "Explore" to Icons.Outlined.Explore,
+            "Search" to Icons.Outlined.Search,
+            "You" to Icons.Outlined.Person
+        )
+    }
+    val applyPreset: (Float) -> Unit = { value ->
+        previewGlassAlpha = value
+        onGlassAlphaChange(value)
+    }
+
+    Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(24.dp),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
         ) {
-            Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(13.dp)) {
-                Text("Liquid Glass", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-                Text("Tune the shared glass tint across navigation, controls and contextual surfaces.",
-                    style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.secondary)
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text("Clear", fontSize = 11.sp, color = MaterialTheme.colorScheme.secondary)
+            Column(Modifier.fillMaxWidth().padding(18.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                    Text("Liquid Glass", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                    Text(
+                        "Tune the shared tint used by navigation, search, filters and contextual controls.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                    Text("Clear", style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.secondary)
                     Spacer(Modifier.weight(1f))
-                    Text((previewGlassAlpha * 100).toInt().toString() + "%", fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.primary)
+                    Text(
+                        "${(previewGlassAlpha * 100).roundToInt()}%",
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary
+                    )
                     Spacer(Modifier.weight(1f))
-                    Text("Frosted", fontSize = 11.sp, color = MaterialTheme.colorScheme.secondary)
+                    Text("Frosted", style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.secondary)
                 }
                 Slider(
                     value = previewGlassAlpha,
                     onValueChange = { previewGlassAlpha = it },
                     onValueChangeFinished = { onGlassAlphaChange(previewGlassAlpha) },
                     valueRange = 0.12f..0.55f,
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp).semantics {
+                        contentDescription = "Glass intensity from clear to frosted"
+                    }
                 )
+                Row(
+                    Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    FilterChip(
+                        selected = selectedPreset == "Clear",
+                        onClick = { applyPreset(0.12f) },
+                        modifier = Modifier.heightIn(min = 48.dp),
+                        label = { Text("Clear") }
+                    )
+                    FilterChip(
+                        selected = selectedPreset == "Balanced",
+                        onClick = { applyPreset(0.32f) },
+                        modifier = Modifier.heightIn(min = 48.dp),
+                        label = { Text("Balanced") }
+                    )
+                    FilterChip(
+                        selected = selectedPreset == "Frosted",
+                        onClick = { applyPreset(0.55f) },
+                        modifier = Modifier.heightIn(min = 48.dp),
+                        label = { Text("Frosted") }
+                    )
+                }
                 Row(
                     Modifier.fillMaxWidth().heightIn(min = 56.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                        Text("Reduce transparency & effects", style = MaterialTheme.typography.titleSmall,
-                            fontWeight = FontWeight.SemiBold)
-                        Text("More opaque controls; removes blur, refraction and adaptive sampling.",
+                        Text(
+                            "Reduce transparency & effects",
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                        Text(
+                            "Raises control opacity and removes blur, refraction and adaptive sampling.",
                             style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.secondary)
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
                     }
                     Switch(
                         checked = reduceTransparency,
@@ -4080,114 +4179,160 @@ private fun GlassSettingsScreen(
                 }
             }
         }
+
         Column(verticalArrangement = Arrangement.spacedBy(7.dp)) {
-            Text("Presets", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-            Text("Choose a starting point or fine-tune it with the slider.",
-                style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.secondary)
-            Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                FilterChip(selected = selectedPreset == "Clear", onClick = { previewGlassAlpha = 0.12f; onGlassAlphaChange(0.12f) },
-                    modifier = Modifier.heightIn(min = 48.dp), label = { Text("Clear") })
-                FilterChip(selected = selectedPreset == "Balanced", onClick = { previewGlassAlpha = 0.32f; onGlassAlphaChange(0.32f) },
-                    modifier = Modifier.heightIn(min = 48.dp), label = { Text("Balanced") })
-                FilterChip(selected = selectedPreset == "Frosted", onClick = { previewGlassAlpha = 0.55f; onGlassAlphaChange(0.55f) },
-                    modifier = Modifier.heightIn(min = 48.dp), label = { Text("Frosted") })
-            }
-        }
-        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Text("Live preview", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-            Text("The control material changes with the slider; the article card stays readable.",
+            Text(
+                "One shared control material responds to the slider; the article surface stays readable.",
                 style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.secondary)
-            PrismalGlassSurface(
-                backdrop = backdrop, modifier = Modifier.fillMaxWidth(),
-                shape = { PrismalRoundedRectangle(24.dp) },
-                blurRadius = GlassRenderingPolicy.blurDp(9f, reduceTransparency).dp,
-                tint = tint, tintAlpha = GlassRenderingPolicy.tintAlpha(previewGlassAlpha, reduceTransparency)
+                color = MaterialTheme.colorScheme.secondary
+            )
+            // A single small Prismal surface replaces the previous two independently
+            // blurred panels. Search and navigation are simple tinted children, not
+            // nested live-glass surfaces or additional backdrop consumers.
+            PrismalTransientSurface(
+                backdrop = backdrop,
+                modifier = Modifier.fillMaxWidth(),
+                glassAlpha = previewGlassAlpha,
+                dark = dark,
+                cornerRadiusDp = 26f
             ) {
-                Column(Modifier.fillMaxWidth().padding(14.dp), verticalArrangement = Arrangement.spacedBy(11.dp)) {
+                Column(
+                    Modifier.fillMaxWidth().padding(14.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
                     Row(
-                        Modifier.fillMaxWidth().heightIn(min = 48.dp).padding(horizontal = 4.dp),
+                        Modifier.fillMaxWidth().heightIn(min = 42.dp).padding(horizontal = 3.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text("brrrNEWS", style = MaterialTheme.typography.titleSmall,
-                            fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
+                        Column(verticalArrangement = Arrangement.spacedBy(1.dp)) {
+                            Text(
+                                "brrrNEWS",
+                                style = MaterialTheme.typography.titleSmall,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                            Text(
+                                "CURRENT AFFAIRS",
+                                style = MaterialTheme.typography.labelSmall,
+                                letterSpacing = 0.8.sp,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
                         Spacer(Modifier.weight(1f))
-                        Text("Today", style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.primary)
-                        Icon(Icons.Outlined.Search, contentDescription = "Search preview",
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.padding(start = 10.dp).size(20.dp))
+                        Text(
+                            "TODAY",
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.primary
+                        )
                     }
+
+                    val searchShape = RoundedCornerShape(16.dp)
+                    Row(
+                        Modifier.fillMaxWidth().heightIn(min = 44.dp)
+                            .clip(searchShape)
+                            .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.56f))
+                            .border(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.20f), searchShape)
+                            .padding(horizontal = 12.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            Icons.Outlined.Search,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(Modifier.width(9.dp))
+                        Text(
+                            "Search articles",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Spacer(Modifier.weight(1f))
+                        Text(
+                            "Filters",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
+
                     Card(
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(18.dp),
                         colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.94f)
+                            containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.96f)
                         ),
                         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
                     ) {
                         Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                             Row(verticalAlignment = Alignment.CenterVertically) {
-                                Text("THE HINDU", style = MaterialTheme.typography.labelSmall,
-                                    color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
+                                Text(
+                                    "THE HINDU",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.primary,
+                                    fontWeight = FontWeight.Bold
+                                )
                                 Spacer(Modifier.weight(1f))
-                                Text("GS II", style = MaterialTheme.typography.labelSmall,
-                                    color = MaterialTheme.colorScheme.secondary)
+                                Text(
+                                    "GS II",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.secondary
+                                )
                             }
-                            Text("How a policy decision shapes India's federal balance",
+                            Text(
+                                "How a policy decision shapes India's federal balance",
                                 style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.SemiBold,
-                                color = MaterialTheme.colorScheme.onSurface)
-                            Text("Publisher report · Indicative syllabus connection",
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                            Text(
+                                "Publisher report · GS II connection",
                                 style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.secondary)
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
                         }
                     }
+
                     Row(
-                        Modifier.fillMaxWidth().heightIn(min = 48.dp),
-                        horizontalArrangement = Arrangement.SpaceEvenly,
+                        Modifier.fillMaxWidth().heightIn(min = 58.dp),
+                        horizontalArrangement = Arrangement.spacedBy(3.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        listOf("Today", "Explore", "Search").forEachIndexed { index, label ->
-                            Row(
-                                Modifier.clip(CircleShape)
+                        previewTabs.forEachIndexed { index, (label, icon) ->
+                            val selected = index == 0
+                            Column(
+                                Modifier.weight(1f).heightIn(min = 48.dp)
+                                    .clip(CircleShape)
                                     .background(
-                                        if (index == 0) MaterialTheme.colorScheme.primary.copy(alpha = 0.13f)
-                                        else MaterialTheme.colorScheme.surface.copy(alpha = 0.60f)
+                                        if (selected) MaterialTheme.colorScheme.primary.copy(alpha = 0.13f)
+                                        else Color.Transparent
                                     )
-                                    .padding(horizontal = 11.dp, vertical = 8.dp),
-                                verticalAlignment = Alignment.CenterVertically
+                                    .padding(vertical = 4.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.Center
                             ) {
-                                Text(label, style = MaterialTheme.typography.labelSmall,
-                                    color = if (index == 0) MaterialTheme.colorScheme.primary
-                                    else MaterialTheme.colorScheme.onSurfaceVariant)
+                                Icon(
+                                    icon,
+                                    contentDescription = null,
+                                    tint = if (selected) MaterialTheme.colorScheme.primary
+                                    else MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                                Text(
+                                    label,
+                                    fontSize = 9.sp,
+                                    color = if (selected) MaterialTheme.colorScheme.primary
+                                    else MaterialTheme.colorScheme.onSurfaceVariant
+                                )
                             }
                         }
                     }
                 }
             }
         }
-        Card(
-            modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(20.dp),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
-        ) {
-            Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) {
-                Text("Designed for reading first", fontWeight = FontWeight.SemiBold)
-                Text(
-                    "The app keeps text and article imagery readable while adapting the glass treatment. Your appearance choice is saved locally on this device.",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-        }
-        Text(
-            "On devices without the required graphics support, unsupported shader effects fall back automatically. No cloud service is used for appearance settings.",
-            style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.secondary
-        )
     }
 }
-
 @Composable
 private fun QuizScreen(
     article: Article,
