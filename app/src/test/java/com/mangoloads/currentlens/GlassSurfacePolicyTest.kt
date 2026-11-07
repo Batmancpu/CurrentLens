@@ -12,14 +12,49 @@ class GlassSurfacePolicyTest {
     }
 
     @Test
-    fun opticalTintAndRimStaySubtleAndBounded() {
-        assertTrue(GlassSurfacePolicy.supportingTintAlpha(dark = true) in 0f..0.12f)
-        assertTrue(GlassSurfacePolicy.supportingTintAlpha(dark = false) in 0f..0.08f)
-        assertTrue(GlassSurfacePolicy.supportingRimAlpha(dark = true) in 0.18f..0.22f)
-        assertTrue(GlassSurfacePolicy.supportingRimAlpha(dark = false) in 0.11f..0.15f)
+    fun opticalTintAndRimStaySubtleAndBoundedAtDefaultIntensity() {
+        assertTrue(GlassSurfacePolicy.supportingTintAlpha(dark = true) in 0.10f..0.12f)
+        assertTrue(GlassSurfacePolicy.supportingTintAlpha(dark = false) in 0.06f..0.08f)
+        assertTrue(GlassSurfacePolicy.supportingRimAlpha(dark = true) in 0.18f..0.21f)
+        assertTrue(GlassSurfacePolicy.supportingRimAlpha(dark = false) in 0.12f..0.14f)
         assertTrue(
             GlassSurfacePolicy.supportingTintAlpha(dark = true) >
                 GlassSurfacePolicy.supportingTintAlpha(dark = false)
+        )
+    }
+
+    @Test
+    fun supportingTintAndRimTrackClearBalancedAndFrostedPreferences() {
+        val clear = AppearancePreferencesPolicy.MIN_GLASS_ALPHA
+        val balanced = AppearancePreferencesPolicy.DEFAULT_GLASS_ALPHA
+        val frosted = AppearancePreferencesPolicy.MAX_GLASS_ALPHA
+
+        assertEquals(0.09f, GlassSurfacePolicy.supportingTintAlpha(true, clear), 0.0001f)
+        assertEquals(0.145f, GlassSurfacePolicy.supportingTintAlpha(true, frosted), 0.0001f)
+        assertEquals(0.055f, GlassSurfacePolicy.supportingTintAlpha(false, clear), 0.0001f)
+        assertEquals(0.095f, GlassSurfacePolicy.supportingTintAlpha(false, frosted), 0.0001f)
+        assertEquals(0.17f, GlassSurfacePolicy.supportingRimAlpha(true, clear), 0.0001f)
+        assertEquals(0.23f, GlassSurfacePolicy.supportingRimAlpha(true, frosted), 0.0001f)
+        assertEquals(0.11f, GlassSurfacePolicy.supportingRimAlpha(false, clear), 0.0001f)
+        assertEquals(0.16f, GlassSurfacePolicy.supportingRimAlpha(false, frosted), 0.0001f)
+
+        assertTrue(GlassSurfacePolicy.supportingTintAlpha(true, clear) <
+            GlassSurfacePolicy.supportingTintAlpha(true, balanced))
+        assertTrue(GlassSurfacePolicy.supportingTintAlpha(true, balanced) <
+            GlassSurfacePolicy.supportingTintAlpha(true, frosted))
+    }
+
+    @Test
+    fun nonFiniteSupportingIntensityFallsBackToDefault() {
+        assertEquals(
+            GlassSurfacePolicy.supportingTintAlpha(true),
+            GlassSurfacePolicy.supportingTintAlpha(true, Float.NaN),
+            0f
+        )
+        assertEquals(
+            GlassSurfacePolicy.supportingRimAlpha(false),
+            GlassSurfacePolicy.supportingRimAlpha(false, Float.POSITIVE_INFINITY),
+            0f
         )
     }
 

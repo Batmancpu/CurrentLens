@@ -14,19 +14,44 @@ internal object GlassSurfacePolicy {
 
     private const val SUPPORTING_SURFACE_ALPHA_DARK = 0.93f
     private const val SUPPORTING_SURFACE_ALPHA_LIGHT = 0.965f
-    private const val SUPPORTING_TINT_ALPHA_DARK = 0.11f
-    private const val SUPPORTING_TINT_ALPHA_LIGHT = 0.07f
-    private const val SUPPORTING_RIM_ALPHA_DARK = 0.20f
-    private const val SUPPORTING_RIM_ALPHA_LIGHT = 0.13f
+    private const val SUPPORTING_TINT_DARK_CLEAR = 0.09f
+    private const val SUPPORTING_TINT_DARK_FROSTED = 0.145f
+    private const val SUPPORTING_TINT_LIGHT_CLEAR = 0.055f
+    private const val SUPPORTING_TINT_LIGHT_FROSTED = 0.095f
+    private const val SUPPORTING_RIM_DARK_CLEAR = 0.17f
+    private const val SUPPORTING_RIM_DARK_FROSTED = 0.23f
+    private const val SUPPORTING_RIM_LIGHT_CLEAR = 0.11f
+    private const val SUPPORTING_RIM_LIGHT_FROSTED = 0.16f
 
     fun supportingSurfaceAlpha(dark: Boolean): Float =
         if (dark) SUPPORTING_SURFACE_ALPHA_DARK else SUPPORTING_SURFACE_ALPHA_LIGHT
 
-    fun supportingTintAlpha(dark: Boolean): Float =
-        if (dark) SUPPORTING_TINT_ALPHA_DARK else SUPPORTING_TINT_ALPHA_LIGHT
+    fun supportingTintAlpha(
+        dark: Boolean,
+        glassAlpha: Float = AppearancePreferencesPolicy.DEFAULT_GLASS_ALPHA
+    ): Float {
+        val progress = intensityProgress(glassAlpha)
+        val clear = if (dark) SUPPORTING_TINT_DARK_CLEAR else SUPPORTING_TINT_LIGHT_CLEAR
+        val frosted = if (dark) SUPPORTING_TINT_DARK_FROSTED else SUPPORTING_TINT_LIGHT_FROSTED
+        return clear + (frosted - clear) * progress
+    }
 
-    fun supportingRimAlpha(dark: Boolean): Float =
-        if (dark) SUPPORTING_RIM_ALPHA_DARK else SUPPORTING_RIM_ALPHA_LIGHT
+    fun supportingRimAlpha(
+        dark: Boolean,
+        glassAlpha: Float = AppearancePreferencesPolicy.DEFAULT_GLASS_ALPHA
+    ): Float {
+        val progress = intensityProgress(glassAlpha)
+        val clear = if (dark) SUPPORTING_RIM_DARK_CLEAR else SUPPORTING_RIM_LIGHT_CLEAR
+        val frosted = if (dark) SUPPORTING_RIM_DARK_FROSTED else SUPPORTING_RIM_LIGHT_FROSTED
+        return clear + (frosted - clear) * progress
+    }
+
+    private fun intensityProgress(glassAlpha: Float): Float {
+        val normalized = AppearancePreferencesPolicy.normalizeGlassAlpha(glassAlpha)
+        return ((normalized - AppearancePreferencesPolicy.MIN_GLASS_ALPHA) /
+            (AppearancePreferencesPolicy.MAX_GLASS_ALPHA - AppearancePreferencesPolicy.MIN_GLASS_ALPHA))
+            .coerceIn(0f, 1f)
+    }
 }
 
 

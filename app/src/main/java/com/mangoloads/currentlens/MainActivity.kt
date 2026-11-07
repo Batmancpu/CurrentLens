@@ -221,6 +221,9 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 private val LocalGlassReduceTransparency = staticCompositionLocalOf { false }
+private val LocalGlassIntensity = staticCompositionLocalOf {
+    AppearancePreferencesPolicy.DEFAULT_GLASS_ALPHA
+}
 
 private const val INDIA_ZONE = "Asia/Kolkata"
 
@@ -644,7 +647,10 @@ private fun BrrrNewsApp() {
         }
     }
 
-    CompositionLocalProvider(LocalGlassReduceTransparency provides reduceTransparency) {
+    CompositionLocalProvider(
+        LocalGlassReduceTransparency provides reduceTransparency,
+        LocalGlassIntensity provides glassAlpha
+    ) {
         BoxWithConstraints(
         Modifier.fillMaxSize().background(
             if (searchExpanded) Color.Transparent else MaterialTheme.colorScheme.background
@@ -1850,12 +1856,13 @@ private fun SupportingGlassCard(
 ) {
     val colors = MaterialTheme.colorScheme
     val dark = isSystemInDarkTheme()
+    val glassAlpha = LocalGlassIntensity.current
     val shape = remember {
         PrismalRoundedRectangle(GlassSurfacePolicy.SUPPORTING_CORNER_RADIUS_DP.dp)
     }
-    val tintAlpha = GlassSurfacePolicy.supportingTintAlpha(dark)
-    val rimAlpha = GlassSurfacePolicy.supportingRimAlpha(dark)
-    val rimBrush = remember(colors.primary, colors.outline, dark) {
+    val tintAlpha = GlassSurfacePolicy.supportingTintAlpha(dark, glassAlpha)
+    val rimAlpha = GlassSurfacePolicy.supportingRimAlpha(dark, glassAlpha)
+    val rimBrush = remember(colors.primary, colors.outline, dark, rimAlpha) {
         Brush.linearGradient(
             colors = listOf(
                 Color.White.copy(alpha = if (dark) 0.24f else 0.64f),
@@ -1864,7 +1871,7 @@ private fun SupportingGlassCard(
             )
         )
     }
-    val tintBrush = remember(colors.primary, colors.surface, dark) {
+    val tintBrush = remember(colors.primary, colors.surface, dark, tintAlpha) {
         Brush.verticalGradient(
             colors = listOf(
                 colors.primary.copy(alpha = tintAlpha),
@@ -4333,13 +4340,14 @@ private fun AppearanceGlassEditor(
             // A single small Prismal surface replaces the previous two independently
             // blurred panels. Search and navigation are simple tinted children, not
             // nested live-glass surfaces or additional backdrop consumers.
-            PrismalTransientSurface(
-                backdrop = backdrop,
-                modifier = Modifier.fillMaxWidth(),
-                glassAlpha = previewGlassAlpha,
-                dark = dark,
-                cornerRadiusDp = 26f
-            ) {
+            CompositionLocalProvider(LocalGlassIntensity provides previewGlassAlpha) {
+                PrismalTransientSurface(
+                    backdrop = backdrop,
+                    modifier = Modifier.fillMaxWidth(),
+                    glassAlpha = previewGlassAlpha,
+                    dark = dark,
+                    cornerRadiusDp = 26f
+                ) {
                 Column(
                     Modifier.fillMaxWidth().padding(14.dp),
                     verticalArrangement = Arrangement.spacedBy(10.dp)
@@ -4400,14 +4408,7 @@ private fun AppearanceGlassEditor(
                         )
                     }
 
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(18.dp),
-                        colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.96f)
-                        ),
-                        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
-                    ) {
+                    SupportingGlassCard(modifier = Modifier.fillMaxWidth()) {
                         Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Text(
@@ -4471,6 +4472,7 @@ private fun AppearanceGlassEditor(
                             }
                         }
                     }
+                }
                 }
             }
         }
