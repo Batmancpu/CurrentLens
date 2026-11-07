@@ -184,3 +184,14 @@ CI establishes that the code compiles and JVM tests pass. It cannot establish th
 - Latest published Release remains `v0.2.0-build-116`. No feature-branch Release was created; no manual dispatch/rerun.
 - Existing deprecation warnings (WebView scale, Compose updateTransition, ArrowBack icon, Node.js 20 action runtime, punycode and url.parse) are non-blocking and remain outside this repair.
 - OPPO device launch, screenshots, accessibility, animation, Perfetto/frame timing, GPU/memory/thermal/battery remain UNVERIFIED.
+
+
+## Live CI snapshot — 7 November 2026, after PR #32 creation
+
+- Single workflow path: `.github/workflows/build-apk.yml`. Main's copy remains push-only with workflow-wide `contents: write`; the active integration copy has read-only build/test permissions and a separate main-push-only release-write job.
+- Actions history: 234 runs fully paginated (100 + 100 + 34): 135 success, 58 failure, 40 cancelled, one in progress; no queued runs.
+- Latest run #234 / ID `42368265004` is the natural PR #32 validation on `37393ea617e39994bd3f2fcc7300c91abcf17576`. At inspection, Java, Android SDK and Android platform setup passed; Gradle setup was in progress; WordNet generation, JVM tests, APK compilation and artifact upload were pending. No artifact was available. The job-log download endpoint had not yet produced logs.
+- Latest completed run #233 / ID `42367697918` passed on PR #27 head `4ee9233e6a18c26163b69a6b40ac8d8b99b1fae9`. WordNet generation, `:app:testDebugUnitTest`, `:app:assembleDebug` and artifact upload passed. Artifact `13572665836`, 39,099,361 bytes, expires 21 November 2026; publish job skipped.
+- Latest Release remains `v0.2.0-build-116`, published 6 November 2026. No new Release.
+- No manual workflow dispatch/rerun, merge or Release publication was performed.
+

@@ -604,3 +604,17 @@ The exact PR #29 source commit a64857b5efa62ea053c0c96e5f374fd35924b340 was revi
 - Actions history: 217 runs fully paginated (100 + 100 + 17): 129 success, 54 failure, 33 cancelled and one in progress (#217 on PR #27's editorial head); no queued runs. Active-branch run #215 passed on exact SHA `f7e10ab13e5098bd51f8c3ff3c03189ef0b72fbb`. The build job completed WordNet generation (151,456 unique words), `:app:testDebugUnitTest`, `:app:assembleDebug` and artifact upload. Artifact `13570219824`, 39,092,836 bytes, SHA-256 `80f0a63e68782348368a0455b6b51e0a5edccb4e4abf3cbc42b7ef5a363f5585`; publish job skipped. The full 202,422-character job log was inspected; only non-blocking deprecation warnings remain.
 - Latest published Release remains `v0.2.0-build-116`. Active workflow blob `6cef6ca19f3babd331c9deb59be9da0067c6fa66` keeps build/test read-only and isolates Release write permission to a main-push-only job. Main's workflow blob `37197497288d9f0a60f4d1cfa8453e3dee52a902` is still push-only; no PR-to-main validation claim is made.
 - No main update, merge, Release publication, workflow edit, manual dispatch/rerun, source-branch mutation or branch deletion occurred in this audit.
+
+
+## Live consolidation audit — 7 November 2026, after PR #32 creation
+
+- Main remains `73b8a0d1ba33503fede02db2c3c0af082d724a12`. Owner-selected integration remains `black-box-bihar-news@ee82dfde140aeb0d1ca80146379a0a2818c695df`, 105 ahead / 0 behind main.
+- Complete current inventory: 36 branches and 18 open PRs. New branch `perf/bounded-rss-fetch-concurrency-2026-11-07@37393ea617e39994bd3f2fcc7300c91abcf17576` is one commit ahead / zero behind the integration base and is represented by draft PR #32.
+- PR #32 changes only `NewsRepository.kt`, new `FeedFetchConcurrencyPolicy.kt` and new `FeedFetchConcurrencyPolicyTest.kt`. It bounds 14 concurrent RSS fetch/parse operations to four; natural run #234 is still in progress at Gradle setup. No artifact/log bundle was available at inspection.
+- PR #27 is 23 ahead / 6 behind current integration (merge base `3a08bb95b0f9a0fed8ec11dae055f0ac2817a523`). Its natural run #233 passed on head `4ee9233`, but against its earlier base; reconcile with the current base and revalidate before integration.
+- PR #31 is five ahead / zero behind current integration; run #227 passed on exact head `bc48daec98ff076c9db3c2c69084d9b08cd0bbce`. It defers first SharedPreferences appearance reads to the existing IO snapshot restore; physical-device cold-start/Perfetto impact is unmeasured.
+- PR #30 remains the separate icon-target accessibility proposal. PRs #25/#26 remain separate RSS/reader image and WebView subresource privacy proposals; do not duplicate or blindly combine their host policies.
+- Actions history: 234 fully paginated (100 + 100 + 34): 135 success, 58 failure, 40 cancelled, one in progress (#234); no queued runs. Latest completed #233 passed. Latest Release remains `v0.2.0-build-116`.
+- Main workflow remains push-only with workflow-wide `contents: write`; integration workflow keeps read-only build/test and a main-push-only release-write job. PR #18 remains open against main.
+- No main edit, PR merge, manual workflow dispatch/rerun, Release publication or branch deletion.
+
