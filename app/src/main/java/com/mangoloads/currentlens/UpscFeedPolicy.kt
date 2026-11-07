@@ -38,8 +38,14 @@ internal object UpscFeedPolicy {
         // Content-about framing is promotional even when an institution announces it;
         // the law or policy is the film's subject, not the object of a regulatory action.
         "film about", "film on", "movie about", "movie on",
-        "documentary about", "documentary on", "series about", "series on",
-        "biopic about", "biopic on",
+        "film highlighting", "film celebrating", "film depicting", "film featuring",
+        "film starring", "film exploring", "film showcasing", "film portraying",
+        "documentary about", "documentary on", "documentary highlighting",
+        "documentary celebrating", "documentary depicting", "documentary featuring",
+        "documentary exploring", "documentary showcasing",
+        "series about", "series on", "series highlighting", "series celebrating",
+        "series depicting", "series exploring", "series showcasing",
+        "biopic about", "biopic on", "biopic highlighting", "biopic depicting",
         "series premiere", "season premiere", "season finale",
         "show promotion", "series promotion", "cast announcement",
         "red carpet", "paparazzi", "film review", "movie review",

@@ -64,6 +64,7 @@ The unit-test fixtures are synthetic examples designed to expose classification 
 | False-negative recovery | “Ministry issues new broadcasting regulations for film trailers” | Include — GS II, Governance | The institutional action and broadcasting-regulation subject concern media governance, not film promotion. |
 | False-positive rejection | “Official trailer released for a film about celebrity endorsements” | Exclude | A promotional release phrase remains hard noise even though the classifier finds a consumer/endorsement keyword. |
 | False-positive rejection | “Government announces new film about the Cinematograph Act” | Exclude | The institution announces a film; the Act is the film's subject, not the object of a regulatory action. |
+| False-positive rejection | “Ministry announces new film highlighting the Cinematograph Act” | Exclude | An institutional announcement of a film is not an institutional action changing the Act or certification rules. |
 | False-positive rejection | “Ministry announces documentary on celebrity endorsement guidelines” | Exclude | Announcing a documentary is not issuing or amending the guidelines it discusses. |
 
 Every automatically eligible item must also map through `UpscEngine` to a non-`Unmapped` GS paper and named syllabus theme, with matched headline/excerpt terms and a non-empty syllabus rationale. The card presents this as indicative evidence, not a numeric relevance score.
