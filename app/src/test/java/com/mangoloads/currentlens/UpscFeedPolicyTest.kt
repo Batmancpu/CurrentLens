@@ -108,4 +108,71 @@ class UpscFeedPolicyTest {
             "Entertainment"
         )))
     }
+
+    @Test
+    fun boxOfficeAndHistoricalFilmHeadlinesCannotBorrowPolicyNouns() {
+        assertFalse(UpscFeedPolicy.shouldInclude(article(
+            "Box-office collection update: GST on movie tickets raises costs",
+            "A box-office report discusses ticket pricing and collections.",
+            "Entertainment"
+        )))
+        assertFalse(UpscFeedPolicy.shouldInclude(article(
+            "A new film about the Cinematograph Act enacted in 1952",
+            "A promotional film feature describes a historical law.",
+            "Entertainment"
+        )))
+        assertFalse(UpscFeedPolicy.shouldInclude(article(
+            "Cricket star's film on national sports policy releases Friday",
+            "The story promotes a sports drama and its release date.",
+            "Entertainment"
+        )))
+        assertFalse(UpscFeedPolicy.shouldInclude(article(
+            "Actor explains film certification rules in a podcast",
+            "A promotional interview accompanies a film release.",
+            "Entertainment"
+        )))
+    }
+
+    @Test
+    fun policyExceptionsRequireAnOrderedInstitutionalActionOrCurrentPassiveChange() {
+        assertTrue(UpscFeedPolicy.shouldInclude(article(
+            "Parliament reviews film certification rules under the Cinematograph Act",
+            "The report concerns statutory powers, constitutional safeguards and media governance.",
+            "Entertainment"
+        )))
+        assertTrue(UpscFeedPolicy.shouldInclude(article(
+            "Government issues new broadcasting regulations for OTT platforms",
+            "The ministry notifies a regulatory change for digital broadcasting.",
+            "India"
+        )))
+        assertTrue(UpscFeedPolicy.shouldInclude(article(
+            "New film certification rules notified by the Ministry",
+            "The notification changes the statutory certification framework.",
+            "Entertainment"
+        )))
+        assertTrue(UpscFeedPolicy.shouldInclude(article(
+            "Sports Ministry issues new anti-doping rules",
+            "The policy changes sports governance and anti-doping compliance.",
+            "Sports"
+        )))
+    }
+
+    @Test
+    fun heatWaveActionPlanRemainsARecoverableGsThreeDisasterManagementTheme() {
+        assertTrue(UpscFeedPolicy.shouldInclude(article(
+            "Heat wave action plan adopted by NDMA",
+            "The action plan addresses heat-related disaster preparedness and public safety.",
+            "India"
+        )))
+    }
+
+    @Test
+    fun ambiguousPassivePolicyHeadlineWithoutCurrentCueOrInstitutionIsHeldBack() {
+        assertFalse(UpscFeedPolicy.shouldInclude(article(
+            "Film certification rules notified",
+            "The headline omits the responsible institution and when the change occurred.",
+            "Entertainment"
+        )))
+    }
+
 }

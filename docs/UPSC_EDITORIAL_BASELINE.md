@@ -50,6 +50,12 @@ The unit-test fixtures are synthetic examples designed to expose classification 
 | Positive | “Standing committee reviews a bill on parliamentary privileges” | Include — GS II, Constitution/Polity | Committee scrutiny and parliamentary privileges map to the syllabus’ functioning and powers themes |
 | False-positive rejection | Celebrity film-release story whose excerpt merely mentions film-certification rules | Exclude | A policy exception must be established by a concrete action in the headline itself |
 
+| False-positive rejection | “Box-office collection update: GST on movie tickets raises costs” | Exclude | A box-office headline is a non-overridable promotion signal; a tax phrase alone cannot bypass it. |
+| False-positive rejection | “A new film about the Cinematograph Act enacted in 1952” | Exclude | A historical Act reference is not a current institutional action; passive matching cannot infer one from the word “enacted”. |
+| False-positive rejection | “Actor explains film certification rules in a podcast” | Exclude | A promotional/celebrity headline is not rescued by policy nouns. |
+| False-negative recovery | “Heat wave action plan adopted by NDMA” | Include — GS III, Disaster Management | Heat-wave action planning maps to the explicit disaster-management theme; NDMA alone remains insufficient. |
+| Conservative false-negative watch | “Film certification rules notified” | Hold out of automatic default feed pending a current-change cue or named institution | This ambiguous passive headline may describe a genuine notification, but lacks enough evidence for an automatic exception; manual/source review is safer than a broad regex. |
+
 The fixtures are regression checks for this deterministic rule set. They do not establish precision/recall, validate a score, or predict examination questions.
 
 ## Source-provenance limitation
