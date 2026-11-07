@@ -515,3 +515,27 @@ Next: after natural CI validates this exact head, perform the Appearance preview
 - Shared immutable geometry tokens prevent skeleton/article layout drift; stable LazyColumn keys/content types improve item identity/reuse. The existing single background-only Prismal root source, expanded-only tab glyph source and 4s/6s foreground-idle adaptive luminance cadence are unchanged.
 - No frame-time, jank, memory, GPU-overdraw, allocation, thermal or battery improvement is claimed from source inspection. OPPO Reno10 visual transition, font scaling, TalkBack, Reduce Motion, scroll smoothness, launch and Perfetto checks remain UNVERIFIED.
 - Next: after exact-head natural CI passes, recheck Today/Explore/Search header-to-feed spacing and validate the skeleton-to-article transition on the OPPO device; retain standard non-glass article cards and no per-card blur.
+
+## You, Saved and statistics supporting-surface consistency — 8 November 2026, 01:29 IST
+
+**Freshness and dependency gate**
+- Re-enumerated the complete 38-branch remote inventory (page 1 returned 38; page 2 empty), all 35 PRs (21 open, 14 closed), default branch and the owner-selected integration PR. Main remains 73b8a0d1ba33503fede02db2c3c0af082d724a12; the selected line before this batch was black-box-bihar-news@f2ad2b57e06863f04ee22c2b0d89ae3b0775fb32, 112 ahead / 0 behind main. PR #34 remains the sole consolidation draft, open and targeting main; no retarget or merge.
+- PR #16's corrected background-only Prismal/stability line remains an ancestor. PR #19's Reader/Search implementation, PR #20's read-only stacked workflow, the selected PR #11/#12/#17 feed policies and the PR #13 conservative contrast policy remain represented in the integration tree.
+- Inspected the independent accessibility/performance proposals against the current source: PR #30's 48dp TouchTargetPolicy is already used by the shared header and bookmark action; PR #31's AppearancePreferencesPolicy is restored with the existing IO snapshot; PR #29's bookmark read/modify/write is serialized on IO. Their source branches remain untouched.
+- PR #35's bounded diagnostic reads are a separate startup-hardening proposal, not included in this UI pass. PR #32 and #33 each passed their own exact-head natural CI but both change NewsRepository.kt; keep them for one joint parser/concurrency reconciliation. PR #27's latest head has no natural PR run; do not integrate it. PR #25/#26 remain behind a combined publisher-resource security review. Divergent brrrNEWS, stale ui/liquid-glass-performance and redesign/v0.3-search-reader are not baselines.
+- The exact pre-batch active head f2ad2b57e06863f04ee22c2b0d89ae3b0775fb32 passed natural PR run #256 (run ID 42404197533): WordNet builder, :app:testDebugUnitTest, :app:assembleDebug and artifact upload succeeded; publish job skipped. Artifact 13586850838 is 39,102,734 bytes (SHA-256 6be6840c650537a5d29e95397576bcb4f71cc92635f0be8890ac6f89adf8a703). This validates only the pre-batch head, not the changes below.
+
+**Implementation**
+- Added SupportingCardGeometryPolicy to the existing surface-policy file: shared 16dp content padding, 6dp internal rhythm, 12dp section spacing, 9dp metric gaps, 88dp metric tiles, 80dp library destinations, 76dp statistic rows and 104dp empty-state panels.
+- Standardised MetricTile, DestinationRow, You dashboard spacing, Saved empty states, Reading Stats daily rows and Quiz Stats attempt/empty surfaces. Saved, reading and quiz empty states now use one quiet supporting surface with high-contrast text instead of detached floating copy.
+- Kept the existing 22dp continuous supporting-card shape, theme-aware static tint/rim, nearly opaque surface and cached brushes. No live blur/refraction, additional backdrop source, sampler/readback, shader, graphics layer, image decode, classification pass, dependency, timer, network or persistence path was added.
+- Quiz questions/options, submit-only quiz persistence, article content cards, reader text, feed order and filter semantics are unchanged.
+
+**Tests / paired optimization**
+- Added a focused JVM assertion for shared padding, spacing and minimum content/touch footprints in GlassSurfacePolicyTest.
+- The optimization is deliberately a geometry/reuse pass: all supporting cards reuse the existing static SupportingGlassCard material and cached rim/tint brushes; no additional GPU render pass or blur surface is introduced. This is source-level scope evidence only, not a measured frame-time or memory win.
+- The policy, test and UI commits are d8b7146e3546e0e248bb5db766ccb0ec8ac09184, 41b572e77f1a7eca48abb11729ac5dd175b3ee69 and dfcc792887cd56d7e5272ca4087c6517c88b3a44. Natural validation for the new exact head is pending; no manual dispatch/rerun.
+
+**Unverified / next**
+- OPPO Reno10 visual balance, metric clipping at large font scale, TalkBack traversal, minimum tap-target reachability, short-screen overflow, animation, launch, Perfetto/frame timing, GPU overdraw, allocations/memory, thermal and battery remain UNVERIFIED.
+- Next: inspect the exact natural run for the final documentation head, then continue the whole-app transient-control and shared-header spacing audit. Keep the one background-only Prismal capture, expanded-only tab glyph source, one Coil decode and foreground-idle adaptive-luminance cadence unchanged.
