@@ -61,17 +61,51 @@ internal object UpscFeedPolicy {
         "celebrity endorsement", "endorsement guidelines"
     )
 
-    // Require an institution before an active action, or an explicit current-change
-    // cue / named institution for passive headlines. A historical Act mention is not
-    // itself evidence that a current policy action occurred.
+    // Build a phrase-aware subject expression so an institutional action must
+    // concern the same media/sports/consumer-policy subject, not an unrelated action
+    // elsewhere in the headline.
+    private fun policyPhrasePattern(value: String): String {
+        val words = EditorialTextMatcher.normalize(value).split(" ").filter { it.isNotBlank() }
+        if (words.isEmpty()) return ""
+        val last = words.last()
+        val plural = when {
+            last.length > 1 && last.endsWith("y") && last[last.length - 2] !in "aeiou" ->
+                last.dropLast(1) + "ies"
+            last.endsWith("s") -> last
+            last.endsWith("x") || last.endsWith("ch") || last.endsWith("sh") -> last + "es"
+            else -> last + "s"
+        }
+        val finalWord = if (plural == last) Regex.escape(last)
+            else "(?:${Regex.escape(last)}|${Regex.escape(plural)})"
+        return (words.dropLast(1).map { Regex.escape(it) } + finalWord).joinToString("\\s+")
+    }
+
+    private val policySubjectPattern = policyExceptions
+        .map(::policyPhrasePattern)
+        .distinct()
+        .sortedByDescending { it.length }
+        .joinToString("|")
+
+    private const val POLICY_INSTITUTION_PATTERN =
+        """union government|central government|state government|government|centre|central board of film certification|cbfc|censor board|central consumer protection authority|ccpa|advertising standards council of india|asci|ministry|department|parliament|lok sabha|rajya sabha|supreme court|high court|regulatory authority|regulator|commission|cabinet|sports ministry|standing committee|joint parliamentary committee|committee|bcci|sports federation|national anti doping agency|nada|wada|international olympic committee|ioc"""
+
+    private const val ACTIVE_POLICY_ACTION_PATTERN =
+        """issues?|issued|notifies?|notified|introduces?|introduced|passes?|passed|amends?|amended|revises?|revised|adopts?|adopted|enacts?|enacted|reviews?|reviewed|debates?|debated|strikes down|struck down|quashes?|quashed|upholds?|upheld|orders?|ordered|directs?|directed|withdraws?|withdrawn|bans?|banned|prohibits?|prohibited|gazettes?|gazetted|announces?|announced|raises?|raised|hikes?|hiked|increases?|increased|cuts?|cut|reduces?|reduced|imposes?|imposed|levies?|levied|exempts?|exempted|repeals?|repealed|suspends?|suspended|extends?|extended|proposes?|proposed|clears?|cleared|approves?|approved|rejects?|rejected"""
+
+    private const val PASSIVE_POLICY_ACTION_PATTERN =
+        """issued|notified|gazetted|amended|revised|adopted|passed|introduced|quashed|struck down|upheld|proposed|approved|imposed|enacted|repealed|suspended"""
+
+    // Active: institution -> action -> the specific policy subject.
     private val institutionalPolicyActionPattern = Regex(
-        """\b(?:union government|central government|state government|government|centre|central board of film certification|cbfc|censor board|central consumer protection authority|ccpa|advertising standards council of india|asci|ministry|department|parliament|lok sabha|rajya sabha|supreme court|high court|regulatory authority|regulator|commission|cabinet|sports ministry|standing committee|joint parliamentary committee|committee|bcci|sports federation|national anti doping agency|nada|wada)\b(?:\s+\w+){0,6}\s+\b(?:issues?|issued|notifies?|notified|introduces?|introduced|passes?|passed|amends?|amended|revises?|revised|adopts?|adopted|enacts?|enacted|reviews?|reviewed|debates?|debated|strikes down|struck down|quashes?|quashed|upholds?|upheld|orders?|ordered|directs?|directed|withdraws?|withdrawn|bans?|banned|prohibits?|prohibited|gazettes?|gazetted|announces?|announced|raises?|raised|hikes?|hiked|increases?|increased|cuts?|cut|reduces?|reduced|imposes?|imposed|levies?|levied|exempts?|exempted|repeals?|repealed|suspends?|suspended|extends?|extended|proposes?|proposed|clears?|cleared|approves?|approved|rejects?|rejected)\b(?:\s+\w+){0,4}\s+\b(?:rules?|regulations?|guidelines?|notifications?|bills?|acts?|amendments?|polic(?:y|ies)|frameworks?|charters?|bans?|orders?|tax|gst|licen[cs]es?|reforms?|laws?)\b"""
+        """\\b(?:$POLICY_INSTITUTION_PATTERN)\\b(?:\\s+\\w+){0,6}\\b(?:$ACTIVE_POLICY_ACTION_PATTERN)\\b(?:\\s+\\w+){0,6}\\b(?:$policySubjectPattern)\\b"""
     )
+    // Passive: a current-change cue -> policy subject -> action.
     private val currentPassivePolicyActionPattern = Regex(
-        """\b(?:new|draft|revised|updated|fresh|proposed|final|recently|2025|2026|2027)\b(?:\s+\w+){0,3}\s+\b(?:rules?|regulations?|guidelines?|notifications?|bills?|amendments?|polic(?:y|ies)|frameworks?|charters?|bans?|orders?|tax|gst|licen[cs]es?|reforms?|laws?)\b(?:\s+\w+){0,2}\s+\b(?:issued|notified|gazetted|amended|revised|adopted|passed|introduced|quashed|struck down|upheld)\b"""
+        """\\b(?:new|draft|revised|updated|fresh|proposed|final|recently|20\\d{2})\\b(?:\\s+\\w+){0,3}\\b(?:$policySubjectPattern)\\b(?:\\s+\\w+){0,4}\\b(?:$PASSIVE_POLICY_ACTION_PATTERN)\\b"""
     )
+    // Passive with a named institution: policy subject -> action -> by institution.
     private val passivePolicyActionByInstitutionPattern = Regex(
-        """\b(?:rules?|regulations?|guidelines?|notifications?|bills?|amendments?|polic(?:y|ies)|frameworks?|charters?|bans?|orders?|tax|gst|licen[cs]es?|reforms?|laws?)\b(?:\s+\w+){0,3}\s+\b(?:issued|notified|gazetted|amended|revised|adopted|passed|introduced|quashed|struck down|upheld)\b(?:\s+\w+){0,3}\s+\bby\s+(?:the\s+)?(?:union government|central government|state government|government|centre|central board of film certification|cbfc|censor board|central consumer protection authority|ccpa|advertising standards council of india|asci|ministry|department|parliament|lok sabha|rajya sabha|supreme court|high court|regulatory authority|regulator|commission|cabinet|sports ministry|standing committee|joint parliamentary committee|committee|bcci|sports federation|national anti doping agency|nada|wada)\b"""
+        """\\b(?:$policySubjectPattern)\\b(?:\\s+\\w+){0,4}\\b(?:$PASSIVE_POLICY_ACTION_PATTERN)\\b(?:\\s+\\w+){0,3}\\bby\\s+(?:the\\s+)?(?:$POLICY_INSTITUTION_PATTERN)\\b"""
     )
 
     private val specificSyllabusSignals = listOf(
@@ -131,12 +165,10 @@ internal object UpscFeedPolicy {
 
         val hasNoise = noiseTerms.any { EditorialTextMatcher.contains(text, it) }
         val hasHardNoise = nonOverrideableNoiseTerms.any { EditorialTextMatcher.contains(title, it) }
-        val hasPolicySubject = policyExceptions.any { EditorialTextMatcher.contains(title, it) }
-        val hasInstitutionalAction =
+        val hasPolicyException =
             institutionalPolicyActionPattern.containsMatchIn(title) ||
                 currentPassivePolicyActionPattern.containsMatchIn(title) ||
                 passivePolicyActionByInstitutionPattern.containsMatchIn(title)
-        val hasPolicyException = hasPolicySubject && hasInstitutionalAction
         // Film promotion stays noise; only a clearly technical thin-film solar headline is exempt.
         val hasThinFilmScienceException =
             EditorialTextMatcher.contains(title, "thin film") &&
