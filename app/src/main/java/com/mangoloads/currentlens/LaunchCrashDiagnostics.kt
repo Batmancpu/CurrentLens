@@ -17,6 +17,7 @@ import kotlin.system.exitProcess
  */
 internal object LaunchCrashDiagnostics {
     const val MAX_REPORT_CHARS = 30_000
+    private const val MAX_STAGE_CHARS = 512
     private const val REPORT_NAME = "currentlens-last-crash.txt"
     private const val REPORT_TEMP_NAME = "currentlens-last-crash.tmp"
     private const val STAGE_NAME = "currentlens-last-startup-stage.txt"
@@ -62,18 +63,18 @@ internal object LaunchCrashDiagnostics {
         runCatching {
             val directory = context.applicationContext?.filesDir ?: context.filesDir
             val stageFile = File(directory, STAGE_NAME)
-            val previousStage = runCatching {
-                stageFile.takeIf { it.isFile }?.readText(Charsets.UTF_8)
-            }.getOrNull()
+            // Diagnostic files are local but may have been written by older builds.
+            // Read only bounded prefixes on the startup path; oversized legacy reports
+            // are disposable diagnostics and are removed without loading them into memory.
+            val previousStage = readTextPrefix(stageFile, MAX_STAGE_CHARS)
             val reportFile = File(directory, REPORT_NAME)
-            val existingReport = runCatching {
-                reportFile.takeIf { it.isFile }?.readText(Charsets.UTF_8).orEmpty()
-            }.getOrDefault("")
-            if (reportFile.isFile && (
-                    isKnownLegacyFalsePositive(existingReport) ||
-                        hasLegacyDeviceMetadata(existingReport)
-                    )
-            ) {
+            val reportLength = reportFile.takeIf { it.isFile }?.length() ?: 0L
+            val existingReport = if (reportLength > MAX_REPORT_CHARS) {
+                ""
+            } else {
+                readTextPrefix(reportFile, MAX_REPORT_CHARS).orEmpty()
+            }
+            if (reportFile.isFile && shouldDiscardExistingReport(reportLength, existingReport)) {
                 // Remove pre-privacy diagnostic reports that exposed device/build identifiers.
                 reportFile.delete()
             }
@@ -119,10 +120,10 @@ internal object LaunchCrashDiagnostics {
     }
 
     fun read(context: Context): String? = runCatching {
-        File((context.applicationContext ?: context).filesDir, REPORT_NAME)
-            .takeIf { it.isFile }
-            ?.readText(Charsets.UTF_8)
-            ?.take(MAX_REPORT_CHARS)
+        readTextPrefix(
+            File((context.applicationContext ?: context).filesDir, REPORT_NAME),
+            MAX_REPORT_CHARS
+        )
     }.getOrNull()
 
     fun clear(context: Context): Boolean {
@@ -135,6 +136,23 @@ internal object LaunchCrashDiagnostics {
         runCatching { File(directory, STAGE_NAME).delete() }
         return reportDeleted && (tempDeleted || !File(directory, REPORT_TEMP_NAME).exists())
     }
+
+    /** Read at most [maxChars] characters; never materialise an unbounded diagnostic file. */
+    internal fun readTextPrefix(file: File, maxChars: Int): String? {
+        if (maxChars < 0) return null
+        return runCatching {
+            file.inputStream().bufferedReader(Charsets.UTF_8).use { reader ->
+                val buffer = CharArray(maxChars)
+                val count = reader.read(buffer, 0, buffer.size)
+                if (count <= 0) "" else String(buffer, 0, count)
+            }
+        }.getOrNull()
+    }
+
+    internal fun shouldDiscardExistingReport(reportLength: Long, report: String): Boolean =
+        reportLength > MAX_REPORT_CHARS ||
+            isKnownLegacyFalsePositive(report) ||
+            hasLegacyDeviceMetadata(report)
 
     internal fun formatInterruptedStartupReport(
         lastCompletedStage: String,
@@ -270,9 +288,7 @@ internal object LaunchCrashDiagnostics {
 
     private fun writeCrashReport(context: Context, threadName: String, throwable: Throwable) {
         val directory = context.filesDir
-        val stage = runCatching {
-            File(directory, STAGE_NAME).takeIf { it.isFile }?.readText(Charsets.UTF_8)
-        }.getOrNull()
+        val stage = readTextPrefix(File(directory, STAGE_NAME), MAX_STAGE_CHARS)
         val versionName = runCatching {
             context.packageManager.getPackageInfo(context.packageName, 0).versionName
         }.getOrNull()
