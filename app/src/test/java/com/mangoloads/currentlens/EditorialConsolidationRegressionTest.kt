@@ -102,6 +102,7 @@ class EditorialConsolidationRegressionTest {
         assertEquals("GS II", relevance.gsPaper)
         assertEquals("Constitution", relevance.subject)
         assertTrue(relevance.matchedTerms.contains("parliament passes a bill"))
+        assertTrue(relevance.matchedTerms.contains("representation of the people act"))
         assertTrue(UpscFeedPolicy.shouldInclude(story))
     }
 
