@@ -389,3 +389,17 @@ Branch: `fix/early-startup-crash-diagnostics-2026-11-06`.
 - **Rejected scope expansion:** no further UI changes were added before verifying the compiler fix; no workflow, dependency, package, app identity, network, storage schema, main branch or Release change.
 - **Risks / unverified:** TalkBack selected-state runtime, font scaling, OPPO Reno10 cold/warm launch, visual animation, Reduce Motion, Perfetto/frame timing, GPU overdraw, allocation/memory, thermal and battery were not measured. CI is not device verification.
 - **Next:** re-read all branch heads/PR diffs and current Actions before another screen-sized Liquid Glass pass; review remaining transient dialogs/sheets/menus while preserving high-contrast reading/data surfaces.
+
+
+## 2026-11-07 16:57 IST / 11:27 UTC — Bound concurrent RSS fetch and parse work
+
+- **Repository / branch:** Batmancpu/CurrentLens; owner-selected integration base `black-box-bihar-news@ee82dfde140aeb0d1ca80146379a0a2818c695df`. Main remains `73b8a0d1ba33503fede02db2c3c0af082d724a12`.
+- **Isolated proposal:** `perf/bounded-rss-fetch-concurrency-2026-11-07`; source commit `37393ea617e39994bd3f2fcc7300c91abcf17576`; draft PR [#32](https://github.com/Batmancpu/CurrentLens/pull/32). One source commit, three code/test files.
+- **Evidence:** `NewsRepository.fetchAll()` created one `async` operation for each of 14 configured RSS feeds. `NetworkLimits.MAX_RSS_BYTES` is 2 MiB per response. The code therefore permitted up to 28 MiB of raw RSS response bodies to be in flight simultaneously, before `ByteArrayOutputStream` copies, UTF-8 decoded strings and XML parser allocations. This is a code-derived worst-case bound, not a measured device memory profile.
+- **Change:** add `FeedFetchConcurrencyPolicy` with four permits and use it around feed fetch/parse operations. `awaitAll()` preserves configured feed order. The theoretical simultaneous raw-body ceiling becomes 8 MiB. Per-feed byte ceiling, connect/read timeouts, redirect allowlist, source labels/provenance, parser/date precedence, URL deduplication and 250-article cap remain unchanged.
+- **Tests:** add a coroutine/JVM test asserting no more than four simultaneous operations, result-order preservation and completion; add empty-input coverage. Tests are added but have not yet run on this head.
+- **Natural CI:** PR run #234 (`42368265004`) started on the code-only head `37393ea`. At the latest inspection, SDK setup had passed and Gradle setup was in progress; WordNet, JVM tests, APK compilation and artifact upload were pending. The active job-log endpoint had not produced a downloadable log bundle yet. No manual dispatch/rerun.
+- **Risk:** a four-request limit can increase total refresh latency when multiple feeds are slow; existing per-connection timeouts are unchanged. The limit is a conservative initial bound, not a measured optimum. No physical-device memory/latency measurement is claimed.
+- **Scope:** no feed source, editorial rule, persistence schema, permission, dependency, workflow, telemetry, analytics, runtime destination, main commit or Release changed.
+- **Next:** inspect the natural PR run and logs; if documentation-only follow-up causes another natural run, report the latest exact head/run separately. Do not merge or publish.
+

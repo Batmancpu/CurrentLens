@@ -171,3 +171,13 @@ Snapshot main: 73b8a0d1ba33503fede02db2c3c0af082d724a12 (6 Nov 2026).
 - Correction: `.semantics { this.selected = chosen }`. The change is one line, preserves the intended selected-state semantics and does not alter quiz answer/scoring/submission persistence.
 - PR #28's direct child commit was fast-forwarded into the active integration branch. Natural run #209 passed on the exact code head in PR context; natural active-branch run #210 passed the same exact SHA with `:app:testDebugUnitTest`, `:app:assembleDebug` and artifact upload.
 - This is a compile defect, not evidence of a device crash. TalkBack selected-state behaviour, font scaling and physical-device layout still require a real-device check.
+
+
+### KL-021 — All configured RSS feeds fetched concurrently
+
+- **Status:** Mitigation proposed in draft [PR #32](https://github.com/Batmancpu/CurrentLens/pull/32); natural CI run #234 is in progress. Not yet validated by JVM tests or device profiling.
+- **Evidence:** the integration `NewsRepository.fetchAll()` launches all 14 configured feed fetches concurrently. Each response is capped at 2 MiB, allowing 28 MiB of raw response bodies in flight before temporary copies, decoded strings and parser allocations. The code establishes a peak-allocation risk; actual feed sizes and device peak memory were not measured.
+- **Mitigation:** `FeedFetchConcurrencyPolicy` caps active fetch/parse operations at four (theoretical raw-body ceiling 8 MiB) while preserving feed order and existing per-feed limits/timeouts.
+- **Trade-off:** a lower concurrency limit can increase total refresh latency when feeds are slow. Four is a conservative initial bound, not a device-measured optimum.
+- **Acceptance:** natural CI must pass the concurrency/order/empty-input tests, `:app:testDebugUnitTest` and `:app:assembleDebug`. A later device memory/refresh-latency measurement is needed before claiming a measured performance gain.
+

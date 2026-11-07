@@ -1,6 +1,23 @@
 # CurrentLens — Latest project handoff (7 November 2026)
 
 
+
+## Live snapshot — 7 November 2026, after PR #32 creation
+
+- Default branch: `main@73b8a0d1ba33503fede02db2c3c0af082d724a12`; unchanged.
+- Owner-selected integration branch: `black-box-bihar-news@ee82dfde140aeb0d1ca80146379a0a2818c695df`; 105 commits ahead / 0 behind main.
+- Branch inventory: 36 refs; 18 open PRs. New isolated draft PR #32 targets the integration branch from `perf/bounded-rss-fetch-concurrency-2026-11-07@37393ea617e39994bd3f2fcc7300c91abcf17576`.
+- Actions history: 234 runs fully paginated (100 + 100 + 34): 135 success, 58 failure, 40 cancelled, one in progress; no queued runs. Latest run #234 is PR #32 and is at Gradle setup; WordNet/test/build steps are pending and no artifact/log bundle is available yet.
+- Latest completed run #233 passed on PR #27 head `4ee9233e6a18c26163b69a6b40ac8d8b99b1fae9`; its build/test job completed WordNet generation, `:app:testDebugUnitTest`, `:app:assembleDebug` and artifact upload. Artifact `13572665836`, 39,099,361 bytes, expires 21 November; release job skipped.
+- PR #27 is 23 commits ahead / 6 behind the current integration branch (merge base `3a08bb95b0f9a0fed8ec11dae055f0ac2817a523`). Run #233 validates its head against its earlier base, not the current integration head; reconcile and obtain natural CI on the current base before integration.
+- PR #31 (first SharedPreferences appearance read off the startup main thread) is 5 commits ahead / 0 behind the current integration branch; natural run #227 passed on its exact head. Device cold-start/Perfetto measurement remains unverified.
+- Latest published Release remains `v0.2.0-build-116`, 6 November 2026. No new Release.
+- Main's sole workflow remains push-only with workflow-wide `contents: write`. The integration workflow uses read-only build/test permissions and a separate main-push-only release-write job; PR #18 remains the main-branch workflow proposal.
+- Physical-device cold/warm launch, OPPO runtime logs, Perfetto, GPU/frame-time, TalkBack and screenshot verification remain outstanding. The native launch-crash root cause remains unestablished.
+- Next: inspect PR #32 natural run #234 and artifact; reconcile PR #27 with the current integration base; continue primary-source corroboration and safe legacy read-history migration without dropping user data.
+
+---
+
 ## Live snapshot — 7 November 2026 (after natural runs #210–#211)
 
 - Active integration branch: `black-box-bihar-news@6f9b3c1e1a484233721863d0b736734c0d282cd5`; 101 ahead / 0 behind main and 44 ahead / 0 behind PR #16. The selected line retains PR #16's background-only Prismal capture correction and the consolidated Reader/Search/navigation/dashboard/Appearance/Quiz work.
