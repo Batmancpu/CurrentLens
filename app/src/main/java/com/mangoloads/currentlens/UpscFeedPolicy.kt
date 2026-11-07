@@ -44,10 +44,10 @@ internal object UpscFeedPolicy {
         "committee", "sports ministry", "nada", "national anti-doping agency", "wada", "cabinet"
     )
     private val activePolicyActionPattern = Regex(
-        """\\b(?:issues|issued|notifies|notified|introduces|introduced|passes|passed|amends|amended|revises|revised|adopts|adopted|enacts|enacted|reviews|reviewed|debates|debated|strikes down|struck down|quashes|quashed|upholds|upheld|orders|ordered|directs|directed|withdraws|withdrawn|bans|banned|prohibits|prohibited|gazettes|gazetted|announces|announced)\\b(?:\\s+\\w+){0,3}\\b(?:rules?|regulations?|guidelines?|notifications?|bills?|acts?|amendments?|polic(?:y|ies)|frameworks?|charters?|bans?|orders?|tax|gst|licen[cs]es?|reforms?|laws?)\\b"""
+        """\b(?:issues|issued|notifies|notified|introduces|introduced|passes|passed|amends|amended|revises|revised|adopts|adopted|enacts|enacted|reviews|reviewed|debates|debated|strikes down|struck down|quashes|quashed|upholds|upheld|orders|ordered|directs|directed|withdraws|withdrawn|bans|banned|prohibits|prohibited|gazettes|gazetted|announces|announced)\b(?:\s+\w+){0,3}\b(?:rules?|regulations?|guidelines?|notifications?|bills?|acts?|amendments?|polic(?:y|ies)|frameworks?|charters?|bans?|orders?|tax|gst|licen[cs]es?|reforms?|laws?)\b"""
     )
     private val passivePolicyActionPattern = Regex(
-        """\\b(?:rules?|regulations?|guidelines?|notifications?|bills?|acts?|amendments?|polic(?:y|ies)|frameworks?|charters?|bans?|orders?|tax|gst|licen[cs]es?|reforms?|laws?)\\b(?:\\s+\\w+){0,2}\\b(?:issued|notified|gazetted|enacted|amended|revised|adopted|passed|introduced|quashed|struck down|upheld)\\b"""
+        """\b(?:rules?|regulations?|guidelines?|notifications?|bills?|acts?|amendments?|polic(?:y|ies)|frameworks?|charters?|bans?|orders?|tax|gst|licen[cs]es?|reforms?|laws?)\b(?:\s+\w+){0,2}\b(?:issued|notified|gazetted|enacted|amended|revised|adopted|passed|introduced|quashed|struck down|upheld)\b"""
     )
 
     // GS-II lists Parliament's functions, not mere institutional mentions; require a concrete process or power.
