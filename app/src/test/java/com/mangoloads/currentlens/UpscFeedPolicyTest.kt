@@ -174,6 +174,11 @@ class UpscFeedPolicyTest {
             "Entertainment"
         ), "GS II", "Governance")
         assertSyllabusMapped(article(
+            "New draft film certification rules notified by the Ministry",
+            "The draft notification changes the statutory certification framework.",
+            "Entertainment"
+        ), "GS II", "Governance")
+        assertSyllabusMapped(article(
             "Film certification rules notified by the Ministry",
             "The named ministry notification changes the statutory certification framework.",
             "Entertainment"
