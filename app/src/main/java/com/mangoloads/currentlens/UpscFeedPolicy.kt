@@ -77,7 +77,7 @@ internal object UpscFeedPolicy {
         }
         val finalWord = if (plural == last) Regex.escape(last)
             else "(?:${Regex.escape(last)}|${Regex.escape(plural)})"
-        return (words.dropLast(1).map { Regex.escape(it) } + finalWord).joinToString("\\s+")
+        return (words.dropLast(1).map { Regex.escape(it) } + finalWord).joinToString("\\\\s+")
     }
 
     private val policySubjectPattern = policyExceptions
@@ -97,15 +97,15 @@ internal object UpscFeedPolicy {
 
     // Active: institution -> action -> the specific policy subject.
     private val institutionalPolicyActionPattern = Regex(
-        """\\b(?:$POLICY_INSTITUTION_PATTERN)\\b(?:\\s+\\w+){0,6}\\b(?:$ACTIVE_POLICY_ACTION_PATTERN)\\b(?:\\s+\\w+){0,6}\\b(?:$policySubjectPattern)\\b"""
+        """\b(?:$POLICY_INSTITUTION_PATTERN)\b(?:\s+\w+){0,6}\b(?:$ACTIVE_POLICY_ACTION_PATTERN)\b(?:\s+\w+){0,6}\b(?:$policySubjectPattern)\b"""
     )
     // Passive: a current-change cue -> policy subject -> action.
     private val currentPassivePolicyActionPattern = Regex(
-        """\\b(?:new|draft|revised|updated|fresh|proposed|final|recently|20\\d{2})\\b(?:\\s+\\w+){0,3}\\b(?:$policySubjectPattern)\\b(?:\\s+\\w+){0,4}\\b(?:$PASSIVE_POLICY_ACTION_PATTERN)\\b"""
+        """\b(?:new|draft|revised|updated|fresh|proposed|final|recently|20\d{2})\b(?:\s+\w+){0,3}\b(?:$policySubjectPattern)\b(?:\s+\w+){0,4}\b(?:$PASSIVE_POLICY_ACTION_PATTERN)\b"""
     )
     // Passive with a named institution: policy subject -> action -> by institution.
     private val passivePolicyActionByInstitutionPattern = Regex(
-        """\\b(?:$policySubjectPattern)\\b(?:\\s+\\w+){0,4}\\b(?:$PASSIVE_POLICY_ACTION_PATTERN)\\b(?:\\s+\\w+){0,3}\\bby\\s+(?:the\\s+)?(?:$POLICY_INSTITUTION_PATTERN)\\b"""
+        """\b(?:$policySubjectPattern)\b(?:\s+\w+){0,4}\b(?:$PASSIVE_POLICY_ACTION_PATTERN)\b(?:\s+\w+){0,3}\bby\s+(?:the\s+)?(?:$POLICY_INSTITUTION_PATTERN)\b"""
     )
 
     private val specificSyllabusSignals = listOf(
