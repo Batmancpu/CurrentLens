@@ -232,6 +232,33 @@ class UpscFeedPolicyTest {
     }
 
     @Test
+    fun unrelatedSpecificSignalFromAnotherTopicCannotRescueBroadGovernanceMatch() {
+        val item = article(
+            "Government launches a new welfare scheme",
+            "A separate unrelated quote briefly mentions climate change.",
+            "India"
+        )
+        val relevance = UpscEngine.classify(item)
+
+        assertTrue("Fixture should select the broad GS II Governance mapping", relevance.gsPaper == "GS II")
+        assertTrue("Fixture should select Governance", relevance.subject == "Governance")
+        assertTrue("The selected mapping should only contain broad scheme signals",
+            relevance.matchedTerms.contains("scheme") && relevance.matchedTerms.contains("welfare"))
+        assertFalse("Climate change belongs to another mapping",
+            relevance.matchedTerms.contains("climate change"))
+        assertFalse("An unrelated environmental phrase must not qualify this welfare headline",
+            UpscFeedPolicy.shouldInclude(item))
+    }
+
+    @Test
+    fun selectedGovernanceMappingStillAcceptsItsOwnSpecificSyllabusSignals() {
+        assertSyllabusMapped(article(
+            "Government publishes a social audit of a direct benefit transfer scheme",
+            "The report examines accountability and public-service delivery."
+        ), "GS II", "Governance")
+    }
+
+    @Test
     fun ambiguousPassivePolicyHeadlineWithoutCurrentCueOrInstitutionIsHeldBack() {
         assertRejectedDespiteKeywordMatch(article(
             "Film certification rules notified",
