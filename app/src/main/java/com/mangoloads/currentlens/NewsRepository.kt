@@ -37,6 +37,7 @@ data class FeedSource(
 )
 
 private val FEED_REDIRECT_STATUS_CODES = setOf(301, 302, 303, 307, 308)
+private const val XML_NAMESPACE = "http://www.w3.org/XML/1998/namespace"
 
 object NewsRepository {
     private val feeds = listOf(
@@ -72,7 +73,11 @@ object NewsRepository {
                     emptyList()
                 } else {
                     connection.inputStream.use { input ->
-                        parse(source, NetworkLimits.readUtf8Limited(input, NetworkLimits.MAX_RSS_BYTES))
+                        parse(
+                            source = source,
+                            xml = NetworkLimits.readUtf8Limited(input, NetworkLimits.MAX_RSS_BYTES),
+                            documentUrl = connection.url.toExternalForm()
+                        )
                     }
                 }
             } finally {
@@ -144,12 +149,13 @@ object NewsRepository {
         Html.fromHtml(value, Html.FROM_HTML_MODE_LEGACY).toString()
             .replace(Regex("\\s+"), " ").trim()
 
-    private fun parse(source: FeedSource, xml: String): List<Article> {
+    private fun parse(source: FeedSource, xml: String, documentUrl: String): List<Article> {
         val result = mutableListOf<Article>()
         val factory = XmlPullParserFactory.newInstance().apply { setNamespaceAware(true) }
         val parser = factory.newPullParser()
         runCatching { parser.setFeature(XmlPullParser.FEATURE_PROCESS_DOCDECL, false) }
         parser.setInput(xml.reader())
+        val baseByDepth = mutableMapOf<Int, String>()
         var event = parser.eventType
         var inItem = false
         var title = ""
@@ -163,6 +169,16 @@ object NewsRepository {
         while (event != XmlPullParser.END_DOCUMENT) {
             when (event) {
                 XmlPullParser.START_TAG -> {
+                    val depth = parser.depth
+                    val inheritedBase = baseByDepth[depth - 1] ?: documentUrl
+                    val declaredBase = parser.getAttributeValue(XML_NAMESPACE, "base")
+                    val effectiveBase = if (declaredBase.isNullOrBlank()) {
+                        inheritedBase
+                    } else {
+                        FeedLinkPolicy.resolveHttpReference(declaredBase, inheritedBase) ?: inheritedBase
+                    }
+                    baseByDepth[depth] = effectiveBase
+
                     val tag = parser.name?.substringAfter(':')?.lowercase(Locale.ROOT).orEmpty()
                     if (tag == "item" || tag == "entry") {
                         inItem = true
@@ -188,12 +204,15 @@ object NewsRepository {
                                         FeedLinkCandidate(
                                             href = href.trim(),
                                             rel = parser.getAttributeValue(null, "rel").orEmpty(),
-                                            type = parser.getAttributeValue(null, "type").orEmpty()
+                                            type = parser.getAttributeValue(null, "type").orEmpty(),
+                                            baseUrl = effectiveBase
                                         )
                                     )
                                 } else {
                                     val textLink = runCatching { parser.nextText().trim() }.getOrDefault("")
-                                    if (textLink.isNotBlank()) links.add(FeedLinkCandidate(href = textLink))
+                                    if (textLink.isNotBlank()) {
+                                        links.add(FeedLinkCandidate(href = textLink, baseUrl = effectiveBase))
+                                    }
                                 }
                             }
                             "pubdate" -> rssPubDate = runCatching { parser.nextText().trim() }.getOrDefault("")
@@ -211,7 +230,7 @@ object NewsRepository {
                 XmlPullParser.END_TAG -> {
                     val tag = parser.name?.lowercase(Locale.ROOT).orEmpty()
                     if (tag == "item" || tag == "entry") {
-                        val articleUrl = FeedLinkPolicy.select(links)
+                        val articleUrl = FeedLinkPolicy.select(links, documentUrl)
                         if (title.isNotBlank() && articleUrl != null) {
                             result.add(
                                 Article(
@@ -235,6 +254,7 @@ object NewsRepository {
                         }
                         inItem = false
                     }
+                    baseByDepth.keys.removeAll { it >= parser.depth }
                 }
             }
             event = parser.next()
