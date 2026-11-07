@@ -1,5 +1,20 @@
 # CurrentLens — Latest project handoff (7 November 2026)
 
+
+## Live snapshot — 7 November 2026 (after natural runs #210–#211)
+
+- Active integration branch: `black-box-bihar-news@6f9b3c1e1a484233721863d0b736734c0d282cd5`; 101 ahead / 0 behind main and 44 ahead / 0 behind PR #16. The selected line retains PR #16's background-only Prismal capture correction and the consolidated Reader/Search/navigation/dashboard/Appearance/Quiz work.
+- Complete live inventory: 32 remote branches, 14 open/draft PRs and 14 closed PRs. PR #28's one-line Quiz semantics compile fix is now included in black-box; its source branch remains. No other branch was changed or deleted.
+- Latest active-branch natural validation: run #210 passed on exact SHA `6f9b3c1e1a484233721863d0b736734c0d282cd5`; WordNet builder tests (4/4), 151,456-word offline database generation, `:app:testDebugUnitTest`, `:app:assembleDebug` and artifact upload succeeded. Artifact `13568511654`, 39,082,053 bytes; Release job skipped.
+- Latest overall natural run #211 passed on PR #27's independent head `9b70ed1c7c39bb511399c6284c7e8833f4672618`; it does not validate black-box. PR #27 remains open/draft with a useful four-file editorial action gate; it was not ported in this UI iteration.
+- PR #25 and #26 publisher asset/subresource security changes remain open and unintegrated pending a separate Reader/NewsCard reconciliation. PR #24 remains on divergent brrrNEWS. Current 8×8 adaptive glass probe remains 4s/6s, paused during scroll/background/Reader/Quiz/Settings/Reduce Transparency.
+- Current active workflow uses read-only build/test permissions and a separate main-push-only release job. Main's workflow is still push-only with workflow-wide contents: write; no black-box-to-main PR was created.
+- Latest Release remains `v0.2.0-build-116`. No new Release, manual dispatch or rerun.
+- Device-backed OPPO cold/warm launch, screenshots, visual motion, TalkBack, Reduce Motion, Perfetto/frame timing, overdraw, memory, thermal and battery remain **UNVERIFIED**.
+- Next: recheck the complete live branch graph and exact CI head before the next Liquid Glass screen batch; audit remaining transient dialogs/sheets/menus without adding glass to dense content surfaces.
+
+> This snapshot supersedes earlier live snapshots below where they conflict. Historical context remains in SESSION_LEDGER.md.
+
 ## Live snapshot — 7 November 2026, 11:38 IST
 
 - Current integration branch: black-box-bihar-news, verified pre-batch head cfe0b3e8319374df5cb29423f04a79c77d4fe10e; 97 ahead / 0 behind main and 40 ahead / 0 behind PR #16. The low-effects Appearance batch is authored from this exact head; its resulting SHA and natural CI are pending.

@@ -162,3 +162,12 @@ Snapshot main: 73b8a0d1ba33503fede02db2c3c0af082d724a12 (6 Nov 2026).
 - The PR #16 correction exports only the numeric exit reason and numeric status/signal. It no longer forwards the opaque description, importance or memory measurements. Java/Kotlin reports continue to omit exception messages and raw addresses/traces.
 - Added focused JVM assertions for the exact allow-listed summary and the interrupted-startup report. Tests are added, not yet executed for this new commit.
 - This change improves report minimisation only. It does not establish the native launch crash's root cause or prove the app launches on a physical device.
+
+
+### KL-020 — Quiz option selected-semantics receiver shadowing
+
+- **Status:** Resolved in code and natural CI on `black-box-bihar-news@6f9b3c1e1a484233721863d0b736734c0d282cd5`; Android/TalkBack runtime remains unverified.
+- The natural push build on pre-fix SHA `947310a157e03df25dde3856d2686d18ffca68e8` failed at `MainActivity.kt:4238:61` because `.semantics { selected = chosen }` resolved to the local `Map<Int, Int>` answer state rather than the semantics receiver's Boolean property.
+- Correction: `.semantics { this.selected = chosen }`. The change is one line, preserves the intended selected-state semantics and does not alter quiz answer/scoring/submission persistence.
+- PR #28's direct child commit was fast-forwarded into the active integration branch. Natural run #209 passed on the exact code head in PR context; natural active-branch run #210 passed the same exact SHA with `:app:testDebugUnitTest`, `:app:assembleDebug` and artifact upload.
+- This is a compile defect, not evidence of a device crash. TalkBack selected-state behaviour, font scaling and physical-device layout still require a real-device check.

@@ -170,3 +170,17 @@ CI establishes that the code compiles and JVM tests pass. It cannot establish th
 - Artifact: 13560769755, CurrentLens-v0.2.8-stability-debug-apk, 39,059,340 bytes, 14-day retention. Non-main stability build uses application ID com.mangoloads.currentlens.stability and label brrrNews Stability; it installs separately from the normal app.
 - Latest published Release remains v0.2.0-build-116. No feature-branch Release was created.
 - The Appearance low-effects commit authored from cfe0b3e is not covered by run #200; wait for its own natural run. Do not dispatch/rerun manually.
+
+
+## Live CI snapshot — 7 November 2026 (after runs #210–#211)
+
+- Active workflow: `.github/workflows/build-apk.yml`, blob `6cef6ca19f3babd331c9deb59be9da0067c6fa66`. It triggers natural push and pull_request builds for main, PR #16's branch and black-box-bihar-news. Build/test permissions are read-only; the separate publish job runs only on a main push and has contents:write.
+- Main workflow remains blob `37197497288d9f0a60f4d1cfa8453e3dee52a902`, push-only with workflow-wide contents:write. Do not claim a future PR-to-main build is naturally validated until main's workflow is safely reconciled.
+- Actions history: 211 runs fully paginated (100 + 100 + 11; page 4 empty): 125 success, 54 failure, 32 cancelled; no queued/in-progress runs.
+- Run #208 failed on black-box pre-fix SHA `947310a157e03df25dde3856d2686d18ffca68e8` at `MainActivity.kt:4238:61` because the local Quiz answer map shadowed the Compose semantics receiver's Boolean `selected` property.
+- PR #28's one-line `.semantics { this.selected = chosen }` correction was fast-forwarded into black-box at `6f9b3c1e1a484233721863d0b736734c0d282cd5`; PR #28 closed/merged into this branch only.
+- Run #209 passed on PR #28's exact head; run #210 passed on the active branch push at the same exact SHA. Run #210: four WordNet builder tests passed; database generated 151,456 unique words / 50,950,144 bytes; `:app:testDebugUnitTest`, `:app:assembleDebug` and artifact upload succeeded. Artifact `13568511654`, 39,082,053 bytes, SHA-256 `9eeb4bbdbfd08f9f8f5e94a5eda0251b41d1c441933653c0ef326246669458de`. Publish job skipped.
+- Latest overall run #211 passed on PR #27's independent head `9b70ed1c7c39bb511399c6284c7e8833f4672618`; artifact `13567364771`, 39,084,359 bytes. It does not validate black-box. PR #27 remains open/draft.
+- Latest published Release remains `v0.2.0-build-116`. No feature-branch Release was created; no manual dispatch/rerun.
+- Existing deprecation warnings (WebView scale, Compose updateTransition, ArrowBack icon, Node.js 20 action runtime, punycode and url.parse) are non-blocking and remain outside this repair.
+- OPPO device launch, screenshots, accessibility, animation, Perfetto/frame timing, GPU/memory/thermal/battery remain UNVERIFIED.

@@ -1,16 +1,17 @@
 # Liquid Glass UI Roadmap
 
-**Status:** Saved/Reading Stats/Quiz Stats filter glass is validated on black-box-bihar-news@3a08bb95 by natural run #203. This batch adds two restrained Prismal control surfaces to Quiz (identity/header and submission dock); question, option, source-note and explanation content remains non-glass. The new commit awaits its own natural CI result.  
-**Feature branch:** black-box-bihar-news — the only branch modified by this work.  
-**Verified source HEAD before this batch:** 3a08bb95b0f9a0fed8ec11dae055f0ac2817a523; the new code and roadmap commits are a direct child created with a fast-forward-only ref update.  
-**Integration lineage:** 99 commits ahead / 0 behind main@73b8a0d1ba33503fede02db2c3c0af082d724a12; 42 ahead / 0 behind PR #16's corrected stability head 6ab1e6a02ac8e91027f21900d64d63b9f2e6a890.  
-**Last completed successful validation on this branch:** Actions run #203 (https://github.com/Batmancpu/CurrentLens/actions/runs/42349689690), exact SHA 3a08bb95b0f9a0fed8ec11dae055f0ac2817a523; WordNet builder tests (4/4), offline database generation (151,456 unique words), :app:testDebugUnitTest, :app:assembleDebug and artifact upload passed. Artifact 13565296151, 39,078,047 bytes; the publish job was skipped. It validates the filter-group parent, not this Quiz batch.  
-**Latest overall natural run:** #204 passed on PR #26's exact head b8d2ef9ff2413c378347986d00961c401dfa771d; artifact 13565228424, 39,079,206 bytes. PR #25 run #202 also passed on its own head 7a51c9c2c40aa89997db55194a6db3d0d65ac95d; neither validates the active branch.  
-**Actions queue:** 204 runs fully paginated (100 + 100 + 4; next page empty); no queued or in-progress runs.  
-**Workflow / Releases:** active workflow blob 6cef6ca19f3babd331c9deb59be9da0067c6fa66 uses read-only build permissions, natural push/PR triggers for main, PR #16 and this branch, and a separate main-push-only release job. Main's workflow remains push-only. Latest published Release remains v0.2.0-build-116; no feature-branch Release or merge.  
-**Safety:** no other branch, main, workflow, package/app identity, network policy, persistence format or quiz submit-only semantics changed; no manual dispatch/rerun or Release publication.
+**Status:** Quiz action chrome is integrated and the compile-time selected-state receiver shadowing is corrected. The active consolidation branch at `6f9b3c1e1a484233721863d0b736734c0d282cd5` passed natural push run #210. This run repaired the build; it did not add another visual batch.  
+**Feature branch:** `black-box-bihar-news` — the only active integration branch for this work.  
+**Verified current HEAD:** `6f9b3c1e1a484233721863d0b736734c0d282cd5`.  
+**Authoritative lineage:** 101 commits ahead / 0 behind `main@73b8a0d1ba33503fede02db2c3c0af082d724a12`; 44 ahead / 0 behind PR #16's corrected stability head `6ab1e6a02ac8e91027f21900d64d63b9f2e6a890`.  
+**Latest active-branch validation:** [Actions run #210](https://github.com/Batmancpu/CurrentLens/actions/runs/42357962166), exact SHA `6f9b3c1e1a484233721863d0b736734c0d282cd5`; WordNet builder tests (4/4), offline database generation (151,456 unique words), `:app:testDebugUnitTest`, `:app:assembleDebug` and artifact upload passed. Artifact `13568511654`, 39,082,053 bytes, SHA-256 `9eeb4bbdbfd08f9f8f5e94a5eda0251b41d1c441933653c0ef326246669458de`; publish job skipped.  
+**Latest overall natural run:** #211 passed on PR #27's independent head `9b70ed1c7c39bb511399c6284c7e8833f4672618`; it does not validate or change the active branch. Artifact `13567364771`, 39,084,359 bytes.  
+**Actions history:** 211 runs fully paginated (100 + 100 + 11; page 4 empty): 125 success, 54 failure, 32 cancelled; no queued/in-progress runs.  
+**Workflow / Releases:** active workflow blob `6cef6ca19f3babd331c9deb59be9da0067c6fa66` has read-only build/test permissions, natural push/PR triggers for main, PR #16 and this branch, and a separate main-push-only Release job. Main's workflow remains push-only with broader write permissions. Latest published Release remains `v0.2.0-build-116`; no feature-branch Release was published.  
+**Branch graph:** 32 remote branches, 14 open PRs and 14 closed PRs. PR #28's one-line compile correction is now included in this branch; source branches remain present. Full current inventory and dispositions are in `docs/BRANCH_CONSOLIDATION.md` §11.  
+**Safety / device status:** no main change, package/app identity change, workflow change, manual dispatch/rerun, Release publication, device screenshot or OPPO runtime verification. Launch stability, visual motion, TalkBack, Reduce Motion, Perfetto/frame timing, GPU overdraw, memory, thermal and battery remain **UNVERIFIED**.
 
-## Live branch freshness audit — 7 November 2026, 13:00 IST
+## Historical branch freshness audit — 7 November 2026, 13:00 IST (superseded by the current run record)
 
 - All 31 remote branches were enumerated (page 1: 31; page 2: 0), all 13 open PRs and 13 closed PRs reviewed, and relevant full diffs/commit comparisons inspected. The exact 31-head table and disposition are in docs/BRANCH_CONSOLIDATION.md §10.
 - black-box-bihar-news@3a08bb95 remains the owner-selected active integration branch: 99 ahead / 0 behind main and 42 ahead / 0 behind PR #16. It is a direct descendant of PR #16's corrected background-only Prismal/stability head. The branch was rechecked immediately before the implementation commit.
@@ -243,3 +244,28 @@ The following work is represented on `black-box-bihar-news`; source PRs/branches
 **Tests and behaviour:** no new persistence policy was introduced; submit-only quiz storage is unchanged. Existing JVM tests remain the compile/regression gate. Option selected semantics and minimum hit size are represented in Compose modifiers; TalkBack, font scaling, selection and real-device layout remain device checks.
 
 **Validation:** natural CI pending for this exact commit. Run #203 validates only the source head before this batch; PR #25/#26 runs #202/#204 validate their own heads. OPPO Reno10 screenshots, launch/scroll traces, Perfetto, frame timing, overdraw, allocation/memory, thermal and battery remain UNVERIFIED.
+
+
+## Current implementation and verification update — 7 November 2026
+
+### Quiz action-chrome compile repair
+
+- The existing Quiz action-chrome batch added two small Prismal control surfaces (identity header and submit/done dock). Questions, options, provenance notes and explanations remain on ordinary high-contrast content surfaces; submit-only persistence is unchanged.
+- The first natural integration push, run #208 on `947310a157e03df25dde3856d2686d18ffca68e8`, failed at `MainActivity.kt:4238:61`: `selected = chosen` resolved to the local `Map<Int, Int>` answer state rather than the Compose semantics receiver's Boolean selected property.
+- The full `QuizScreen` and its article-keyed state/dependencies were inspected. The one-line correction is `.semantics { this.selected = chosen }`; it preserves selected-state accessibility semantics and changes no answer, score or persistence behaviour.
+- PR #28's exact one-line child commit was fast-forwarded into `black-box-bihar-news`; PR #28 is closed/merged into this integration branch only. The source branch remains. No other branch was modified.
+- Natural PR run #209 passed on the same code head. Natural active-branch push run #210 then passed WordNet generation, all four Python builder tests, `:app:testDebugUnitTest`, `:app:assembleDebug` and artifact upload. Release job skipped.
+- Latest overall run #211 passed on PR #27's separate editorial head. That PR remains open/draft and was not ported during this UI/build-repair iteration.
+
+### Material/performance audit retained
+
+- The Prismal root capture remains a background-only sibling; the captured tree contains only the theme background and two ambient gradients. App content and all glass surfaces remain siblings above it. No self-capture was reintroduced.
+- The shared 8×8 luminance probe remains one source at 4s on Android 12+ / 6s on older Android, paused while backgrounded, Reader/Quiz/Settings is open, feed motion is active, or Reduce Transparency is enabled.
+- Compact feed navigation composes one shared bar morph; the full glyph source, selected droplet and merged sampling surface are used only in the expanded branch. The compact active-label pill is a 54dp navigation control with an explicit expand action.
+- Search clear remains inside the expanded morph capsule, appears for non-empty queries, uses a 48dp target and only clears the query. Reader chrome is pinned for dictionary definition, native selection ActionMode, IME and enabled accessibility services.
+- These are source-level checks, not measured performance wins. No additional capture, sampler, per-card blur, bitmap decode, graphics layer or dependency was added by the compile repair.
+
+### Next implementation pass
+
+After re-reading the live branch graph and exact CI state, continue the app-wide audit of remaining transient dialogs/sheets/menus and uncovered interactive surfaces. Add glass only where it clarifies a control or transient action, pair every new effect with an explicit cost-control strategy, and keep article/data surfaces high contrast. Do not start another UI batch in the same run as a build repair.
+
