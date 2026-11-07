@@ -2,10 +2,10 @@
 
 **Repository:** `Batmancpu/CurrentLens`  
 **Chosen integration branch:** `black-box-bihar-news`  
-**Current HEAD at this audit:** `ebdfdd7b22c9164ab4ea24a6fa744e706081fc7f`  
+**Current HEAD at this audit:** `46c7d77f66a1a2eba87bad77e5345f2b0e1ec3b2`  
 **Default branch:** `main` — unchanged at `73b8a0d1ba33503fede02db2c3c0af082d724a12`  
-**Live branch inventory:** 25 refs (including `main` and this integration branch); no branch was deleted.  
-**Latest natural validation:** Actions run [#187](https://github.com/Batmancpu/CurrentLens/actions/runs/42334981467), success on this exact HEAD.  
+**Live branch inventory:** 26 refs (including `main` and this integration branch); no branch was deleted.  
+**Latest completed validation:** Actions run [#190](https://github.com/Batmancpu/CurrentLens/actions/runs/42335940352), success on the documentation commit before the PR #23 merge. Natural post-merge run #192 is validating this exact HEAD.  
 **No Release was published.** No manual workflow dispatch or rerun was used.
 
 The integration was started from PR #16's corrected stability/network baseline, then useful changes were merged or selectively reconciled. No older `MainActivity.kt`, `NewsRepository.kt`, `LocalStore.kt` or workflow was copied wholesale over the newer code.
@@ -26,6 +26,7 @@ The integration was started from PR #16's corrected stability/network baseline, 
 - Celebrity, film promotion, box-office, reality-show, routine sports and generic viral noise are suppressed; policy exceptions require an institutional action in the headline. A narrow thin-film photovoltaic/solar-cell exception avoids blocking a legitimate Science & Technology topic.
 - Cards expose a concise indicative GS mapping, matched signal and syllabus rationale. The UI and tests do not describe this heuristic as a validated UPSC score or question predictor.
 - Synthetic regression fixtures explicitly cover both eligible cases and false positives; they are not represented as actual PYQs or real news articles.
+- Parliamentary classification now requires concrete function/process signals—bill introduction/passage/debate, committee scrutiny, Question Hour/Zero Hour, privileges, motions, sessions or legislative oversight. A bare institution mention (for example, a visitor-centre story) is rejected. The full “Representation of the People Act” phrase is recognised.
 
 ### Feeds, dates, sources and URLs
 - RSS/Atom parsing prefers safe HTML alternate destinations over feed self-links/enclosures, while supporting RSS text links.
@@ -64,6 +65,7 @@ This is the live 25-ref inventory audited against the selected integration branc
 | `fix/atom-alternate-link-selection-2026-11-06` | Atom/RSS link candidate policy and parser regression tests integrated. PR #12 remains open/draft. |
 | `fix/cache-publication-date-integrity-2026-11-06` | Publication-date precedence, cache-retention policy, publisher provenance and tests integrated. PR #11 remains open/draft and is based on this integration branch; its remaining diff should be reconciled/closed before source deletion. |
 | `fix/early-startup-crash-diagnostics-2026-11-06` | Integration ancestor from PR #16; corrected Prismal capture, startup safeguards and network policy retained. PR #16 remains open/draft against main. |
+| `fix/parliamentary-syllabus-signal-gate-2026-11-07` | Bare Parliament mention removed as a sufficient GS-II signal; concrete parliamentary functions and bill actions retained; institution-only false-positive and bill/committee positive fixtures added. PR #23 merged into this branch, not main. |
 | `fix/editorial-heatwave-bill-signals-2026-11-07` | Bill/Finance Bill/heat-wave classifier and feed tests integrated with the Geography and entertainment-noise rules. PR #21 remains open/draft. |
 | `fix/editorial-signal-count-test` | Updated repo-rate signal-count expectation integrated; current classifier test expects four matched economy signals. |
 | `fix/editorial-token-boundaries-2026-11-06` | Whole-token matcher and negative substring fixtures are present; current editorial policy is a later, expanded version with more specific syllabus and noise rules. |
@@ -83,7 +85,7 @@ This is the live 25-ref inventory audited against the selected integration branc
 
 ## 3. Pull-request state at the audit
 
-- PR #19 (Reader Liquid Glass) and PR #20 (stacked read-only CI) are **closed/merged into `black-box-bihar-news`**, not into main.
+- PR #19 (Reader Liquid Glass), PR #20 (stacked read-only CI) and PR #23 (specific parliamentary syllabus gate) are **closed/merged into `black-box-bihar-news`**, not into main.
 - PR #15 (publisher redirect allowlist) is closed/unmerged; its safe redirect behaviour is present in the integration branch.
 - PRs #6, #8, #11, #12, #13, #16, #17, #18, #21 and #22 remain open/draft. Their useful code is represented in the consolidated branch; they are source-history records, not independent implementation targets.
 - No source branch was deleted. The owner should review the consolidated PR/branch before deleting source refs. PR #11 is especially redundant because it was retargeted to the integration branch and its changes were separately reconciled there.

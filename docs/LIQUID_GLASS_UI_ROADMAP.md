@@ -2,9 +2,9 @@
 
 **Status:** Consolidated branch; current natural CI build is green  
 **Feature branch:** `black-box-bihar-news`  
-**Current HEAD:** `ebdfdd7b22c9164ab4ea24a6fa744e706081fc7f`  
+**Current HEAD:** `46c7d77f66a1a2eba87bad77e5345f2b0e1ec3b2`  
 **Integration base:** PR #16 stability head `6ab1e6a02ac8e91027f21900d64d63b9f2e6a890`  
-**Latest successful run:** #187 on this exact HEAD; JVM tests, APK assembly and artifact upload passed.  
+**Last completed successful run:** #190 passed the documentation commit; post-PR #23 merge run #192 is validating this current HEAD.  
 **Main:** unchanged at `73b8a0d1ba33503fede02db2c3c0af082d724a12`.  
 **Safety:** no source branch has been deleted and no Release has been published. The user retains all source refs until review.
 
@@ -137,8 +137,11 @@ The following work is represented on `black-box-bihar-news`; source PRs/branches
 
 - Run #182, exact SHA `f031bf21229f43a992384cc23fa0f4da57e547a1`: passed JVM tests, APK assembly and artifact upload.
 - Run #183, exact SHA `d80916691eb5e72ee5448bd543433cdabe2a1e5a`: passed Reader auto-hide and Search clear-target work.
-- Runs #184/#185 exposed one threshold-boundary assertion in the new feed-nav policy test; the test was corrected to 43px + 1px without reducing the 44px threshold.
-- Run #186, exact SHA `6f15200325d3d333b3abff16c6f290fc81287b9c`: passed the corrected compact-navigation policy test suite and APK build.
-- **Run #187, exact SHA `ebdfdd7b22c9164ab4ea24a6fa744e706081fc7f`: passed** `:app:testDebugUnitTest`, `:app:assembleDebug` and artifact upload. Artifact ID `13559292205`, 39,052,427 bytes, expires 21 November 2026. [Open run #187](https://github.com/Batmancpu/CurrentLens/actions/runs/42334981467).
-- The Release job is skipped on the integration branch. No manual dispatch/rerun or main edit was made.
-- CI verifies build and JVM tests; physical-device launch, accessibility, animation smoothness and performance remain unverified.
+- Runs #184/#185 exposed one new navigation threshold test assertion; it was corrected to 43px + 1px without reducing the 44px threshold.
+- Run #186, exact SHA `6f15200325d3d333b3abff16c6f290fc81287b9c`: passed the corrected compact-navigation policy tests and APK build.
+- Run #187, exact SHA `ebdfdd7b22c9164ab4ea24a6fa744e706081fc7f`: passed the UI, dashboard and Appearance preview integration; artifact ID `13559292205`, 39,052,427 bytes.
+- Run #189, PR #23 head `9d754953a29c0355ce55306ce4fd5463193c9dbb`: passed the more-specific parliamentary syllabus gate and regression tests.
+- Run #190, integration SHA `67d1f6a32b483535dcecf2d0f803e8ce5cac7e16`: passed after consolidation documentation update.
+- The parliamentary signal gate (PR #23) is merged into `black-box-bihar-news`; current merged head is `46c7d77f66a1a2eba87bad77e5345f2b0e1ec3b2`. Natural post-merge run #192 is in progress; wait for that exact run before claiming the newest head passed.
+- Release publishing is skipped off main. No manual dispatch/rerun; no main edit/merge.
+- CI does not verify physical-device launch, animation smoothness, accessibility or performance. These remain unverified.
