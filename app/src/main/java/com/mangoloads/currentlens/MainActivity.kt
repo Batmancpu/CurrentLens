@@ -731,6 +731,9 @@ private fun BrrrNewsApp() {
             when {
                 selectedArticle != null && quizMode -> QuizScreen(
                     article = selectedArticle!!,
+                    backdrop = backdrop,
+                    glassAlpha = glassAlpha,
+                    dark = dark,
                     onBack = { quizMode = false },
                     onSubmit = { answers, questions ->
                         val article = selectedArticle!!
@@ -4111,26 +4114,86 @@ private fun GlassSettingsScreen(
 @Composable
 private fun QuizScreen(
     article: Article,
+    backdrop: PrismalBackdrop,
+    glassAlpha: Float,
+    dark: Boolean,
     onBack: () -> Unit,
     onSubmit: (Map<Int, Int>, List<QuizQuestion>) -> Unit
 ) {
-    val relevance = remember(article.id) { UpscEngine.classify(article) }
-    val questions = remember(article.id) { UpscEngine.questions(article, relevance) }
-    var selected by remember(article.id) { mutableStateOf<Map<Int, Int>>(emptyMap()) }
-    var submitted by remember(article.id) { mutableStateOf(false) }
+    val relevance = remember(article.id, article.title, article.description) {
+        UpscEngine.classify(article)
+    }
+    val questions = remember(article.id, article.title, article.description, relevance) {
+        UpscEngine.questions(article, relevance)
+    }
+    var selected by remember(article.id, article.title, article.description) {
+        mutableStateOf<Map<Int, Int>>(emptyMap())
+    }
+    var submitted by remember(article.id, article.title, article.description) {
+        mutableStateOf(false)
+    }
     val score = questions.indices.count { selected[it] == questions[it].correctIndex }
+    val reduceTransparency = LocalGlassReduceTransparency.current
+    val controlTint = if (dark) Color(0xFF26364B) else Color(0xFFEAF0FA)
 
     Column(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
-        Row(Modifier.fillMaxWidth().padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
-            IconButton(onClick = onBack) { Icon(Icons.Outlined.ArrowBack, contentDescription = "Back to article") }
-            Text("Your reading check", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+        PrismalGlassSurface(
+            backdrop = backdrop,
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 6.dp),
+            shape = { PrismalRoundedRectangle(22.dp) },
+            blurRadius = GlassRenderingPolicy.blurDp(8f, reduceTransparency).dp,
+            refractionHeightPx = GlassRenderingPolicy.refractionPx(10f, reduceTransparency),
+            refractionAmountPx = GlassRenderingPolicy.refractionPx(12f, reduceTransparency),
+            depthEffect = GlassRenderingPolicy.depthEnabled(true, reduceTransparency),
+            chromaticAberration = GlassRenderingPolicy.chromaticAberration(0.003f, reduceTransparency),
+            tint = controlTint,
+            tintAlpha = GlassRenderingPolicy.tintAlpha(
+                (glassAlpha * 0.42f).coerceIn(0.05f, 0.24f), reduceTransparency
+            )
+        ) {
+            Row(
+                Modifier.fillMaxWidth().heightIn(min = 60.dp)
+                    .padding(horizontal = 4.dp, vertical = 4.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                IconButton(onClick = onBack, modifier = Modifier.size(48.dp)) {
+                    Icon(Icons.Outlined.ArrowBack, contentDescription = "Back to article")
+                }
+                Column(
+                    Modifier.weight(1f).padding(vertical = 3.dp),
+                    verticalArrangement = Arrangement.spacedBy(2.dp)
+                ) {
+                    Text(
+                        "Your reading check",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                    Text(
+                        "Five questions · Basic to application",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.secondary,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+                Text(
+                    selected.size.toString() + "/" + questions.size,
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.primary,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(horizontal = 10.dp).semantics {
+                        contentDescription = "Answered " + selected.size + " of " +
+                            questions.size + " questions"
+                    }
+                )
+            }
         }
-        Text("Five questions · Basic to application", color = MaterialTheme.colorScheme.secondary,
-            modifier = Modifier.padding(horizontal = 20.dp))
         Card(
             modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer),
-            shape = RoundedCornerShape(16.dp)
+            shape = ContinuousCornerShape(22.dp)
         ) {
             Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) {
                 Text("Question-source note", fontWeight = FontWeight.Bold)
@@ -4160,7 +4223,7 @@ private fun QuizScreen(
             }
             items(questions.size) { index ->
                 val question = questions[index]
-                Card(shape = RoundedCornerShape(18.dp),
+                Card(shape = ContinuousCornerShape(22.dp),
                     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
                     Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(9.dp)) {
                         Text(question.level + " / " + question.type.uppercase(),
@@ -4171,7 +4234,9 @@ private fun QuizScreen(
                             val correct = submitted && optionIndex == question.correctIndex
                             OutlinedButton(
                                 onClick = { if (!submitted) selected = selected + (index to optionIndex) },
-                                modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(13.dp),
+                                modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)
+                                    .semantics { selected = chosen },
+                                shape = ContinuousCornerShape(16.dp),
                                 enabled = !submitted
                             ) {
                                 Text((if (chosen) "●  " else "○  ") + option,
@@ -4193,7 +4258,10 @@ private fun QuizScreen(
                 }
             }
             if (submitted) item {
-                Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)) {
+                Card(
+                    shape = ContinuousCornerShape(22.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
+                ) {
                     Column(Modifier.padding(17.dp)) {
                         Text("Your result: " + score + "/" + questions.size,
                             style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
@@ -4204,18 +4272,54 @@ private fun QuizScreen(
                 }
             }
         }
-        Row(Modifier.fillMaxWidth().padding(14.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            OutlinedButton(onClick = onBack, modifier = Modifier.weight(1f)) { Text("Done") }
-            Button(
-                onClick = {
-                    if (!submitted) {
-                        submitted = true
-                        onSubmit(selected.toMap(), questions)
+        Box(Modifier.fillMaxWidth().navigationBarsPadding()) {
+            PrismalGlassSurface(
+                backdrop = backdrop,
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 6.dp),
+                shape = { PrismalRoundedRectangle(22.dp) },
+                blurRadius = GlassRenderingPolicy.blurDp(7f, reduceTransparency).dp,
+                refractionHeightPx = GlassRenderingPolicy.refractionPx(8f, reduceTransparency),
+                refractionAmountPx = GlassRenderingPolicy.refractionPx(10f, reduceTransparency),
+                depthEffect = GlassRenderingPolicy.depthEnabled(true, reduceTransparency),
+                chromaticAberration = GlassRenderingPolicy.chromaticAberration(0.002f, reduceTransparency),
+                tint = controlTint,
+                tintAlpha = GlassRenderingPolicy.tintAlpha(
+                    (glassAlpha * 0.36f).coerceIn(0.045f, 0.20f), reduceTransparency
+                )
+            ) {
+                Column(
+                    Modifier.fillMaxWidth().padding(horizontal = 10.dp, vertical = 9.dp),
+                    verticalArrangement = Arrangement.spacedBy(7.dp)
+                ) {
+                    Text(
+                        selected.size.toString() + " of " + questions.size + " answered",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.secondary,
+                        modifier = Modifier.padding(start = 4.dp)
+                    )
+                    Row(
+                        Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        OutlinedButton(
+                            onClick = onBack,
+                            modifier = Modifier.weight(1f).heightIn(min = 48.dp),
+                            shape = ContinuousCornerShape(16.dp)
+                        ) { Text("Done") }
+                        Button(
+                            onClick = {
+                                if (!submitted) {
+                                    submitted = true
+                                    onSubmit(selected.toMap(), questions)
+                                }
+                            },
+                            modifier = Modifier.weight(1f).heightIn(min = 48.dp),
+                            shape = ContinuousCornerShape(16.dp),
+                            enabled = selected.isNotEmpty() && !submitted
+                        ) { Text(if (submitted) "Submitted" else "Submit answers") }
                     }
-                },
-                modifier = Modifier.weight(1f),
-                enabled = selected.isNotEmpty() && !submitted
-            ) { Text("Submit answers") }
+                }
+            }
         }
     }
 }

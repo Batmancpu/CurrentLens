@@ -1,24 +1,24 @@
 # Liquid Glass UI Roadmap
 
-**Status:** The shared Appearance low-effects/reduced-transparency mode is implemented and naturally validated on `black-box-bihar-news@2e2c15f`. This iteration adds one restrained Prismal filter group across Saved, Reading Stats and Quiz Stats; it is authored from that exact verified head and awaits its own natural CI result.  
-**Feature branch:** `black-box-bihar-news` — the only branch modified by this work.  
-**Verified source HEAD before this batch:** `2e2c15f5189ec6c60fa1f07f384bce4aa1734ea0`; direct child commit and exact resulting head are read from the live branch ref after the atomic update.  
-**Integration lineage:** 98 commits ahead / 0 behind `main@73b8a0d1ba33503fede02db2c3c0af082d724a12`; 41 ahead / 0 behind PR #16's corrected stability head `6ab1e6a02ac8e91027f21900d64d63b9f2e6a890`.  
-**Last completed successful validation on this branch:** Actions run [#201](https://github.com/Batmancpu/CurrentLens/actions/runs/42346024924), exact SHA `2e2c15f5189ec6c60fa1f07f384bce4aa1734ea0`; WordNet builder tests, offline database generation, `:app:testDebugUnitTest`, `:app:assembleDebug` and artifact upload passed. Artifact `13563139070`, 39,067,369 bytes, SHA-256 `236b9611c925a8a3f9aae4f7a28b57ef76c7c488161ada7d2d84fd54bcce27fb`. It validates the previous head, not this filter batch.  
-**Latest separate PR run:** #202 passed on PR #25's child head `7a51c9c2c40aa89997db55194a6db3d0d65ac95d`; artifact `13563912571`. It is not a validation of `black-box-bihar-news`.  
-**Actions queue:** no queued or in-progress runs at the audit; 202 runs fully paginated (100 + 100 + 2).  
-**Main / Releases:** `main` unchanged; latest published Release remains `v0.2.0-build-116`; no feature-branch Release or merge.  
-**Safety:** no source branch was changed/deleted; no workflow dispatch/rerun; no package/app identity, networking, persistence or quiz-submit semantics changed.
+**Status:** Saved/Reading Stats/Quiz Stats filter glass is validated on black-box-bihar-news@3a08bb95 by natural run #203. This batch adds two restrained Prismal control surfaces to Quiz (identity/header and submission dock); question, option, source-note and explanation content remains non-glass. The new commit awaits its own natural CI result.  
+**Feature branch:** black-box-bihar-news — the only branch modified by this work.  
+**Verified source HEAD before this batch:** 3a08bb95b0f9a0fed8ec11dae055f0ac2817a523; the new code and roadmap commits are a direct child created with a fast-forward-only ref update.  
+**Integration lineage:** 99 commits ahead / 0 behind main@73b8a0d1ba33503fede02db2c3c0af082d724a12; 42 ahead / 0 behind PR #16's corrected stability head 6ab1e6a02ac8e91027f21900d64d63b9f2e6a890.  
+**Last completed successful validation on this branch:** Actions run #203 (https://github.com/Batmancpu/CurrentLens/actions/runs/42349689690), exact SHA 3a08bb95b0f9a0fed8ec11dae055f0ac2817a523; WordNet builder tests (4/4), offline database generation (151,456 unique words), :app:testDebugUnitTest, :app:assembleDebug and artifact upload passed. Artifact 13565296151, 39,078,047 bytes; the publish job was skipped. It validates the filter-group parent, not this Quiz batch.  
+**Latest overall natural run:** #204 passed on PR #26's exact head b8d2ef9ff2413c378347986d00961c401dfa771d; artifact 13565228424, 39,079,206 bytes. PR #25 run #202 also passed on its own head 7a51c9c2c40aa89997db55194a6db3d0d65ac95d; neither validates the active branch.  
+**Actions queue:** 204 runs fully paginated (100 + 100 + 4; next page empty); no queued or in-progress runs.  
+**Workflow / Releases:** active workflow blob 6cef6ca19f3babd331c9deb59be9da0067c6fa66 uses read-only build permissions, natural push/PR triggers for main, PR #16 and this branch, and a separate main-push-only release job. Main's workflow remains push-only. Latest published Release remains v0.2.0-build-116; no feature-branch Release or merge.  
+**Safety:** no other branch, main, workflow, package/app identity, network policy, persistence format or quiz submit-only semantics changed; no manual dispatch/rerun or Release publication.
 
-## Live branch freshness audit — 7 November 2026, 12:27 IST
+## Live branch freshness audit — 7 November 2026, 13:00 IST
 
-- All 29 remote branches were enumerated (page 1: 29; page 2: 0), all 12 open PRs and recently merged PRs reviewed, and the full current workflow plus exact latest job logs/artifacts were checked. The full branch/commit table and comparisons are in `docs/BRANCH_CONSOLIDATION.md` §9.
-- `black-box-bihar-news@2e2c15f` is the latest coherent owner-selected integration lineage: 98 ahead / 0 behind main and 41 ahead / 0 behind PR #16. PR #16 remains open/draft on main; its corrected background-only Prismal source is an ancestor, not a reason to branch from its now-older head.
-- PR #19 Reader/Search UI, PR #20 read-only stacked CI and PR #23 editorial gate are merged into this branch only. The branch's workflow has read-only build permissions, a separately gated main-push release job, and natural push/PR triggers for this branch; no workflow edit is part of this batch.
-- `brrrNEWS` is a divergent sibling (4 ahead / 4 behind). Its `GlassSurfacePolicy.kt` and test are byte-identical to this branch; the visible supporting-glass implementation is already integrated. PR #24's own three-file diff is editorial-only and remains on its sibling base.
-- PR #25 is a seven-commit child of the exact source head and adds publisher-owned RSS/Reader image allowlisting. Its MainActivity hunks are confined to NewsCard image validation and cached Reader HTML; they do not overlap the Saved/stat filter section. The branch and PR remain untouched.
-- PR #13's 1.5s/2.5s adaptive readback cadence was not copied; this branch retains one 8×8 probe at 4s/6s, paused while scrolling and outside foreground home surfaces. Stale `ui/liquid-glass-performance` and `redesign/v0.3-search-reader` remain excluded.
-- Run #201 is the exact black-box validation described above. Run #202 validates only PR #25. The publish jobs were skipped; no Release was created. OPPO visual/performance checks remain unverified.
+- All 31 remote branches were enumerated (page 1: 31; page 2: 0), all 13 open PRs and 13 closed PRs reviewed, and relevant full diffs/commit comparisons inspected. The exact 31-head table and disposition are in docs/BRANCH_CONSOLIDATION.md §10.
+- black-box-bihar-news@3a08bb95 remains the owner-selected active integration branch: 99 ahead / 0 behind main and 42 ahead / 0 behind PR #16. It is a direct descendant of PR #16's corrected background-only Prismal/stability head. The branch was rechecked immediately before the implementation commit.
+- brrrNEWS@e6fcfc25 is a divergent sibling (4 commits unique to brrrNEWS and 5 unique to black-box; common ancestor e411c394). Its GlassSurfacePolicy.kt and test are byte-identical to black-box; Reader saved-position restoration on IO is already present in black-box. Its workflow/branding/documentation changes and PR #24's separate editorial policy are not adopted. The explicit active-branch instruction remains authoritative.
+- PR #25 and #26 are open publisher-image/subresource privacy changes. Their MainActivity hunks are limited to NewsCard/Reader resource paths and do not overlap this QuizScreen batch; they remain untouched pending a separate shared-host/security reconciliation. PR #24 is editorial-only and remains on brrrNEWS. No source branch was merged, deleted or modified.
+- PR #19, #20 and #23 remain closed/merged into black-box only. PR #16 remains open on main; PR #18's compatible read-only workflow intent is represented in the active branch. The old ui/liquid-glass-performance and redesign/v0.3-search-reader branches remain excluded.
+- The active workflow is read-only for build/test and only grants contents: write to the separate main-push Release job. Main still has no pull_request trigger; a future draft PR to main must not be described as PR-to-main CI-validated until that base workflow is reconciled.
+- Run #203 validates the exact pre-Quiz head; #204 validates PR #26 only and #202 validates PR #25 only. No queue remains. OPPO runtime, launch stability, visual motion, TalkBack, Reduce Motion, Perfetto/frame timing, GPU overdraw, allocation/memory, thermal and battery remain UNVERIFIED.
 
 ## Historical branch audit and reduced-transparency batch — 7 November 2026, 11:38 IST (superseded by the live audit above)
 
@@ -83,8 +83,8 @@ Recheck every branch head and dependency before each future implementation commi
 | Reader article canvas | Editorial content | Clear, high-contrast text; responsive max width and paragraph rhythm | Existing responsive CSS; keep non-glass |
 | Reader completion action | Transient contextual glass | Compact, dismissible, only after true completion; hide with reader chrome and avoid definition/action-mode overlap | Implemented; physical safe-area/selection checks unverified |
 | Definition popover | Interactive contextual glass | Anchored Prismal surface, full selected word and compact accessible actions | Existing anchored surface; title/actions improved in this batch |
-| Quiz questions/options | Editorial content | Calm standard surfaces; persist only on submit | Existing standard surfaces; preserve |
-| Quiz action controls | Interactive control glass where useful | Compact, accessible action layer without glassifying questions | Planned |
+| Quiz questions/options | Editorial content | Calm standard surfaces; persist only on submit | Continuous-corner content cards, >=48dp option targets and selected semantics; no live blur; submit-only persistence unchanged |
+| Quiz action controls | Interactive control glass | One compact glass identity/header and one safe-area-aware submission dock; keep Done/Submit discoverable | Implemented in the Quiz action-chrome batch; two small surfaces reuse the root backdrop |
 | Appearance settings | Interactive control glass | Clear↔Frosted slider, presets, live header/navigation/article preview and low-effects switch | Preview and reduced-transparency mode integrated; slider changes apply to shared material policy; device validation pending |
 | Dialogs, menus and sheets | Contextual controls | Use glass only when transient context benefits; preserve native OS selection/share UI | Review individually; no global glass overlay |
 
@@ -105,6 +105,7 @@ Recheck every branch head and dependency before each future implementation commi
 | You / stats supporting cards | No live blur; one cached gradient tint and rim on visible cards | Shared `GlassSurfacePolicy`; stable shape/brushes; memoized aggregates; existing LazyColumn composition | No capture/readback or image work added; frame/GPU/memory/battery cost not measured |
 | Saved / Reading / Quiz Stats filter group | One 5dp-blur / low-refraction Prismal surface per visible subpage, containing three compact 48dp rails | Reuses the one background-only root source; no per-row/per-chip blur, no new capture/readback; option de-duplication is remembered | Reduce Transparency routes blur/refraction through `GlassRenderingPolicy`; FilterChip keeps selected semantics and >=48dp width/height; GPU/frame/memory/battery cost unmeasured |
 | Appearance preview | Existing small preview surfaces | Reuse current slider value and existing components; no whole-screen blur or repeated image decode | Reduced-transparency/low-effects preference is integrated; OPPO rendering and slider-response measurements remain unverified |
+| Quiz chrome | Two small Prismal control surfaces (header + bottom dock) | Reuse the one background-only root source; 7–8dp bounded blur/refraction; no per-question glass, new capture or readback | Reduce Transparency uses GlassRenderingPolicy; 48dp actions and safe-area padding; device frame/GPU/battery cost unmeasured |
 
 ## Implemented batch — Reader toolbar and completion
 
@@ -119,24 +120,22 @@ Recheck every branch head and dependency before each future implementation commi
 
 **Rendering delta:** one small Reader toolbar surface is now active while reading; one small completion surface is active only after completion. Both reuse the existing root backdrop. The definition popover remains the existing single anchored surface. No per-card blur, extra backdrop capture, sampler, image decode, GPU readback, dependency, network request or persistent data format was added.
 
-**Subsequently implemented:** Reader chrome auto-hide/directional pinning, 48dp Search clear, feed-only compact navigation, dashboard/stat supporting surfaces, the Appearance live preview and the shared low-effects/reduced-transparency preference. The grouped Saved/stat filter panel is the current pending batch; Quiz action-area polish remains next.
+**Subsequently implemented:** Reader chrome auto-hide/directional pinning, 48dp Search clear, feed-only compact navigation, dashboard/stat supporting surfaces, Appearance live preview, shared low-effects/reduced-transparency preference and the Saved/stat filter group. The current Quiz action-chrome batch adds a glass header and safe-area submission dock while keeping questions and explanations on standard surfaces.
 
 ## Verification status and limitations
 
-- Latest exact branch validation before this batch is run #201 on `2e2c15f5189ec6c60fa1f07f384bce4aa1734ea0`; its full build/test/artifact evidence is recorded in the current audit above. Run #202 is a separate PR #25 child build and is not a substitute.
-- The Appearance reduced-transparency batch is part of the run #201 tested SHA. The new filter-group UI commit is not yet validated; wait for a natural run on its exact head before declaring it compiled or passing.
-- No OPPO Reno10 5G install, screenshot, TalkBack session, logcat/tombstone, Perfetto trace, GPU frame-time, memory, thermal or battery measurement is available. Visual transitions, contrast on image backdrops, real-device launch stability and resource cost remain **UNVERIFIED**.
-- Supporting-card cost controls: no Prismal capture, live blur, refraction, sampler, readback, graphics layer, image decode or dependency; cached tint/rim only. The current filter batch adds one shared 5dp-blur/low-refraction panel on the active Saved or Stats page, reusing the root background-only source; no per-chip surface or new readback. This is a code-scope statement, not a measured performance win.
+- The exact Saved/stat filter-group head 3a08bb95b0f9a0fed8ec11dae055f0ac2817a523 passed natural run #203; full job steps/log, WordNet output, JVM test task, APK assembly and artifact upload were inspected. Run #204 is PR #26 and #202 is PR #25; neither validates the active branch.
+- This Quiz action-chrome commit has no CI result yet. Wait for its natural push run on the exact new SHA before declaring it compiled or passing.
+- No OPPO Reno10 5G install, screenshot, TalkBack session, logcat/tombstone, Perfetto trace, GPU frame-time, memory, thermal or battery measurement is available. Visual transitions, contrast on image backdrops, real-device launch stability and resource cost remain UNVERIFIED.
+- Supporting-card cost controls: no Prismal capture, live blur, refraction, sampler, readback, graphics layer, image decode or dependency; cached tint/rim only. The Saved/stat filter batch adds one shared 5dp-blur/low-refraction panel on the active Saved or Stats page, reusing the root background-only source; no per-chip surface or new readback. Quiz chrome adds only two small active surfaces, with no per-question blur or additional capture. These are code-scope statements, not measured performance wins.
 - The native launch fault remains unproven as fixed until a post-change physical-device launch test is available.
 
 ## Next implementation sequence
 
-1. Await natural CI on the current Saved/Reading Stats/Quiz Stats filter-group commit; inspect the exact run, full logs and artifact before another UI batch.
-2. Refine the Quiz action area and transient sheets/menus with the same restrained control-glass vocabulary only where it improves hierarchy; keep questions/options and explanatory content on clear surfaces.
+1. Await natural CI on this Quiz action-chrome commit; inspect the exact run, full logs and artifact before another UI batch.
+2. Review transient sheets/menus and any remaining quiz contextual actions; keep dense question, option and explanatory content on clear surfaces.
 3. Whole-app audit: reconcile header, filters, Reader, navigation, dashboard, Saved, stats and quiz resting/transient states; check light/dark, large text, TalkBack and Reduce Motion.
 4. Measure on OPPO Reno10 5G (or explicitly keep metrics unverified): startup, scroll jank/frame timing, allocation churn, GPU overdraw/layers, thermal and battery against the same base build.
-
-Do not mark the redesign complete until every screen has an intentional material role, paired cost strategy, and verified or explicitly unverified accessibility/performance status.
 
 ## Consolidation implementation log
 
@@ -154,7 +153,8 @@ The following work is represented on `black-box-bihar-news`; source PRs/branches
 | PR #6 + #21 editorial | GS I Geography, bill/Finance Bill, heat-wave; film/viral/sports safeguards; labelled synthetic tests | Run #182 and #183 passed |
 | PR #13 adaptive glass contrast | Shared 8×8 band probe, foreground/idle-only, 4s/6s cadence, pauses during feed motion, Reader, Settings and background | Run #187 passed; physical-device profile unverified |
 | Feed-only compact navigation | Same bar morphs to active-label pill only on Today/Explore/Search; You/nested surfaces remain expanded | Run #186 policy tests and #187 integration build passed; visual motion needs device validation |
-| Supporting glass surfaces | Shared non-blurred tier for You metrics, practice-empty and destinations plus stats day/attempt cards | Code commit 5e966; focused policy tests added; natural CI pending |
+| Supporting glass surfaces | Shared non-blurred tier for You metrics, practice-empty and destinations plus stats day/attempt cards | Integrated; current active branch run #203 passed; device cost remains unmeasured |
+| Quiz action chrome | Two small Prismal surfaces for header identity and submit/done actions; content cards remain standard | This batch; natural CI pending on its exact new head |
 
 ### Deliberately excluded / superseded
 
@@ -226,4 +226,20 @@ The following work is represented on `black-box-bihar-news`; source PRs/branches
 
 **Tests:** no new policy/state logic was introduced; the panel reuses the already-tested `GlassRenderingPolicy` and `GlassSurfacePolicy`. Natural CI must run the full `:app:testDebugUnitTest` suite and assemble the APK on this exact new head. Visual density, TalkBack, 48dp touch behaviour and animation remain device checks.
 
-**Validation:** pending natural CI for this commit. OPPO Reno10 5G screenshots, Perfetto/frame timing, GPU overdraw, memory, thermal and battery remain **UNVERIFIED**.
+**Validation:** the grouped-filter commit is covered by run #203 on exact SHA 3a08bb95b0f9a0fed8ec11dae055f0ac2817a523; artifact 13565296151, 39,078,047 bytes. OPPO Reno10 5G screenshots, Perfetto/frame timing, GPU overdraw, memory, thermal and battery remain UNVERIFIED.
+
+
+## Quiz action-chrome batch — 7 November 2026
+
+**Source:** black-box-bihar-news@3a08bb95b0f9a0fed8ec11dae055f0ac2817a523, rechecked immediately before the fast-forward-only update. No other branch or workflow is changed.
+
+- Added a compact Prismal glass header with Back, “Your reading check”, the five-question context and an accessible answered-count description.
+- Added one bottom Prismal dock for answered count, Done and Submit; it uses navigation-bar safe-area padding and 48dp action targets. The existing submit callback remains the only persistence boundary; no draft or unsubmitted quiz state is stored.
+- Kept the source note, question cards, options and explanations on high-contrast standard surfaces. Question/result cards now use the shared continuous-corner geometry; answer options have 48dp minimum height and expose selected state semantics.
+- Quiz relevance/questions/answer state now key off article identity plus title/description, avoiding stale questions or answer state if a cached article is refreshed under the same URL identity.
+
+**Paired rendering/performance strategy:** two small visible Prismal surfaces (header and bottom dock) reuse the existing background-only root capture. Blur/refraction are bounded to 7–8dp and routed through GlassRenderingPolicy; no per-question blur, second capture, sampler/readback, bitmap decode, graphics layer, polling, dependency or network work is added. Reduce Transparency uses the existing static/low-effects path. No frame-time, GPU, memory or battery improvement is claimed without device measurements.
+
+**Tests and behaviour:** no new persistence policy was introduced; submit-only quiz storage is unchanged. Existing JVM tests remain the compile/regression gate. Option selected semantics and minimum hit size are represented in Compose modifiers; TalkBack, font scaling, selection and real-device layout remain device checks.
+
+**Validation:** natural CI pending for this exact commit. Run #203 validates only the source head before this batch; PR #25/#26 runs #202/#204 validate their own heads. OPPO Reno10 screenshots, launch/scroll traces, Perfetto, frame timing, overdraw, allocation/memory, thermal and battery remain UNVERIFIED.
