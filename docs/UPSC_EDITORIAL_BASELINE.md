@@ -30,7 +30,7 @@ This is a coverage baseline, **not** a frequency-weighted prediction model. The 
 
 1. A default-feed item must map to a defensible GS paper and a named syllabus theme.
 2. The card exposes the matched RSS terms and the syllabus connection as an **indicative reason**, not as proof that the full article is relevant.
-3. Entertainment, celebrity, box-office, reality-show, routine sports and generic viral noise is excluded unless the headline itself identifies a concrete law, regulatory action, institutional decision or policy change.
+3. Entertainment, celebrity, box-office, reality-show, routine sports and generic viral noise is excluded. Hard exclusions use unmistakable promotional, drama, box-office, routine-result and viral phrases; isolated words such as “celebrity”, “trailer”, “premiere” or “contestant” are not hard exclusions by themselves because they can occur in genuine regulatory coverage. A soft exception still requires a specific policy subject and an institutional action or a clearly current passive policy change. A historical Act mention is not a current action.
 4. Publisher RSS titles, excerpts, publication dates and feed URLs are publisher-supplied metadata. They are **not** primary-source corroboration.
 5. Verify material claims against the original public document. CurrentLens does not yet attach an independently verified official-source document to each publisher report.
 6. A question is labelled an official PYQ only after its year, paper and official UPSC source have been verified. Original practice prompts remain labelled as original or PYQ-style.
@@ -49,9 +49,35 @@ The unit-test fixtures are synthetic examples designed to expose classification 
 | False-negative recovery | “Parliament passes a bill to amend electoral rules” | Include — GS II, Constitution/Polity | A concrete legislative action and Representation of the People Act theme are explicit GS II signals | 
 | Positive | “Standing committee reviews a bill on parliamentary privileges” | Include — GS II, Constitution/Polity | Committee scrutiny and parliamentary privileges map to the syllabus’ functioning and powers themes |
 | False-positive rejection | Celebrity film-release story whose excerpt merely mentions film-certification rules | Exclude | A policy exception must be established by a concrete action in the headline itself |
+| False-positive rejection | “Government launches a new welfare scheme for public service reform”; an unrelated excerpt sentence mentions climate change | Exclude | A GS III environmental signal outside the selected GS II Governance mapping cannot validate a broad governance match |
+
+| False-positive rejection | “Box-office collection update: GST on movie tickets raises costs” | Exclude | A box-office headline is a non-overridable promotion signal; a tax phrase alone cannot bypass it. |
+| False-positive rejection | “A new film about the Cinematograph Act enacted in 1952” | Exclude | A historical Act reference is not a current institutional action; passive matching cannot infer one from the word “enacted”. |
+| False-positive rejection | “A new film about the Cinematograph Act while Ministry issues new agricultural rules” | Exclude | An unrelated ministry action must not be combined with an entertainment subject to manufacture a policy exception. |
+| False-positive rejection | “Actor explains film certification rules in a podcast” | Exclude | A promotional/celebrity headline is not rescued by policy nouns. |
+| False-negative recovery | “Heat wave action plan adopted by NDMA” | Include — GS III, Disaster Management | Heat-wave action planning maps to the explicit disaster-management theme; NDMA alone remains insufficient. |
+| Conservative false-negative watch | “Film certification rules notified” | Hold out of automatic default feed pending a current-change cue or named institution | This ambiguous passive headline may describe a genuine notification, but lacks enough evidence for an automatic exception; manual/source review is safer than a broad regex. |
+
+| Positive | “CBFC issues new film certification guidelines for actors” | Include — GS II, Governance | A named statutory board announces a current certification-guideline change; the word “actors” does not negate an explicit institutional action. |
+| False-negative recovery | “Central Consumer Protection Authority issues new guidelines on celebrity endorsements” | Include — GS II, Governance | CCPA is a statutory authority; the 9 June 2022 guidelines were issued under Section 18 of the Consumer Protection Act, 2019. [Official Gazette notification](https://consumeraffairs.gov.in/public/upload/files/CCPA_Notification_1732707665.pdf). |
+| False-negative recovery | “Ministry issues new broadcasting regulations for film trailers” | Include — GS II, Governance | The institutional action and broadcasting-regulation subject concern media governance, not film promotion. |
+| False-positive rejection | “Official trailer released for a film about celebrity endorsements” | Exclude | A promotional release phrase remains hard noise even though the classifier finds a consumer/endorsement keyword. |
+
+Every automatically eligible item must also map through `UpscEngine` to a non-`Unmapped` GS paper and named syllabus theme, with matched headline/excerpt terms and a non-empty syllabus rationale. The card presents this as indicative evidence, not a numeric relevance score.
 
 The fixtures are regression checks for this deterministic rule set. They do not establish precision/recall, validate a score, or predict examination questions.
 
 ## Source-provenance limitation
 
 The current RSS registry is publisher-led (The Hindu, Indian Express, BBC, DW and Al Jazeera). The stored `feedUrl` records which publisher feed supplied an item; it does not prove that the report is supported by PIB, the Gazette of India, a ministry, Parliament, PRS, RBI, the Supreme Court or a statutory/regulatory body. Do not display publisher RSS metadata as an official primary source. Official-source feeds and per-story corroboration require endpoint validation and an explicit provenance model before being presented as verified.
+
+## Specific-signal false-negative recovery fixtures
+
+| Label | Headline fixture | Expected result | Reason |
+|---|---|---|---|
+| False-negative recovery | “Parliament debates a constitutional amendment” | Include — GS II, Constitution | The exact constitutional-amendment signal is part of the selected Constitution mapping. |
+| False-negative recovery | “National Education Policy review focuses on school education” | Include — GS II, Education & Human Resources | Education is an explicit GS II social-sector theme, not a generic governance keyword. |
+| False-negative recovery | “Government expands e-governance and public service delivery” | Include — GS II, Governance | The selected Governance rule recognises the specific e-governance/service-delivery signals. |
+| False-negative recovery | “Gross domestic product growth slows as fiscal deficit widens and monetary policy changes” | Include — GS III, Indian Economy | The selected Economy mapping contains the exact macroeconomic syllabus signals. |
+| False-negative recovery | “ISRO announces a new space mission and quantum computing programme” | Include — GS III, Science & Technology | Space missions and quantum computing are explicit technology themes. |
+| False-negative recovery | “Border security review strengthens management of the frontier” | Include — GS III, Internal Security | Border security is mapped to the selected Internal Security rule. |
