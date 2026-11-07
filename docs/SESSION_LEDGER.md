@@ -419,3 +419,6 @@ Branch: `fix/early-startup-crash-diagnostics-2026-11-06`.
 
 
 - **Post-commit CI status:** after the required handoff snapshot advanced the PR head from `eed05ce` to `d05a790`, natural run #271 on the earlier head was cancelled by GitHub concurrency. Natural PR run #272 is pending with its build job queued on the final head `d05a79035a1c9a7676d855129ea4a960fa313ffe`. No compile/test result exists yet for the final PR head; no manual rerun/dispatch was made.
+
+
+- **Final-head verification update:** natural PR run #274 passed on `8eb7aae3ee0d864fac77ccb83cf9565ce8409d9f`. Full job log inspected: WordNet builder 4/4 tests; dictionary generated with 151,456 unique words (50,950,144 bytes); `:app:testDebugUnitTest` and `:app:assembleDebug` passed; artifact upload passed. Artifact `13592087500`, 39,106,296 bytes, expires 21 November 2026. This validates the Compose RowScope compile repair at CI level only; no physical-device or visual/performance claim.

@@ -19,6 +19,21 @@
 
 ---
 
+## Live snapshot — 8 November 2026, final verification
+
+- **Main:** `73b8a0d1ba33503fede02db2c3c0af082d724a12`, unchanged.
+- **Integration:** `black-box-bihar-news@d451d22518b8065e2865dae6b40679c3d7b41dc2`; the uncorrected integration head fails natural runs #269/#270 at SearchMorphField's RowScope.AnimatedVisibility call.
+- **Compile repair:** draft PR [#37](https://github.com/Batmancpu/CurrentLens/pull/37), base integration, final head `8eb7aae3ee0d864fac77ccb83cf9565ce8409d9f`, GitHub mergeable. It replaces the inner fixed 48dp Box with a fixed 48dp Row, providing the required RowScope without changing the search field's reserved width, 48dp hit target, fade timing, focus retention or Reduce Motion behaviour.
+- **Exact-head verification:** natural run [#274](https://github.com/Batmancpu/CurrentLens/actions/runs/42417973318) passed: WordNet builder 4/4, 151,456 unique words, `:app:testDebugUnitTest`, `:app:assembleDebug` and artifact upload. Artifact [#13592087500](https://github.com/Batmancpu/CurrentLens/actions/runs/42417973318/artifacts/13592087500), 39,106,296 bytes, expires 21 November 2026. No Release job ran.
+- **Today rollover:** PR [#36](https://github.com/Batmancpu/CurrentLens/pull/36) exact head passed natural run #268; its Asia/Kolkata date/index refresh is not integrated and needs reconciliation against the newer integration head. It does not refetch feeds.
+- **Actions:** 274 runs fully paginated: 160 success, 61 failure, 52 cancelled, 1 in progress (the final cleanup phase of #274 at the last check); queued 0. Exactly one workflow file. Main remains push-only with workflow-wide `contents: write`; integration has read-only build/test and separately gated main-push Release write.
+- **Repository:** 40 branches, 23 open PRs, 14 closed PRs. No main edit, merge, manual dispatch/rerun or Release publication.
+- **Latest Release:** `v0.2.0-build-116` (6 November 2026).
+- **Next priorities:** reconcile PR #27 strict editorial gate; combine PR #32 bounded RSS concurrency and #33 relative Atom resolution; then reconcile PRs #25/#26 publisher image and WebView subresource restrictions. PR #35 startup diagnostic read bounds and PR #36 IST rollover also remain unintegrated. Per-story primary-source corroboration is not implemented.
+- **Device:** no fresh OPPO Reno10 logcat, tombstone, Perfetto trace or screenshot. Native cold-start crash remains unverified. CI does not certify device launch, TalkBack, font scaling, keyboard, GPU, frame-time, thermal or battery behaviour.
+
+> This snapshot supersedes older live snapshots below where they conflict. Chronological evidence remains in SESSION_LEDGER.md.
+
 # CurrentLens — Latest project handoff (7 November 2026, 22:24 IST)
 
 ## Live snapshot — 7 November 2026, 22:24 IST
