@@ -1720,9 +1720,9 @@ private fun SavedFeed(
                     fontWeight = FontWeight.Bold, fontSize = 10.sp, letterSpacing = 1.4.sp)
             }
             if (savedArticles.isEmpty()) item {
-                EmptyPanel("Nothing saved yet", "Tap the bookmark on any story to keep it here.")
+                SupportingEmptyPanel("Nothing saved yet", "Tap the bookmark on any story to keep it here.")
             } else if (filtered.isEmpty()) item {
-                EmptyPanel("No saved articles match", "Change the publication-date, subject or GS-paper filter.")
+                SupportingEmptyPanel("No saved articles match", "Change the publication-date, subject or GS-paper filter.")
             } else items(filtered, key = { it.id }, contentType = { "article" }) { article ->
                 NewsCard(article, true, onOpenArticle, onToggleBookmark)
             }
@@ -1760,7 +1760,7 @@ private fun YouDashboard(
     LazyColumn(
         Modifier.fillMaxSize(),
         contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 112.dp),
-        verticalArrangement = Arrangement.spacedBy(13.dp)
+        verticalArrangement = Arrangement.spacedBy(SupportingCardGeometryPolicy.SECTION_GAP_DP.dp)
     ) {
         item {
             Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
@@ -1771,7 +1771,7 @@ private fun YouDashboard(
             }
         }
         item {
-            Row(horizontalArrangement = Arrangement.spacedBy(9.dp)) {
+            Row(horizontalArrangement = Arrangement.spacedBy(SupportingCardGeometryPolicy.METRIC_GAP_DP.dp)) {
                 MetricTile("Articles read", totalUniqueRead.toString(), Modifier.weight(1f))
                 MetricTile("Read today", articlesReadToday.toString(), Modifier.weight(1f))
             }
@@ -1779,8 +1779,8 @@ private fun YouDashboard(
         if (attempts.isEmpty()) {
             item {
                 SupportingGlassCard(modifier = Modifier.fillMaxWidth()) {
-                    Column(Modifier.fillMaxWidth().padding(17.dp),
-                        verticalArrangement = Arrangement.spacedBy(5.dp)) {
+                    Column(Modifier.fillMaxWidth().padding(SupportingCardGeometryPolicy.CONTENT_PADDING_DP.dp),
+                        verticalArrangement = Arrangement.spacedBy(SupportingCardGeometryPolicy.CONTENT_GAP_DP.dp)) {
                         Text("Practice when you're ready",
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.SemiBold,
@@ -1795,7 +1795,7 @@ private fun YouDashboard(
             }
         } else {
             item {
-                Row(horizontalArrangement = Arrangement.spacedBy(9.dp)) {
+                Row(horizontalArrangement = Arrangement.spacedBy(SupportingCardGeometryPolicy.METRIC_GAP_DP.dp)) {
                     MetricTile("Quiz attempts", attempts.size.toString(), Modifier.weight(1f))
                     MetricTile("Accuracy", accuracy, Modifier.weight(1f))
                 }
@@ -1804,7 +1804,7 @@ private fun YouDashboard(
         item {
             Text("YOUR LIBRARY", color = MaterialTheme.colorScheme.primary,
                 fontWeight = FontWeight.Bold, fontSize = 10.sp, letterSpacing = 1.4.sp,
-                modifier = Modifier.padding(top = 5.dp))
+                modifier = Modifier.padding(top = 4.dp))
         }
         item { DestinationRow("Saved", "Your bookmarked articles", savedCount.toString(), onSaved) }
         item { DestinationRow("Reading Stats", "Daily reading time and article activity", "›", onReadingStats) }
@@ -1867,10 +1867,10 @@ private fun SupportingGlassCard(
 
 @Composable
 private fun MetricTile(label: String, value: String, modifier: Modifier = Modifier) {
-    SupportingGlassCard(modifier = modifier.heightIn(min = 82.dp)) {
+    SupportingGlassCard(modifier = modifier.heightIn(min = SupportingCardGeometryPolicy.METRIC_MIN_HEIGHT_DP.dp)) {
         Column(
-            Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 13.dp),
-            verticalArrangement = Arrangement.spacedBy(4.dp)
+            Modifier.fillMaxWidth().padding(SupportingCardGeometryPolicy.CONTENT_PADDING_DP.dp),
+            verticalArrangement = Arrangement.spacedBy(SupportingCardGeometryPolicy.CONTENT_GAP_DP.dp)
         ) {
             Text(
                 value,
@@ -1895,11 +1895,11 @@ private fun MetricTile(label: String, value: String, modifier: Modifier = Modifi
 
 @Composable
 private fun DestinationRow(title: String, description: String, trailing: String, onClick: () -> Unit) {
-    SupportingGlassCard(modifier = Modifier.fillMaxWidth().heightIn(min = 72.dp)) {
+    SupportingGlassCard(modifier = Modifier.fillMaxWidth().heightIn(min = SupportingCardGeometryPolicy.DESTINATION_MIN_HEIGHT_DP.dp)) {
         Row(
             Modifier.fillMaxWidth()
                 .clickable(role = Role.Button, onClick = onClick)
-                .padding(16.dp),
+                .padding(SupportingCardGeometryPolicy.CONTENT_PADDING_DP.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
@@ -1909,6 +1909,34 @@ private fun DestinationRow(title: String, description: String, trailing: String,
             }
             Text(trailing, style = MaterialTheme.typography.titleLarge,
                 color = MaterialTheme.colorScheme.primary, maxLines = 1, softWrap = false)
+        }
+    }
+}
+
+@Composable
+private fun SupportingEmptyPanel(title: String, description: String) {
+    SupportingGlassCard(
+        modifier = Modifier.fillMaxWidth()
+            .heightIn(min = SupportingCardGeometryPolicy.EMPTY_MIN_HEIGHT_DP.dp)
+    ) {
+        Column(
+            Modifier.fillMaxWidth()
+                .padding(SupportingCardGeometryPolicy.CONTENT_PADDING_DP.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(SupportingCardGeometryPolicy.CONTENT_GAP_DP.dp)
+        ) {
+            Text(
+                title,
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold,
+                textAlign = TextAlign.Center
+            )
+            Text(
+                description,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center
+            )
         }
     }
 }
@@ -2138,14 +2166,14 @@ private fun ReadingStatsScreen(
             )
             CompactFilterRow("Subject", subjects, selectedSubject) { selectedSubject = it }
         }
-        Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 7.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
+            horizontalArrangement = Arrangement.spacedBy(SupportingCardGeometryPolicy.METRIC_GAP_DP.dp)) {
             MetricTile("Reading time", formatDuration(summary.totalDurationMillis), Modifier.weight(1f))
             MetricTile("Unique articles", summary.uniqueArticleCount.toString(), Modifier.weight(1f))
             MetricTile("Sessions", summary.sessionCount.toString(), Modifier.weight(1f))
         }
         if (summary.days.isEmpty()) {
-            EmptyPanel("No timed reading sessions in this range",
+            SupportingEmptyPanel("No timed reading sessions in this range",
                 "Open an article and keep it in the foreground. Older read markers have no historical date or duration.")
         } else {
             LazyColumn(
@@ -2158,8 +2186,8 @@ private fun ReadingStatsScreen(
                         fontWeight = FontWeight.Bold, fontSize = 10.sp, letterSpacing = 1.3.sp)
                 }
                 items(summary.days, key = { it.date.toString() }) { day ->
-                    SupportingGlassCard(modifier = Modifier.fillMaxWidth()) {
-                        Row(Modifier.fillMaxWidth().padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
+                    SupportingGlassCard(modifier = Modifier.fillMaxWidth().heightIn(min = SupportingCardGeometryPolicy.STAT_ROW_MIN_HEIGHT_DP.dp)) {
+                        Row(Modifier.fillMaxWidth().padding(SupportingCardGeometryPolicy.CONTENT_PADDING_DP.dp), verticalAlignment = Alignment.CenterVertically) {
                             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
                                 Text(day.date.format(DateTimeFormatter.ofPattern("EEE, d MMM", Locale.ENGLISH)),
                                     fontWeight = FontWeight.SemiBold)
@@ -2209,19 +2237,19 @@ private fun QuizStatsScreen(
             )
             CompactFilterRow("Subject", subjects, selectedSubject) { selectedSubject = it }
         }
-        Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 7.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
+            horizontalArrangement = Arrangement.spacedBy(SupportingCardGeometryPolicy.METRIC_GAP_DP.dp)) {
             MetricTile("Attempts", summary.attemptCount.toString(), Modifier.weight(1f))
             MetricTile("Answered", summary.answersAttempted.toString(), Modifier.weight(1f))
         }
-        Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 3.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
+            horizontalArrangement = Arrangement.spacedBy(SupportingCardGeometryPolicy.METRIC_GAP_DP.dp)) {
             MetricTile("Correct", summary.correctAnswers.toString(), Modifier.weight(1f))
             MetricTile("Incorrect", summary.wrongAnswers.toString(), Modifier.weight(1f))
             MetricTile("Accuracy", accuracy, Modifier.weight(1f))
         }
         if (summary.attempts.isEmpty()) {
-            EmptyPanel("No submitted quizzes in this range",
+            SupportingEmptyPanel("No submitted quizzes in this range",
                 "Quiz statistics are saved only after you submit answers. Unsubmitted selections are not counted.")
         } else {
             LazyColumn(
@@ -2230,8 +2258,8 @@ private fun QuizStatsScreen(
                 verticalArrangement = Arrangement.spacedBy(9.dp)
             ) {
                 items(summary.attempts, key = { it.id }) { attempt ->
-                    SupportingGlassCard(modifier = Modifier.fillMaxWidth()) {
-                        Column(Modifier.fillMaxWidth().padding(14.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) {
+                    SupportingGlassCard(modifier = Modifier.fillMaxWidth().heightIn(min = SupportingCardGeometryPolicy.STAT_ROW_MIN_HEIGHT_DP.dp)) {
+                        Column(Modifier.fillMaxWidth().padding(SupportingCardGeometryPolicy.CONTENT_PADDING_DP.dp), verticalArrangement = Arrangement.spacedBy(SupportingCardGeometryPolicy.CONTENT_GAP_DP.dp)) {
                             Text(attempt.articleTitle, fontWeight = FontWeight.SemiBold,
                                 maxLines = 2, overflow = TextOverflow.Ellipsis)
                             Text(
