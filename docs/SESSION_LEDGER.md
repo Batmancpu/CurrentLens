@@ -396,3 +396,11 @@ Branch: `fix/early-startup-crash-diagnostics-2026-11-06`.
 - Baseline wording correction: `b08b0902f69d5fb4cbc11490ab9cec50103d3db2` — clarifies that generic box-office wording remains soft noise, not a hard exclusion.
 - Natural PR run #254 (`42402006467`) was still in progress at the last check, at `Compile APK and run JVM tests`. Its head `fa2eab8f` includes the code, test and initial baseline fixture commits; the later two commits are documentation-only. No result is claimed for the new code/test change yet. Prior green run #250 applies only to the earlier head `a5dddb3697b18167b195f79a60b4f14468f789c3`.
 - No device/runtime verification was available. No live-feed or official-PYQ claim is made.
+
+
+### CI failure and correction — 2026-11-08
+
+- Natural PR run #254 (`42402006467`) failed at `:app:testDebugUnitTest`: 291 tests completed, 1 failed, `UpscFeedPolicyTest.currentGstPolicyActionMapsToGsThreeEconomyButBoxOfficeFramingIsRejected`, helper line 23. WordNet generation passed; APK artifact upload was skipped.
+- Root cause established from the exact source and failing fixture: the first edit removed “box office” from the **soft** `noiseTerms` list instead of from `nonOverrideableNoiseTerms`. The generic hard exclusion therefore remained and correctly blocked the new policy fixture. This was an implementation mistake in the proposed correction, not a Gradle/compiler/environment failure.
+- Corrective commit: `3d57f0714f06579955d6efba1ebee72002dda081`. Restores “box office”/“box-office” to soft noise and removes only those generic phrases from the hard-exclusion list. Generic box-office reporting remains rejected unless the headline satisfies the narrow institutional-action + exact GST-subject rule.
+- The positive fixture and existing generic box-office false-positive fixture are unchanged. Natural CI for the corrective code commit is pending; do not claim it passes until the run completes.
