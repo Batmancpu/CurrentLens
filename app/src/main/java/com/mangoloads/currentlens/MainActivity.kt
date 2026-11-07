@@ -67,6 +67,7 @@ import androidx.compose.foundation.layout.requiredHeight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -144,6 +145,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.platform.LocalFocusManager
@@ -1059,7 +1061,8 @@ private fun ExploreGlassCategories(
                         .background(if (selected) MaterialTheme.colorScheme.primary.copy(alpha = 0.20f)
                             else surfaceTint.copy(alpha = 0.12f))
                         .border(1.dp, borderColor, chipShape)
-                        .clickable { onCategory(category) }
+                        .selectable(selected = selected, role = Role.Tab) { onCategory(category) }
+                        .heightIn(min = 48.dp)
                         .padding(horizontal = 14.dp, vertical = 8.dp)
                 ) {
                     Text(category, fontSize = 13.sp,
@@ -1156,7 +1159,7 @@ private fun ExploreFeed(
     glassAlpha: Float,
     dark: Boolean
 ) {
-    val categories = listOf("All", "India", "World", "Politics", "Economy", "Environment", "Science", "Explained", "UPSC", "Opinion")
+    val categories = listOf("All", "India", "World", "Politics", "Geography", "Economy", "Environment", "Science", "Explained", "UPSC", "Opinion")
     val filtered = remember(articles, selectedCategory) {
         articles.filter { article -> ExploreFilters.matches(article, selectedCategory, "") }
     }
@@ -1211,7 +1214,7 @@ private fun SearchFeed(
     val eligibleArticles = articles
     val density = LocalDensity.current
     val glassSurfaceColor = MaterialTheme.colorScheme.surface
-    val categories = listOf("All", "India", "World", "Politics", "Economy", "Environment", "Science", "Explained", "UPSC", "Opinion")
+    val categories = listOf("All", "India", "World", "Politics", "Geography", "Economy", "Environment", "Science", "Explained", "UPSC", "Opinion")
     val subjects = remember(eligibleArticles) {
         listOf("All") + eligibleArticles.map { UpscEngine.classify(it).subject }.distinct().sorted()
     }
@@ -1842,12 +1845,13 @@ private fun NewsCard(
 ) {
     val context = LocalContext.current
     val density = LocalDensity.current
-    val relevance = remember(article.id) { UpscEngine.classify(article) }
-    val syllabusHint = remember(article.id, relevance.gsPaper, relevance.subject, relevance.matchedTerms) {
+    val relevance = remember(article.id, article.title, article.description) { UpscEngine.classify(article) }
+    val syllabusHint = remember(article.id, article.title, article.description, relevance.gsPaper, relevance.subject, relevance.matchedTerms, relevance.syllabusLink) {
         ArticleCardMetaPolicy.syllabusHint(
             gsPaper = relevance.gsPaper,
             subject = relevance.subject,
-            matchedTerms = relevance.matchedTerms
+            matchedTerms = relevance.matchedTerms,
+            syllabusLink = relevance.syllabusLink
         )
     }
     val hasImage = !article.imageUrl.isNullOrBlank()
@@ -1860,7 +1864,7 @@ private fun NewsCard(
                 .build()
         }
     }
-    var imagePalette by remember(article.id) { mutableStateOf<Color?>(null) }
+    var imagePalette by remember(article.id, article.imageUrl) { mutableStateOf<Color?>(null) }
     val palette = imagePalette
 
     Box(
@@ -1947,7 +1951,7 @@ private fun NewsCard(
                     syllabusHint?.let { hint ->
                         Text(hint, style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.SemiBold,
-                            maxLines = 2, overflow = TextOverflow.Ellipsis)
+                            maxLines = 4, overflow = TextOverflow.Ellipsis)
                     }
                 }
             }

@@ -11,15 +11,18 @@ package com.mangoloads.currentlens
 internal object UpscFeedPolicy {
     private val noiseTerms = listOf(
         "ranbir kapoor", "salman khan", "celebrity", "celebrity news",
-        "box office", "box-office", "opening weekend", "entertainment",
-        "film", "movie", "cinema", "actor", "actress", "trailer", "teaser",
+        "box office", "box-office", "opening weekend", "entertainment", "film",
+        "movie", "cinema", "actor", "actress", "trailer", "teaser",
         "reality show", "reality tv", "reality television", "contestant", "bigg boss",
         "tv show", "tv series", "television show", "television series",
         "series premiere", "season premiere", "season finale", "show promotion",
         "cast announcement", "match result", "scorecard", "live score",
         "red carpet", "paparazzi", "celebrity gossip", "film review", "movie review",
         "streaming release", "cricket", "ipl", "football match", "match highlights",
-        "sports score", "transfer window", "player signs", "tournament result", "league table"
+        "sports score", "transfer window", "player signs", "tournament result", "league table",
+        "final score", "match score", "points table", "league standings", "medal tally",
+        "viral challenge", "social media trend", "trending now", "internet sensation",
+        "meme", "memes", "influencer feud", "influencer drama"
     )
 
     private val policyExceptions = listOf(
@@ -49,7 +52,9 @@ internal object UpscFeedPolicy {
         "gdp", "fiscal deficit", "monetary policy", "current account deficit",
         "financial inclusion", "banking sector", "banking regulation",
         "non performing assets", "payment system", "gst", "taxation",
-        "union budget", "government budgeting", "trade agreement",
+        "union budget", "government budgeting", "finance bill", "money bill", "amendment bill",
+        "bill introduced in parliament", "bill passed by parliament", "bill introduced in lok sabha",
+        "bill passed by lok sabha", "bill passed by rajya sabha", "trade agreement",
         "free trade agreement", "world trade organization", "foreign exchange reserves",
         "employment guarantee", "unemployment rate", "labour code", "labor code",
         "labour force participation", "plfs",
@@ -76,7 +81,14 @@ internal object UpscFeedPolicy {
         "direct benefit transfer", "public service delivery", "lokpal",
         "comptroller and auditor general", "central vigilance commission",
         "disaster management", "earthquake", "cyclone", "flood", "drought",
-        "landslide", "heatwave"
+        "landslide", "heatwave", "heat wave", "heat action plan", "heat wave action plan",
+        "physical geography", "monsoon", "river basin", "river systems", "glacier",
+        "ice cap", "ocean current", "tectonic plate", "plate boundary",
+        "tsunami", "volcano", "volcanoes", "volcanic activity", "coastal erosion",
+        "natural resource distribution", "resource distribution", "mineral resources",
+        "industrial location", "location of industries", "rainfall distribution",
+        "groundwater aquifer", "geomorphology", "landform", "geophysical phenomena",
+        "weathering", "desertification"
     )
 
     fun shouldInclude(article: Article): Boolean {
@@ -89,8 +101,12 @@ internal object UpscFeedPolicy {
         val hasPolicyException =
             policyExceptions.any { EditorialTextMatcher.contains(title, it) } &&
                 policyActionTerms.any { EditorialTextMatcher.contains(title, it) }
+        // Film promotion stays noise; only a clearly technical thin-film solar headline is exempt.
+        val hasThinFilmScienceException =
+            EditorialTextMatcher.contains(title, "thin film") &&
+                listOf("photovoltaic", "solar cell").any { EditorialTextMatcher.contains(title, it) }
 
-        if (hasNoise && !hasPolicyException) return false
+        if (hasNoise && !hasPolicyException && !hasThinFilmScienceException) return false
 
         val relevance = UpscEngine.classify(article)
         if (relevance.gsPaper == "Unmapped" || relevance.matchedTerms.isEmpty()) return false
