@@ -261,6 +261,14 @@ class UpscFeedPolicyTest {
             "The tax change affects the indirect-tax treatment of cinema tickets.",
             "Economy"
         ), "GS III", "Indian Economy")
+
+        // A genuine institutional tax clarification may mention a noisy sector.
+        // Generic box-office reporting remains soft noise and still fails the gate.
+        assertSyllabusMapped(article(
+            "Finance Ministry clarifies GST on box-office collections",
+            "The clarification concerns the indirect-tax treatment of entertainment receipts.",
+            "Entertainment"
+        ), "GS III", "Indian Economy")
     }
 
     @Test
