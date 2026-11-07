@@ -44,9 +44,9 @@ Recheck the entire branch graph, open PRs, merge state and exact source/base SHA
 | Search morph field | Interactive control glass | Preserve tab-to-IME geometry and focus; trailing clear affordance | Existing morph/focus callback preserved; clear target is 48dp (run #183 and #187 passed) |
 | Explore category rail | Interactive control glass | One shared capsule; selected fill/border and >=48dp targets | 48dp target, selected semantics and Geography filter integrated |
 | Today / Explore / Search article cards | Editorial content | Continuous corners, clear typography, image-derived ambient colour; no live blur per card | Existing standard cards, single Coil request and same-bitmap palette |
-| You dashboard | Supporting surfaces | Consistent metric/destination geometry and restrained tint/edge hierarchy | Standard cards; geometry pass remains |
-| Saved | Interactive controls + editorial content | Clear filters; standard readable saved-story cards | Existing filters/cards; consistency pass remains |
-| Reading / Quiz Stats | Supporting surfaces | Consistent metric tiles, filter states and readable charts/data | Standard content surfaces; hierarchy pass remains |
+| You dashboard | Supporting glass | Shared non-blurred tinted/rim card, continuous 22dp geometry, single-line metric values | `GlassSurfacePolicy` integrated; device contrast remains unverified |
+| Saved | Interactive controls + editorial content | Clear filters; standard readable saved-story cards | Saved/filter/previously-opened derivations memoized; grouped filter material remains |
+| Reading / Quiz Stats | Supporting glass + editorial data | Shared metric tiles and quiet tint/rim on daily reading and quiz records | `GlassSurfacePolicy` integrated without live blur or backdrop readback; physical contrast/performance unverified |
 | Reader toolbar | Primary floating glass | Back, source/date/status and compact Aa control | Implemented in this batch |
 | Reader progress | Minimal indicator | Reuse existing saved progress; no polling or animated readback | Implemented in this batch |
 | Reader article canvas | Editorial content | Clear, high-contrast text; responsive max width and paragraph rhythm | Existing responsive CSS; keep non-glass |

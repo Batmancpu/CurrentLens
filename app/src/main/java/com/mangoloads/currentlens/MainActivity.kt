@@ -1592,17 +1592,23 @@ private fun SavedFeed(
     var selectedSubject by remember { mutableStateOf("All") }
     var selectedGsPaper by remember { mutableStateOf("All") }
     val today = LocalDate.now(ZoneId.of(INDIA_ZONE))
-    val savedArticles = articles.filter { bookmarks.contains(it.url) }
+    val savedArticles = remember(articles, bookmarks) {
+        articles.filter { bookmarks.contains(it.url) }
+    }
     val subjects = remember(savedArticles) {
         listOf("All") + savedArticles.map { UpscEngine.classify(it).subject }.distinct().sorted()
     }
-    val filtered = StudyStatsPolicy.filterArticles(
-        savedArticles, dateRange, selectedSubject, selectedGsPaper, today
-    )
-    val previouslyOpened = articles.filter {
-        readHistory.contains(it.url) && !bookmarks.contains(it.url) && UpscFeedPolicy.shouldInclude(it)
+    val filtered = remember(savedArticles, dateRange, selectedSubject, selectedGsPaper, today) {
+        StudyStatsPolicy.filterArticles(
+            savedArticles, dateRange, selectedSubject, selectedGsPaper, today
+        )
     }
-        .sortedByDescending { it.publishedAtMillis ?: 0L }.take(15)
+    val previouslyOpened = remember(articles, readHistory, bookmarks) {
+        articles.filter {
+            readHistory.contains(it.url) && !bookmarks.contains(it.url) && UpscFeedPolicy.shouldInclude(it)
+        }
+            .sortedByDescending { it.publishedAtMillis ?: 0L }.take(15)
+    }
 
     Column(Modifier.fillMaxSize()) {
         FilterChipRow("Published", StatsDateRange.values().map { it.label }, dateRange.label) { label ->
@@ -1654,8 +1660,8 @@ private fun YouDashboard(
     onQuizStats: () -> Unit,
     onSettings: () -> Unit
 ) {
-    val answersAttempted = attempts.sumOf { it.answeredCount }
-    val correctAnswers = attempts.sumOf { it.correctCount }
+    val answersAttempted = remember(attempts) { attempts.sumOf { it.answeredCount } }
+    val correctAnswers = remember(attempts) { attempts.sumOf { it.correctCount } }
     val accuracy = if (answersAttempted == 0) "—"
         else ((correctAnswers * 100f / answersAttempted).toInt().toString() + "%")
     LazyColumn(
@@ -1679,13 +1685,7 @@ private fun YouDashboard(
         }
         if (attempts.isEmpty()) {
             item {
-                Card(
-                    modifier = Modifier.fillMaxWidth()
-                        .border(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.12f), RoundedCornerShape(22.dp)),
-                    shape = RoundedCornerShape(22.dp),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
-                ) {
+                SupportingGlassCard(modifier = Modifier.fillMaxWidth()) {
                     Column(Modifier.fillMaxWidth().padding(17.dp),
                         verticalArrangement = Arrangement.spacedBy(5.dp)) {
                         Text("Practice when you're ready",
@@ -1728,39 +1728,94 @@ private fun YouDashboard(
 }
 
 @Composable
-private fun MetricTile(label: String, value: String, modifier: Modifier = Modifier) {
+private fun SupportingGlassCard(
+    modifier: Modifier = Modifier,
+    content: @Composable () -> Unit
+) {
+    val colors = MaterialTheme.colorScheme
+    val dark = isSystemInDarkTheme()
+    val shape = remember {
+        PrismalRoundedRectangle(GlassSurfacePolicy.SUPPORTING_CORNER_RADIUS_DP.dp)
+    }
+    val tintAlpha = GlassSurfacePolicy.supportingTintAlpha(dark)
+    val rimAlpha = GlassSurfacePolicy.supportingRimAlpha(dark)
+    val rimBrush = remember(colors.primary, colors.outline, dark) {
+        Brush.linearGradient(
+            colors = listOf(
+                Color.White.copy(alpha = if (dark) 0.24f else 0.64f),
+                colors.primary.copy(alpha = rimAlpha),
+                colors.outline.copy(alpha = if (dark) 0.30f else 0.18f)
+            )
+        )
+    }
+    val tintBrush = remember(colors.primary, colors.surface, dark) {
+        Brush.verticalGradient(
+            colors = listOf(
+                colors.primary.copy(alpha = tintAlpha),
+                Color.Transparent
+            )
+        )
+    }
     Card(
-        modifier = modifier.border(
-            1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.12f), RoundedCornerShape(22.dp)
+        modifier = modifier.border(1.dp, rimBrush, shape),
+        shape = shape,
+        colors = CardDefaults.cardColors(
+            containerColor = colors.surface.copy(
+                alpha = GlassSurfacePolicy.supportingSurfaceAlpha(dark)
+            )
         ),
-        shape = RoundedCornerShape(22.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
-        Column(Modifier.padding(horizontal = 14.dp, vertical = 13.dp),
-            verticalArrangement = Arrangement.spacedBy(5.dp)) {
-            Text(value, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.primary)
-            Text(label, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.secondary)
+        Box(Modifier.fillMaxWidth().background(tintBrush)) {
+            content()
+        }
+    }
+}
+
+@Composable
+private fun MetricTile(label: String, value: String, modifier: Modifier = Modifier) {
+    SupportingGlassCard(modifier = modifier.heightIn(min = 82.dp)) {
+        Column(
+            Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 13.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            Text(
+                value,
+                style = MaterialTheme.typography.titleLarge,
+                fontSize = GlassSurfacePolicy.SUPPORTING_VALUE_SIZE_SP.sp,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.primary,
+                maxLines = 1,
+                softWrap = false,
+                overflow = TextOverflow.Ellipsis
+            )
+            Text(
+                label,
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.secondary,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis
+            )
         }
     }
 }
 
 @Composable
 private fun DestinationRow(title: String, description: String, trailing: String, onClick: () -> Unit) {
-    Card(
-        modifier = Modifier.fillMaxWidth().heightIn(min = 68.dp)
-            .border(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.12f), RoundedCornerShape(22.dp))
-            .clickable(onClick = onClick),
-        shape = RoundedCornerShape(22.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
-    ) {
-        Row(Modifier.fillMaxWidth().padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+    SupportingGlassCard(modifier = Modifier.fillMaxWidth().heightIn(min = 72.dp)) {
+        Row(
+            Modifier.fillMaxWidth()
+                .clickable(role = Role.Button, onClick = onClick)
+                .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
                 Text(title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-                Text(description, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.secondary)
+                Text(description, style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.secondary)
             }
-            Text(trailing, style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.primary)
+            Text(trailing, style = MaterialTheme.typography.titleLarge,
+                color = MaterialTheme.colorScheme.primary, maxLines = 1, softWrap = false)
         }
     }
 }
@@ -1800,9 +1855,11 @@ private fun ReadingStatsScreen(sessions: List<ReadingSession>) {
     val subjects = remember(sessions) {
         listOf("All") + sessions.map { it.subject }.distinct().sorted()
     }
-    val summary = StudyStatsPolicy.readingSummary(
-        sessions, dateRange, selectedSubject, selectedGsPaper, today
-    )
+    val summary = remember(sessions, dateRange, selectedSubject, selectedGsPaper, today) {
+        StudyStatsPolicy.readingSummary(
+            sessions, dateRange, selectedSubject, selectedGsPaper, today
+        )
+    }
     Column(Modifier.fillMaxSize()) {
         FilterChipRow("Date", StatsDateRange.values().map { it.label }, dateRange.label) { label ->
             dateRange = StatsDateRange.values().first { it.label == label }
@@ -1830,14 +1887,7 @@ private fun ReadingStatsScreen(sessions: List<ReadingSession>) {
                         fontWeight = FontWeight.Bold, fontSize = 10.sp, letterSpacing = 1.3.sp)
                 }
                 items(summary.days, key = { it.date.toString() }) { day ->
-                    Card(
-                        modifier = Modifier.border(
-                            1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.12f), RoundedCornerShape(22.dp)
-                        ),
-                        shape = RoundedCornerShape(22.dp),
-                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
-                    ) {
+                    SupportingGlassCard(modifier = Modifier.fillMaxWidth()) {
                         Row(Modifier.fillMaxWidth().padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
                             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
                                 Text(day.date.format(DateTimeFormatter.ofPattern("EEE, d MMM", Locale.ENGLISH)),
@@ -1864,9 +1914,11 @@ private fun QuizStatsScreen(attempts: List<QuizAttempt>) {
     val subjects = remember(attempts) {
         listOf("All") + attempts.map { it.subject }.distinct().sorted()
     }
-    val summary = StudyStatsPolicy.quizSummary(
-        attempts, dateRange, selectedSubject, selectedGsPaper, today
-    )
+    val summary = remember(attempts, dateRange, selectedSubject, selectedGsPaper, today) {
+        StudyStatsPolicy.quizSummary(
+            attempts, dateRange, selectedSubject, selectedGsPaper, today
+        )
+    }
     val accuracy = if (summary.answersAttempted == 0) "—" else
         ((summary.correctAnswers * 100f / summary.answersAttempted).toInt().toString() + "%")
     Column(Modifier.fillMaxSize()) {
@@ -1897,14 +1949,7 @@ private fun QuizStatsScreen(attempts: List<QuizAttempt>) {
                 verticalArrangement = Arrangement.spacedBy(9.dp)
             ) {
                 items(summary.attempts, key = { it.id }) { attempt ->
-                    Card(
-                        modifier = Modifier.border(
-                            1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.12f), RoundedCornerShape(22.dp)
-                        ),
-                        shape = RoundedCornerShape(22.dp),
-                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
-                    ) {
+                    SupportingGlassCard(modifier = Modifier.fillMaxWidth()) {
                         Column(Modifier.fillMaxWidth().padding(14.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) {
                             Text(attempt.articleTitle, fontWeight = FontWeight.SemiBold,
                                 maxLines = 2, overflow = TextOverflow.Ellipsis)
