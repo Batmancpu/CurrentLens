@@ -156,7 +156,7 @@ object NewsRepository {
         var inItem = false
         var title = ""
         var description = ""
-        var link = ""
+        val links = mutableListOf<FeedLinkCandidate>()
         var rssPubDate = ""
         var atomPublished = ""
         var atomUpdated = ""
@@ -170,7 +170,7 @@ object NewsRepository {
                         inItem = true
                         title = ""
                         description = ""
-                        link = ""
+                        links.clear()
                         rssPubDate = ""
                         atomPublished = ""
                         atomUpdated = ""
@@ -185,8 +185,18 @@ object NewsRepository {
                             }
                             "link" -> {
                                 val href = parser.getAttributeValue(null, "href")
-                                if (!href.isNullOrBlank()) link = href
-                                else if (link.isBlank()) link = runCatching { parser.nextText().trim() }.getOrDefault("")
+                                if (!href.isNullOrBlank()) {
+                                    links.add(
+                                        FeedLinkCandidate(
+                                            href = href.trim(),
+                                            rel = parser.getAttributeValue(null, "rel").orEmpty(),
+                                            type = parser.getAttributeValue(null, "type").orEmpty()
+                                        )
+                                    )
+                                } else {
+                                    val textLink = runCatching { parser.nextText().trim() }.getOrDefault("")
+                                    if (textLink.isNotBlank()) links.add(FeedLinkCandidate(href = textLink))
+                                }
                             }
                             "pubdate" -> rssPubDate = runCatching { parser.nextText().trim() }.getOrDefault("")
                             "published" -> atomPublished = runCatching { parser.nextText().trim() }.getOrDefault("")
@@ -203,13 +213,14 @@ object NewsRepository {
                 XmlPullParser.END_TAG -> {
                     val tag = parser.name?.lowercase(Locale.ROOT).orEmpty()
                     if (tag == "item" || tag == "entry") {
-                        if (title.isNotBlank() && link.startsWith("http")) {
+                        val articleUrl = FeedLinkPolicy.select(links)
+                        if (title.isNotBlank() && articleUrl != null) {
                             result.add(
                                 Article(
-                                    id = link,
+                                    id = articleUrl,
                                     title = title,
                                     description = description.take(420),
-                                    url = link,
+                                    url = articleUrl,
                                     source = source.name,
                                     section = source.section,
                                     published = FeedPublicationDatePolicy.select(
