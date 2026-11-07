@@ -2904,12 +2904,19 @@ private fun ReaderScreen(
     var readerViewportWindowOrigin by remember(article.url) { mutableStateOf(Offset.Zero) }
     var readerViewportHeightPx by remember(article.url) { mutableIntStateOf(0) }
     var fontSize by remember(article.url) { mutableIntStateOf(20) }
+    var textSizeMenuExpanded by remember(article.url) { mutableStateOf(false) }
     var completionDismissed by remember(article.url) { mutableStateOf(false) }
     var selectionActionModeActive by remember(article.url) { mutableStateOf(false) }
     var readerChromeVisible by remember(article.url) { mutableStateOf(true) }
     val imeVisible = WindowInsets.ime.getBottom(LocalDensity.current) > 0
     val accessibilityEnabled = context.getSystemService(AccessibilityManager::class.java)?.isEnabled == true
-    val readerChromePinned = activeWord != null || selectionActionModeActive || imeVisible || accessibilityEnabled
+    val readerChromePinned = ReaderChromePolicy.shouldPinChrome(
+        definitionOpen = activeWord != null,
+        selectionActive = selectionActionModeActive,
+        imeVisible = imeVisible,
+        accessibilityEnabled = accessibilityEnabled,
+        textSizeMenuExpanded = textSizeMenuExpanded
+    )
     val readerChromeMotionMs = if (ValueAnimator.areAnimatorsEnabled()) 160 else 0
 
     LaunchedEffect(article.url) {
@@ -2957,6 +2964,8 @@ private fun ReaderScreen(
                     glassAlpha = glassAlpha,
                     dark = dark,
                     fontSize = fontSize,
+                    textSizeMenuExpanded = textSizeMenuExpanded,
+                    onTextSizeMenuExpandedChange = { textSizeMenuExpanded = it },
                     onBack = {
                         readerWebViewHolder.value?.flushReadingPosition()
                         onBack()
@@ -3216,7 +3225,8 @@ private fun ReaderScreen(
                 reachedBottom = reachedBottom,
                 definitionOpen = activeWord != null,
                 dismissed = completionDismissed,
-                selectionActive = selectionActionModeActive
+                selectionActive = selectionActionModeActive,
+                transientControlOpen = textSizeMenuExpanded
             ),
             enter = fadeIn(animationSpec = tween(readerChromeMotionMs)) +
                 slideInVertically(animationSpec = tween(readerChromeMotionMs)) { it / 4 },
@@ -3270,11 +3280,11 @@ private fun ReaderGlassToolbar(
     glassAlpha: Float,
     dark: Boolean,
     fontSize: Int,
+    textSizeMenuExpanded: Boolean,
+    onTextSizeMenuExpandedChange: (Boolean) -> Unit,
     onBack: () -> Unit,
     onFontSizeChange: (Int) -> Unit
 ) {
-    var textSizeMenuExpanded by remember(article.url) { mutableStateOf(false) }
-
     PrismalTransientSurface(
         backdrop = backdrop,
         modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 6.dp),
@@ -3313,7 +3323,7 @@ private fun ReaderGlassToolbar(
             }
             Box {
                 IconButton(
-                    onClick = { textSizeMenuExpanded = true },
+                    onClick = { onTextSizeMenuExpandedChange(true) },
                     modifier = Modifier.size(48.dp).semantics {
                         contentDescription = "Text size, $fontSize sp"
                     }
@@ -3323,7 +3333,7 @@ private fun ReaderGlassToolbar(
                 }
                 DropdownMenu(
                     expanded = textSizeMenuExpanded,
-                    onDismissRequest = { textSizeMenuExpanded = false },
+                    onDismissRequest = { onTextSizeMenuExpandedChange(false) },
                     modifier = Modifier.widthIn(min = 196.dp),
                     shape = RoundedCornerShape(18.dp),
                     containerColor = Color.Transparent,
@@ -3344,7 +3354,7 @@ private fun ReaderGlassToolbar(
                                 enabled = fontSize > ReaderChromePolicy.MIN_FONT_SIZE_SP,
                                 onClick = {
                                     onFontSizeChange(ReaderChromePolicy.adjustFontSize(fontSize, -1))
-                                    textSizeMenuExpanded = false
+                                    onTextSizeMenuExpandedChange(false)
                                 }
                             )
                             DropdownMenuItem(
@@ -3353,7 +3363,7 @@ private fun ReaderGlassToolbar(
                                 enabled = fontSize < ReaderChromePolicy.MAX_FONT_SIZE_SP,
                                 onClick = {
                                     onFontSizeChange(ReaderChromePolicy.adjustFontSize(fontSize, 1))
-                                    textSizeMenuExpanded = false
+                                    onTextSizeMenuExpandedChange(false)
                                 }
                             )
                             DropdownMenuItem(

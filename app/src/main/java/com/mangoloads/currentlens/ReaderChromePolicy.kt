@@ -13,10 +13,20 @@ internal object ReaderChromePolicy {
     const val SHOW_THRESHOLD_DP = 12
     const val HIDE_SETTLE_DELAY_MS = 160L
 
+    /** Any transient reader interaction that needs controls keeps the chrome visible. */
+    fun shouldPinChrome(
+        definitionOpen: Boolean,
+        selectionActive: Boolean,
+        imeVisible: Boolean,
+        accessibilityEnabled: Boolean,
+        textSizeMenuExpanded: Boolean
+    ): Boolean = definitionOpen || selectionActive || imeVisible ||
+        accessibilityEnabled || textSizeMenuExpanded
+
     /**
      * Downward document movement hides chrome after a larger threshold; upward movement
      * reveals it after a smaller threshold. Direction changes reset accumulated distance.
-     * Pinning (selection/definition/IME/accessibility) and returning to the top always reveal.
+     * Pinning (selection/definition/IME/accessibility/transient menu) and returning to the top always reveal.
      */
     fun onScroll(
         state: ReaderChromeScrollState,
@@ -56,6 +66,8 @@ internal object ReaderChromePolicy {
         reachedBottom: Boolean,
         definitionOpen: Boolean,
         dismissed: Boolean,
-        selectionActive: Boolean = false
-    ): Boolean = reachedBottom && !definitionOpen && !dismissed && !selectionActive
+        selectionActive: Boolean = false,
+        transientControlOpen: Boolean = false
+    ): Boolean = reachedBottom && !definitionOpen && !dismissed &&
+        !selectionActive && !transientControlOpen
 }

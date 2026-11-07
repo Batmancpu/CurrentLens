@@ -1,13 +1,13 @@
 # Liquid Glass UI Roadmap
 
-**Status:** Shared Prismal coverage includes the primary shell, Reader auto-hide, Search clear, feed-only compact navigation, Appearance preview, supporting dashboard/stat materials and the unified Reader/Quiz transient tier. This pass strengthens the quiet supporting-card tint/rim without adding live blur or capture.
+**Status:** Shared Prismal coverage spans the primary shell, Reader auto-hide, Search clear, feed-only compact navigation, Appearance preview, supporting dashboard/stat materials and the unified Reader/Quiz transient tier. The Reader Aa menu now pins the toolbar while open and suppresses the completion dock until dismissal; no new render pass or backdrop capture is added.
 **Feature branch:** black-box-bihar-news — the sole active integration/UI branch by explicit owner direction.
-**Source baseline for this pass:** black-box-bihar-news@ec86b2fef2f5e86c3b95f2a2a2269bfef6158053 (2026-11-07T15:09:39Z); 108 commits ahead / 0 behind main@73b8a0d1ba33503fede02db2c3c0af082d724a12 and 51 ahead / 0 behind PR #16's corrected background-only Prismal/stability head 6ab1e6a02ac8e91027f21900d64d63b9f2e6a890.
-**Previous exact active-branch validation:** [Actions run #241](https://github.com/Batmancpu/CurrentLens/actions/runs/42385017675), exact source SHA ec86b2fef2f5e86c3b95f2a2a2269bfef6158053, success. Four WordNet builder tests passed; 151,456 unique words generated; :app:testDebugUnitTest, :app:assembleDebug and artifact upload succeeded. Artifact 13579222899, 39,094,929 bytes, SHA-256 d60b7e0d261c0ccac6bb5b407a642bd54183cca7abf1601b9fae541645bc838f, expires 21 Nov 2026 15:11:49Z.
-**Latest overall natural run:** [#241](https://github.com/Batmancpu/CurrentLens/actions/runs/42385017675) is the same successful run on the active branch head; no active or queued Actions jobs remain.
-**Actions history:** 241 runs fully paginated; 142 success, 58 failure, 41 cancelled; queue empty.
-**Workflow / Releases:** active workflow blob 6cef6ca19f3babd331c9deb59be9da0067c6fa66 uses read-only build/test permissions and a separate main-push-only Release-write job. Main workflow blob 37197497288d9f0a60f4d1cfa8453e3dee52a902 remains push-only, so no PR-to-main validation is claimed. Latest Release remains v0.2.0-build-116; no Release was created.
-**Branch graph:** 37 remote branches (page 1 complete, page 2 empty), 19 open PRs and 14 closed PRs. black-box-bihar-news is 108 ahead / 0 behind main and 51 ahead / 0 behind PR #16. brrrNEWS is divergent (4 ahead / 14 behind); its useful supporting-material implementation is already represented. Newer independent parser/RSS/security/editorial branches remain separate and were not used as a UI baseline; see docs/BRANCH_CONSOLIDATION.md.
+**Source baseline for this pass:** black-box-bihar-news@818afb47eaadc685f133eaffc3efd199392627e4 (2026-11-07T16:02:13Z); 109 commits ahead / 0 behind main@73b8a0d1ba33503fede02db2c3c0af082d724a12 and 52 ahead / 0 behind PR #16's corrected background-only Prismal/stability head 6ab1e6a02ac8e91027f21900d64d63b9f2e6a890.
+**Previous exact active-branch validation:** [PR run #243](https://github.com/Batmancpu/CurrentLens/actions/runs/42389283591) and [push run #242](https://github.com/Batmancpu/CurrentLens/actions/runs/42389254191) both succeeded on exact parent SHA 818afb47eaadc685f133eaffc3efd199392627e4. Job-step summaries confirm WordNet generation, :app:testDebugUnitTest, :app:assembleDebug and artifact upload passed. PR artifact 13580718014 (39,094,949 bytes; expires 21 Nov 2026 16:04:54Z); push artifact 13580578348 (39,094,947 bytes).
+**Latest overall natural run:** [#243](https://github.com/Batmancpu/CurrentLens/actions/runs/42389283591), successful PR #34 validation on the exact active-branch parent head; #242 is the matching successful push run. No queued or in-progress Actions jobs remain.
+**Actions history:** 243 runs fully paginated (pages 1–3; page 4 empty): 144 success, 58 failure, 41 cancelled; queue empty.
+**Workflow / Releases:** active workflow blob 6cef6ca19f3babd331c9deb59be9da0067c6fa66 uses read-only build/test permissions and a separate main-push-only Release-write job. Main workflow blob 37197497288d9f0a60f4d1cfa8453e3dee52a902 remains push-only; nevertheless the exact PR #34 event naturally ran as #243 and passed on the PR head. Latest Release remains v0.2.0-build-116; neither #242 nor #243 published a Release.
+**Branch graph:** 37 remote branches (page 1 complete, page 2 empty), 20 open PRs and 14 closed PRs. black-box-bihar-news is 109 ahead / 0 behind main and 52 ahead / 0 behind PR #16. brrrNEWS is divergent (4 ahead / 15 behind); its useful supporting-material implementation is already represented. PR #29/#30/#31 changes are also already represented; PR #27/#32/#33 remain independent editorial/feed candidates, and #25/#26 remain pending a combined publisher-resource security review. See the latest complete table in docs/BRANCH_CONSOLIDATION.md.
 **Safety / device status:** no main change, app/package identity change, workflow edit, manual dispatch/rerun, Release publication, PR merge, source-branch mutation or branch deletion. OPPO Reno10 launch, screenshots, transitions, TalkBack/Reduce Motion, Perfetto/frame timing, GPU overdraw, memory, thermal and battery remain UNVERIFIED.
 
 ## Historical branch freshness audit — 7 November 2026, 13:00 IST (superseded by the current run record)
@@ -435,3 +435,30 @@ Next: after natural CI validates this exact head, perform the Appearance preview
 **Unverified / next**
 - OPPO Reno10 screenshots, real light/dark contrast, large font scaling, TalkBack focus, Reduce Motion, card scrolling/jank, GPU overdraw, allocations/memory, startup, thermal and battery remain UNVERIFIED.
 - After this exact head's natural CI passes, continue the remaining transient-sheet/menu and whole-app consistency audit; retain the 8×8 adaptive probe's 4s/6s foreground-idle cadence and never add per-card capture/readback.
+
+
+## Reader Aa menu pinning — 7 November 2026, 22:24 IST
+
+**Freshness / baseline**
+- Re-enumerated all 37 remote branches (page 1: 37, page 2: 0), 20 open PRs and 14 closed PRs; paginated all 243 Actions runs (100 + 100 + 43; page 4 empty) and confirmed the queue is empty.
+- Implementation source is `black-box-bihar-news@818afb47eaadc685f133eaffc3efd199392627e4`, a direct child of `ec86b2fef2f5e86c3b95f2a2a2269bfef6158053); 109 ahead / 0 behind main and 52 ahead / 0 behind PR #16's corrected stability/Prismal head. PR #34 remains the sole consolidation draft; no other branch is used as the baseline.
+- PR #30's 48dp touch-target policy, PR #31's off-main appearance restore and PR #29's serialized bookmark persistence are already represented in the active branch. Their source branches remain unchanged. PR #32 (RSS concurrency), #33 (relative Atom links) and #27 (editorial action gate) remain separate; PR #25/#26 remain held for combined publisher-resource security review. The old Liquid Glass and v0.3 branches are not baselines.
+
+**Implementation**
+- Hoisted `textSizeMenuExpanded` from `ReaderGlassToolbar` to `ReaderScreen`, keyed by article URL, and passed it back to the toolbar through a controlled state/callback.
+- Added pure `ReaderChromePolicy.shouldPinChrome`; an open Aa menu now joins definition selection, native ActionMode, IME and enabled accessibility services as a chrome-pinning condition. The existing `ReaderWebView.setReaderChromePinned` path reveals the toolbar and cancels a pending hide without adding scroll polling or per-pixel Compose state.
+- The completion dock is suppressed while the Aa menu is open, then becomes eligible again when the menu is dismissed. Font-size steps/clamping, source/date provenance, article reload semantics, native Copy/Select/share, dictionary selection and WebView privacy settings are unchanged.
+- Added JVM policy coverage for each pinning reason, menu-open reveal behaviour and completion suppression. These tests are **added, not yet run** on this new commit.
+
+**Paired rendering / performance strategy**
+- No new Prismal surface, blur/refraction parameter, backdrop capture, sampler/readback, shader, graphics layer, image decode, dependency, timer, network request or persistence operation was added.
+- The Aa dropdown continues to use its existing small `PrismalTransientSurface` and the one background-only root source. Only the already-mounted Reader chrome state is pinned while the menu is visible; the completion surface is not composed in that state.
+- This is a state/lifecycle correctness change, not a measured frame-time, GPU, memory, battery or thermal improvement.
+
+**CI / release**
+- Parent SHA `818afb47eaadc685f133eaffc3efd199392627e4` passed natural push run [#242](https://github.com/Batmancpu/CurrentLens/actions/runs/42389254191) and exact PR #34 run [#243](https://github.com/Batmancpu/CurrentLens/actions/runs/42389283591). Both build jobs passed WordNet generation, JVM tests, APK assembly and artifact upload; PR artifact `13580718014` is 39,094,949 bytes. Publish jobs were skipped.
+- The new Reader pinning commit has **no CI result yet**; wait for its natural branch run. Main remains unchanged; no workflow edit, manual dispatch/rerun, Release publication, PR merge or source-branch mutation occurred.
+
+**Unverified / next**
+- OPPO Reno10 screenshots, cold/warm launch, menu/toolbar collision, native selection, TalkBack, Reduce Motion, font scaling, animation smoothness, Perfetto/frame timing, GPU overdraw, allocation/memory, thermal and battery remain **UNVERIFIED**.
+- After the new exact head's natural CI completes, continue the transient-surface/accessibility audit; separately reconcile PR #27/#32/#33 only after full dependency review, and keep #25/#26 behind a combined publisher-host/subresource security review.

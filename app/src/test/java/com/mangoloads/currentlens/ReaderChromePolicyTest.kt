@@ -27,7 +27,77 @@ class ReaderChromePolicyTest {
         assertFalse(ReaderChromePolicy.shouldShowCompletion(true, true, false))
         assertFalse(ReaderChromePolicy.shouldShowCompletion(true, false, true))
         assertFalse(ReaderChromePolicy.shouldShowCompletion(true, false, false, selectionActive = true))
+        assertFalse(
+            ReaderChromePolicy.shouldShowCompletion(true, false, false, transientControlOpen = true)
+        )
     }
+    @Test
+    fun textSizeMenuAndOtherTransientStatesPinReaderChrome() {
+        assertTrue(
+            ReaderChromePolicy.shouldPinChrome(
+                definitionOpen = true,
+                selectionActive = false,
+                imeVisible = false,
+                accessibilityEnabled = false,
+                textSizeMenuExpanded = false
+            )
+        )
+        assertTrue(
+            ReaderChromePolicy.shouldPinChrome(
+                definitionOpen = false,
+                selectionActive = true,
+                imeVisible = false,
+                accessibilityEnabled = false,
+                textSizeMenuExpanded = false
+            )
+        )
+        assertTrue(
+            ReaderChromePolicy.shouldPinChrome(
+                definitionOpen = false,
+                selectionActive = false,
+                imeVisible = true,
+                accessibilityEnabled = false,
+                textSizeMenuExpanded = false
+            )
+        )
+        assertTrue(
+            ReaderChromePolicy.shouldPinChrome(
+                definitionOpen = false,
+                selectionActive = false,
+                imeVisible = false,
+                accessibilityEnabled = true,
+                textSizeMenuExpanded = false
+            )
+        )
+        val menuOpen = ReaderChromePolicy.shouldPinChrome(
+            definitionOpen = false,
+            selectionActive = false,
+            imeVisible = false,
+            accessibilityEnabled = false,
+            textSizeMenuExpanded = true
+        )
+        assertTrue(menuOpen)
+        assertTrue(
+            ReaderChromePolicy.onScroll(
+                state = ReaderChromeScrollState(visible = false),
+                deltaY = 30,
+                hideThresholdPx = 24,
+                showThresholdPx = 12,
+                pinned = menuOpen,
+                atTop = false
+            ).visible
+        )
+        assertFalse(
+            ReaderChromePolicy.shouldPinChrome(
+                definitionOpen = false,
+                selectionActive = false,
+                imeVisible = false,
+                accessibilityEnabled = false,
+                textSizeMenuExpanded = false
+            )
+        )
+    }
+
     @Test
     fun downwardScrollHidesOnlyAfterLargerThreshold() {
         var state = ReaderChromeScrollState()
