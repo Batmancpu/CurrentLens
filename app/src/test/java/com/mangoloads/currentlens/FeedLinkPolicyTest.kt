@@ -107,7 +107,7 @@ class FeedLinkPolicyTest {
         assertEquals(
             "https://example.test/world/",
             FeedLinkPolicy.resolveHttpReference(
-                "../world/",
+                "../../world/",
                 "https://example.test/feeds/archive/feed.xml"
             )
         )
