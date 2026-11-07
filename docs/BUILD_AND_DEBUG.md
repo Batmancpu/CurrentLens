@@ -160,3 +160,13 @@ CI establishes that the code compiles and JVM tests pass. It cannot establish th
 - Latest main run remains #116 / https://github.com/Batmancpu/CurrentLens/actions/runs/42209037417, success on main SHA 73b8a0d1ba33503fede02db2c3c0af082d724a12; it published v0.2.0-build-116. The latest main Release does not contain the unmerged PR #16 changes.
 - PR #18's read-only pull-request build / isolated release-write workflow passed run #165 / https://github.com/Batmancpu/CurrentLens/actions/runs/42260538402; PR #18 remains open/draft. Main still has the older push-only workflow with contents: write at workflow scope. Reconcile PR #16's branch-specific workflow and PR #18 before any merge; no workflow was changed in this review.
 - The current PR #16 privacy-minimisation change adds focused JVM tests. Its new natural CI run must be checked before describing those tests as passed. No Actions workflow was manually dispatched or rerun.
+
+
+## Live CI snapshot — 7 November 2026, 11:38 IST
+
+- Workflow: .github/workflows/build-apk.yml; push and pull_request triggers include main, PR #16's branch and black-box-bihar-news. Build job permissions are read-only; the separate publish job runs only on push to main and has contents:write.
+- Actions history was fully paginated: 200 runs (100 + 100 + 0), no queued/in-progress jobs.
+- Run #200 (42341245934) succeeded on exact parent SHA cfe0b3e8319374df5cb29423f04a79c77d4fe10e. WordNet builder tests and database generation, :app:testDebugUnitTest, :app:assembleDebug and APK artifact upload succeeded; publish job skipped.
+- Artifact: 13560769755, CurrentLens-v0.2.8-stability-debug-apk, 39,059,340 bytes, 14-day retention. Non-main stability build uses application ID com.mangoloads.currentlens.stability and label brrrNews Stability; it installs separately from the normal app.
+- Latest published Release remains v0.2.0-build-116. No feature-branch Release was created.
+- The Appearance low-effects commit authored from cfe0b3e is not covered by run #200; wait for its own natural run. Do not dispatch/rerun manually.

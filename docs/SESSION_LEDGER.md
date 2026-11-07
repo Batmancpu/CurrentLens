@@ -361,3 +361,16 @@ Branch: `fix/early-startup-crash-diagnostics-2026-11-06`.
 - Tests: replace the string-injection test with exact assertions for CRASH_NATIVE (5) and status 11; assert that the report has no system-description, PSS/RSS or importance fields. A second test asserts the formatter's exact allow-listed output. Tests are added; the natural branch CI result is pending at commit time.
 - Files changed: LaunchCrashDiagnostics.kt, LaunchCrashDiagnosticsTest.kt, KNOWN_ISSUES.md, SESSION_LEDGER.md, BUILD_AND_DEBUG.md and PROJECT_HANDOFF.md.
 - Scope/limits: privacy minimisation only; no claim that the native startup crash is fixed. No physical-device run, raw crash trace, user media, workflow edit, manual Actions dispatch/rerun, main edit, merge or Release.
+
+
+## 2026-11-07 11:38 IST — Appearance low-effects fallback and slider recomposition control
+
+- **Repository / branch:** Batmancpu/CurrentLens, black-box-bihar-news. Verified parent HEAD cfe0b3e8319374df5cb29423f04a79c77d4fe10e; implementation commit SHA is assigned by GitHub after this entry is authored and must be added during the next ledger refresh.
+- **Branch freshness:** complete inventory 28/28; black-box-bihar-news is 97 ahead / 0 behind main and 40 ahead / 0 behind PR #16. No source branch, main, PR base, Release or workflow was changed.
+- **Purpose:** make the Appearance preference app-wide and accessible while reducing unnecessary whole-root recomposition during slider movement.
+- **Changes:** added local reduceTransparency persistence (default false); introduced pure GlassRenderingPolicy; applied the reduced profile to Home header, Explore rail, Search filter capsule/morph, full/compact tab material, Reader toolbar/completion and definition overlay. Reduced mode removes live blur/refraction/chromatic aberration/depth/shadow, retains a lower specular edge, raises interactive tint opacity to at least 0.24 and pauses the existing 8×8 adaptive luminance probe. No second glass engine or new backdrop capture was introduced.
+- **Appearance interaction:** slider drag updates only previewGlassAlpha in the settings screen; parent glassAlpha and SharedPreferences are updated once on drag completion or preset selection. This avoids writing/recomposing the shared root for each slider pixel. The low-effects Switch is labelled and retains a 56dp row.
+- **Tests:** added GlassRenderingPolicyTest for normal/reduced optical parameters and extended GlassLuminanceActivationPolicyTest to prove reduced mode pauses sampling. Tests are authored but not yet run on the resulting commit.
+- **Previous CI evidence:** run #200 passed on parent SHA cfe0b3e8319374df5cb29423f04a79c77d4fe10e, artifact 13560769755; it does not validate this batch. Await the natural workflow for the new exact head; no manual dispatch/rerun.
+- **Risks / unverified:** no OPPO Reno10 5G runtime screenshot, launch, accessibility, Perfetto/frame-jank, GPU-overdraw, battery or thermal measurements. Do not claim measured performance improvement. The root background-only source remains shared; the existing tab glyph/merged source is unchanged.
+- **Next:** verify natural CI on the new exact head; then review Saved/stat filter surfaces and Quiz/Settings contextual controls. Re-read live branch graph before any further code change.

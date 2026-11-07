@@ -1,12 +1,29 @@
 # Liquid Glass UI Roadmap
 
-**Status:** Active incremental redesign; supporting-surface code and its documentation baseline have passed natural CI; the Reader resume-I/O batch in this iteration awaits its own natural CI run.  
+**Status:** Appearance low-effects/reduced-transparency batch authored from the live consolidation head; natural CI for the resulting commit is pending. Reader resume-I/O and supporting-glass code are already present on the branch.  
 **Feature branch:** `black-box-bihar-news`  
-**Pre-iteration source HEAD:** `c8afed0a78c536a36567c286f19fdafcada1ac70`; follow the live `black-box-bihar-news` ref for this iteration's new HEAD.  
-**Integration lineage:** PR #16 stability head `6ab1e6a02ac8e91027f21900d64d63b9f2e6a890`; pre-iteration branch head is 39 commits ahead / 0 behind PR #16 and 96 ahead / 0 behind main.  
-**Last completed successful run:** #196, exact pre-iteration HEAD `c8afed0a78c536a36567c286f19fdafcada1ac70`, passed WordNet generation, `:app:testDebugUnitTest`, `:app:assembleDebug` and artifact upload; artifact `13560390670`. Run #195 also passed the exact supporting-glass code commit `5e966a1b2d27bc08e01af3cd40e6573d6e8328be`; these runs do not validate the new Reader resume-I/O commit.  
+**Verified source HEAD:** `cfe0b3e8319374df5cb29423f04a79c77d4fe10e`; the new implementation commit is created from this exact head and its SHA is read from the live ref after commit.  
+**Integration lineage:** PR #16 stability head `6ab1e6a02ac8e91027f21900d64d63b9f2e6a890`; consolidation head is 40 commits ahead / 0 behind PR #16 and 97 ahead / 0 behind main.  
+**Last completed successful run:** #200, exact source HEAD `cfe0b3e8319374df5cb29423f04a79c77d4fe10e`, passed WordNet generation, `:app:testDebugUnitTest`, `:app:assembleDebug` and artifact upload; artifact `13560769755` (39,059,340 bytes). This validates the pre-change head only, not the new low-effects batch.  
 **Main:** unchanged at `73b8a0d1ba33503fede02db2c3c0af082d724a12`.  
 **Safety:** no source branch has been deleted, no Release has been published, and no workflow has been manually dispatched or rerun.
+
+## Live branch audit and reduced-transparency batch — 7 November 2026, 11:38 IST
+
+- The complete remote inventory is 28 branches (page 1: 28; page 2: 0). **black-box-bihar-news** is the freshest coherent consolidation line: 97 ahead / 0 behind **main**; 40 ahead / 0 behind PR #16's corrected stability head.
+- **brrrNEWS** is a diverged sibling (4 ahead / 3 behind; merge base e411c394e8d48b3f547b6d6fb9039a8935bd05eb). Its GlassSurfacePolicy.kt and test are byte-identical to this branch; MainActivity.kt differs only in formatting around the restored Reader-position state. Do not switch to or merge the sibling: its remaining differences include workflow/documentation/app-build metadata.
+- PR #24 (fix/editorial-policy-exception-guard-2026-11-07) remains open against brrrNEWS, not this branch. Its separate editorial policy change is not part of this visual batch and has not been ported. PR #11 still targets an older black-box-bihar-news base SHA; do not merge it blindly.
+- Rechecked source equivalence: ReadHistoryPolicy.kt and its test match PR #22's branch; ArticleCachePolicy.kt and ArticleProvenancePolicy.kt match PR #11's branch; FeedLinkPolicy.kt and its test match PR #12's branch. Current adaptive luminance sampling remains the conservative 4s/6s policy; PR #13's branch is 1.5s/2.5s and is not copied.
+- Open PRs: #24, #22, #21, #18, #17, #16, #13, #12, #11, #8 and #6. Closed/merged into consolidation: #19, #20 and #23. No PR from black-box-bihar-news to main exists yet; no merge or branch deletion was performed.
+
+### Appearance batch
+
+- Added a persisted local reduceTransparency preference, defaulting to off. The Appearance screen exposes an accessible 56dp row with a labelled Switch.
+- GlassRenderingPolicy keeps the normal Prismal material unchanged; when enabled it sets live blur/refraction/chromatic aberration to zero, disables depth/shadow, reduces specular intensity and raises interactive-surface tint to at least 0.24 for clearer, more opaque controls. Applied to the shared header, Explore rail, Search filter capsule and morph, full/compact tab material, Reader toolbar/completion action and definition popover.
+- The existing single background-only root backdrop remains the only shared page source; no new capture, readback, bitmap decode, dependency or graphics layer was added. The existing 8×8 adaptive luminance probe is paused while the preference is enabled; normal-mode cadence remains 4s Android 12+ / 6s older.
+- Appearance slider movement now updates only a local preview state; the app-wide glassAlpha preference is committed on drag completion or preset selection, avoiding root-state persistence/recomposition on every slider tick.
+- Added pure JVM tests for reduced material parameters and sampler suspension. The last successful natural run (#200) validates parent SHA cfe0b3e8319374df5cb29423f04a79c77d4fe10e only; the new commit must receive its own natural run. No device screenshots, OPPO jank/Perfetto, battery or thermal measurements exist; those remain UNVERIFIED.
+- Next: verify the exact new head's natural build and tests, then continue Saved/stats filter consistency and Quiz/Settings transient controls. Do not claim device performance improvement from policy code alone.
 
 ## Product and material principles
 

@@ -103,6 +103,8 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Slider
+import androidx.compose.material3.Switch
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -123,6 +125,7 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.geometry.Offset
@@ -190,7 +193,6 @@ import com.styropyr0.prismal.specular.PrismalSpecular
 import com.styropyr0.prismal.specular.PrismalSpecularStyle
 import com.styropyr0.prismal.components.LocalPrismalBottomTabHighlightedIndex
 import com.styropyr0.prismal.components.PrismalGlassBottomTab
-import com.styropyr0.prismal.components.PrismalGlassSlider
 import com.styropyr0.prismal.interactive.PrismalPressRipple
 import com.styropyr0.prismal.interactive.PrismalSpringMotion
 import com.styropyr0.prismal.shapes.PrismalCapsule
@@ -215,6 +217,8 @@ import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+
+private val LocalGlassReduceTransparency = staticCompositionLocalOf { false }
 
 private const val INDIA_ZONE = "Asia/Kolkata"
 
@@ -451,6 +455,7 @@ private fun BrrrNewsApp() {
     var quizMode by remember { mutableStateOf(false) }
     var showSettings by remember { mutableStateOf(false) }
     var glassAlpha by remember { mutableFloatStateOf(LocalStore.glassAlpha(context)) }
+    var reduceTransparency by remember { mutableStateOf(LocalStore.reduceTransparency(context)) }
     var searchQuery by remember { mutableStateOf("") }
     var searchExpanded by remember { mutableStateOf(false) }
     var searchCollapseRequested by remember { mutableStateOf(false) }
@@ -539,7 +544,8 @@ private fun BrrrNewsApp() {
             isResumed = appResumed,
             readerOpen = selectedArticle != null || quizMode,
             settingsOpen = showSettings,
-            feedScrolling = feedIsScrolling
+            feedScrolling = feedIsScrolling,
+            reduceTransparency = reduceTransparency
         ),
         source = backdrop,
         isLightTheme = !dark,
@@ -630,7 +636,8 @@ private fun BrrrNewsApp() {
         }
     }
 
-    BoxWithConstraints(
+    CompositionLocalProvider(LocalGlassReduceTransparency provides reduceTransparency) {
+        BoxWithConstraints(
         Modifier.fillMaxSize().background(
             if (searchExpanded) Color.Transparent else MaterialTheme.colorScheme.background
         )
@@ -772,6 +779,11 @@ private fun BrrrNewsApp() {
                 showSettings -> GlassSettingsScreen(
                     backdrop = backdrop,
                     glassAlpha = glassAlpha,
+                    reduceTransparency = reduceTransparency,
+                    onReduceTransparencyChange = { enabled ->
+                        reduceTransparency = enabled
+                        LocalStore.saveReduceTransparency(context, enabled)
+                    },
                     onGlassAlphaChange = {
                         glassAlpha = it
                         LocalStore.saveGlassAlpha(context, it)
@@ -914,8 +926,8 @@ private fun BrrrNewsApp() {
             }
         }
     }
+    }
 }
-
 @Composable
 private fun HomeScreen(
     backdrop: PrismalBackdrop,
@@ -1041,6 +1053,7 @@ private fun HomeGlassHeader(
     onBack: () -> Unit
 ) {
     val density = LocalDensity.current
+    val reduceTransparency = LocalGlassReduceTransparency.current
     val surfaceTint = MaterialTheme.colorScheme.surface
     val luminance = if (dark) 0.12f else 0.82f
     Box(
@@ -1051,25 +1064,26 @@ private fun HomeGlassHeader(
                 effects = {
                     applyPrismalGlassEffects(
                         density = density, adaptiveLuminance = true, luminance = luminance,
-                        blurRadiusPx = with(density) { 13.dp.toPx() },
-                        refractionHeightPx = with(density) { 4.dp.toPx() },
-                        refractionAmountPx = with(density) { 6.dp.toPx() },
-                        depthEffect = true, chromaticAberration = 0.003f,
+                        blurRadiusPx = with(density) { GlassRenderingPolicy.blurDp(13f, reduceTransparency).dp.toPx() },
+                        refractionHeightPx = with(density) { GlassRenderingPolicy.refractionDp(4f, reduceTransparency).dp.toPx() },
+                        refractionAmountPx = with(density) { GlassRenderingPolicy.refractionDp(6f, reduceTransparency).dp.toPx() },
+                        depthEffect = GlassRenderingPolicy.depthEnabled(true, reduceTransparency),
+                        chromaticAberration = GlassRenderingPolicy.chromaticAberration(0.003f, reduceTransparency),
                         adaptiveTuning = PrismalAdaptiveTuning.Subtle
                     )
                 },
                 specular = {
-                    PrismalSpecular.Default.copy(width = 0.55.dp, blurRadius = 0.35.dp, alpha = 0.28f)
+                    PrismalSpecular.Default.copy(width = 0.55.dp, blurRadius = 0.35.dp, alpha = GlassRenderingPolicy.specularAlpha(0.28f, reduceTransparency))
                 },
                 depthShadow = {
                     PrismalDepthShadow(radius = 12.dp, offset = DpOffset(0.dp, 2.dp),
-                        color = Color.Black.copy(alpha = 0.09f), alpha = 0.20f)
+                        color = Color.Black.copy(alpha = 0.09f), alpha = GlassRenderingPolicy.shadowAlpha(0.20f, reduceTransparency))
                 },
                 depthInset = {
                     PrismalDepthInset(radius = 4.dp, offset = DpOffset(0.dp, 1.dp),
-                        color = Color.Black.copy(alpha = 0.05f), alpha = 0.05f)
+                        color = Color.Black.copy(alpha = 0.05f), alpha = GlassRenderingPolicy.shadowAlpha(0.05f, reduceTransparency))
                 },
-                onDrawSurface = { drawRect(surfaceTint.copy(alpha = glassAlpha * 0.13f)) }
+                onDrawSurface = { drawRect(surfaceTint.copy(alpha = GlassRenderingPolicy.tintAlpha(glassAlpha * 0.13f, reduceTransparency))) }
             )
     ) {
         Row(Modifier.fillMaxWidth().padding(start = 14.dp, end = 8.dp, top = 8.dp, bottom = 8.dp),
@@ -1100,6 +1114,7 @@ private fun ExploreGlassCategories(
     dark: Boolean
 ) {
     val density = LocalDensity.current
+    val reduceTransparency = LocalGlassReduceTransparency.current
     val surfaceTint = MaterialTheme.colorScheme.surface
     val luminance = if (dark) 0.14f else 0.80f
     val chipShape = ContinuousCornerShape(18.dp)
@@ -1111,25 +1126,26 @@ private fun ExploreGlassCategories(
                 effects = {
                     applyPrismalGlassEffects(
                         density = density, adaptiveLuminance = true, luminance = luminance,
-                        blurRadiusPx = with(density) { 8.dp.toPx() },
-                        refractionHeightPx = with(density) { 3.dp.toPx() },
-                        refractionAmountPx = with(density) { 4.dp.toPx() },
-                        depthEffect = true, chromaticAberration = 0.0015f,
+                        blurRadiusPx = with(density) { GlassRenderingPolicy.blurDp(8f, reduceTransparency).dp.toPx() },
+                        refractionHeightPx = with(density) { GlassRenderingPolicy.refractionDp(3f, reduceTransparency).dp.toPx() },
+                        refractionAmountPx = with(density) { GlassRenderingPolicy.refractionDp(4f, reduceTransparency).dp.toPx() },
+                        depthEffect = GlassRenderingPolicy.depthEnabled(true, reduceTransparency),
+                        chromaticAberration = GlassRenderingPolicy.chromaticAberration(0.0015f, reduceTransparency),
                         adaptiveTuning = PrismalAdaptiveTuning.Subtle
                     )
                 },
                 specular = {
-                    PrismalSpecular.Default.copy(width = 0.45.dp, blurRadius = 0.30.dp, alpha = 0.20f)
+                    PrismalSpecular.Default.copy(width = 0.45.dp, blurRadius = 0.30.dp, alpha = GlassRenderingPolicy.specularAlpha(0.20f, reduceTransparency))
                 },
                 depthShadow = {
                     PrismalDepthShadow(radius = 9.dp, offset = DpOffset(0.dp, 1.dp),
-                        color = Color.Black.copy(alpha = 0.07f), alpha = 0.12f)
+                        color = Color.Black.copy(alpha = 0.07f), alpha = GlassRenderingPolicy.shadowAlpha(0.12f, reduceTransparency))
                 },
                 depthInset = {
                     PrismalDepthInset(radius = 3.dp, offset = DpOffset(0.dp, 1.dp),
-                        color = Color.Black.copy(alpha = 0.04f), alpha = 0.04f)
+                        color = Color.Black.copy(alpha = 0.04f), alpha = GlassRenderingPolicy.shadowAlpha(0.04f, reduceTransparency))
                 },
-                onDrawSurface = { drawRect(surfaceTint.copy(alpha = glassAlpha * 0.09f)) }
+                onDrawSurface = { drawRect(surfaceTint.copy(alpha = GlassRenderingPolicy.tintAlpha(glassAlpha * 0.09f, reduceTransparency))) }
             )
     ) {
         Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState())
@@ -1296,6 +1312,7 @@ private fun SearchFeed(
     val keyboardController = LocalSoftwareKeyboardController.current
     val eligibleArticles = articles
     val density = LocalDensity.current
+    val reduceTransparency = LocalGlassReduceTransparency.current
     val glassSurfaceColor = MaterialTheme.colorScheme.surface
     val categories = listOf("All", "India", "World", "Politics", "Geography", "Economy", "Environment", "Science", "Explained", "UPSC", "Opinion")
     val subjects = remember(eligibleArticles) {
@@ -1331,27 +1348,27 @@ private fun SearchFeed(
                             density = density,
                             adaptiveLuminance = true,
                             luminance = if (dark) 0.10f else 0.90f,
-                            blurRadiusPx = with(density) { 7.dp.toPx() },
-                            refractionHeightPx = with(density) { 3.dp.toPx() },
-                            refractionAmountPx = with(density) { 4.dp.toPx() },
-                            depthEffect = true,
-                            chromaticAberration = 0.001f,
+                            blurRadiusPx = with(density) { GlassRenderingPolicy.blurDp(7f, reduceTransparency).dp.toPx() },
+                            refractionHeightPx = with(density) { GlassRenderingPolicy.refractionDp(3f, reduceTransparency).dp.toPx() },
+                            refractionAmountPx = with(density) { GlassRenderingPolicy.refractionDp(4f, reduceTransparency).dp.toPx() },
+                            depthEffect = GlassRenderingPolicy.depthEnabled(true, reduceTransparency),
+                            chromaticAberration = GlassRenderingPolicy.chromaticAberration(0.001f, reduceTransparency),
                             adaptiveTuning = PrismalAdaptiveTuning.Subtle
                         )
                     },
                     specular = {
-                        PrismalSpecular.Default.copy(width = 0.42.dp, blurRadius = 0.28.dp, alpha = 0.19f)
+                        PrismalSpecular.Default.copy(width = 0.42.dp, blurRadius = 0.28.dp, alpha = GlassRenderingPolicy.specularAlpha(0.19f, reduceTransparency))
                     },
                     depthShadow = {
                         PrismalDepthShadow(radius = 8.dp, offset = DpOffset(0.dp, 1.dp),
-                            color = Color.Black.copy(alpha = 0.06f), alpha = 0.12f)
+                            color = Color.Black.copy(alpha = 0.06f), alpha = GlassRenderingPolicy.shadowAlpha(0.12f, reduceTransparency))
                     },
                     depthInset = {
                         PrismalDepthInset(radius = 3.dp, offset = DpOffset(0.dp, 1.dp),
-                            color = Color.Black.copy(alpha = 0.04f), alpha = 0.04f)
+                            color = Color.Black.copy(alpha = 0.04f), alpha = GlassRenderingPolicy.shadowAlpha(0.04f, reduceTransparency))
                     },
                     onDrawSurface = {
-                        drawRect(glassSurfaceColor.copy(alpha = glassAlpha * 0.10f))
+                        drawRect(glassSurfaceColor.copy(alpha = GlassRenderingPolicy.tintAlpha(glassAlpha * 0.10f, reduceTransparency)))
                     }
                 )
         ) {
@@ -1461,14 +1478,18 @@ private fun SearchMorphField(
     onClear: () -> Unit
 ) {
     val density = LocalDensity.current
+    val reduceTransparency = LocalGlassReduceTransparency.current
     val progress = morphProgress.coerceIn(0f, 1f)
     val optics = GlassOpticsPolicy.search(progress)
     val glassTint = if (adaptiveContentColor == Color.Black) Color(0xFFF5F8FC) else Color(0xFF202B3A)
-    val tintAlpha = GlassOpticsPolicy.adaptiveTintAlpha(
-        baseAlpha = glassAlpha * optics.tintAlpha,
-        luminance = luminance,
-        minAlpha = 0.04f,
-        maxAlpha = 0.12f
+    val tintAlpha = GlassRenderingPolicy.tintAlpha(
+        GlassOpticsPolicy.adaptiveTintAlpha(
+            baseAlpha = glassAlpha * optics.tintAlpha,
+            luminance = luminance,
+            minAlpha = 0.04f,
+            maxAlpha = 0.12f
+        ),
+        reduceTransparency
     )
     val iconOffset = with(density) {
         SearchMorphGeometryPolicy.iconOffset(collapsedIconOffsetPx, progress).toDp()
@@ -1486,11 +1507,11 @@ private fun SearchMorphField(
                         density = density,
                         adaptiveLuminance = true,
                         luminance = luminance,
-                        blurRadiusPx = with(density) { optics.blurDp.dp.toPx() },
-                        refractionHeightPx = with(density) { optics.refractionHeightDp.dp.toPx() },
-                        refractionAmountPx = with(density) { optics.refractionAmountDp.dp.toPx() },
-                        depthEffect = true,
-                        chromaticAberration = optics.chromaticAberration,
+                        blurRadiusPx = with(density) { GlassRenderingPolicy.blurDp(optics.blurDp, reduceTransparency).dp.toPx() },
+                        refractionHeightPx = with(density) { GlassRenderingPolicy.refractionDp(optics.refractionHeightDp, reduceTransparency).dp.toPx() },
+                        refractionAmountPx = with(density) { GlassRenderingPolicy.refractionDp(optics.refractionAmountDp, reduceTransparency).dp.toPx() },
+                        depthEffect = GlassRenderingPolicy.depthEnabled(true, reduceTransparency),
+                        chromaticAberration = GlassRenderingPolicy.chromaticAberration(optics.chromaticAberration, reduceTransparency),
                         adaptiveTuning = PrismalAdaptiveTuning.Subtle
                     )
                 },
@@ -1498,7 +1519,7 @@ private fun SearchMorphField(
                     PrismalSpecular.Default.copy(
                         width = (0.55f + 0.20f * progress).dp,
                         blurRadius = (0.30f + 0.15f * progress).dp,
-                        alpha = optics.specularAlpha
+                        alpha = GlassRenderingPolicy.specularAlpha(optics.specularAlpha, reduceTransparency)
                     )
                 },
                 depthShadow = {
@@ -1506,7 +1527,7 @@ private fun SearchMorphField(
                         radius = (12f + 6f * progress).dp,
                         offset = DpOffset(0.dp, (2f + progress).dp),
                         color = Color.Black.copy(alpha = 0.12f),
-                        alpha = optics.shadowAlpha
+                        alpha = GlassRenderingPolicy.shadowAlpha(optics.shadowAlpha, reduceTransparency)
                     )
                 },
                 depthInset = {
@@ -1514,7 +1535,7 @@ private fun SearchMorphField(
                         radius = (4f + progress).dp,
                         offset = DpOffset(0.dp, 1.dp),
                         color = Color.Black.copy(alpha = 0.07f),
-                        alpha = optics.insetAlpha
+                        alpha = GlassRenderingPolicy.shadowAlpha(optics.insetAlpha, reduceTransparency)
                     )
                 },
                 onDrawSurface = {
@@ -2226,6 +2247,7 @@ private fun GlassTabBar(
     onSelect: (Int) -> Unit
 ) {
     val density = LocalDensity.current
+    val reduceTransparency = LocalGlassReduceTransparency.current
     val isLtr = LocalLayoutDirection.current == LayoutDirection.Ltr
     val animationScope = rememberCoroutineScope()
     val latestOnSelect = rememberUpdatedState(onSelect)
@@ -2234,11 +2256,14 @@ private fun GlassTabBar(
     val tabsBackdrop = rememberPrismalGlassLayer()
     val dropletBackdrop = rememberPrismalMergedSource(backdrop, tabsBackdrop)
     val glassTint = if (adaptiveContentColor == Color.Black) Color(0xFFEAF0FA) else Color(0xFF1C2E49)
-    val baseTintAlpha = GlassOpticsPolicy.adaptiveTintAlpha(
-        baseAlpha = glassAlpha * 0.12f,
-        luminance = luminance,
-        minAlpha = 0.035f,
-        maxAlpha = 0.13f
+    val baseTintAlpha = GlassRenderingPolicy.tintAlpha(
+        GlassOpticsPolicy.adaptiveTintAlpha(
+            baseAlpha = glassAlpha * 0.12f,
+            luminance = luminance,
+            minAlpha = 0.035f,
+            maxAlpha = 0.13f
+        ),
+        reduceTransparency
     )
     val compactTransition = updateTransition(targetState = compact, label = "Feed navigation compact morph")
     val compactProgress = compactTransition.animateFloat(
@@ -2308,11 +2333,14 @@ private fun GlassTabBar(
         val pillVelocity = if (reduceMotion) 0f else motion.velocity.coerceIn(-2f, 2f)
         val dropletOptics = GlassOpticsPolicy.droplet(pillPress, reduceMotion)
         val dropletTint = if (adaptiveContentColor == Color.Black) Color(0xFFE8F1FF) else Color(0xFF1C2E49)
-        val dropletTintAlpha = GlassOpticsPolicy.adaptiveTintAlpha(
-            baseAlpha = glassAlpha * dropletOptics.tintAlpha,
-            luminance = luminance,
-            minAlpha = 0.045f,
-            maxAlpha = 0.14f
+        val dropletTintAlpha = GlassRenderingPolicy.tintAlpha(
+            GlassOpticsPolicy.adaptiveTintAlpha(
+                baseAlpha = glassAlpha * dropletOptics.tintAlpha,
+                luminance = luminance,
+                minAlpha = 0.045f,
+                maxAlpha = 0.14f
+            ),
+            reduceTransparency
         )
 
         val tabRipple = remember(animationScope, tabWidthPx, contentStartPx) {
@@ -2339,11 +2367,11 @@ private fun GlassTabBar(
                             density = density,
                             adaptiveLuminance = true,
                             luminance = luminance,
-                            blurRadiusPx = with(density) { (6f - 2f * compactProgress).dp.toPx() },
-                            refractionHeightPx = with(density) { (14f - 6f * compactProgress).dp.toPx() },
-                            refractionAmountPx = with(density) { (20f - 10f * compactProgress).dp.toPx() },
-                            depthEffect = true,
-                            chromaticAberration = 0.015f * (1f - compactProgress),
+                            blurRadiusPx = with(density) { GlassRenderingPolicy.blurDp(6f - 2f * compactProgress, reduceTransparency).dp.toPx() },
+                            refractionHeightPx = with(density) { GlassRenderingPolicy.refractionDp(14f - 6f * compactProgress, reduceTransparency).dp.toPx() },
+                            refractionAmountPx = with(density) { GlassRenderingPolicy.refractionDp(20f - 10f * compactProgress, reduceTransparency).dp.toPx() },
+                            depthEffect = GlassRenderingPolicy.depthEnabled(true, reduceTransparency),
+                            chromaticAberration = GlassRenderingPolicy.chromaticAberration(0.015f * (1f - compactProgress), reduceTransparency),
                             adaptiveTuning = PrismalAdaptiveTuning.Subtle
                         )
                     },
@@ -2351,7 +2379,7 @@ private fun GlassTabBar(
                         PrismalSpecular.Default.copy(
                             width = 0.6.dp,
                             blurRadius = 0.4.dp,
-                            alpha = 0.48f * (1f - 0.18f * compactProgress)
+                            alpha = GlassRenderingPolicy.specularAlpha(0.48f * (1f - 0.18f * compactProgress), reduceTransparency)
                         )
                     },
                     depthShadow = {
@@ -2359,7 +2387,7 @@ private fun GlassTabBar(
                             radius = 18.dp - 4.dp * compactProgress,
                             offset = DpOffset(0.dp, 3.dp),
                             color = Color.Black.copy(alpha = 0.10f),
-                            alpha = 0.28f
+                            alpha = GlassRenderingPolicy.shadowAlpha(0.28f, reduceTransparency)
                         )
                     },
                     depthInset = {
@@ -2367,7 +2395,7 @@ private fun GlassTabBar(
                             radius = 4.dp,
                             offset = DpOffset(0.dp, 1.dp),
                             color = Color.Black.copy(alpha = 0.06f),
-                            alpha = 0.06f
+                            alpha = GlassRenderingPolicy.shadowAlpha(0.06f, reduceTransparency)
                         )
                     },
                     onDrawSurface = { drawRect(glassTint.copy(alpha = baseTintAlpha)) }
@@ -2441,11 +2469,11 @@ private fun GlassTabBar(
                                 density = density,
                                 adaptiveLuminance = true,
                                 luminance = luminance,
-                                blurRadiusPx = with(density) { dropletOptics.blurDp.dp.toPx() },
-                                refractionHeightPx = with(density) { dropletOptics.refractionHeightDp.dp.toPx() },
-                                refractionAmountPx = with(density) { dropletOptics.refractionAmountDp.dp.toPx() },
-                                depthEffect = true,
-                                chromaticAberration = dropletOptics.chromaticAberration,
+                                blurRadiusPx = with(density) { GlassRenderingPolicy.blurDp(dropletOptics.blurDp, reduceTransparency).dp.toPx() },
+                                refractionHeightPx = with(density) { GlassRenderingPolicy.refractionDp(dropletOptics.refractionHeightDp, reduceTransparency).dp.toPx() },
+                                refractionAmountPx = with(density) { GlassRenderingPolicy.refractionDp(dropletOptics.refractionAmountDp, reduceTransparency).dp.toPx() },
+                                depthEffect = GlassRenderingPolicy.depthEnabled(true, reduceTransparency),
+                                chromaticAberration = GlassRenderingPolicy.chromaticAberration(dropletOptics.chromaticAberration, reduceTransparency),
                                 adaptiveTuning = PrismalAdaptiveTuning.Subtle
                             )
                         },
@@ -2453,7 +2481,7 @@ private fun GlassTabBar(
                             PrismalSpecular.Default.copy(
                                 width = 0.7.dp,
                                 blurRadius = 0.4.dp,
-                                alpha = dropletOptics.specularAlpha,
+                                alpha = GlassRenderingPolicy.specularAlpha(dropletOptics.specularAlpha, reduceTransparency),
                                 style = PrismalSpecularStyle.Default(
                                     angle = GlassOpticsPolicy.specularAngle(pillVelocity, reduceMotion)
                                 )
@@ -2464,7 +2492,7 @@ private fun GlassTabBar(
                                 radius = 12.dp,
                                 offset = DpOffset(0.dp, 2.dp),
                                 color = Color.Black.copy(alpha = 0.12f),
-                                alpha = dropletOptics.shadowAlpha
+                                alpha = GlassRenderingPolicy.shadowAlpha(dropletOptics.shadowAlpha, reduceTransparency)
                             )
                         },
                         depthInset = {
@@ -2472,7 +2500,7 @@ private fun GlassTabBar(
                                 radius = 5.dp,
                                 offset = DpOffset(0.dp, 1.dp),
                                 color = Color.Black.copy(alpha = 0.08f),
-                                alpha = dropletOptics.insetAlpha
+                                alpha = GlassRenderingPolicy.shadowAlpha(dropletOptics.insetAlpha, reduceTransparency)
                             )
                         },
                         onDrawSurface = { drawRect(dropletTint.copy(alpha = dropletTintAlpha)) }
@@ -2581,6 +2609,7 @@ private fun ReaderScreen(
     onClearReaderPosition: (String) -> Unit
 ) {
     val context = LocalContext.current
+    val reduceTransparency = LocalGlassReduceTransparency.current
     val readerWebViewHolder = remember { mutableStateOf<ReaderWebView?>(null) }
     var savedReadingProgress by remember(article.url) { mutableFloatStateOf(0f) }
     var readerPositionLoaded by remember(article.url) { mutableStateOf(false) }
@@ -2966,13 +2995,13 @@ private fun ReaderScreen(
                     .padding(horizontal = 12.dp, vertical = 8.dp)
                     .navigationBarsPadding(),
                 shape = { PrismalRoundedRectangle(20.dp) },
-                blurRadius = 7.dp,
-                refractionHeightPx = 10f,
-                refractionAmountPx = 12f,
-                depthEffect = true,
-                chromaticAberration = 0.004f,
+                blurRadius = GlassRenderingPolicy.blurDp(7f, reduceTransparency).dp,
+                refractionHeightPx = GlassRenderingPolicy.refractionPx(10f, reduceTransparency),
+                refractionAmountPx = GlassRenderingPolicy.refractionPx(12f, reduceTransparency),
+                depthEffect = GlassRenderingPolicy.depthEnabled(true, reduceTransparency),
+                chromaticAberration = GlassRenderingPolicy.chromaticAberration(0.004f, reduceTransparency),
                 tint = if (dark) Color(0xFF25354A) else Color(0xFFEAF0FA),
-                tintAlpha = (glassAlpha * 0.34f).coerceIn(0.05f, 0.20f)
+                tintAlpha = GlassRenderingPolicy.tintAlpha((glassAlpha * 0.34f).coerceIn(0.05f, 0.20f), reduceTransparency)
             ) {
                 Row(
                     Modifier.fillMaxWidth().padding(start = 14.dp, end = 4.dp, top = 4.dp, bottom = 4.dp),
@@ -3015,6 +3044,7 @@ private fun ReaderGlassToolbar(
     onBack: () -> Unit,
     onFontSizeChange: (Int) -> Unit
 ) {
+    val reduceTransparency = LocalGlassReduceTransparency.current
     var textSizeMenuExpanded by remember(article.url) { mutableStateOf(false) }
     val tint = if (dark) Color(0xFF26364B) else Color(0xFFEAF0FA)
 
@@ -3022,13 +3052,13 @@ private fun ReaderGlassToolbar(
         backdrop = backdrop,
         modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 6.dp),
         shape = { PrismalRoundedRectangle(22.dp) },
-        blurRadius = 8.dp,
-        refractionHeightPx = 13f,
-        refractionAmountPx = 15f,
-        depthEffect = true,
-        chromaticAberration = 0.006f,
+        blurRadius = GlassRenderingPolicy.blurDp(8f, reduceTransparency).dp,
+        refractionHeightPx = GlassRenderingPolicy.refractionPx(13f, reduceTransparency),
+        refractionAmountPx = GlassRenderingPolicy.refractionPx(15f, reduceTransparency),
+        depthEffect = GlassRenderingPolicy.depthEnabled(true, reduceTransparency),
+        chromaticAberration = GlassRenderingPolicy.chromaticAberration(0.006f, reduceTransparency),
         tint = tint,
-        tintAlpha = (glassAlpha * 0.42f).coerceIn(0.05f, 0.24f)
+        tintAlpha = GlassRenderingPolicy.tintAlpha((glassAlpha * 0.42f).coerceIn(0.05f, 0.24f), reduceTransparency)
     ) {
         Row(
             Modifier.fillMaxWidth().heightIn(min = 60.dp)
@@ -3617,6 +3647,7 @@ private fun DefinitionGlassOverlay(
     onClose: () -> Unit
 ) {
     val context = LocalContext.current
+    val reduceTransparency = LocalGlassReduceTransparency.current
     var result by remember(word) { mutableStateOf<Definition?>(null) }
     var loading by remember(word) { mutableStateOf(true) }
     var expanded by remember(word) { mutableStateOf(false) }
@@ -3657,13 +3688,13 @@ private fun DefinitionGlassOverlay(
                 modifier = Modifier.fillMaxWidth()
                     .animateContentSize(spring(dampingRatio = 0.82f, stiffness = 480f)),
                 shape = { PrismalRoundedRectangle(25.dp) },
-                blurRadius = 12.dp,
-                refractionHeightPx = 22f,
-                refractionAmountPx = 24f,
-                depthEffect = true,
-                chromaticAberration = 0.015f,
+                blurRadius = GlassRenderingPolicy.blurDp(12f, reduceTransparency).dp,
+                refractionHeightPx = GlassRenderingPolicy.refractionPx(22f, reduceTransparency),
+                refractionAmountPx = GlassRenderingPolicy.refractionPx(24f, reduceTransparency),
+                depthEffect = GlassRenderingPolicy.depthEnabled(true, reduceTransparency),
+                chromaticAberration = GlassRenderingPolicy.chromaticAberration(0.015f, reduceTransparency),
                 tint = if (isSystemInDarkTheme()) Color(0xFF263247) else Color(0xFFEAF0FA),
-                tintAlpha = (glassAlpha * 0.62f).coerceIn(0.08f, 0.34f)
+                tintAlpha = GlassRenderingPolicy.tintAlpha((glassAlpha * 0.62f).coerceIn(0.08f, 0.34f), reduceTransparency)
             ) {
                 DefinitionPopoverContent(
                     word = word,
@@ -3731,15 +3762,19 @@ private fun DefinitionGlassOverlay(
 private fun GlassSettingsScreen(
     backdrop: PrismalBackdrop,
     glassAlpha: Float,
+    reduceTransparency: Boolean,
+    onReduceTransparencyChange: (Boolean) -> Unit,
     onGlassAlphaChange: (Float) -> Unit,
     onBack: () -> Unit
 ) {
     val dark = isSystemInDarkTheme()
     val tint = if (dark) Color(0xFF30394B) else Color(0xFFEAF0FA)
+    var previewGlassAlpha by remember { mutableFloatStateOf(glassAlpha) }
+    LaunchedEffect(glassAlpha) { previewGlassAlpha = glassAlpha }
     val selectedPreset = when {
-        kotlin.math.abs(glassAlpha - 0.12f) < 0.015f -> "Clear"
-        kotlin.math.abs(glassAlpha - 0.32f) < 0.015f -> "Balanced"
-        kotlin.math.abs(glassAlpha - 0.55f) < 0.015f -> "Frosted"
+        kotlin.math.abs(previewGlassAlpha - 0.12f) < 0.015f -> "Clear"
+        kotlin.math.abs(previewGlassAlpha - 0.32f) < 0.015f -> "Balanced"
+        kotlin.math.abs(previewGlassAlpha - 0.55f) < 0.015f -> "Frosted"
         else -> "Custom"
     }
     Column(
@@ -3751,32 +3786,54 @@ private fun GlassSettingsScreen(
             IconButton(onClick = onBack) { Icon(Icons.Outlined.ArrowBack, contentDescription = "Back") }
             Column(verticalArrangement = Arrangement.spacedBy(1.dp)) {
                 Text("Appearance", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-                Text("Personalise the reading surfaces", style = MaterialTheme.typography.labelSmall,
+                Text("Personalise controls and reading surfaces", style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.secondary)
             }
         }
         PrismalGlassSurface(
             backdrop = backdrop, modifier = Modifier.fillMaxWidth(),
-            shape = { PrismalRoundedRectangle(26.dp) }, blurRadius = 11.dp,
-            tint = tint, tintAlpha = glassAlpha
+            shape = { PrismalRoundedRectangle(26.dp) },
+            blurRadius = GlassRenderingPolicy.blurDp(11f, reduceTransparency).dp,
+            tint = tint, tintAlpha = GlassRenderingPolicy.tintAlpha(previewGlassAlpha, reduceTransparency)
         ) {
             Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(13.dp)) {
                 Text("Liquid Glass", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-                Text("Control how strongly the glass tint sits over the content beneath it.",
+                Text("Tune the shared glass tint across navigation, controls and contextual surfaces.",
                     style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.secondary)
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text("Clear", fontSize = 11.sp, color = MaterialTheme.colorScheme.secondary)
                     Spacer(Modifier.weight(1f))
-                    Text((glassAlpha * 100).toInt().toString() + "%", fontWeight = FontWeight.Bold,
+                    Text((previewGlassAlpha * 100).toInt().toString() + "%", fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.primary)
                     Spacer(Modifier.weight(1f))
                     Text("Frosted", fontSize = 11.sp, color = MaterialTheme.colorScheme.secondary)
                 }
-                PrismalGlassSlider(
-                    value = { glassAlpha }, onValueChange = onGlassAlphaChange,
-                    valueRange = 0.12f..0.55f, visibilityThreshold = 0.01f,
-                    backdrop = backdrop, modifier = Modifier.fillMaxWidth()
+                Slider(
+                    value = previewGlassAlpha,
+                    onValueChange = { previewGlassAlpha = it },
+                    onValueChangeFinished = { onGlassAlphaChange(previewGlassAlpha) },
+                    valueRange = 0.12f..0.55f,
+                    modifier = Modifier.fillMaxWidth()
                 )
+                Row(
+                    Modifier.fillMaxWidth().heightIn(min = 56.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                        Text("Reduce transparency & effects", style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.SemiBold)
+                        Text("More opaque controls; removes blur, refraction and adaptive sampling.",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.secondary)
+                    }
+                    Switch(
+                        checked = reduceTransparency,
+                        onCheckedChange = onReduceTransparencyChange,
+                        modifier = Modifier.semantics {
+                            contentDescription = "Reduce transparency and effects"
+                        }
+                    )
+                }
             }
         }
         Column(verticalArrangement = Arrangement.spacedBy(7.dp)) {
@@ -3785,11 +3842,11 @@ private fun GlassSettingsScreen(
                 style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.secondary)
             Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                FilterChip(selected = selectedPreset == "Clear", onClick = { onGlassAlphaChange(0.12f) },
+                FilterChip(selected = selectedPreset == "Clear", onClick = { previewGlassAlpha = 0.12f; onGlassAlphaChange(0.12f) },
                     modifier = Modifier.heightIn(min = 48.dp), label = { Text("Clear") })
-                FilterChip(selected = selectedPreset == "Balanced", onClick = { onGlassAlphaChange(0.32f) },
+                FilterChip(selected = selectedPreset == "Balanced", onClick = { previewGlassAlpha = 0.32f; onGlassAlphaChange(0.32f) },
                     modifier = Modifier.heightIn(min = 48.dp), label = { Text("Balanced") })
-                FilterChip(selected = selectedPreset == "Frosted", onClick = { onGlassAlphaChange(0.55f) },
+                FilterChip(selected = selectedPreset == "Frosted", onClick = { previewGlassAlpha = 0.55f; onGlassAlphaChange(0.55f) },
                     modifier = Modifier.heightIn(min = 48.dp), label = { Text("Frosted") })
             }
         }
@@ -3800,8 +3857,9 @@ private fun GlassSettingsScreen(
                 color = MaterialTheme.colorScheme.secondary)
             PrismalGlassSurface(
                 backdrop = backdrop, modifier = Modifier.fillMaxWidth(),
-                shape = { PrismalRoundedRectangle(24.dp) }, blurRadius = 9.dp,
-                tint = tint, tintAlpha = glassAlpha
+                shape = { PrismalRoundedRectangle(24.dp) },
+                blurRadius = GlassRenderingPolicy.blurDp(9f, reduceTransparency).dp,
+                tint = tint, tintAlpha = GlassRenderingPolicy.tintAlpha(previewGlassAlpha, reduceTransparency)
             ) {
                 Column(Modifier.fillMaxWidth().padding(14.dp), verticalArrangement = Arrangement.spacedBy(11.dp)) {
                     Row(

@@ -19,6 +19,7 @@ object LocalStore {
     private const val RECENT_READ = "read_history_recent_v1"
     private const val ARTICLE_CACHE = "article_cache"
     private const val GLASS_ALPHA = "glass_alpha"
+    private const val REDUCE_TRANSPARENCY = "glass_reduce_transparency"
     private const val MAX_CACHED_ARTICLES = 500
     private const val CACHE_DAYS = 30
     private const val DEFAULT_GLASS_ALPHA = 0.28f
@@ -528,5 +529,16 @@ object LocalStore {
     fun saveGlassAlpha(context: Context, value: Float) {
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
             .edit().putFloat(GLASS_ALPHA, value.coerceIn(0.12f, 0.55f)).apply()
+    }
+
+    fun reduceTransparency(context: Context): Boolean =
+        runCatching {
+            context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+                .getBoolean(REDUCE_TRANSPARENCY, false)
+        }.getOrDefault(false)
+
+    fun saveReduceTransparency(context: Context, enabled: Boolean) {
+        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+            .edit().putBoolean(REDUCE_TRANSPARENCY, enabled).apply()
     }
 }

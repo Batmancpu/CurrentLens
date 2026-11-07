@@ -6,6 +6,7 @@ internal object GlassLuminanceActivationPolicy {
         isResumed: Boolean,
         readerOpen: Boolean,
         settingsOpen: Boolean,
-        feedScrolling: Boolean = false
-    ): Boolean = isResumed && !readerOpen && !settingsOpen && !feedScrolling
+        feedScrolling: Boolean = false,
+        reduceTransparency: Boolean = false
+    ): Boolean = isResumed && !readerOpen && !settingsOpen && !feedScrolling && !reduceTransparency
 }

@@ -76,3 +76,8 @@ The production app must retain Prismal's normal automatic pipeline and complete 
 
 ## D-018 — One active integration branch per continuing issue
 Reuse the current issue's open integration branch/PR and batch related work there. Avoid branch-per-file/per-session/per-agent. Preserve independent unmerged feature branches until reviewed or explicitly abandoned. Delete merged/stale refs only after confirming no unique work; branch count is repository hygiene, not a runtime cause.
+
+
+## D-019 — Reduced transparency is a shared low-cost material profile
+
+The Appearance preference is app-wide, persisted locally and defaults off. When enabled, the existing Prismal material remains recognisable through a stronger tint and restrained edge highlight, while blur, refraction, chromatic aberration, depth and shadow are removed and the existing adaptive luminance readback is paused. Do not create a second renderer or backdrop. Slider motion updates a local preview; apply the shared alpha only on drag completion or preset selection so the app root is not persisted/recomposed on every pointer tick. This is an accessibility/low-effects fallback, not a measured performance claim.

@@ -1,5 +1,15 @@
 # CurrentLens — Latest project handoff (7 November 2026)
 
+## Live snapshot — 7 November 2026, 11:38 IST
+
+- Current integration branch: black-box-bihar-news, verified pre-batch head cfe0b3e8319374df5cb29423f04a79c77d4fe10e; 97 ahead / 0 behind main and 40 ahead / 0 behind PR #16. The low-effects Appearance batch is authored from this exact head; its resulting SHA and natural CI are pending.
+- Full remote inventory: 28 branches, 11 open draft PRs (#24, #22, #21, #18, #17, #16, #13, #12, #11, #8, #6). No branch deleted; no PR merged during this run.
+- Latest natural Actions run #200 passed on parent SHA cfe0b3e; WordNet builder tests/database, :app:testDebugUnitTest, :app:assembleDebug and artifact upload succeeded; publish job skipped. Artifact 13560769755 (39,059,340 bytes), CurrentLens-v0.2.8-stability-debug-apk, installs as com.mangoloads.currentlens.stability / brrrNews Stability, not the normal package.
+- Latest Release remains v0.2.0-build-116. No main write, Release publication, workflow dispatch or rerun.
+- Branch audit: black-box remains the latest coherent consolidation line; brrrNEWS is 4 ahead / 3 behind with equivalent GlassSurfacePolicy/test and only a formatting-only MainActivity difference. PR #24 is a separate editorial-policy draft based on brrrNEWS; it was not ported in this UI batch.
+- New Appearance setting: persisted Reduce transparency & effects; low-effects policy disables blur/refraction/chromatic/depth/shadows, raises tint opacity and pauses adaptive luminance sampling. Slider preview is local and applies on release/preset. New JVM tests await the natural build on the new commit.
+- Device-backed OPPO launch, visual, accessibility and performance checks remain UNVERIFIED. No device measurement is inferred from CI.
+
 > This is the newest status snapshot and supersedes older dated snapshots below where they conflict. Full chronological context remains in SESSION_LEDGER.md.
 
 

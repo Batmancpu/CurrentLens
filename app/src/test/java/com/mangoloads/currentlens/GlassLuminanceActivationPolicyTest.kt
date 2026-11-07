@@ -46,6 +46,18 @@ class GlassLuminanceActivationPolicyTest {
     }
 
     @Test
+    fun pausesWhenReducedTransparencyIsEnabled() {
+        assertFalse(
+            GlassLuminanceActivationPolicy.shouldSample(
+                isResumed = true,
+                readerOpen = false,
+                settingsOpen = false,
+                reduceTransparency = true
+            )
+        )
+    }
+
+    @Test
     fun pausesDuringFeedMotion() {
         assertFalse(
             GlassLuminanceActivationPolicy.shouldSample(
