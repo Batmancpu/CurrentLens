@@ -163,6 +163,12 @@ class UpscFeedPolicyTest {
             "The report concerns statutory powers, constitutional safeguards and media governance.",
             "Entertainment"
         ), "GS II", "Governance")
+
+        assertSyllabusMapped(article(
+            "Parliament amends the Cinematograph Act 1952 in 2026",
+            "A current amendment changes the operation of the existing statutory framework.",
+            "Entertainment"
+        ), "GS II", "Governance")
         assertSyllabusMapped(article(
             "Government issues new broadcasting regulations for OTT platforms",
             "The ministry notifies a regulatory change for digital broadcasting.",
@@ -191,6 +197,12 @@ class UpscFeedPolicyTest {
         assertRejectedDespiteKeywordMatch(article(
             "Cinematograph Act enacted by Parliament in 1952",
             "A historical account of the original enactment, not a current regulatory change.",
+            "Entertainment"
+        ))
+
+        assertRejectedDespiteKeywordMatch(article(
+            "Parliament enacted the Cinematograph Act in 1952",
+            "An active-voice headline still describes the original historical enactment, not a current change.",
             "Entertainment"
         ))
         assertSyllabusMapped(article(
