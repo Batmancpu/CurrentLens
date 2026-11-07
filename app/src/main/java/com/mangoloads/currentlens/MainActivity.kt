@@ -2689,7 +2689,9 @@ private fun ReaderScreen(
         try {
             val cached = ArticleReaderContentCache.read(context, article.url)
             if (cached != null) {
-                extractedHtml = cached
+                // Older cached documents may contain image URLs that predate the
+                // publisher asset allowlist; filter them again before WebView rendering.
+                extractedHtml = filterPublisherImageUrls(cached, article.url, article.source)
                 loadedFromCache = true
             } else {
                 val publicContent = ArticleReaderRepository.extractAccessibleArticle(article.url, article.source)
