@@ -530,7 +530,7 @@ object LocalStore {
      * Read both appearance preferences together. The first SharedPreferences access also
      * loads the entire local XML file, so callers should use this from the startup IO restore.
      */
-    fun appearancePreferences(context: Context): LocalAppearancePreferences =
+    internal fun appearancePreferences(context: Context): LocalAppearancePreferences =
         runCatching {
             val preferences = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
             AppearancePreferencesPolicy.create(
