@@ -1,3 +1,24 @@
+# CurrentLens — Latest project handoff (8 November 2026, 03:20 IST)
+
+## Live snapshot — 8 November 2026, 03:20 IST
+
+- **Main:** `73b8a0d1ba33503fede02db2c3c0af082d724a12`, unchanged. No direct main write.
+- **Active integration:** `black-box-bihar-news@d451d22518b8065e2865dae6b40679c3d7b41dc2`, 118 commits ahead / 0 behind main. Consolidation PR [#34](https://github.com/Batmancpu/CurrentLens/pull/34) remains open/draft.
+- **New compile repair:** draft PR [#37](https://github.com/Batmancpu/CurrentLens/pull/37), branch `fix/search-clear-row-scope-compile-2026-11-08`, based on the exact integration head. Commit `84cb91b8a1ecfcd6790a086743215031d7f8d671` changes the SearchMorphField trailing fixed 48dp slot from Box to Row, supplying the RowScope required by AnimatedVisibility. It preserves the 48dp target, fade timing, Reduce Motion snap, focus retention and fixed text-field width. Required continuity ledger entry is included. PR is draft/GitHub-mergeable; natural run #271 is queued. Do not claim CI passed until that exact head completes.
+- **Verified integration failure:** natural runs #269 (push) and #270 (pull request) both failed on exact integration SHA `d451d225` at `:app:compileDebugKotlin`, `MainActivity.kt:1663:21`: RowScope.AnimatedVisibility cannot be called from the Box content scope. Full job logs inspected. WordNet generation, SDK and Gradle setup passed; APK upload skipped. PR #37 is the isolated correction; no workflow dispatch/rerun.
+- **Today rollover:** PR [#36](https://github.com/Batmancpu/CurrentLens/pull/36) head `5fbd14e6ef9be33d04a882ba463d4c72473419e2` passed natural run [#268](https://github.com/Batmancpu/CurrentLens/actions/runs/42412837878): WordNet builder tests, JVM tests, APK compilation and artifact upload passed. Artifact `13590541096`, 39,106,316 bytes, expires 21 November 2026. PR #36 is based on older integration parent `4a7a8f8c`; revalidate/reconcile against current `d451d225`. It refreshes Today's date/index at foreground Asia/Kolkata midnight; it does not refetch RSS.
+- **Actions:** 271 total runs currently recorded: 160 success, 61 failure, 49 cancelled, 1 queued; paginated as 100 + 100 + 71. No in-progress run. Exactly one workflow file exists. Main workflow remains push-only with workflow-wide `contents: write`; integration workflow uses read-only build/test permissions and a separately gated main-push Release job.
+- **Repository inventory:** 40 branches, 23 open PRs, 14 closed PRs. No branch deleted and no PR merged in this review.
+- **Latest successful integration build:** run #267 on parent SHA `4a7a8f8c`, with WordNet/JVM tests/APK/artifact passing. Runs #269/#270 supersede it as the current integration-head result because the newer head fails compilation.
+- **Latest Release:** `v0.2.0-build-116`; no new Release. Publish jobs on integration/PR runs are skipped.
+- **Product priorities:** reconcile strict editorial gate PR #27; combine RSS concurrency PR #32 and relative Atom URL PR #33; then close publisher image/WebView subresource gaps PRs #25/#26. Primary-source per-story corroboration remains unimplemented. Publisher RSS remains secondary evidence.
+- **Device evidence:** no fresh OPPO Reno10 logcat, tombstone, Perfetto trace or screenshot. The historical native signal-11 cold-start failure remains unverified; CI is not device-launch verification. TalkBack, font scale, keyboard interaction, Reduce Motion runtime, frame timing, GPU overdraw, memory, thermal and battery remain unverified.
+- **Safety:** no main edit, PR merge, workflow edit, manual dispatch/rerun or Release publication. Keep exactly Today/Explore/Search/You; Saved inside You; no Archive. Preserve offline WordNet, local-first privacy, Asia/Kolkata dates, foreground-only reading-session tracking and submit-only quiz persistence.
+
+> This snapshot supersedes older live snapshots below where they conflict. Full chronological evidence remains in SESSION_LEDGER.md.
+
+---
+
 # CurrentLens — Latest project handoff (7 November 2026, 22:24 IST)
 
 ## Live snapshot — 7 November 2026, 22:24 IST
