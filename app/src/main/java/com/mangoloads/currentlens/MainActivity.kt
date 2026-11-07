@@ -1680,8 +1680,9 @@ private fun YouDashboard(
         if (attempts.isEmpty()) {
             item {
                 Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(21.dp),
+                    modifier = Modifier.fillMaxWidth()
+                        .border(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.12f), RoundedCornerShape(22.dp)),
+                    shape = RoundedCornerShape(22.dp),
                     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
                     elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
                 ) {
@@ -1729,8 +1730,10 @@ private fun YouDashboard(
 @Composable
 private fun MetricTile(label: String, value: String, modifier: Modifier = Modifier) {
     Card(
-        modifier = modifier,
-        shape = RoundedCornerShape(20.dp),
+        modifier = modifier.border(
+            1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.12f), RoundedCornerShape(22.dp)
+        ),
+        shape = RoundedCornerShape(22.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
     ) {
@@ -1746,8 +1749,10 @@ private fun MetricTile(label: String, value: String, modifier: Modifier = Modifi
 @Composable
 private fun DestinationRow(title: String, description: String, trailing: String, onClick: () -> Unit) {
     Card(
-        modifier = Modifier.fillMaxWidth().clickable(onClick = onClick),
-        shape = RoundedCornerShape(18.dp),
+        modifier = Modifier.fillMaxWidth().heightIn(min = 68.dp)
+            .border(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.12f), RoundedCornerShape(22.dp))
+            .clickable(onClick = onClick),
+        shape = RoundedCornerShape(22.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
     ) {
         Row(Modifier.fillMaxWidth().padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -1775,8 +1780,12 @@ private fun FilterChipRow(
             horizontalArrangement = Arrangement.spacedBy(6.dp)
         ) {
             options.distinct().forEach { option ->
-                FilterChip(selected = selected == option, onClick = { onSelected(option) },
-                    label = { Text(option, fontSize = 11.sp) })
+                FilterChip(
+                    selected = selected == option,
+                    onClick = { onSelected(option) },
+                    modifier = Modifier.heightIn(min = 48.dp),
+                    label = { Text(option, fontSize = 11.sp) }
+                )
             }
         }
     }
@@ -1821,8 +1830,14 @@ private fun ReadingStatsScreen(sessions: List<ReadingSession>) {
                         fontWeight = FontWeight.Bold, fontSize = 10.sp, letterSpacing = 1.3.sp)
                 }
                 items(summary.days, key = { it.date.toString() }) { day ->
-                    Card(shape = RoundedCornerShape(17.dp),
-                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
+                    Card(
+                        modifier = Modifier.border(
+                            1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.12f), RoundedCornerShape(22.dp)
+                        ),
+                        shape = RoundedCornerShape(22.dp),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+                    ) {
                         Row(Modifier.fillMaxWidth().padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
                             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
                                 Text(day.date.format(DateTimeFormatter.ofPattern("EEE, d MMM", Locale.ENGLISH)),
@@ -1882,8 +1897,14 @@ private fun QuizStatsScreen(attempts: List<QuizAttempt>) {
                 verticalArrangement = Arrangement.spacedBy(9.dp)
             ) {
                 items(summary.attempts, key = { it.id }) { attempt ->
-                    Card(shape = RoundedCornerShape(17.dp),
-                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
+                    Card(
+                        modifier = Modifier.border(
+                            1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.12f), RoundedCornerShape(22.dp)
+                        ),
+                        shape = RoundedCornerShape(22.dp),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+                    ) {
                         Column(Modifier.fillMaxWidth().padding(14.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) {
                             Text(attempt.articleTitle, fontWeight = FontWeight.SemiBold,
                                 maxLines = 2, overflow = TextOverflow.Ellipsis)
@@ -3706,35 +3727,83 @@ private fun GlassSettingsScreen(
             Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 FilterChip(selected = selectedPreset == "Clear", onClick = { onGlassAlphaChange(0.12f) },
-                    label = { Text("Clear") })
+                    modifier = Modifier.heightIn(min = 48.dp), label = { Text("Clear") })
                 FilterChip(selected = selectedPreset == "Balanced", onClick = { onGlassAlphaChange(0.32f) },
-                    label = { Text("Balanced") })
+                    modifier = Modifier.heightIn(min = 48.dp), label = { Text("Balanced") })
                 FilterChip(selected = selectedPreset == "Frosted", onClick = { onGlassAlphaChange(0.55f) },
-                    label = { Text("Frosted") })
+                    modifier = Modifier.heightIn(min = 48.dp), label = { Text("Frosted") })
             }
         }
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Text("Live preview", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-            Text("Sample feed card · appearance only", style = MaterialTheme.typography.labelSmall,
+            Text("The control material changes with the slider; the article card stays readable.",
+                style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.secondary)
             PrismalGlassSurface(
                 backdrop = backdrop, modifier = Modifier.fillMaxWidth(),
                 shape = { PrismalRoundedRectangle(24.dp) }, blurRadius = 9.dp,
                 tint = tint, tintAlpha = glassAlpha
             ) {
-                Column(Modifier.padding(17.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text("THE HINDU", style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
+                Column(Modifier.fillMaxWidth().padding(14.dp), verticalArrangement = Arrangement.spacedBy(11.dp)) {
+                    Row(
+                        Modifier.fillMaxWidth().heightIn(min = 48.dp).padding(horizontal = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text("brrrNEWS", style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
                         Spacer(Modifier.weight(1f))
-                        Text("GS II", style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.secondary)
+                        Text("Today", style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.primary)
+                        Icon(Icons.Outlined.Search, contentDescription = "Search preview",
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(start = 10.dp).size(20.dp))
                     }
-                    Text("How a policy decision shapes India's federal balance",
-                        style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold,
-                        color = MaterialTheme.colorScheme.onSurface)
-                    Text("6 Nov 2026 · Publisher report · Indicative syllabus link",
-                        style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.secondary)
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(18.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.94f)
+                        ),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+                    ) {
+                        Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text("THE HINDU", style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
+                                Spacer(Modifier.weight(1f))
+                                Text("GS II", style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.secondary)
+                            }
+                            Text("How a policy decision shapes India's federal balance",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.SemiBold,
+                                color = MaterialTheme.colorScheme.onSurface)
+                            Text("Publisher report · Indicative syllabus connection",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.secondary)
+                        }
+                    }
+                    Row(
+                        Modifier.fillMaxWidth().heightIn(min = 48.dp),
+                        horizontalArrangement = Arrangement.SpaceEvenly,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        listOf("Today", "Explore", "Search").forEachIndexed { index, label ->
+                            Row(
+                                Modifier.clip(CircleShape)
+                                    .background(
+                                        if (index == 0) MaterialTheme.colorScheme.primary.copy(alpha = 0.13f)
+                                        else MaterialTheme.colorScheme.surface.copy(alpha = 0.60f)
+                                    )
+                                    .padding(horizontal = 11.dp, vertical = 8.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(label, style = MaterialTheme.typography.labelSmall,
+                                    color = if (index == 0) MaterialTheme.colorScheme.primary
+                                    else MaterialTheme.colorScheme.onSurfaceVariant)
+                            }
+                        }
+                    }
                 }
             }
         }
