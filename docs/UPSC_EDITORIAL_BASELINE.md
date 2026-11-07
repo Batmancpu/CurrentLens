@@ -51,7 +51,7 @@ The unit-test fixtures are synthetic examples designed to expose classification 
 | False-positive rejection | Celebrity film-release story whose excerpt merely mentions film-certification rules | Exclude | A policy exception must be established by a concrete action in the headline itself |
 | False-positive rejection | “Government launches a new welfare scheme for public service reform”; an unrelated excerpt sentence mentions climate change | Exclude | A GS III environmental signal outside the selected GS II Governance mapping cannot validate a broad governance match |
 
-| False-positive rejection | “Box-office collection update: GST on movie tickets raises costs” | Exclude | A box-office headline is a non-overridable promotion signal; a tax phrase alone cannot bypass it. |
+| False-positive rejection | “Box-office collection update: GST on movie tickets raises costs” | Exclude | Box-office wording is soft noise; a tax phrase alone cannot bypass it without a linked institutional action and specific tax subject. |
 | False-negative recovery | “Finance Ministry clarifies GST on box-office collections” | Include — GS III, Indian Economy | A named ministry clarifies a specific indirect-tax subject; a generic collections report without an institutional action remains excluded. |
 | False-positive rejection | “A new film about the Cinematograph Act enacted in 1952” | Exclude | A historical Act reference is not a current institutional action; passive matching cannot infer one from the word “enacted”. |
 | False-positive rejection | “A new film about the Cinematograph Act while Ministry issues new agricultural rules” | Exclude | An unrelated ministry action must not be combined with an entertainment subject to manufacture a policy exception. |
