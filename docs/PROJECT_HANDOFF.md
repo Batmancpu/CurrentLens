@@ -1,3 +1,19 @@
+# CurrentLens — Latest project handoff (7 November 2026, 22:51 IST)
+
+## Live snapshot — 7 November 2026, 22:51 IST
+
+- **Main:** `73b8a0d1ba33503fede02db2c3c0af082d724a12`; unchanged.
+- **Active integration:** `black-box-bihar-news@ed6c94190296c8d7af400b80f6fe26f2252fafe1`; 110 commits ahead / 0 behind main. Draft consolidation [PR #34](https://github.com/Batmancpu/CurrentLens/pull/34) remains open.
+- **PR #34 exact-head verification:** natural push run [#244](https://github.com/Batmancpu/CurrentLens/actions/runs/42394156457) and pull-request run [#245](https://github.com/Batmancpu/CurrentLens/actions/runs/42394162322) both completed successfully on `ed6c94190296c8d7af400b80f6fe26f2252fafe1`. WordNet generation, JVM tests, APK assembly and artifact upload passed; release jobs skipped. PR artifact `13582611557`, 39,095,549 bytes, expires 21 November 2026 17:02:22 UTC.
+- **Latest Release:** [v0.2.0-build-116](https://github.com/Batmancpu/CurrentLens/releases/tag/v0.2.0-build-116), published 6 November 2026. No newer Release.
+- **Workflow:** one file, `.github/workflows/build-apk.yml`. Main remains push-only with workflow-wide `contents: write`; integration uses read-only build/test and a separate main-push release-write job.
+- **New bounded-diagnostic-read work:** draft [PR #35](https://github.com/Batmancpu/CurrentLens/pull/35), branch `perf/bound-startup-diagnostic-reads-2026-11-07`, stacked on `black-box-bihar-news`. It caps startup-stage/report file reads and discards oversized legacy diagnostic reports without materialising them. Focused JVM tests are added; natural CI is pending. This is a cold-start memory hardening proposal, not a native-crash fix.
+- **Outstanding integration blockers:** PR #27 editorial action gate, #32 bounded RSS concurrency and #33 relative Atom links are not yet in the consolidation branch. PR #25/#26 image/WebView resource restrictions still need combined security reconciliation. Do not merge these independently without checking shared-file overlap.
+- **Actions inventory at review:** 245 runs fully paginated (100 + 100 + 45): 146 success, 58 failure, 41 cancelled; zero queued/in-progress before PR #35 was opened. PR #35's natural validation is expected from the pull_request trigger; no manual dispatch/rerun.
+- **Device evidence:** OPPO Reno10 cold/warm launch, native tombstone/logcat, screenshots, TalkBack, font scaling, Reduce Motion, Perfetto/frame timing, GPU overdraw, memory, thermal and battery remain **UNVERIFIED**. CI does not establish device launch stability.
+- **No main edit, merge, manual dispatch/rerun, workflow edit or Release publication.**
+
+> This snapshot supersedes earlier live snapshots below where they conflict. Historical context remains in SESSION_LEDGER.md.
 # CurrentLens — Latest project handoff (7 November 2026, 22:24 IST)
 
 ## Live snapshot — 7 November 2026, 22:24 IST

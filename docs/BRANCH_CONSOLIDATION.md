@@ -816,3 +816,10 @@ Repository/default: `Batmancpu/CurrentLens`, default `main@73b8a0d1ba33503fede02
 - **Not adopted as baselines:** `brrrNEWS` is divergent (4 ahead / 15 behind; merge base `e411c394e8d48b3f547b6d6fb9039a8935bd05eb`); `ui/liquid-glass-system-continuation` is 25 behind; `ui/liquid-glass-performance` and `redesign/v0.3-search-reader` are stale.
 - **Independent remaining work:** PR #27 editorial action gate (26 ahead / 10 behind), PR #32 bounded RSS concurrency (2 ahead / 4 behind), and PR #33 relative Atom resolution (4 ahead / 2 behind) are not included in this Reader UI batch; the PR #34 owner comment asks for reconciliation before completion. PR #25 asset-host and #26 publisher subresource security branches remain held for one combined host/security review. PR #24 is based on divergent `brrrNEWS`.
 - **No source branch was modified, merged, retargeted or deleted.** Only the selected `black-box-bihar-news` branch may receive this UI batch; no main write, workflow edit, manual dispatch/rerun or Release publication is allowed.
+
+
+### 2026-11-07 22:51 IST — Bounded startup diagnostic reads
+
+- Added isolated draft PR [#35](https://github.com/Batmancpu/CurrentLens/pull/35), branch `perf/bound-startup-diagnostic-reads-2026-11-07`, based on the active integration head `ed6c94190296c8d7af400b80f6fe26f2252fafe1`.
+- The change bounds startup-stage and local diagnostic-report reads and removes oversized legacy reports without materialising them. Focused JVM tests are added; natural PR CI is pending.
+- This does not claim to fix the reported native launch crash. No main, workflow, Release or existing source branch was modified.

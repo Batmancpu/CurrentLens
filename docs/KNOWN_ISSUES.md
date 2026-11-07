@@ -171,3 +171,13 @@ Snapshot main: 73b8a0d1ba33503fede02db2c3c0af082d724a12 (6 Nov 2026).
 - Correction: `.semantics { this.selected = chosen }`. The change is one line, preserves the intended selected-state semantics and does not alter quiz answer/scoring/submission persistence.
 - PR #28's direct child commit was fast-forwarded into the active integration branch. Natural run #209 passed on the exact code head in PR context; natural active-branch run #210 passed the same exact SHA with `:app:testDebugUnitTest`, `:app:assembleDebug` and artifact upload.
 - This is a compile defect, not evidence of a device crash. TalkBack selected-state behaviour, font scaling and physical-device layout still require a real-device check.
+
+
+### KL-021 — Unbounded local diagnostic-file reads during startup
+
+- **Status:** Code-evidenced cold-start memory risk; bounded-read correction proposed in draft PR [#35](https://github.com/Batmancpu/CurrentLens/pull/35). No measured launch-time impact or crash causality is claimed.
+- `CurrentLensApplication.attachBaseContext()` calls `LaunchCrashDiagnostics.beginStartup()` before AndroidX Startup providers. That path previously used unbounded `readText()` for the previous stage and existing crash report. Older pre-privacy diagnostic formats are known to have included Base64 system traces and device/build metadata, so a large legacy/corrupted report could be fully materialised on the startup main thread before cleanup.
+- The recovery-screen `read()` path also read the entire report before applying `take(MAX_REPORT_CHARS)`.
+- PR #35 adds a bounded-prefix reader, limits stage reads to 512 characters and report reads/display to 30,000 characters, and discards oversized diagnostic reports by file length without loading them.
+- Focused JVM tests cover prefix length, zero-length reads, oversized-report rejection, legacy metadata cleanup and retention of ordinary reports. Tests are added; natural PR CI is pending.
+- The change does not move the ActivityManager historical-exit query or all diagnostics off the startup path. It does not establish the native launch crash's root cause or prove device stability. OPPO cold/warm launch and Perfetto evidence remain unavailable.
