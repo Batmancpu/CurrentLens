@@ -54,6 +54,29 @@ internal fun sanitizeArticleHtml(bodyHtml: String, baseUri: String): String? = r
     }
 }.getOrNull()
 
+/**
+ * Remove publisher-page images that would cause off-publisher or cleartext requests.
+ * The same filter is applied to legacy cached HTML before it is rendered.
+ */
+internal fun filterPublisherImageUrls(bodyHtml: String, baseUri: String, source: String): String =
+    runCatching {
+        val fragment = Jsoup.parseBodyFragment(bodyHtml, baseUri)
+        fragment.select("img").forEach { image ->
+            val imageUrl = image.absUrl("src")
+                .ifBlank { image.absUrl("data-src") }
+                .ifBlank { image.absUrl("data-original") }
+            if (PublisherAssetHostPolicy.allows(source, imageUrl)) {
+                image.attr("src", imageUrl)
+                    .removeAttr("srcset")
+                    .removeAttr("data-src")
+                    .removeAttr("data-original")
+            } else {
+                image.remove()
+            }
+        }
+        fragment.body().html()
+    }.getOrDefault("")
+
 
 private val PUBLISHER_REDIRECT_STATUS_CODES = setOf(301, 302, 303, 307, 308)
 
@@ -98,20 +121,12 @@ object ArticleReaderRepository {
                                         link.unwrap()
                                     }
                                 }
-                                safe.select("img").forEach { image ->
-                                    val source = image.absUrl("src")
-                                        .ifBlank { image.absUrl("data-src") }
-                                        .ifBlank { image.absUrl("data-original") }
-                                    if (source.startsWith("https://") || source.startsWith("http://")) {
-                                        image.attr("src", source)
-                                            .removeAttr("srcset")
-                                            .removeAttr("data-src")
-                                            .removeAttr("data-original")
-                                    } else {
-                                        image.remove()
-                                    }
-                                }
-                                sanitizeArticleHtml(safe.html(), safe.baseUri())
+                                val publisherSafeBody = filterPublisherImageUrls(
+                                    bodyHtml = safe.html(),
+                                    baseUri = safe.baseUri(),
+                                    source = source
+                                )
+                                sanitizeArticleHtml(publisherSafeBody, safe.baseUri())
                             }
                         }
                     }
