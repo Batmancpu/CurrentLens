@@ -518,3 +518,77 @@ The owner-selected integration baseline was re-enumerated before this implementa
 - Latest published Release remains `v0.2.0-build-116`; no Release created by runs #211–#213.
 - This is the last verified CI on the base SHA, not on the transient-control child commit. The new child commit must receive its own natural run.
 
+## Live branch-freshness and CI audit — 7 November 2026 (before bookmark-I/O port)
+
+Repository/default: Batmancpu/CurrentLens; default main at 73b8a0d1ba33503fede02db2c3c0af082d724a12. Complete remote inventory: 33 branches on page 1; page 2 empty. Complete pull inventory: 29 PRs on page 1; page 2 empty; 15 open, 14 closed. No branches were deleted. Current integration head is black-box-bihar-news at 59022ed4dd20513ccd2a00b38c6e8b822057e938 (2026-11-07 10:07:10Z, “ui: unify transient search and reader glass controls”), parent 16eb549c3235b321ecf7ef1c5c5270817e336489; compare against main: 103 ahead / 0 behind. It remains the freshest coherent owner-selected consolidation line and contains the corrected background-only Prismal capture, Reader/Search controls, feed-only compact navigation, adaptive contrast safeguards, Saved/Stats glass controls, Quiz chrome and read-only stacked CI. No PR from this branch to main exists; no merge or Release publication was performed.
+
+### Complete branch-head inventory
+
+| Branch | Head SHA | Commit time (UTC) | Latest commit message | PR / disposition |
+|---|---|---|---|---|
+| black-box-bihar-news | 59022ed4dd20513ccd2a00b38c6e8b822057e938 | 2026-11-07 10:07:10 | ui: unify transient search and reader glass controls | Active integration branch; base of open #11, #25–#27, #29 |
+| brrrNEWS | e6fcfc25a4c8d5f363ced58f313552120aa7ff96 | 2026-11-07 04:13:30 | ui: consolidate lightweight supporting glass surfaces | Divergent sibling; open #24 targets it; not baseline |
+| ci/read-only-pr-validation-isolated-release-write-2026-11-06 | 963118f0abe5f7e38f2aa66a49d4b8e74548660c | 2026-11-06 17:18:53 | ci: validate pull requests with read-only build permissions | Open #18; workflow intent reconciled into active branch |
+| ci/stacked-pr-validation-2026-11-07 | 5dc3179361835b77fb3186a99d9b5791301463fd | 2026-11-06 21:41:27 | ci: restore Android SDK setup before sdkmanager | #20 merged into active branch only; source retained |
+| docs/ai-agent-handoff-2026-11-06 | 73b8a0d1ba33503fede02db2c3c0af082d724a12 | 2026-11-06 11:16:35 | Correct icon artwork accessibility name to brrrNews | Same head as main; no active PR |
+| feat/gs1-geography-editorial-coverage | ca66fa1c865514a86c655a4b6c7eaf16b4681f81 | 2026-11-06 10:53:35 | fix: refresh article card metadata when feed content changes | Open #6; useful editorial pieces already selectively represented |
+| fix/atom-alternate-link-selection-2026-11-06 | cdf4c3846dde1c05894284e48b8f7d69cb7541ad | 2026-11-06 09:14:27 | fix: select Atom article alternate links deterministically | Open #12; policy/test already represented; do not merge whole branch |
+| fix/cache-publication-date-integrity-2026-11-06 | be5151e674c2bd4fa9beb166fc38ddf622781f84 | 2026-11-06 14:26:32 | feat: expose publication date and publisher RSS provenance on cards | Open #11; current policies selectively represented; old base requires review |
+| fix/early-startup-crash-diagnostics-2026-11-06 | 6ab1e6a02ac8e91027f21900d64d63b9f2e6a890 | 2026-11-06 19:33:20 | fix: minimise shareable process-exit diagnostics | Open #16; active integration descends from this corrected baseline |
+| fix/editorial-action-gate-blackbox-2026-11-07 | 9b70ed1c7c39bb511399c6284c7e8833f4672618 | 2026-11-07 09:02:50 | fix(editorial): preserve regulatory coverage amid entertainment filtering | Open #27; separate editorial change, not UI scope |
+| fix/editorial-heatwave-bill-signals-2026-11-07 | 89464104e300f48da10e3e32e33715cbe2405084 | 2026-11-06 22:05:40 | Verify a specific parliamentary bill remains eligible for the GS II feed | Open #21; prior editorial work selectively represented; review separately |
+| fix/editorial-policy-exception-guard-2026-11-07 | 1f7a3c2a7b74cc02cfee6fe451f4576feb291acf | 2026-11-07 04:46:47 | fix(editorial): match policy action and target as separate words | Open #24; based on brrrNEWS; not copied into UI branch |
+| fix/editorial-signal-count-test | 4738690d6e7f6c7c02a621742f25d5ebf1d631fb | 2026-11-06 05:16:32 | test: align economy signal count with repo-rate mapping | #2 merged into main |
+| fix/editorial-token-boundaries-2026-11-06 | 0045c24637f162f1c13dceb1f8878f42f6eb15fd | 2026-11-06 02:34:28 | fix: tighten UPSC editorial signal matching | #1 merged into main |
+| fix/navigation-icon-imports-2026-11-06 | fa8868940c08ed5b4a9def014a850e8a9dcb3490 | 2026-11-06 06:27:06 | fix: use supported calendar navigation glyph | #5 merged into main |
+| fix/parliamentary-syllabus-signal-gate-2026-11-07 | 9d754953a29c0355ce55306ce4fd5463193c9dbb | 2026-11-07 03:49:44 | test: preserve Parliament bill headline variants | #23 merged into active branch only |
+| fix/publisher-redirect-allowlist-2026-11-06 | 83a94ac9c3fdc4e70f1ef35c65e9cf793aa9b306 | 2026-11-06 12:15:39 | Validate RSS redirects against publisher allowlists | #15 closed unmerged; superseded by newer active redirect guards |
+| fix/quiz-option-selected-semantics-compile-2026-11-07 | 6f9b3c1e1a484233721863d0b736734c0d282cd5 | 2026-11-07 08:12:10 | fix(quiz): qualify selected semantics receiver | #28 merged into active branch only |
+| fix/rss-image-host-allowlist-2026-11-07 | 7a51c9c2c40aa89997db55194a6db3d0d65ac95d | 2026-11-07 06:28:46 | test(reader): cover publisher-only image resources | Open #25; publisher asset/privacy reconciliation pending |
+| fix/rss-tracking-variant-dedup-2026-11-06 | 2093990be43a8a9b8eed43f8e4ec1e49c0b29f1b | 2026-11-06 16:42:29 | fix: deduplicate RSS tracking URL variants | Open #17; URL identity policy already represented |
+| fix/search-glass-theme-capture-2026-11-06 | c514eff3d5fd266ce6b6ecec51a141055e5fa52e | 2026-11-06 07:44:03 | fix: capture Search glass tint before draw callback | #10 merged into main |
+| fix/startup-crash-diagnostics-feed-jank-2026-11-06 | 5da4e789b0f49c0eefda024410ade34c1e0f2a7c | 2026-11-06 07:39:53 | fix: diagnose launch crashes and move feed indexing off main | #9 merged into main; superseded by newer startup safeguards |
+| fix/startup-stability-performance-2026-11-06 | 654e660347de692ef88531dfa49c610269d69671 | 2026-11-06 07:18:06 | fix: harden cold start and reduce feed rendering workload | #7 merged into main |
+| main | 73b8a0d1ba33503fede02db2c3c0af082d724a12 | 2026-11-06 11:16:35 | Correct icon artwork accessibility name to brrrNews | Default branch; unchanged |
+| perf/bounded-read-history-2026-11-07 | 910178af3f595993557533cb65d03e714bcd7760 | 2026-11-06 23:53:04 | Verify legacy markers survive recent-history retention | Open #22 stacked on #8; only new markers bounded; legacy unordered markers preserved |
+| perf/off-main-bookmark-persistence-2026-11-07 | a64857b5efa62ea053c0c96e5f374fd35924b340 | 2026-11-07 09:05:25 | perf(storage): move bookmark mutations off the UI thread | Open #29; exact one-commit change selectively ported below |
+| perf/off-main-session-persistence-2026-11-06 | ed91a3bfbcb3f12f6f6050ce72a120b3aafeae4a | 2026-11-06 10:50:31 | perf: move read-marker persistence off main thread | Open #8; policy selectively represented |
+| privacy/webview-publisher-subresource-gate-2026-11-07 | b8d2ef9ff2413c378347986d00961c401dfa771d | 2026-11-07 07:27:22 | privacy: block third-party publisher reader subresources | Open #26; one MainActivity hunk plus policy/tests; separate security review |
+| redesign/v0.3-search-reader | 654cc89dee4f93fea98bb76df9d8cf88abf2f0d8 | 2026-11-03 15:31:48 | fix: make selection decoding fallback valid JSON | Stale; 197 commits behind active; not baseline |
+| ui/foreground-adaptive-glass-contrast-2026-11-06 | 3dc0f3fb0eb4ca69facdfa44eeb26c00e9b55264 | 2026-11-06 10:56:16 | ui: restore low-cadence foreground adaptive glass contrast | Open #13; active implementation uses one 8×8 probe at 4s/6s, not its faster cadence |
+| ui/liquid-glass-performance-2026-11-06 | 2e9c7f62ca65a899e18d9026e1535392835b3724 | 2026-11-06 06:25:39 | fix: import bottom navigation glyphs | #4 closed unmerged; stale divergent checkpoint |
+| ui/liquid-glass-system-2026-11-07 | 1f7cd2e5ddc5d169d1443035a8334538e44efc40 | 2026-11-06 20:11:36 | docs(reader): record native selection collision guard | #19 merged into active branch only; source retained |
+| ui/liquid-glass-system-continuation-2026-11-07 | f031bf21229f43a992384cc23fa0f4da57e547a1 | 2026-11-07 03:18:34 | fix: finish syllabus metadata and thin-film feed eligibility | Earlier checkpoint; 18 commits behind active |
+
+### Branch comparison and dependency decisions
+
+- black-box-bihar-news is 103 ahead / 0 behind main; PR #16 is an ancestor (active is 46 commits ahead of its head), PR #20 is an ancestor (active is 44 commits ahead), and PR #19/#23/#28 are ancestors. Corrected background-only Prismal capture and read-only workflow are already present.
+- brrrNEWS is divergent from active: 4 ahead / 9 behind, merge base e411c394e8d48b3f547b6d6fb9039a8935bd05eb. Its supporting-glass files match the already-integrated implementation; its app-label/workflow/build metadata changes are not adopted. PR #24 remains separate editorial work.
+- PR #29 bookmark persistence is 1 ahead / 2 behind active, merge base 6f9b3c1e1a484233721863d0b736734c0d282cd5. Only its four-file bookmark delta was ported after checking that current MainActivity still has the same synchronous callback and LocalStore still has the same synchronous read/modify/write. No branch merge or reset was used.
+- PR #27 editorial gate is 5 ahead / 4 behind, merge base 3a08bb95b0f9a0fed8ec11dae055f0ac2817a523; remains separate.
+- PR #26 WebView subresource gate is 1 ahead / 4 behind, merge base 3a08bb95b0f9a0fed8ec11dae055f0ac2817a523; its shouldInterceptRequest change is an initial-request boundary and does not cover redirect hops, so retain that caveat for a separate security review.
+- PR #25 publisher asset gate is 7 ahead / 5 behind, merge base 2e2c15f5189ec6c60fa1f07f384bce4aa1734ea0; it changes ArticleReaderRepository, NewsRepository and MainActivity image handling. Do not combine with PR #26 or copy old MainActivity wholesale.
+- PR #24 is 9 ahead / 9 behind active, merge base e411c394e8d48b3f547b6d6fb9039a8935bd05eb; its policy regex/test changes are separate from the UI branch.
+- PR #18 workflow proposal is 1 ahead / 103 behind active; its read-only PR-validation and isolated publish intent is already reconciled in the active workflow, so do not overwrite the current workflow.
+- PR #11 is 3 ahead / 103 behind; current cache/date/provenance policy files already contain its selectively ported behaviour.
+- PR #21 is 11 ahead / 103 behind; current editorial coverage already contains selected heat-wave/bill signals, but its head remains separate.
+- PR #22 is 9 ahead / 116 behind; only the new ordered 5,000-marker window is bounded, while old unordered legacy markers remain preserved.
+- PR #6 is 10 ahead / 116 behind; selected GS I Geography and editorial tests are already represented; do not merge its older MainActivity.
+- PR #8 is 3 ahead / 116 behind; read/session/quiz persistence policies are already represented.
+- PR #12 is 1 ahead / 116 behind; Atom alternate-link selection is already represented.
+- PR #13 is 1 ahead / 116 behind; its 1.5s/2.5s probe cadence is not copied. Active probe remains one 8×8 source at 4s Android 12+ / 6s older, paused during feed motion and non-home/background.
+- PR #17 is 1 ahead / 103 behind; URL identity/dedupe policy is already represented.
+- Old ui/liquid-glass-performance is 3 ahead / 121 behind active; redesign/v0.3-search-reader is 197 behind active. Neither is a baseline.
+
+### Actions queue, latest run and Release state
+
+- Actions inventory is fully paginated: 214 runs (100 + 100 + 14; page 4 empty). No queued or in-progress runs.
+- Latest natural run #214, push on exact active SHA 59022ed4dd20513ccd2a00b38c6e8b822057e938, completed successfully. Build job #128373870121 passed checkout, Java, cached signing key, Android SDK/platform, Gradle, four WordNet-builder Python tests, offline database generation (151,456 unique words), :app:testDebugUnitTest, :app:assembleDebug and artifact upload. Release/publish job skipped. Full 202,824-character job log inspected; no build/test failure. Compiler warnings are non-blocking deprecations.
+- Artifact 13570367489, CurrentLens-v0.2.8-stability-debug-apk, 39,090,275 bytes, SHA-256 1b3635ef1a23d51054550bd4fe397eb6fbff640e2ce9f081f596d4559accc108, expires 21 Nov 2026 10:09:04Z.
+- Latest published Release remains v0.2.0-build-116; no Release was created by #214.
+- Current .github/workflows/build-apk.yml is read-only for build/test, has natural push and pull_request triggers for main/PR #16/black-box, and isolates contents: write to the main-push publish job. No PR-to-main validation claim is made because main's base workflow is not this branch's workflow.
+
+### PR #29 selective bookmark-I/O port
+
+The exact PR #29 source commit a64857b5efa62ea053c0c96e5f374fd35924b340 was reviewed as a one-commit delta, not merged. Its natural PR run #212 passed the WordNet builder, :app:testDebugUnitTest, :app:assembleDebug and artifact upload; source artifact 13569115360 was 39,084,383 bytes. The integration below keeps the complete bookmark set (no cap/eviction), moves the SharedPreferences read/copy/mutation/write to Dispatchers.IO, serializes mutations with a dedicated Mutex, updates Compose bookmark state after the serialized operation, and adds pure policy tests for add/remove/blank/reversible toggles. The source branch and PR remain untouched. This change adds no glass surface, capture, sampler/readback, image decode, shader, dependency or network request; actual interaction/frame-time/battery gains are not measured.
+

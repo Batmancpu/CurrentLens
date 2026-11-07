@@ -270,7 +270,7 @@ The following work is represented on `black-box-bihar-news`; source PRs/branches
 
 ### Next implementation pass
 
-On the next scheduled run, inspect the natural build for the exact transient-surface commit, including the full job log, JVM tests and APK artifact. If it passes, continue the remaining app-wide audit with an Appearance preview cost pass (avoid two simultaneously blurred preview panels) and reconcile the separately validated PR #29 bookmark IO change only as its own scoped performance batch. Do not claim OPPO visual or performance verification from CI.
+This note preceded the transient-control commit below. The exact transient-surface head 59022ed4dd20513ccd2a00b38c6e8b822057e938 is now validated by natural push run #214 (full JVM suite, APK assembly and artifact upload succeeded; publish job skipped). The next isolated pass is the separately validated PR #29 bookmark-persistence change; it is a storage/performance change, not a visual-material change. OPPO visual and performance verification remain separate from CI.
 
 
 
@@ -284,3 +284,18 @@ On the next scheduled run, inspect the natural build for the exact transient-sur
 - Both transient surfaces consume the existing background-only `PrismalBackdrop`. They are conditionally composed only while their own sheet/menu is open; Search and Reader are mutually exclusive destinations. No new capture, sampler, readback, bitmap decode, graphics layer, shader, timer, dependency, network request or persistence change was added.
 - Reduce Transparency routes the shared material through the existing zero-blur/zero-refraction fallback and higher tint reserve. Added policy-bound tests to `GlassSurfacePolicyTest`; the full `:app:testDebugUnitTest` suite and APK assembly must run naturally on this exact commit.
 - **Unverified:** OPPO Reno10 screenshots, sheet drag/IME/safe-area interaction, Aa popup placement, TalkBack, Reduce Motion, Perfetto/frame timing, GPU overdraw, allocation/memory, thermal and battery. No device or performance claim is made.
+
+## Bookmark persistence off-main batch — 7 November 2026
+
+Source / integration lineage: active branch was rechecked at black-box-bihar-news@59022ed4dd20513ccd2a00b38c6e8b822057e938, 103 ahead / 0 behind main@73b8a0d1ba33503fede02db2c3c0af082d724a12. PR #29 source perf/off-main-bookmark-persistence-2026-11-07@a64857b5efa62ea053c0c96e5f374fd35924b340 is one commit ahead / two behind the active head from merge base 6f9b3c1e1a484233721863d0b736734c0d282cd5; only its reviewed bookmark delta is being ported. No source branch was merged, reset, rewritten or deleted.
+
+- LocalStore.toggleBookmark is now a suspend operation on Dispatchers.IO; a dedicated bookmarkWriteMutex serializes the SharedPreferences read/modify/write so rapid taps cannot overwrite one another.
+- BrrrNewsApp reuses its existing persistenceScope and NonCancellable persistence pattern; Compose bookmark state is updated only after the IO mutation returns. All Today/Explore/Search/Saved NewsCard callbacks continue to share this single path.
+- Added pure BookmarkSetPolicy and four JVM tests covering add, remove, blank URL, preservation of unrelated bookmarks and reversible toggles.
+- Data preservation: the full user bookmark set remains unbounded by design; no cap, eviction, migration, preference-key change or URL-normalisation change is introduced. Mutex protection is in-process only; SharedPreferences apply() remains asynchronous. UI state may reflect the tap after the IO round trip.
+- Paired performance strategy: removes the SharedPreferences full-set read/copy/mutation from the Compose click callback and serializes the work off-main. No rendering pass, glass material, Prismal capture, sampler/readback, blur, image decode, bitmap work, network request, dependency or GPU layer was added. This is a source-level main-thread-work reduction, not a measured jank, latency, memory, battery or thermal improvement.
+- Source verification: PR #29 natural run #212 passed on its exact source head; full job log inspected, including four WordNet-builder tests, :app:testDebugUnitTest, :app:assembleDebug and artifact upload (artifact 13569115360, 39,084,383 bytes). The current integration head before this port passed natural run #214 with the same build/test/upload pipeline and artifact 13570367489; neither run validates the new integration commit.
+- New integration verification: pending the next natural push run on this exact commit. No manual dispatch/rerun and no Release publication.
+- Unverified: OPPO Reno10 tap latency, rapid repeated bookmark toggles, lifecycle cancellation, TalkBack feedback, memory/allocation, frame timing, battery and thermal behaviour. CI does not establish device performance.
+
+Next: after natural CI validates this exact head, perform the Appearance preview cost pass and whole-app visual consistency audit; retain the rule that only one preview glass surface is live at a time and that slider drag changes local preview state rather than rebuilding the root backdrop.

@@ -829,9 +829,13 @@ private fun BrrrNewsApp() {
                             readHistory = updated
                         }
                     },
-                    onToggleBookmark = {
-                        val added = LocalStore.toggleBookmark(context, it.url)
-                        bookmarks = if (added) bookmarks + it.url else bookmarks - it.url
+                    onToggleBookmark = { article ->
+                        persistenceScope.launch {
+                            val added = withContext(NonCancellable) {
+                                LocalStore.toggleBookmark(context, article.url)
+                            }
+                            bookmarks = if (added) bookmarks + article.url else bookmarks - article.url
+                        }
                     }
                 )
             }
