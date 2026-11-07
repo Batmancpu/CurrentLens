@@ -83,6 +83,41 @@ class EditorialConsolidationRegressionTest {
     }
 
     @Test
+    fun parliamentFacilityMentionAloneIsRejected() {
+        val story = article(
+            "Parliament opens a new visitor centre and cafeteria",
+            "The facility will serve visitors and staff."
+        )
+        assertEquals("Unmapped", UpscEngine.classify(story).gsPaper)
+        assertFalse(UpscFeedPolicy.shouldInclude(story))
+    }
+
+    @Test
+    fun parliamentPassesBillIsRecoveredAsGsTwoFalseNegative() {
+        val story = article(
+            "Parliament passes a bill to amend electoral rules",
+            "The measure changes the Representation of the People Act."
+        )
+        val relevance = UpscEngine.classify(story)
+        assertEquals("GS II", relevance.gsPaper)
+        assertEquals("Constitution", relevance.subject)
+        assertTrue(relevance.matchedTerms.contains("parliament passes a bill"))
+        assertTrue(UpscFeedPolicy.shouldInclude(story))
+    }
+
+    @Test
+    fun standingCommitteeScrutinyRemainsEligible() {
+        val story = article(
+            "Standing committee reviews a bill on parliamentary privileges",
+            "The report examines legislative scrutiny and accountability."
+        )
+        val relevance = UpscEngine.classify(story)
+        assertEquals("GS II", relevance.gsPaper)
+        assertEquals("Constitution", relevance.subject)
+        assertTrue(UpscFeedPolicy.shouldInclude(story))
+    }
+
+    @Test
     fun spacedHeatWaveActionPlanMapsToDisasterManagement() {
         val story = article("NDMA issues heat wave action plan guidelines")
         val relevance = UpscEngine.classify(story)
