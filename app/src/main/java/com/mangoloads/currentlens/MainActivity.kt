@@ -48,6 +48,7 @@ import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
@@ -1238,7 +1239,11 @@ private fun TodayFeed(
             }
         }
         when {
-            loading -> items(3) { FeedSkeletonCard() }
+            loading -> items(
+                count = 3,
+                key = { index -> "feed-skeleton-$index" },
+                contentType = { "feed-skeleton" }
+            ) { FeedSkeletonCard() }
             loadError && articles.isEmpty() -> item { EmptyPanel("News is temporarily unavailable", "Check your connection and refresh.") }
             articles.isEmpty() -> item { EmptyPanel("No UPSC-relevant stories today", "Broad entertainment and general-interest updates are filtered out. Refresh later for syllabus-linked developments.") }
             else -> items(articles.take(45), key = { it.id }, contentType = { "article" }) { article ->
@@ -1305,7 +1310,11 @@ private fun ExploreFeed(
             verticalArrangement = Arrangement.spacedBy(13.dp)
         ) {
             if (filtered.isEmpty() && loading) {
-                items(3) { FeedSkeletonCard() }
+                items(
+                count = 3,
+                key = { index -> "feed-skeleton-$index" },
+                contentType = { "feed-skeleton" }
+            ) { FeedSkeletonCard() }
             } else if (filtered.isEmpty() && loadError) {
                 item { EmptyPanel("News is temporarily unavailable", "Check your connection and refresh.") }
             } else if (filtered.isEmpty()) item {
@@ -1442,7 +1451,11 @@ private fun SearchFeed(
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             if (filtered.isEmpty() && loading) {
-                items(3) { FeedSkeletonCard() }
+                items(
+                count = 3,
+                key = { index -> "feed-skeleton-$index" },
+                contentType = { "feed-skeleton" }
+            ) { FeedSkeletonCard() }
             } else if (filtered.isEmpty() && loadError) {
                 item { EmptyPanel("News is temporarily unavailable", "Check your connection and refresh.") }
             } else if (filtered.isEmpty()) item {
@@ -2285,7 +2298,7 @@ private fun NewsCard(
     val palette = imagePalette
 
     Box(
-        modifier = Modifier.fillMaxWidth().padding(vertical = 3.dp)
+        modifier = Modifier.fillMaxWidth().padding(vertical = FeedCardGeometryPolicy.CARD_VERTICAL_INSET_DP.dp)
             .graphicsLayer { clip = false }
             .drawBehind {
                 val sampled = palette ?: return@drawBehind
@@ -2304,7 +2317,7 @@ private fun NewsCard(
     ) {
         Card(
             modifier = Modifier.fillMaxWidth().clickable { onOpenArticle(article) },
-            shape = ContinuousCornerShape(29.dp),
+            shape = ContinuousCornerShape(FeedCardGeometryPolicy.CARD_CORNER_RADIUS_DP.dp),
             colors = CardDefaults.cardColors(
                 containerColor = MaterialTheme.colorScheme.surface.copy(alpha = if (palette != null) 0.94f else 1f)
             ),
@@ -2323,13 +2336,22 @@ private fun NewsCard(
                             }.getOrNull()
                             if (sampled != null && imagePalette != sampled) imagePalette = sampled
                         },
-                        modifier = Modifier.fillMaxWidth().height(190.dp)
-                            .clip(ContinuousCornerShape(23.dp))
+                        modifier = Modifier.fillMaxWidth()
+                            .aspectRatio(FeedCardGeometryPolicy.IMAGE_ASPECT_RATIO)
+                            .clip(ContinuousCornerShape(FeedCardGeometryPolicy.IMAGE_CORNER_RADIUS_DP.dp))
                     )
                 }
-                Column(Modifier.padding(horizontal = 15.dp, vertical = 14.dp),
-                    verticalArrangement = Arrangement.spacedBy(9.dp)) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
+                Column(
+                    Modifier.padding(
+                        horizontal = FeedCardGeometryPolicy.CONTENT_HORIZONTAL_PADDING_DP.dp,
+                        vertical = FeedCardGeometryPolicy.CONTENT_VERTICAL_PADDING_DP.dp
+                    ),
+                    verticalArrangement = Arrangement.spacedBy(FeedCardGeometryPolicy.CONTENT_VERTICAL_SPACING_DP.dp)
+                ) {
+                    Row(
+                        Modifier.heightIn(min = FeedCardGeometryPolicy.METADATA_ACTION_TARGET_DP.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
                         Text(article.source.uppercase(), color = MaterialTheme.colorScheme.primary,
                             fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 0.65.sp)
                         Text("  ·  " + article.section, color = MaterialTheme.colorScheme.secondary,
@@ -2341,7 +2363,10 @@ private fun NewsCard(
                                 tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(21.dp))
                         }
                     }
-                    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                    Row(
+                        Modifier.fillMaxWidth().heightIn(min = FeedCardGeometryPolicy.METADATA_TEXT_ROW_MIN_HEIGHT_DP.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
                         Text(ArticlePublicationDatePolicy.compactLabel(article.publishedAtMillis),
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.secondary,
@@ -2355,13 +2380,13 @@ private fun NewsCard(
                         )
                     }
                     SelectionContainer {
-                        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                        Column(verticalArrangement = Arrangement.spacedBy(FeedCardGeometryPolicy.TITLE_DESCRIPTION_SPACING_DP.dp)) {
                             Text(article.title, style = MaterialTheme.typography.titleLarge,
-                                fontWeight = FontWeight.SemiBold, lineHeight = 28.sp)
+                                fontWeight = FontWeight.SemiBold, lineHeight = FeedCardGeometryPolicy.TITLE_LINE_HEIGHT_SP.sp)
                             if (article.description.isNotBlank()) {
                                 Text(article.description, style = MaterialTheme.typography.bodyLarge,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 4,
-                                    overflow = TextOverflow.Ellipsis, lineHeight = 23.sp)
+                                    overflow = TextOverflow.Ellipsis, lineHeight = FeedCardGeometryPolicy.DESCRIPTION_LINE_HEIGHT_SP.sp)
                             }
                         }
                     }
@@ -2433,34 +2458,86 @@ private fun sampleImagePalette(bitmap: Bitmap): Color {
 }
 
 @Composable
+private fun SkeletonTextLine(
+    widthFraction: Float,
+    lineHeightDp: Float,
+    barHeightDp: Float,
+    color: Color
+) {
+    Box(
+        Modifier.fillMaxWidth(widthFraction).height(lineHeightDp.dp),
+        contentAlignment = Alignment.CenterStart
+    ) {
+        Box(
+            Modifier.fillMaxWidth().height(barHeightDp.dp)
+                .clip(RoundedCornerShape(6.dp))
+                .background(color)
+        )
+    }
+}
+
+@Composable
 private fun FeedSkeletonCard() {
     val base = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.82f)
     val line = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.075f)
     Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = ContinuousCornerShape(29.dp),
+        modifier = Modifier.fillMaxWidth()
+            .padding(vertical = FeedCardGeometryPolicy.CARD_VERTICAL_INSET_DP.dp),
+        shape = ContinuousCornerShape(FeedCardGeometryPolicy.CARD_CORNER_RADIUS_DP.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
         Column {
-            Box(Modifier.fillMaxWidth().height(176.dp).background(base))
-            Column(Modifier.padding(15.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
+            Box(
+                Modifier.fillMaxWidth()
+                    .aspectRatio(FeedCardGeometryPolicy.IMAGE_ASPECT_RATIO)
+                    .clip(ContinuousCornerShape(FeedCardGeometryPolicy.IMAGE_CORNER_RADIUS_DP.dp))
+                    .background(base)
+            )
+            Column(
+                Modifier.padding(
+                    horizontal = FeedCardGeometryPolicy.CONTENT_HORIZONTAL_PADDING_DP.dp,
+                    vertical = FeedCardGeometryPolicy.CONTENT_VERTICAL_PADDING_DP.dp
+                ),
+                verticalArrangement = Arrangement.spacedBy(FeedCardGeometryPolicy.CONTENT_VERTICAL_SPACING_DP.dp)
+            ) {
+                Row(
+                    Modifier.fillMaxWidth()
+                        .heightIn(min = FeedCardGeometryPolicy.METADATA_ACTION_TARGET_DP.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
                     Box(Modifier.width(86.dp).height(10.dp).clip(CircleShape).background(line))
                     Spacer(Modifier.width(9.dp))
                     Box(Modifier.width(64.dp).height(10.dp).clip(CircleShape).background(line))
                     Spacer(Modifier.weight(1f))
-                    Box(Modifier.size(22.dp).clip(CircleShape).background(line))
+                    Box(
+                        Modifier.size(FeedCardGeometryPolicy.METADATA_ACTION_TARGET_DP.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Box(Modifier.size(22.dp).clip(CircleShape).background(line))
+                    }
                 }
-                Box(Modifier.fillMaxWidth(0.88f).height(25.dp).clip(CircleShape).background(line))
-                Box(Modifier.fillMaxWidth(0.71f).height(25.dp).clip(CircleShape).background(line))
-                Box(Modifier.fillMaxWidth().height(13.dp).clip(CircleShape).background(line))
-                Box(Modifier.fillMaxWidth(0.82f).height(13.dp).clip(CircleShape).background(line))
+                Row(
+                    Modifier.fillMaxWidth()
+                        .heightIn(min = FeedCardGeometryPolicy.METADATA_TEXT_ROW_MIN_HEIGHT_DP.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Box(Modifier.width(84.dp).height(8.dp).clip(CircleShape).background(line))
+                    Spacer(Modifier.weight(1f))
+                    Box(Modifier.width(106.dp).height(8.dp).clip(CircleShape).background(line))
+                }
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(FeedCardGeometryPolicy.TITLE_DESCRIPTION_SPACING_DP.dp)
+                ) {
+                    SkeletonTextLine(0.88f, FeedCardGeometryPolicy.TITLE_LINE_HEIGHT_SP, 15f, line)
+                    SkeletonTextLine(0.71f, FeedCardGeometryPolicy.TITLE_LINE_HEIGHT_SP, 15f, line)
+                    SkeletonTextLine(1f, FeedCardGeometryPolicy.DESCRIPTION_LINE_HEIGHT_SP, 10f, line)
+                    SkeletonTextLine(0.82f, FeedCardGeometryPolicy.DESCRIPTION_LINE_HEIGHT_SP, 10f, line)
+                }
             }
         }
     }
 }
-
 @Composable
 private fun LoadingPanel() {
     Column(Modifier.fillMaxWidth().padding(38.dp), horizontalAlignment = Alignment.CenterHorizontally,

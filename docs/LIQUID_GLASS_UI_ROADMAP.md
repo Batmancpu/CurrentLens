@@ -489,3 +489,29 @@ Next: after natural CI validates this exact head, perform the Appearance preview
 **Unverified / next**
 - OPPO Reno10 filter chip reachability, font scaling, horizontal scrolling, TalkBack focus, visual balance and animation remain **UNVERIFIED**. Device Perfetto/frame timing, GPU overdraw, allocation/memory, thermal and battery remain unmeasured.
 - Next pass: inspect Today skeleton/card proportions and shared header/navigation spacing against the supplied recording; keep repeated feed cards free of per-card live blur and preserve the one shared background-only Prismal source.
+
+
+## Feed-card and loading-skeleton geometry parity — 8 November 2026, 00:24 IST
+
+**Branch freshness and dependency gate**
+- Re-enumerated all 38 remote branches (page 1 complete, page 2 empty), all 35 PRs (21 open, 14 closed), current main, current PR #34, the complete Actions history (254 runs across 100 + 100 + 54), queue, workflow, latest run jobs/logs/artifacts and Releases.
+- Implementation parent: black-box-bihar-news@ad16cecf06add374b3e19989d0829919d0055114, direct child of ed6c94190296c8d7af400b80f6fe26f2252fafe1; comparison is 111 ahead / 0 behind main@73b8a0d1ba33503fede02db2c3c0af082d724a12 and 54 ahead / 0 behind PR #16's corrected background-only Prismal/stability head 6ab1e6a02ac8e91027f21900d64d63b9f2e6a890. PR #34 remains the single open draft integration PR targeting main@73b8a0d1ba33503fede02db2c3c0af082d724a12.
+- brrrNEWS@e6fcfc25a4c8d5f363ced58f313552120aa7ff96 is divergent (4 ahead / 17 behind); its GlassSurfacePolicy, SupportingGlassCard, Saved/You/stats memoization and supporting-surface implementation are already represented in the current integration tree. PR #30's 48dp target, PR #31's off-main appearance restore and PR #29's serialized bookmark persistence are also represented; their source branches remain untouched.
+- ui/liquid-glass-system-continuation is 27 commits behind; ui/liquid-glass-performance is a stale divergent sibling; redesign/v0.3-search-reader is stale. None supersedes the selected line. PR #35 diagnostic-file reads, PR #32 RSS concurrency, PR #33 relative Atom parsing, PR #25/#26 publisher-resource security, PR #27 editorial action-gating and PR #24's brrrNEWS-based editorial exception remain separate; no unrelated source branch was modified.
+
+**Implementation**
+- Added pure FeedCardGeometryPolicy tokens shared by NewsCard and FeedSkeletonCard: responsive 16:9 image ratio, continuous 29dp card / 23dp image corners, matching 3dp outer inset, content padding and vertical rhythm, 48dp bookmark-action footprint, metadata-row height and title/description line heights.
+- Loading placeholders now mirror both source/action and date/provenance rows, reserve the real bookmark hit-target footprint, and place text bars inside the same line-height slots as the article typography. This removes the known 176dp-vs-190dp image mismatch and the missing 48dp metadata-action space that could shift the first loaded cards.
+- Today, Explore and Search skeleton rows now have stable loading keys and a shared content type. Article IDs/content types, filters, article text, card click/selection, bookmark persistence and feed ordering are unchanged.
+- No new glass surface, blur/refraction, backdrop capture, sampler/readback, shader, graphics layer, shimmer, image decode, network request, timer, dependency or persistence operation was added. NewsCard retains one Coil request and palette extraction from that same decoded bitmap.
+
+**Tests / CI**
+- Added FeedCardGeometryPolicyTest for the 16:9 ratio, shared continuous geometry, 48dp action parity and typography rhythm.
+- Exact parent ad16cecf06add374b3e19989d0829919d0055114 passed natural PR run #253 (https://github.com/Batmancpu/CurrentLens/actions/runs/42399278100), including WordNet generation, :app:testDebugUnitTest, :app:assembleDebug and artifact upload. Artifact 13584638074 is 39,095,814 bytes. This does not validate the new commit; its natural push/PR runs must complete. No manual dispatch/rerun.
+- Latest overall run #254 is a separate PR #27 editorial branch failure: 291 tests completed, one UpscFeedPolicyTest.currentGstPolicyActionMapsToGsThreeEconomyButBoxOfficeFramingIsRejected assertion failed. It does not run on or invalidate this UI branch and is not changed here.
+- Latest published Release remains v0.2.0-build-116; no Release was published by #253.
+
+**Paired optimization and unverified checks**
+- Shared immutable geometry tokens prevent skeleton/article layout drift; stable LazyColumn keys/content types improve item identity/reuse. The existing single background-only Prismal root source, expanded-only tab glyph source and 4s/6s foreground-idle adaptive luminance cadence are unchanged.
+- No frame-time, jank, memory, GPU-overdraw, allocation, thermal or battery improvement is claimed from source inspection. OPPO Reno10 visual transition, font scaling, TalkBack, Reduce Motion, scroll smoothness, launch and Perfetto checks remain UNVERIFIED.
+- Next: after exact-head natural CI passes, recheck Today/Explore/Search header-to-feed spacing and validate the skeleton-to-article transition on the OPPO device; retain standard non-glass article cards and no per-card blur.
