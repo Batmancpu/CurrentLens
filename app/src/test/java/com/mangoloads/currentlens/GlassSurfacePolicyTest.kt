@@ -36,4 +36,20 @@ class GlassSurfacePolicyTest {
         assertEquals(22f, GlassSurfacePolicy.SUPPORTING_CORNER_RADIUS_DP, 0f)
         assertEquals(20f, GlassSurfacePolicy.SUPPORTING_VALUE_SIZE_SP, 0f)
     }
+
+    @Test
+    fun supportingCardsShareConsistentReadableGeometry() {
+        assertEquals(16f, SupportingCardGeometryPolicy.CONTENT_PADDING_DP, 0f)
+        assertEquals(6f, SupportingCardGeometryPolicy.CONTENT_GAP_DP, 0f)
+        assertEquals(12f, SupportingCardGeometryPolicy.SECTION_GAP_DP, 0f)
+        assertEquals(9f, SupportingCardGeometryPolicy.METRIC_GAP_DP, 0f)
+        assertTrue(SupportingCardGeometryPolicy.METRIC_MIN_HEIGHT_DP >= 48f)
+        assertTrue(SupportingCardGeometryPolicy.DESTINATION_MIN_HEIGHT_DP >= 48f)
+        assertTrue(SupportingCardGeometryPolicy.STAT_ROW_MIN_HEIGHT_DP >= 48f)
+        assertTrue(SupportingCardGeometryPolicy.EMPTY_MIN_HEIGHT_DP >= 48f)
+        assertTrue(
+            SupportingCardGeometryPolicy.CONTENT_GAP_DP <
+                SupportingCardGeometryPolicy.SECTION_GAP_DP
+        )
+    }
 }
