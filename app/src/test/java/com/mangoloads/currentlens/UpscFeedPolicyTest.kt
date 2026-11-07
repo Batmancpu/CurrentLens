@@ -234,7 +234,7 @@ class UpscFeedPolicyTest {
     @Test
     fun unrelatedSpecificSignalFromAnotherTopicCannotRescueBroadGovernanceMatch() {
         val item = article(
-            "Government launches a new welfare scheme",
+            "Government launches a new welfare scheme for public service reform",
             "A separate unrelated quote briefly mentions climate change.",
             "India"
         )
@@ -243,7 +243,8 @@ class UpscFeedPolicyTest {
         assertTrue("Fixture should select the broad GS II Governance mapping", relevance.gsPaper == "GS II")
         assertTrue("Fixture should select Governance", relevance.subject == "Governance")
         assertTrue("The selected mapping should only contain broad scheme signals",
-            relevance.matchedTerms.contains("scheme") && relevance.matchedTerms.contains("welfare"))
+            relevance.matchedTerms.contains("scheme") && relevance.matchedTerms.contains("welfare") &&
+                relevance.matchedTerms.contains("public service"))
         assertFalse("Climate change belongs to another mapping",
             relevance.matchedTerms.contains("climate change"))
         assertFalse("An unrelated environmental phrase must not qualify this welfare headline",
