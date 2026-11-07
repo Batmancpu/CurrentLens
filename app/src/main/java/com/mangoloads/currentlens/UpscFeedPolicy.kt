@@ -11,7 +11,7 @@ package com.mangoloads.currentlens
 internal object UpscFeedPolicy {
     private val noiseTerms = listOf(
         "ranbir kapoor", "salman khan", "celebrity", "celebrity news",
-        "opening weekend", "entertainment", "film",
+        "box office", "box-office", "opening weekend", "entertainment", "film",
         "movie", "cinema", "actor", "actress", "trailer", "teaser",
         "reality show", "reality tv", "reality television", "contestant", "bigg boss",
         "tv show", "tv series", "television show", "television series",
@@ -31,7 +31,7 @@ internal object UpscFeedPolicy {
     // the soft noise gate plus the strict institution-action-policy requirement.
     private val nonOverrideableNoiseTerms = listOf(
         "celebrity gossip", "gossip column", "celebrity news",
-        "box office", "box-office", "opening weekend",
+        "opening weekend",
         "trailer launch", "trailer released", "official trailer",
         "teaser launch", "teaser released", "official teaser",
         "film release date", "movie release date", "streaming release",
