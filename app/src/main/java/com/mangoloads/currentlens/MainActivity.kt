@@ -126,6 +126,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
+import androidx.compose.ui.input.nestedscroll.NestedScrollSource
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.Modifier
@@ -457,6 +460,40 @@ private fun BrrrNewsApp() {
     val density = LocalDensity.current
     // WindowInsets.ime is a composable local; capture it here before entering an effect.
     val imeInsets = WindowInsets.ime
+    var compactNavigation by remember { mutableStateOf(false) }
+    val feedNavigationTracker = remember { FeedNavigationScrollTracker() }
+    val feedNavigationEnabled = selectedArticle == null && !quizMode && !showSettings &&
+        selectedTab in 0..2 && !searchExpanded
+    val feedNavigationConnection = remember(feedNavigationEnabled) {
+        object : NestedScrollConnection {
+            override fun onPostScroll(
+                consumed: Offset,
+                available: Offset,
+                source: NestedScrollSource
+            ): Offset {
+                if (!feedNavigationEnabled) return Offset.Zero
+                // LazyColumn scrolls forward with positive consumed Y; pulling past its
+                // top edge leaves a negative unconsumed delta.
+                val atTopEdge = consumed.y == 0f && available.y < 0f
+                val nextCompact = when {
+                    atTopEdge -> feedNavigationTracker.reset()
+                    consumed.y != 0f -> feedNavigationTracker.onScroll(
+                        deltaPx = consumed.y.roundToInt(),
+                        hideThresholdPx = with(density) { FeedNavigationPolicy.HIDE_THRESHOLD_DP.dp.roundToPx() },
+                        showThresholdPx = with(density) { FeedNavigationPolicy.SHOW_THRESHOLD_DP.dp.roundToPx() },
+                        eligible = true
+                    )
+                    else -> compactNavigation
+                }
+                if (nextCompact != compactNavigation) compactNavigation = nextCompact
+                return Offset.Zero
+            }
+        }
+    }
+    LaunchedEffect(selectedTab, searchExpanded, selectedArticle?.url, showSettings, quizMode) {
+        feedNavigationTracker.reset()
+        compactNavigation = false
+    }
     val lifecycleOwner = context as? LifecycleOwner
     var reduceMotion by remember { mutableStateOf(!ValueAnimator.areAnimatorsEnabled()) }
     DisposableEffect(lifecycleOwner) {
@@ -645,6 +682,7 @@ private fun BrrrNewsApp() {
         Column(
             Modifier.fillMaxSize()
                 .then(if (searchExpanded) Modifier.imePadding() else Modifier)
+                .then(if (feedNavigationEnabled) Modifier.nestedScroll(feedNavigationConnection) else Modifier)
                 .background(if (searchExpanded) Color.Transparent else MaterialTheme.colorScheme.background)
         ) {
             when {
@@ -760,11 +798,20 @@ private fun BrrrNewsApp() {
                     luminance = glassLuminance.luminance,
                     adaptiveContentColor = glassLuminance.contentColor,
                     reduceMotion = reduceMotion,
+                    compact = compactNavigation && feedNavigationEnabled,
+                    onExpandCompact = {
+                        compactNavigation = false
+                        feedNavigationTracker.reset()
+                    },
                     morphProgress = if (selectedTab == SearchNavigationPolicy.SEARCH_TAB && searchMorphActive) {
                         searchMorphProgress
                     } else 0f,
                     onSearchAnchor = { searchTabAnchorState.value = it },
                     onSelect = { tab ->
+                        if (tab != selectedTab) {
+                            compactNavigation = false
+                            feedNavigationTracker.reset()
+                        }
                         val destination = SearchNavigationPolicy.selectTab(tab)
                         selectedTab = destination.selectedTab
                         searchExpanded = destination.searchExpanded
@@ -2071,6 +2118,8 @@ private fun GlassTabBar(
     luminance: Float,
     adaptiveContentColor: Color,
     reduceMotion: Boolean,
+    compact: Boolean,
+    onExpandCompact: () -> Unit,
     morphProgress: Float,
     onSearchAnchor: (Offset) -> Unit,
     onSelect: (Int) -> Unit
@@ -2079,10 +2128,10 @@ private fun GlassTabBar(
     val isLtr = LocalLayoutDirection.current == LayoutDirection.Ltr
     val animationScope = rememberCoroutineScope()
     val latestOnSelect = rememberUpdatedState(onSelect)
+    // These sources are reused by the expanded state; the compact state does not
+    // read or render the hidden glyph capture or selected droplet.
     val tabsBackdrop = rememberPrismalGlassLayer()
     val dropletBackdrop = rememberPrismalMergedSource(backdrop, tabsBackdrop)
-    tabsBackdrop.readSamplingState()
-    val barAlpha = SearchMorphGeometryPolicy.tabBarAlpha(morphProgress)
     val glassTint = if (adaptiveContentColor == Color.Black) Color(0xFFEAF0FA) else Color(0xFF1C2E49)
     val baseTintAlpha = GlassOpticsPolicy.adaptiveTintAlpha(
         baseAlpha = glassAlpha * 0.12f,
@@ -2090,19 +2139,28 @@ private fun GlassTabBar(
         minAlpha = 0.035f,
         maxAlpha = 0.13f
     )
+    val compactTransition = updateTransition(targetState = compact, label = "Feed navigation compact morph")
+    val compactProgress = compactTransition.animateFloat(
+        transitionSpec = { if (reduceMotion) snap() else tween(180) },
+        label = "Feed navigation compact progress"
+    ) { if (it) 1f else 0f }.value.coerceIn(0f, 1f)
 
     BoxWithConstraints(
-        modifier = Modifier.fillMaxWidth().height(70.dp),
-        contentAlignment = Alignment.CenterStart
+        modifier = Modifier.fillMaxWidth()
+            .height(70.dp + (54.dp - 70.dp) * compactProgress),
+        contentAlignment = Alignment.Center
     ) {
-        val tabWidthPx = (
-            constraints.maxWidth.toFloat() - with(density) { 8.dp.toPx() }
-        ).div(4f).coerceAtLeast(1f)
-        val tabWidth = with(density) { tabWidthPx.toDp() }
-        val contentStartPx = with(density) { 4.dp.toPx() }
-        val contentHeight = 64.dp
+        val fullWidth = maxWidth
+        val compactWidth = 148.dp.coerceAtMost(maxWidth)
+        val barWidth = fullWidth + (compactWidth - fullWidth) * compactProgress
+        val barHeight = 70.dp + (54.dp - 70.dp) * compactProgress
+        val barWidthPx = with(density) { barWidth.toPx() }
+        val barHeightPx = with(density) { barHeight.toPx() }
+        val barOffsetXPx = (constraints.maxWidth.toFloat() - barWidthPx) / 2f
+        val tabWidthPx = (barWidthPx - with(density) { 8.dp.toPx() }).div(4f).coerceAtLeast(1f)
+        val contentStartPx = barOffsetXPx + with(density) { 4.dp.toPx() }
+        val contentHeight = 64.dp + (48.dp - 64.dp) * compactProgress
         val contentHeightPx = with(density) { contentHeight.toPx() }
-        val barHeightPx = with(density) { 70.dp.toPx() }
         val dropletWidth = with(density) {
             GlassTabGeometryPolicy.expandedDimension(tabWidthPx, 12.dp.toPx()).toDp()
         }
@@ -2132,15 +2190,13 @@ private fun GlassTabBar(
                 },
                 onDrag = { _, delta ->
                     val direction = if (isLtr) 1f else -1f
-                    val next = (targetValue + delta.x / tabWidthPx * direction)
-                        .coerceIn(0f, 3f)
+                    val next = (targetValue + delta.x / tabWidthPx * direction).coerceIn(0f, 3f)
                     if (reduceMotion) snapToValue(next) else updateValue(next)
                     dragHighlightIndex = next.roundToInt().coerceIn(0, 3)
                 }
             )
         }
-
-        LaunchedEffect(selectedTab, reduceMotion) {
+        LaunchedEffect(selectedTab, reduceMotion, compact) {
             dragHighlightIndex = null
             if (reduceMotion) motion.snapToValue(selectedTab.toFloat())
             else motion.animateToValue(selectedTab.toFloat())
@@ -2149,7 +2205,6 @@ private fun GlassTabBar(
         val highlightedIndex = dragHighlightIndex ?: selectedTab
         val pillPress = GlassOpticsPolicy.interactionProgress(motion.pressProgress, reduceMotion)
         val pillVelocity = if (reduceMotion) 0f else motion.velocity.coerceIn(-2f, 2f)
-        val contentTopPx = (barHeightPx - contentHeightPx) / 2f
         val dropletOptics = GlassOpticsPolicy.droplet(pillPress, reduceMotion)
         val dropletTint = if (adaptiveContentColor == Color.Black) Color(0xFFE8F1FF) else Color(0xFF1C2E49)
         val dropletTintAlpha = GlassOpticsPolicy.adaptiveTintAlpha(
@@ -2159,196 +2214,220 @@ private fun GlassTabBar(
             maxAlpha = 0.14f
         )
 
-        // Reuse Prismal's touch ripple and keep it on the expanded optical droplet.
-        // The ripple is drawn over the base material; its centre follows the selected tab.
         val tabRipple = remember(animationScope, tabWidthPx, contentStartPx) {
             PrismalPressRipple(animationScope) { size, _ ->
-                val center = GlassTabGeometryPolicy.tabCenterPx(
-                    contentStartPx, motion.value, tabWidthPx
-                )
+                val center = GlassTabGeometryPolicy.tabCenterPx(contentStartPx, motion.value, tabWidthPx)
                 Offset(center, size.height / 2f)
             }
         }
-        // Prismal's pre-33 fallback is a flat white flash, not a shader ripple.
-        // Keep spring/lens feedback on those devices without that visual regression.
         val rippleEnabled = GlassOpticsPolicy.rippleEnabled(Build.VERSION.SDK_INT, reduceMotion)
-        val rippleDrawModifier = if (rippleEnabled) tabRipple.modifier else Modifier
-        val rippleGestureModifier = if (rippleEnabled) tabRipple.gestureModifier else Modifier
+        val rippleDrawModifier = if (rippleEnabled && !compact) tabRipple.modifier else Modifier
+        val rippleGestureModifier = if (rippleEnabled && !compact) tabRipple.gestureModifier else Modifier
+        val barAlpha = SearchMorphGeometryPolicy.tabBarAlpha(morphProgress)
 
-        // The sampled root includes the page background and content, but excludes this
-        // overlay bar; the tab-content layer is merged only for the selected droplet.
+        // One shared Prismal surface changes bounds with the existing bar. No duplicate
+        // expanded/compact layer is composed; live blur remains restricted to this small control.
         Box(
-            Modifier.fillMaxSize().graphicsLayer { alpha = barAlpha }.drawPrismalGlass(
-                backdrop = backdrop,
-                shape = { PrismalCapsule() },
-                effects = {
-                    applyPrismalGlassEffects(
-                        density = density,
-                        adaptiveLuminance = true,
-                        luminance = luminance,
-                        blurRadiusPx = with(density) { 6.dp.toPx() },
-                        refractionHeightPx = with(density) { 14.dp.toPx() },
-                        refractionAmountPx = with(density) { 20.dp.toPx() },
-                        depthEffect = true,
-                        chromaticAberration = 0.015f,
-                        adaptiveTuning = PrismalAdaptiveTuning.Subtle
-                    )
-                },
-                specular = {
-                    PrismalSpecular.Default.copy(
-                        width = 0.6.dp,
-                        blurRadius = 0.4.dp,
-                        alpha = 0.48f
-                    )
-                },
-                depthShadow = {
-                    PrismalDepthShadow(
-                        radius = 18.dp,
-                        offset = DpOffset(0.dp, 3.dp),
-                        color = Color.Black.copy(alpha = 0.10f),
-                        alpha = 0.28f
-                    )
-                },
-                depthInset = {
-                    PrismalDepthInset(
-                        radius = 4.dp,
-                        offset = DpOffset(0.dp, 1.dp),
-                        color = Color.Black.copy(alpha = 0.06f),
-                        alpha = 0.06f
-                    )
-                },
-                onDrawSurface = {
-                    drawRect(glassTint.copy(alpha = baseTintAlpha))
-                }
-            )
-        )
-        Box(Modifier.fillMaxSize().clip(PrismalCapsule()).then(rippleDrawModifier)) {}
-
-        CompositionLocalProvider(
-            LocalPrismalBottomTabHighlightedIndex provides { highlightedIndex }
-        ) {
-            // Capture the tab glyphs once as a second source; keep this hidden layer
-            // out of the accessibility tree so each destination is announced only once.
-            Row(
-                Modifier.graphicsLayer { alpha = 0f }
-                    .clearAndSetSemantics {}
-                    .prismalGlassLayer(tabsBackdrop)
-                    .fillMaxSize()
-                    .padding(horizontal = 4.dp, vertical = 3.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                GlassTab(0, "Today", Icons.Outlined.Today, onSelect, adaptiveContentColor)
-                GlassTab(1, "Explore", Icons.Outlined.Explore, onSelect, adaptiveContentColor)
-                GlassTab(2, "Search", Icons.Outlined.Search, onSelect, adaptiveContentColor)
-                GlassTab(3, "You", Icons.Outlined.Person, onSelect, adaptiveContentColor)
-            }
-
-            Row(
-                Modifier.fillMaxSize()
-                    .padding(horizontal = 4.dp, vertical = 3.dp)
-                    .graphicsLayer { alpha = barAlpha },
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                GlassTab(0, "Today", Icons.Outlined.Today, onSelect, adaptiveContentColor)
-                GlassTab(1, "Explore", Icons.Outlined.Explore, onSelect, adaptiveContentColor)
-                GlassTab(2, "Search", Icons.Outlined.Search, onSelect, adaptiveContentColor, onSearchAnchor)
-                GlassTab(3, "You", Icons.Outlined.Person, onSelect, adaptiveContentColor)
-            }
-        }
-
-        // The expanded droplet itself is the drag target. Its touch bounds now match
-        // the refracted rim rather than a narrower, visually detached tab-cell target.
-
-        Box(
-            Modifier.offset {
-                val center = GlassTabGeometryPolicy.tabCenterPx(
-                    contentStartPx, motion.value, tabWidthPx
-                )
-                IntOffset(
-                    GlassTabGeometryPolicy.leftPx(center, dropletWidthPx).roundToInt(),
-                    GlassTabGeometryPolicy.topPx(barHeightPx, dropletHeightPx).roundToInt()
-                )
-            }
-                .size(dropletWidth, dropletHeight)
-                .graphicsLayer {
-                    alpha = barAlpha
-                    val velocity = (pillVelocity / 10f).coerceIn(-0.2f, 0.2f)
-                    scaleX = GlassTabGeometryPolicy.horizontalScale(restingScaleX, motion.scaleX, velocity)
-                    scaleY = GlassTabGeometryPolicy.verticalScale(restingScaleY, motion.scaleY, velocity)
-                    clip = false
-                }
-                .then(rippleGestureModifier)
-                .then(motion.modifier)
-        ) {
-            Box(
-                Modifier.fillMaxSize().drawPrismalGlass(
-                    backdrop = dropletBackdrop,
+            Modifier.align(Alignment.Center).width(barWidth).height(barHeight)
+                .graphicsLayer { alpha = barAlpha }
+                .drawPrismalGlass(
+                    backdrop = backdrop,
                     shape = { PrismalCapsule() },
                     effects = {
                         applyPrismalGlassEffects(
                             density = density,
                             adaptiveLuminance = true,
                             luminance = luminance,
-                            blurRadiusPx = with(density) { dropletOptics.blurDp.dp.toPx() },
-                            refractionHeightPx = with(density) { dropletOptics.refractionHeightDp.dp.toPx() },
-                            refractionAmountPx = with(density) { dropletOptics.refractionAmountDp.dp.toPx() },
+                            blurRadiusPx = with(density) { (6f - 2f * compactProgress).dp.toPx() },
+                            refractionHeightPx = with(density) { (14f - 6f * compactProgress).dp.toPx() },
+                            refractionAmountPx = with(density) { (20f - 10f * compactProgress).dp.toPx() },
                             depthEffect = true,
-                            chromaticAberration = dropletOptics.chromaticAberration,
+                            chromaticAberration = 0.015f * (1f - compactProgress),
                             adaptiveTuning = PrismalAdaptiveTuning.Subtle
                         )
                     },
                     specular = {
                         PrismalSpecular.Default.copy(
-                            width = 0.7.dp,
+                            width = 0.6.dp,
                             blurRadius = 0.4.dp,
-                            alpha = dropletOptics.specularAlpha,
-                            style = PrismalSpecularStyle.Default(
-                                angle = GlassOpticsPolicy.specularAngle(pillVelocity, reduceMotion)
-                            )
+                            alpha = 0.48f * (1f - 0.18f * compactProgress)
                         )
                     },
                     depthShadow = {
                         PrismalDepthShadow(
-                            radius = 12.dp,
-                            offset = DpOffset(0.dp, 2.dp),
-                            color = Color.Black.copy(alpha = 0.12f),
-                            alpha = dropletOptics.shadowAlpha
+                            radius = 18.dp - 4.dp * compactProgress,
+                            offset = DpOffset(0.dp, 3.dp),
+                            color = Color.Black.copy(alpha = 0.10f),
+                            alpha = 0.28f
                         )
                     },
                     depthInset = {
                         PrismalDepthInset(
-                            radius = 5.dp,
+                            radius = 4.dp,
                             offset = DpOffset(0.dp, 1.dp),
-                            color = Color.Black.copy(alpha = 0.08f),
-                            alpha = dropletOptics.insetAlpha
+                            color = Color.Black.copy(alpha = 0.06f),
+                            alpha = 0.06f
                         )
                     },
-                    onDrawSurface = {
-                        drawRect(dropletTint.copy(alpha = dropletTintAlpha))
-                    }
+                    onDrawSurface = { drawRect(glassTint.copy(alpha = baseTintAlpha)) }
                 )
-            )
-        }
+        )
 
-        val activeGlyph = when (highlightedIndex) {
-            0 -> Icons.Outlined.Today
-            1 -> Icons.Outlined.Explore
-            2 -> Icons.Outlined.Search
-            else -> Icons.Outlined.Person
-        }
-        Box(
-            Modifier.offset {
-                val center = GlassTabGeometryPolicy.tabCenterPx(contentStartPx, motion.value, tabWidthPx)
-                val iconSizePx = with(density) { 29.dp.toPx() }
-                IntOffset((center - iconSizePx / 2f).roundToInt(),
-                    ((barHeightPx - iconSizePx) / 2f).roundToInt())
+        if (!compact) {
+            Box(
+                Modifier.align(Alignment.Center).width(barWidth).height(barHeight)
+                    .clip(PrismalCapsule()).then(rippleDrawModifier)
+            )
+            tabsBackdrop.readSamplingState()
+            CompositionLocalProvider(
+                LocalPrismalBottomTabHighlightedIndex provides { highlightedIndex }
+            ) {
+                // Hidden glyph capture is active only in expanded navigation. Compact mode
+                // draws no glyph source, droplet, or merged-source sampling layer.
+                Row(
+                    Modifier.align(Alignment.Center).width(barWidth).height(barHeight)
+                        .graphicsLayer { alpha = 0f }
+                        .clearAndSetSemantics {}
+                        .prismalGlassLayer(tabsBackdrop)
+                        .padding(horizontal = 4.dp, vertical = 3.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    GlassTab(0, "Today", Icons.Outlined.Today, onSelect, adaptiveContentColor)
+                    GlassTab(1, "Explore", Icons.Outlined.Explore, onSelect, adaptiveContentColor)
+                    GlassTab(2, "Search", Icons.Outlined.Search, onSelect, adaptiveContentColor)
+                    GlassTab(3, "You", Icons.Outlined.Person, onSelect, adaptiveContentColor)
+                }
+
+                Row(
+                    Modifier.align(Alignment.Center).width(barWidth).height(barHeight)
+                        .padding(horizontal = 4.dp, vertical = 3.dp)
+                        .graphicsLayer { alpha = barAlpha },
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    GlassTab(0, "Today", Icons.Outlined.Today, onSelect, adaptiveContentColor)
+                    GlassTab(1, "Explore", Icons.Outlined.Explore, onSelect, adaptiveContentColor)
+                    GlassTab(2, "Search", Icons.Outlined.Search, onSelect, adaptiveContentColor, onSearchAnchor)
+                    GlassTab(3, "You", Icons.Outlined.Person, onSelect, adaptiveContentColor)
+                }
             }
-                .size(29.dp)
-                .clearAndSetSemantics {},
-            contentAlignment = Alignment.Center
-        ) {
-            Icon(activeGlyph, contentDescription = null, tint = adaptiveContentColor,
-                modifier = Modifier.size(29.dp))
+
+            val dropletTopPx = (barHeightPx - dropletHeightPx) / 2f
+            Box(
+                Modifier.offset {
+                    val center = GlassTabGeometryPolicy.tabCenterPx(contentStartPx, motion.value, tabWidthPx)
+                    IntOffset(
+                        GlassTabGeometryPolicy.leftPx(center, dropletWidthPx).roundToInt(),
+                        dropletTopPx.roundToInt()
+                    )
+                }
+                    .size(dropletWidth, dropletHeight)
+                    .graphicsLayer {
+                        alpha = barAlpha
+                        val velocity = (pillVelocity / 10f).coerceIn(-0.2f, 0.2f)
+                        scaleX = GlassTabGeometryPolicy.horizontalScale(restingScaleX, motion.scaleX, velocity)
+                        scaleY = GlassTabGeometryPolicy.verticalScale(restingScaleY, motion.scaleY, velocity)
+                        clip = false
+                    }
+                    .then(rippleGestureModifier)
+                    .then(motion.modifier)
+            ) {
+                Box(
+                    Modifier.fillMaxSize().drawPrismalGlass(
+                        backdrop = dropletBackdrop,
+                        shape = { PrismalCapsule() },
+                        effects = {
+                            applyPrismalGlassEffects(
+                                density = density,
+                                adaptiveLuminance = true,
+                                luminance = luminance,
+                                blurRadiusPx = with(density) { dropletOptics.blurDp.dp.toPx() },
+                                refractionHeightPx = with(density) { dropletOptics.refractionHeightDp.dp.toPx() },
+                                refractionAmountPx = with(density) { dropletOptics.refractionAmountDp.dp.toPx() },
+                                depthEffect = true,
+                                chromaticAberration = dropletOptics.chromaticAberration,
+                                adaptiveTuning = PrismalAdaptiveTuning.Subtle
+                            )
+                        },
+                        specular = {
+                            PrismalSpecular.Default.copy(
+                                width = 0.7.dp,
+                                blurRadius = 0.4.dp,
+                                alpha = dropletOptics.specularAlpha,
+                                style = PrismalSpecularStyle.Default(
+                                    angle = GlassOpticsPolicy.specularAngle(pillVelocity, reduceMotion)
+                                )
+                            )
+                        },
+                        depthShadow = {
+                            PrismalDepthShadow(
+                                radius = 12.dp,
+                                offset = DpOffset(0.dp, 2.dp),
+                                color = Color.Black.copy(alpha = 0.12f),
+                                alpha = dropletOptics.shadowAlpha
+                            )
+                        },
+                        depthInset = {
+                            PrismalDepthInset(
+                                radius = 5.dp,
+                                offset = DpOffset(0.dp, 1.dp),
+                                color = Color.Black.copy(alpha = 0.08f),
+                                alpha = dropletOptics.insetAlpha
+                            )
+                        },
+                        onDrawSurface = { drawRect(dropletTint.copy(alpha = dropletTintAlpha)) }
+                    )
+                )
+            }
+
+            val activeGlyph = when (highlightedIndex) {
+                0 -> Icons.Outlined.Today
+                1 -> Icons.Outlined.Explore
+                2 -> Icons.Outlined.Search
+                else -> Icons.Outlined.Person
+            }
+            Box(
+                Modifier.offset {
+                    val center = GlassTabGeometryPolicy.tabCenterPx(contentStartPx, motion.value, tabWidthPx)
+                    val iconSizePx = with(density) { 29.dp.toPx() }
+                    IntOffset((center - iconSizePx / 2f).roundToInt(),
+                        ((barHeightPx - iconSizePx) / 2f).roundToInt())
+                }
+                    .size(29.dp)
+                    .clearAndSetSemantics {},
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(activeGlyph, contentDescription = null, tint = adaptiveContentColor,
+                    modifier = Modifier.size(29.dp))
+            }
+        } else {
+            val activeLabel = when (selectedTab) {
+                0 -> "Today"
+                1 -> "Explore"
+                2 -> "Search"
+                else -> "You"
+            }
+            val activeIcon = when (selectedTab) {
+                0 -> Icons.Outlined.Today
+                1 -> Icons.Outlined.Explore
+                2 -> Icons.Outlined.Search
+                else -> Icons.Outlined.Person
+            }
+            Row(
+                Modifier.align(Alignment.Center).width(barWidth).height(barHeight)
+                    .clip(PrismalCapsule())
+                    .clickable(onClick = onExpandCompact, role = Role.Button)
+                    .semantics(mergeDescendants = true) {
+                        contentDescription = "$activeLabel navigation, compact. Expand navigation."
+                    }
+                    .padding(horizontal = 18.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Center
+            ) {
+                Icon(activeIcon, contentDescription = null, tint = adaptiveContentColor, modifier = Modifier.size(20.dp))
+                Spacer(Modifier.width(9.dp))
+                Text(activeLabel, color = adaptiveContentColor, style = MaterialTheme.typography.labelLarge,
+                    fontWeight = FontWeight.SemiBold, maxLines = 1)
+            }
         }
     }
 }
