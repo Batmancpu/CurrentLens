@@ -1,6 +1,6 @@
 # UPSC editorial baseline
 
-**Snapshot:** 6 November 2026
+**Snapshot:** 7 November 2026
 
 ## Official syllabus
 
@@ -12,6 +12,8 @@ Use the current UPSC Civil Services Examination 2026 notice, **Notice No. 05/202
 For topical current-affairs mapping, the relevant baseline includes Prelims General Studies Paper I and Mains General Studies Papers I–IV. Prelims General Studies Paper II (CSAT) remains part of the examination but is an aptitude paper, not a topical-news classification target.
 
 The GS I geography scope explicitly includes physical geography, distribution of key natural resources, location factors for industries, geophysical phenomena, and changes in critical geographical features. The Geography rule in CurrentLens is intended to cover these syllabus themes without treating a generic place-name or a broad publisher section as sufficient evidence.
+
+The GS II Parliament and State Legislatures scope explicitly covers structure, functioning, conduct of business, powers and privileges, and issues arising from these. A bare mention of Parliament is therefore not a sufficient syllabus theme; default-feed eligibility requires a concrete legislative process, committee, privilege or parliamentary-function signal.
 
 ## Official previous-year question-paper window
 
@@ -39,10 +41,13 @@ The unit-test fixtures are synthetic examples designed to expose classification 
 
 | Label | Example | Expected decision | Reason |
 |---|---|---|---|
-| Previously missed positive | “Monsoon onset shifts across the Indo-Gangetic plain”; excerpt mentions rainfall distribution and river-basin flows | Include — GS I, Geography | Physical geography and changing water systems are explicit GS I syllabus themes |
+| False-negative recovery | “Monsoon onset shifts across the Indo-Gangetic plain”; excerpt mentions rainfall distribution and river-basin flows | Include — GS I, Geography | Physical geography and changing water systems are explicit GS I syllabus themes |
 | Positive | “RBI holds repo rate amid inflation concerns” | Include — GS III, Indian Economy | Monetary policy, repo rate and inflation are specific economy signals |
 | False-positive rejection | “Film trailer celebrates Himalayan glaciers”; excerpt mentions glacier and river-basin imagery | Exclude | Entertainment noise in the headline overrides incidental geography words in the excerpt |
 | False-positive rejection | Generic consumer-technology trend story in an “UPSC” publisher section | Exclude | A broad section label and generic technology wording do not establish a specific syllabus theme |
+| False-positive rejection | “Parliament opens a new visitor centre and cafeteria” | Exclude | An institution-only mention does not establish Parliament’s structure, functioning, conduct of business, powers or privileges | 
+| False-negative recovery | “Parliament passes a bill to amend electoral rules” | Include — GS II, Constitution/Polity | A concrete legislative action and Representation of the People Act theme are explicit GS II signals | 
+| Positive | “Standing committee reviews a bill on parliamentary privileges” | Include — GS II, Constitution/Polity | Committee scrutiny and parliamentary privileges map to the syllabus’ functioning and powers themes |
 | False-positive rejection | Celebrity film-release story whose excerpt merely mentions film-certification rules | Exclude | A policy exception must be established by a concrete action in the headline itself |
 
 The fixtures are regression checks for this deterministic rule set. They do not establish precision/recall, validate a score, or predict examination questions.

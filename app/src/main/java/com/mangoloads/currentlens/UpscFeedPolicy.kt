@@ -44,9 +44,10 @@ internal object UpscFeedPolicy {
         "framework", "charter", "ban", "review", "overhaul"
     )
 
+    // GS-II lists Parliament's functions, not mere institutional mentions; require a concrete process or power.
     private val specificSyllabusSignals = listOf(
         "supreme court", "high court", "constitution", "constitutional amendment",
-        "parliament", "election commission", "federalism", "centre-state",
+        "election commission", "federalism", "centre-state",
         "inter-state", "panchayat", "municipal corporation", "gst council",
         "reserve bank", "rbi", "repo rate", "inflation", "gross domestic product",
         "gdp", "fiscal deficit", "monetary policy", "current account deficit",
@@ -54,7 +55,7 @@ internal object UpscFeedPolicy {
         "non performing assets", "payment system", "gst", "taxation",
         "union budget", "government budgeting", "finance bill", "money bill", "amendment bill",
         "bill introduced in parliament", "bill passed by parliament", "bill introduced in lok sabha",
-        "bill passed by lok sabha", "bill passed by rajya sabha", "trade agreement",
+        "bill passed by lok sabha", "bill passed by rajya sabha", "parliament passes a bill", "parliament passes bill", "parliament passed a bill", "parliament passed bill", "parliament introduces a bill", "parliament introduces bill", "parliament introduced a bill", "parliament introduced bill", "parliament clears a bill", "parliament clears bill", "parliament cleared a bill", "parliament cleared bill", "parliament approves a bill", "parliament approves bill", "parliament approved a bill", "parliament approved bill", "parliament debates a bill", "parliament debates bill", "parliament debated a bill", "parliament debated bill", "parliamentary committee", "standing committee", "joint parliamentary committee", "question hour", "zero hour", "parliamentary privilege", "parliamentary procedure", "legislative scrutiny", "legislative oversight", "motion of no confidence", "no confidence motion", "motion of thanks", "budget session", "monsoon session", "winter session", "joint session", "representation of the people act", "representation of people act", "trade agreement",
         "free trade agreement", "world trade organization", "foreign exchange reserves",
         "employment guarantee", "unemployment rate", "labour code", "labor code",
         "labour force participation", "plfs",
