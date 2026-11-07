@@ -5,19 +5,27 @@ on:
     branches:
       - main
       - fix/early-startup-crash-diagnostics-2026-11-06
+      - ci/stacked-pr-validation-2026-11-07
+  pull_request:
+    branches:
+      - fix/early-startup-crash-diagnostics-2026-11-06
+    types: [ opened, synchronize, reopened, ready_for_review ]
 
+# Build and test jobs are read-only. Release write access is isolated below.
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
-  group: currentlens-android-build-${{ github.ref }}
-  cancel-in-progress: true
+  group: currentlens-android-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   build:
-    name: Build debug APK
+    name: Build and test debug APK
     runs-on: ubuntu-latest
     timeout-minutes: 40
+    permissions:
+      contents: read
     steps:
       - name: Checkout source
         uses: actions/checkout@v5
@@ -27,11 +35,6 @@ jobs:
         with:
           distribution: temurin
           java-version: '17'
-
-      - name: Set up Android SDK
-        uses: android-actions/setup-android@v3
-        with:
-          packages: platform-tools
 
       - name: Restore stable Stability test signing key
         id: stability-signing-cache
@@ -46,6 +49,11 @@ jobs:
           set -euo pipefail
           mkdir -p .ci
           keytool -genkeypair -noprompt -v -keystore .ci/stability-debug.keystore -storetype JKS -storepass currentlens-stability-test-only -keypass currentlens-stability-test-only -alias currentlens-stability -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=CurrentLens Stability Debug,O=CurrentLens,C=IN"
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+        with:
+          packages: platform-tools
 
       - name: Install Android platform
         run: |
@@ -74,7 +82,7 @@ jobs:
             --min-unique-words 100000
           test -s app/src/main/assets/wordnet.db
 
-      - name: Compile APK
+      - name: Compile APK and run JVM tests
         shell: bash
         run: |
           set -euo pipefail
@@ -92,8 +100,22 @@ jobs:
           if-no-files-found: error
           retention-days: 14
 
+  publish:
+    name: Publish main-branch testing release
+    if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - name: Download APK built and tested by this workflow run
+        uses: actions/download-artifact@v4
+        with:
+          name: CurrentLens-v0.2.8-stability-debug-apk
+          path: release-assets
+
       - name: Publish direct APK download in GitHub Releases
-        if: github.ref == 'refs/heads/main'
         uses: softprops/action-gh-release@v2
         with:
           tag_name: v0.2.8-build-${{ github.run_number }}
@@ -104,6 +126,6 @@ jobs:
             Includes the four-tab editorial redesign, Prismal AGSL glass controls, a 30-day local article metadata cache,
             Express Sunday Eye RSS, best-effort public-page extraction with in-app publisher fallback, offline WordNet definitions.
             Debug-signed APK for testing; not a production or Play Store release.
-          files: app/build/outputs/apk/debug/app-debug.apk
+          files: release-assets/app-debug.apk
           prerelease: true
           make_latest: false
