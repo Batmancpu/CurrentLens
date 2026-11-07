@@ -179,10 +179,20 @@ class UpscFeedPolicyTest {
             "Entertainment"
         ), "GS II", "Governance")
         assertSyllabusMapped(article(
-            "Film certification rules notified by the Ministry",
-            "The named ministry notification changes the statutory certification framework.",
+            "Film certification rules notified by the Ministry today",
+            "The named ministry notification is a current statutory certification change.",
             "Entertainment"
         ), "GS II", "Governance")
+        assertRejectedDespiteKeywordMatch(article(
+            "Film certification rules notified by the Ministry",
+            "The headline has no currentness cue and could describe a historical notification.",
+            "Entertainment"
+        ))
+        assertRejectedDespiteKeywordMatch(article(
+            "Cinematograph Act enacted by Parliament in 1952",
+            "A historical account of the original enactment, not a current regulatory change.",
+            "Entertainment"
+        ))
         assertSyllabusMapped(article(
             "Sports Ministry issues new anti-doping rules",
             "The policy changes sports governance and anti-doping compliance.",
