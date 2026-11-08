@@ -49,8 +49,12 @@ The unit-test fixtures are synthetic examples designed to expose classification 
 | False-negative recovery | “Parliament passes a bill to amend electoral rules” | Include — GS II, Constitution/Polity | A concrete legislative action and Representation of the People Act theme are explicit GS II signals | 
 | Positive | “Standing committee reviews a bill on parliamentary privileges” | Include — GS II, Constitution/Polity | Committee scrutiny and parliamentary privileges map to the syllabus’ functioning and powers themes |
 | False-positive rejection | Celebrity film-release story whose excerpt merely mentions film-certification rules | Exclude | A policy exception must be established by a concrete action in the headline itself |
+| Positive | “GST Council cuts GST rates on insurance premiums” | Include — GS III, Indian Economy | A specific GST-rate decision is an indirect-tax/economy signal, not merely an institutional mention |
+| Positive | “GST Council composition and voting structure under Article 279A” | Include — GS II, Constitution | Article 279A, composition and weighted voting are constitutional/institutional themes |
+| False-positive rejection | “GST Council holds a routine meeting” | Exclude | The institution's name alone does not establish a specific syllabus theme |
+| False-positive rejection | “Technology platform launched for GST Council event” | Exclude | An incidental Council mention must not qualify an unrelated technology feature |
 
-The fixtures are regression checks for this deterministic rule set. They do not establish precision/recall, validate a score, or predict examination questions.
+The official GST Council describes its Article 279A composition and its recommendations on GST rates, exemptions and principles of levy ([official Council reference](https://gstcouncil.gov.in/gst-council-0)). CurrentLens therefore distinguishes constitutional composition/voting (GS II) from specific tax-rate or indirect-tax decisions (GS III); a bare Council mention is insufficient.\n\nThe fixtures are regression checks for this deterministic rule set. They do not establish precision/recall, validate a score, or predict examination questions.
 
 ## Source-provenance limitation
 
