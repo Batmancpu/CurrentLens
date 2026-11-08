@@ -40,13 +40,10 @@ internal object FeedXmlTextReader {
                         Character.isHighSurrogate(current) &&
                             offset + 1 < chunk.length &&
                             Character.isLowSurrogate(chunk[offset + 1]) -> 2
-                        Character.isSurrogate(current) -> {
-                            limitReached = true
-                            break
-                        }
+                        Character.isSurrogate(current) -> 0
                         else -> 1
                     }
-                    if (result.length + charCount > maxChars) {
+                    if (charCount == 0 || result.length + charCount > maxChars) {
                         limitReached = true
                         break
                     }
