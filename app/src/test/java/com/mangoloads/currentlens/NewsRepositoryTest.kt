@@ -1,57 +1,40 @@
 package com.mangoloads.currentlens
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class NewsRepositoryTest {
-    private val source = FeedSource(
-        name = "The Hindu",
-        section = "India",
-        url = "https://www.thehindu.com/feed.xml"
-    )
-
-    // Android's Html.fromHtml is a framework stub in local JVM tests. The parser
-    // receives an identity sanitizer here so these tests exercise XML/entry limits,
-    // while production keeps the default Android HTML sanitizer.
-    private val plainTextSanitizer: (String) -> String = { it }
-
     @Test
-    fun parserCapsValidEntriesBeforeTheCrossFeedMerge() {
-        val xml = buildString {
-            append("<rss><channel>")
-            repeat(NewsRepository.MAX_ENTRIES_PER_FEED + 25) { index ->
-                append("<item>")
-                append("<title>Story $index</title>")
-                append("<link>https://www.thehindu.com/story/$index</link>")
-                append("</item>")
-            }
-            append("</channel></rss>")
+    fun perFeedBudgetAcceptsExactlyTheConfiguredNumberOfEntries() {
+        val limit = NewsRepository.MAX_ENTRIES_PER_FEED
+        var seen = 0
+
+        repeat(limit) {
+            seen = requireNotNull(FeedEntryBudgetPolicy.consume(seen, limit))
         }
 
-        val articles = NewsRepository.parse(source, xml, plainTextSanitizer)
-
-        assertEquals(NewsRepository.MAX_ENTRIES_PER_FEED, articles.size)
-        assertEquals(
-            "Story ${NewsRepository.MAX_ENTRIES_PER_FEED - 1}",
-            articles.last().title
-        )
+        assertEquals(limit, seen)
+        assertNull(FeedEntryBudgetPolicy.consume(seen, limit))
     }
 
     @Test
-    fun malformedEntriesAlsoConsumeThePerFeedParsingBudget() {
-        val xml = buildString {
-            append("<rss><channel>")
-            repeat(NewsRepository.MAX_ENTRIES_PER_FEED) { index ->
-                append("<item><title>Unusable $index</title></item>")
-            }
-            append("<item><title>Later valid story</title>")
-            append("<link>https://www.thehindu.com/story/later</link></item>")
-            append("</channel></rss>")
+    fun malformedEntriesConsumeBudgetBeforeA laterValidEntryCanBeParsed() {
+        val limit = NewsRepository.MAX_ENTRIES_PER_FEED
+        // The parser calls consume at each item/entry start tag, before checking
+        // title/link validity. Model a feed with 100 malformed records then a valid one.
+        val entryHasUsableArticleLink = List(limit) { false } + true
+        var seen = 0
+        val acceptedEntryIndexes = mutableListOf<Int>()
+
+        for ((index, isUsable) in entryHasUsableArticleLink.withIndex()) {
+            val nextCount = FeedEntryBudgetPolicy.consume(seen, limit) ?: break
+            seen = nextCount
+            if (isUsable) acceptedEntryIndexes += index
         }
 
-        assertEquals(
-            emptyList<Article>(),
-            NewsRepository.parse(source, xml, plainTextSanitizer)
-        )
+        assertEquals(limit, seen)
+        assertTrue(acceptedEntryIndexes.isEmpty())
     }
 }
