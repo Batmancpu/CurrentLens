@@ -148,15 +148,7 @@ object NewsRepository {
         Html.fromHtml(value, Html.FROM_HTML_MODE_LEGACY).toString()
             .replace(Regex("\\s+"), " ").trim()
 
-    /**
-     * [sanitizeHtml] keeps the parser independently testable on the local JVM.
-     * Production callers use [clean], retaining Android's HTML entity/tag handling.
-     */
-    internal fun parse(
-        source: FeedSource,
-        xml: String,
-        sanitizeHtml: (String) -> String = ::clean
-    ): List<Article> {
+    private fun parse(source: FeedSource, xml: String): List<Article> {
         val result = mutableListOf<Article>()
         val factory = XmlPullParserFactory.newInstance().apply { setNamespaceAware(true) }
         val parser = factory.newPullParser()
@@ -180,8 +172,11 @@ object NewsRepository {
                     if (tag == "item" || tag == "entry") {
                         // Count malformed entries too, so a publisher cannot force
                         // unbounded parser work with empty or unusable records.
-                        if (entriesSeen >= MAX_ENTRIES_PER_FEED) break
-                        entriesSeen += 1
+                        val nextEntryCount = FeedEntryBudgetPolicy.consume(
+                            entriesSeen,
+                            MAX_ENTRIES_PER_FEED
+                        ) ?: break
+                        entriesSeen = nextEntryCount
                         inItem = true
                         title = ""
                         description = ""
@@ -193,9 +188,9 @@ object NewsRepository {
                         image = null
                     } else if (inItem) {
                         when (tag) {
-                            "title" -> title = sanitizeHtml(runCatching { parser.nextText() }.getOrDefault(""))
+                            "title" -> title = clean(runCatching { parser.nextText() }.getOrDefault(""))
                             "description", "summary", "encoded" -> {
-                                val text = sanitizeHtml(runCatching { parser.nextText() }.getOrDefault(""))
+                                val text = clean(runCatching { parser.nextText() }.getOrDefault(""))
                                 if (text.length > description.length) description = text
                             }
                             "link" -> {
