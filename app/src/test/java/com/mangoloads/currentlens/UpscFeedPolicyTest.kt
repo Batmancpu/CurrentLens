@@ -445,6 +445,16 @@ class UpscFeedPolicyTest {
             "The ministry promotes a reality programme rather than issuing or amending anti-doping rules.",
             "Entertainment"
         ))
+        assertRejectedDespiteKeywordMatch(article(
+            "Government announces a new reality TV series about anti-doping rules",
+            "The headline promotes a reality programme rather than changing anti-doping regulation.",
+            "Entertainment"
+        ))
+        assertRejectedDespiteKeywordMatch(article(
+            "Ministry announces reality television programme exploring national sports policy",
+            "The ministry promotes entertainment content rather than issuing a sports-governance policy.",
+            "Entertainment"
+        ))
         // The same sports-governance subject remains eligible when the institution
         // actually changes the rules rather than announcing entertainment content.
         assertSyllabusMapped(article(
