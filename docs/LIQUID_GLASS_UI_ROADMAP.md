@@ -1,3 +1,42 @@
+# Live implementation batch — Saved-feed relevance index reuse
+**Audit:** 8 November 2026, 18:38 IST  
+**Source branch / SHA before this batch:** `black-box-bihar-news@d21ff270011b80ff6fd4ad6fcbaf7ce15cb8b494`  
+**Implementation commit:** `21fee7f625a211962bd9e94c0846226d0501196d`  
+**Base:** `main@73b8a0d1ba33503fede02db2c3c0af082d724a12`; PR #34 remains open/draft and unmerged.
+
+## Freshness and dependency gate
+- Re-enumerated all **44 remote branches** (page 1: 44; page 2: 0) and all **41 PRs** (27 open, 14 closed; page 2: 0). Default `main` is unchanged. The owner-selected integration branch is **145 commits ahead / 0 behind main** and **88 ahead / 0 behind PR #16**; the corrected background-only Prismal capture and consolidated Reader/Search/feed-navigation lineage remain ancestors.
+- PR #34 is the single consolidation draft: `black-box-bihar-news` → `main@73b8a0d1ba33503fede02db2c3c0af082d724a12`. Its code head for this batch is `21fee7f625a211962bd9e94c0846226d0501196d`, a direct child of `d21ff270011b80ff6fd4ad6fcbaf7ce15cb8b494`; the documentation audit is a direct child of the implementation commit.
+- The newest independent commit is PR #41's `perf/bound-rss-field-values-2026-11-08@f3fa5daf3242e4d69b1db4666eca3b009821c6e2` (12 ahead / 145 behind this integration line). Its reviewed diff is parser-only: FeedFieldPolicy, FeedXmlTextReader, NewsRepository, build/test dependency and parser tests; it does not change SavedFeed/StudyStats and is not a UI baseline. PR #40 `fix/validate-rss-article-hosts-2026-11-08@552b96e7948ac5ade821a711ea8dd225984824a9` (6 ahead / 145 behind) is a separate RSS URL/redirect policy. Neither was blindly ported.
+- PR #39 `fix/stable-release-signing-2026-11-08@4250de5040a8ca0efbf96a990218ef7d69ef26e8` is 6 ahead / 10 behind and changes workflow/build signing and migration documentation; it remains gated on owner-managed secrets and explicit first-install/local-data migration approval.
+- PR #37's Search-clear RowScope repair is already present in the active SearchMorphField; PR #30's 48dp target policy, PR #31's off-main appearance restore and PR #13's more conservative shared 8×8 luminance probe are represented. The divergent `brrrNEWS` line is 4 ahead / 51 behind and its fixed-intensity material is superseded; `ui/liquid-glass-performance` is 3 ahead / 163 behind and `redesign/v0.3-search-reader` is 239 behind. No other branch was modified.
+
+## Parent exact-head Actions verification
+- Fully paginated **340 workflow runs** (100 + 100 + 100 + 40; page 5 empty): **209 success, 67 failure, 64 cancelled**; queued/in-progress: **0**.
+- Natural push run [#339](https://github.com/Batmancpu/CurrentLens/actions/runs/42478159581) and PR run [#340](https://github.com/Batmancpu/CurrentLens/actions/runs/42478162564) passed on exact parent SHA `d21ff270011b80ff6fd4ad6fcbaf7ce15cb8b494`. Full job logs show WordNet builder tests and offline database generation (151,456 unique words; 50,950,144 bytes), `:app:testDebugUnitTest`, `:app:assembleDebug` and APK artifact upload all succeeded; build completed successfully in 1m 30s. Publish jobs skipped.
+- PR artifact [#13616009073](https://github.com/Batmancpu/CurrentLens/actions/runs/42478162564/artifacts/13616009073) is 39,119,842 bytes; ZIP SHA-256 `59fb508f433027c43183c24dc34ba205b326f2b080761c92705acc51ffe815cb`; expires 22 November 2026 12:01:55 UTC. Push artifact #13616506663 is 39,119,834 bytes; ZIP SHA-256 `5b9eb6bc4804f99ae5dead80b187545ecc093b7ca2120b3910e92901bee9d42b`.
+- These runs validate only the parent SHA. Natural CI for implementation commit `21fee7f6` and the following documentation head is pending; no pass is claimed for the new Saved-feed change.
+- Active `.github/workflows/build-apk.yml` uses read-only build/test permissions and natural push/pull_request triggers for main, PR #16's base and this branch; Release write is isolated to main pushes. Main's own workflow remains push-only with broader write permission. Latest published Release remains `v0.2.0-build-116` (6 November 2026 11:18:59 UTC); no Release was created.
+
+## Implementation — one Saved-feed relevance index
+- SavedFeed previously classified each saved article separately to build Subject choices, again inside `StudyStatsPolicy.filterArticles`, and again when a visible `NewsCard` had no relevance override.
+- It now builds one `ArticleRelevanceIndexPolicy` map keyed by the actual classifier inputs (article ID, title and description), then reuses it for Subject choices, GS/Subject/date filtering and visible saved cards. Changes to publication date, source, section or image do not invalidate the classifier result.
+- `StudyStatsPolicy.filterArticles` accepts an optional cached map and preserves its original classifier fallback for callers that do not supply one or whose article ID is absent. Filter semantics, Asia/Kolkata publication-date handling, bookmark identity, previously-opened behaviour and saved-card presentation are unchanged.
+
+## Coverage and paired-cost matrix — Saved
+| Screen/component | Material tier / reason | Effect and capture scope | Reuse / fallback | Accessibility and tests | Measured result |
+|---|---|---|---|---|---|
+| Saved filter group | Tier 2 interactive glass; Published/GS/Subject choices need one coherent control hierarchy | Existing single `GlassFilterGroup` Prismal draw; no new surface, capture or readback | Existing `GlassFilterPill`, shared Clear↔Frosted tokens and low-effects fallback | Selected radio semantics and 48dp minimum targets retained; existing filter tests | Render-pass delta 0; device visuals UNVERIFIED |
+| Saved article cards | Tier 4 high-contrast content; headlines and imagery remain readable | Standard NewsCard surface; one Coil request/decode and existing cached palette glow | Same relevance map feeds the card's syllabus metadata; existing single-decode path unchanged | Bookmark target and article semantics unchanged; JVM filter/index tests | No additional blur/capture/decode; frame/memory/battery effects UNVERIFIED |
+
+## Paired optimization, tests and next step
+- Keyword classification changes from separate subject/filter passes plus per-visible-card classification to **one index build per relevant content-input change**; subsequent filter changes use map lookups while retaining the existing date/sort work. The index is invalidated only by ID/title/description changes.
+- Added `StudyStatsTest.savedArticleFiltersReuseSuppliedRelevanceIndex`, deliberately supplying a cached GS III/Economy result for a headline that would otherwise classify as GS II/Constitution. The existing no-map test continues to cover the fallback path.
+- No Prismal/AGSL surface, blur/refraction, shader, graphics layer, backdrop capture/readback, image decode, dependency, timer, polling, network request, persistence path or quiz-data change was introduced. This is a source-level CPU-work reduction; no frame-time, memory, battery or thermal improvement is claimed without measurement.
+- Next: inspect natural CI for the exact new branch head and full logs/artifact, then continue the final whole-app visual/accessibility/performance audit. OPPO Reno10 launch, screenshots, TalkBack, font scaling, Reduce Motion, IME, Perfetto/frame jank, GPU overdraw, allocations/memory, thermal and battery remain **UNVERIFIED**. No main write, PR merge/retarget, manual dispatch/rerun, Release publication, package identity change or source-branch deletion.
+
+---
+
 # Live implementation batch — Reader completion chrome reveal
 **Audit:** 8 November 2026, 13:26 IST  
 **Source branch / SHA before this batch:** `black-box-bihar-news@5f7e8cfe7c536dec2923a67348fb028916ca637c`  

@@ -1,28 +1,35 @@
-# Latest live branch/PR/CI audit — 8 November 2026, 14:23 IST
+# Latest live branch/PR/CI audit — 8 November 2026, 18:38 IST
 
 **Repository:** `Batmancpu/CurrentLens`  
 **Default:** `main@73b8a0d1ba33503fede02db2c3c0af082d724a12` (unchanged).  
-**Active:** `black-box-bihar-news@d5fab2ae9aa097e24180d831d6e0e8d64e441b43`, PR #34 open/draft → main; **138 ahead / 0 behind main** and **81 ahead / 0 behind** PR #16's corrected background-only Prismal/stability head `6ab1e6a02ac8e91027f21900d64d63b9f2e6a890`.  
-**Inventory:** 44 remote branches (44 + 0 pagination); 41 PRs (27 open, 14 closed). No source branch was deleted or modified.
+**Active code line:** `black-box-bihar-news@21fee7f625a211962bd9e94c0846226d0501196d`, PR #34 open/draft → main; **145 ahead / 0 behind main**, **88 ahead / 0 behind PR #16**. The documentation audit commit is a direct child of this code commit.  
+**Inventory:** 44 remote branches (44 + 0 pagination); 41 PRs (27 open, 14 closed; 0 additional PRs). No source branch was deleted or modified.
 
 ## Baseline decision and branch freshness
-- The owner-selected black-box branch remains the latest coherent UI integration line: it is a direct descendant of PR #16, retains the corrected background-only root capture and consolidated Reader/Search/feed-navigation implementation, and contains the latest verified UI state.
-- PR #36 is a 3-commit/20-behind Today-date branch; its isolated Asia/Kolkata calendar policy was selectively ported into black-box without copying its older MainActivity. Source PR #36 exact head passed natural run #268; the integration commit requires its own exact-head CI.
-- PR #37's RowScope repair, PR #30's 48dp target policy, PR #31's off-main appearance restore, PR #13's conservative 8×8 luminance probe and the prior PR #19/#20 work are represented in the active tree.
-- PR #39 remains separate: owner-managed secrets and a first-install/local-data migration decision are required. PRs #40/#41 are unvalidated main-based RSS security/field-bound proposals; PR #38 and #32/#33 overlap parser/network code. The divergent brrrNEWS and stale Liquid Glass/v0.3 branches are not baselines.
+- The owner-selected `black-box-bihar-news` line remains the freshest coherent UI baseline: direct descendant of PR #16, preserving the corrected background-only Prismal root capture, Reader/Search/feed-navigation work, the shared material system and the current app architecture. PR #34 remains the only consolidation PR updated by this task; it is open/draft and based on main.
+- PR #41's newest head `f3fa5daf3242e4d69b1db4666eca3b009821c6e2` is 12 ahead / 145 behind the active line and changes only RSS field/XML parsing, NewsRepository, build/test dependency and parser tests. It is not a newer UI baseline and does not overlap SavedFeed/StudyStats. PR #40 `552b96e7948ac5ade821a711ea8dd225984824a9` is 6 ahead / 145 behind and is a separate RSS article-host/redirect policy. Both remain separate review streams; neither was cherry-picked.
+- PR #39 `4250de5040a8ca0efbf96a990218ef7d69ef26e8` is 6 ahead / 10 behind and touches workflow, Gradle signing and release/migration docs only; owner-managed secrets and first-install/local-data migration approval remain required. PR #37's RowScope repair, #30's 48dp target policy, #31's off-main appearance restore and #13's conservative shared luminance probe are already represented.
+- The older `brrrNEWS` line is 4 ahead / 51 behind; its fixed-intensity supporting material is superseded by the active Clear↔Frosted GlassSurfacePolicy. `ui/liquid-glass-performance` is 3 ahead / 163 behind; `redesign/v0.3-search-reader` is 239 behind. Neither is a safe baseline. PR #16 remains an ancestor; PR #19/#20 work is consolidated only on this branch.
 - No main write, merge, retarget, force update, source-branch mutation, manual workflow dispatch/rerun or Release publication.
 
 ## Actions, workflow and Release
-- Exact parent PR run [#326](https://github.com/Batmancpu/CurrentLens/actions/runs/42461549072) and push run [#325](https://github.com/Batmancpu/CurrentLens/actions/runs/42461544503) passed on `d5fab2ae9aa097e24180d831d6e0e8d64e441b43`: WordNet 4/4; 151,456 unique words / 50,950,144-byte database; `:app:testDebugUnitTest`; `:app:assembleDebug`; APK artifact upload. Build successful in 1m 9s; Release job skipped.
-- PR artifact #13610236262: 39,118,591 bytes; ZIP SHA-256 `db1f34ac9d690e85d398f5b25d5defea6686b5af477b6f70653f3b5fdf464b44`; expires 22 November 2026 08:09 UTC.
-- Actions history: 326 runs (195 success, 67 failure, 64 cancelled); active/queued 0. `.github/workflows/build-apk.yml` uses read-only build/test permissions, natural push/PR validation for main, PR #16's base and black-box, and a separate main-push-only Release-write job. Latest published Release remains `v0.2.0-build-116`; no Release was published.
+- Fully paginated **340 Actions runs** (100 + 100 + 100 + 40; page 5 empty): **209 success, 67 failure, 64 cancelled**; queued/in-progress: **0**.
+- Natural push [#339](https://github.com/Batmancpu/CurrentLens/actions/runs/42478159581) and pull-request [#340](https://github.com/Batmancpu/CurrentLens/actions/runs/42478162564) passed on parent SHA `d21ff270011b80ff6fd4ad6fcbaf7ce15cb8b494`. Full job logs: WordNet builder/database (151,456 unique words; 50,950,144 bytes), `:app:testDebugUnitTest`, `:app:assembleDebug` and artifact upload succeeded; build completed in 1m 30s; publish jobs skipped.
+- PR artifact #13616009073: 39,119,842 bytes, ZIP SHA-256 `59fb508f433027c43183c24dc34ba205b326f2b080761c92705acc51ffe815cb`, expires 22 November 2026 12:01:55 UTC. Push artifact #13616506663: 39,119,834 bytes, ZIP SHA-256 `5b9eb6bc4804f99ae5dead80b187545ecc093b7ca2120b3910e92901bee9d42b`.
+- The Saved-feed code commit `21fee7f6` and its documentation child require their own natural CI; parent #339/#340 do not validate them. `.github/workflows/build-apk.yml` on this branch has read-only build/test permissions, natural push/PR validation for main, PR #16's base and black-box, and a separate main-push-only Release-write job. Main's workflow remains push-only with broader write permission.
+- Latest published Release: `v0.2.0-build-116`, published 6 November 2026 11:18:59 UTC. No Release was created.
+
+## Current implementation batch — Saved-feed relevance reuse
+- `SavedFeed` now creates one stable relevance index keyed by article ID/title/description and reuses it for Subject options, GS/Subject/date filtering and visible saved NewsCards. `StudyStatsPolicy.filterArticles` accepts the optional map but keeps its classifier fallback. The existing filter, publication-date, bookmark and previously-opened semantics are unchanged.
+- Added `StudyStatsTest.savedArticleFiltersReuseSuppliedRelevanceIndex`; the test intentionally supplies a cached classification that differs from the headline's default mapping, while the existing test still covers the no-map fallback.
+- Paired cost: no new material, blur, refraction, graphics layer, capture/readback, image decode, dependency, timer, network or persistence path. Classifier work is reduced at source level; no measured frame/memory/battery improvement is claimed. OPPO Reno10 and all device-backed visual/accessibility/performance checks remain UNVERIFIED.
 
 ## Complete remote branch inventory (44)
 
 | Branch | Exact head SHA | Latest commit UTC | Latest commit message | PR relationship / disposition |
 |---|---|---|---|---|
 | `a11y/48dp-icon-targets-2026-11-07` | `25107ce905b70bde1a41282ffd1d606819ebf58d` | 2026-11-07 11:02:12Z | test(a11y): cover minimum icon action target | PR #30 open head; policy represented |
-| `black-box-bihar-news` | `d5fab2ae9aa097e24180d831d6e0e8d64e441b43` | 2026-11-08 08:07:02Z | docs(reader): scope chrome policy comments correctly | PR #34 open/draft head; active integration |
+| `black-box-bihar-news` | `21fee7f625a211962bd9e94c0846226d0501196d` | 2026-11-08 13:07:31Z | perf(saved): reuse cached relevance across filters and cards | PR #34 open/draft; code head for this audit (documentation commit is its direct child) |
 | `brrrNEWS` | `e6fcfc25a4c8d5f363ced58f313552120aa7ff96` | 2026-11-07 04:13:30Z | ui: consolidate lightweight supporting glass surfaces | PR #24 open base; divergent/superseded material |
 | `ci/read-only-pr-validation-isolated-release-write-2026-11-06` | `963118f0abe5f7e38f2aa66a49d4b8e74548660c` | 2026-11-06 17:18:53Z | ci: validate pull requests with read-only build permissions | PR #18 open head; compatible workflow intent represented |
 | `ci/stacked-pr-validation-2026-11-07` | `5dc3179361835b77fb3186a99d9b5791301463fd` | 2026-11-06 21:41:27Z | ci: restore Android SDK setup before sdkmanager | PR #20 closed/merged into black-box only |
@@ -49,10 +56,10 @@
 | `fix/startup-crash-diagnostics-feed-jank-2026-11-06` | `5da4e789b0f49c0eefda024410ade34c1e0f2a7c` | 2026-11-06 07:39:53Z | fix: diagnose launch crashes and move feed indexing off main | PR #9 merged into main |
 | `fix/startup-stability-performance-2026-11-06` | `654e660347de692ef88531dfa49c610269d69671` | 2026-11-06 07:18:06Z | fix: harden cold start and reduce feed rendering workload | PR #7 merged into main |
 | `fix/today-ist-midnight-rollover-2026-11-08` | `5fbd14e6ef9be33d04a882ba463d4c72473419e2` | 2026-11-07 20:48:43Z | test(today): cover Asia/Kolkata midnight rollover | PR #36 open head; selected and ported in this batch |
-| `fix/validate-rss-article-hosts-2026-11-08` | `dcdbce939d0626767163f6133a42b60d23af7e57` | 2026-11-08 06:52:22Z | Test publisher-bound RSS article URLs | PR #40 open head; unvalidated NewsRepository/security proposal |
+| `fix/validate-rss-article-hosts-2026-11-08` | `552b96e7948ac5ade821a711ea8dd225984824a9` | 2026-11-08 10:34:28Z | fix(rss): keep redirect result non-null | PR #40 open head; separate main-based RSS URL/redirect review |
 | `main` | `73b8a0d1ba33503fede02db2c3c0af082d724a12` | 2026-11-06 11:16:35Z | Correct icon artwork accessibility name to brrrNews | Default branch; base of open PRs #6, #8, #12, #13, #17, #18, #21, #40 and #41 |
 | `perf/bound-rss-entry-parsing-2026-11-08` | `adade1ed8494c66b7e567de87f61f3dac3da7788` | 2026-11-08 03:31:36Z | fix(test): correct RSS budget test identifier | PR #38 open head; parser overlap with #32/#33 |
-| `perf/bound-rss-field-values-2026-11-08` | `fb5f7517e8b03d92d72964622a156a68ff1f6397` | 2026-11-08 08:36:27Z | Test Unicode-safe RSS field bounds | PR #41 open head; unvalidated main-based parser proposal |
+| `perf/bound-rss-field-values-2026-11-08` | `f3fa5daf3242e4d69b1db4666eca3b009821c6e2` | 2026-11-08 12:48:49Z | fix(rss): guard nullable XHTML block names | PR #41 open head; separate main-based parser proposal |
 | `perf/bound-startup-diagnostic-reads-2026-11-07` | `c4a977831846224182f16981b15e5c803761e26d` | 2026-11-07 17:34:16Z | Record successful bounded-diagnostic CI | PR #35 open head; diagnostic-only |
 | `perf/bounded-read-history-2026-11-07` | `910178af3f595993557533cb65d03e714bcd7760` | 2026-11-06 23:53:04Z | Verify legacy markers survive recent-history retention | PR #22 open head; legacy markers retained |
 | `perf/bounded-rss-fetch-concurrency-2026-11-07` | `8c56c98c83cc69451f128aa259df86a8ce28f43a` | 2026-11-07 11:29:26Z | docs: record bounded RSS fetch review and CI state | PR #32 open head; parser/network review |
@@ -103,14 +110,14 @@
 | #31 | open/draft | `perf/off-main-appearance-preferences-2026-11-07@bc48daec98ff076c9db3c2c69084d9b08cd0bbce` | `black-box-bihar-news@ee82dfde140aeb0d1ca80146379a0a2818c695df` | 2026-11-07T11:14:31Z |
 | #32 | open/draft | `perf/bounded-rss-fetch-concurrency-2026-11-07@8c56c98c83cc69451f128aa259df86a8ce28f43a` | `black-box-bihar-news@ee82dfde140aeb0d1ca80146379a0a2818c695df` | 2026-11-07T11:30:22Z |
 | #33 | open/draft | `fix/resolve-relative-atom-links-2026-11-07@c97d6b960e2cc6b93ac6444ebf9ceb6eabd320a4` | `black-box-bihar-news@48b54808807f5b15e637b6177524fd923741e1f7` | 2026-11-07T14:59:51Z |
-| #34 | open/draft | `black-box-bihar-news@d5fab2ae9aa097e24180d831d6e0e8d64e441b43` | `main@73b8a0d1ba33503fede02db2c3c0af082d724a12` | 2026-11-08T08:07:11Z |
+| #34 | open/draft | `black-box-bihar-news@21fee7f625a211962bd9e94c0846226d0501196d` | `main@73b8a0d1ba33503fede02db2c3c0af082d724a12` | 2026-11-08T13:07:34Z |
 | #35 | open/draft | `perf/bound-startup-diagnostic-reads-2026-11-07@c4a977831846224182f16981b15e5c803761e26d` | `black-box-bihar-news@ed6c94190296c8d7af400b80f6fe26f2252fafe1` | 2026-11-07T17:34:25Z |
 | #36 | open/draft | `fix/today-ist-midnight-rollover-2026-11-08@5fbd14e6ef9be33d04a882ba463d4c72473419e2` | `black-box-bihar-news@4a7a8f8c1db651d8b06d636836c8221569938ff8` | 2026-11-07T20:48:45Z |
 | #37 | open/draft | `fix/search-clear-row-scope-compile-2026-11-08@9dd4ceac08e88e6ee4ea565025a70539a6e9e331` | `black-box-bihar-news@d451d22518b8065e2865dae6b40679c3d7b41dc2` | 2026-11-07T22:51:33Z |
 | #38 | open/draft | `perf/bound-rss-entry-parsing-2026-11-08@adade1ed8494c66b7e567de87f61f3dac3da7788` | `black-box-bihar-news@c7d50bb2bafe29a43c106e4fb71b607e9830adea` | 2026-11-08T03:34:06Z |
 | #39 | open/draft | `fix/stable-release-signing-2026-11-08@4250de5040a8ca0efbf96a990218ef7d69ef26e8` | `black-box-bihar-news@cc5a01b4e95b8f1250e5d0dda7535e8a485c7d84` | 2026-11-08T07:06:50Z |
-| #40 | open/draft | `fix/validate-rss-article-hosts-2026-11-08@dcdbce939d0626767163f6133a42b60d23af7e57` | `main@73b8a0d1ba33503fede02db2c3c0af082d724a12` | 2026-11-08T06:53:49Z |
-| #41 | open/draft | `perf/bound-rss-field-values-2026-11-08@fb5f7517e8b03d92d72964622a156a68ff1f6397` | `main@73b8a0d1ba33503fede02db2c3c0af082d724a12` | 2026-11-08T08:36:38Z |
+| #40 | open/draft | `fix/validate-rss-article-hosts-2026-11-08@552b96e7948ac5ade821a711ea8dd225984824a9` | `main@73b8a0d1ba33503fede02db2c3c0af082d724a12` | 2026-11-08T10:34:40Z |
+| #41 | open/draft | `perf/bound-rss-field-values-2026-11-08@f3fa5daf3242e4d69b1db4666eca3b009821c6e2` | `main@73b8a0d1ba33503fede02db2c3c0af082d724a12` | 2026-11-08T12:48:59Z |
 
 ---
 
