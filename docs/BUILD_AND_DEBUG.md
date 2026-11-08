@@ -184,3 +184,15 @@ CI establishes that the code compiles and JVM tests pass. It cannot establish th
 - Latest published Release remains `v0.2.0-build-116`. No feature-branch Release was created; no manual dispatch/rerun.
 - Existing deprecation warnings (WebView scale, Compose updateTransition, ArrowBack icon, Node.js 20 action runtime, punycode and url.parse) are non-blocking and remain outside this repair.
 - OPPO device launch, screenshots, accessibility, animation, Perfetto/frame timing, GPU/memory/thermal/battery remain UNVERIFIED.
+
+## 8 November 2026 — verified main APK signing discontinuity
+
+- Main runs #112 and #116 were both successful push builds for com.mangoloads.currentlens, versionCode=2, versionName=0.2.0.
+- Downloaded and inspected their actual APKs from Actions artifacts #13497753209 and #13497522975. The APK v2 signing-block certificates differ:
+  - Run #112: dba85a1c1ac6b3a7b829850353724e7a847e2fa456a13ab3f983d66c245f30dd.
+  - Run #116: 28c1fc47020366d8ad1fd689935039b7b3c8b79675e93112a68e2e47452adb64.
+- This is artifact-level evidence that the default runner debug signing identity changed between main builds. Android rejects an in-place update when package signatures differ.
+- The integration branch's stable cached key is used only when -PstabilityTest=true; main does not set that flag and still falls back to the runner debug key.
+- Proposed stacked draft branch: fix/stable-release-signing-2026-11-08 (base black-box-bihar-news). It requires a private main-release keystore in four GitHub Actions secrets, fails closed if missing, and verifies the built APK's signer certificate against the configured keystore before upload.
+- CI on the non-main branch can verify the separate Stability key path. The main secret-backed signing path remains unverified until the owner configures the secrets and a main push runs naturally.
+- Migration risk: the private keys for builds #112/#116 cannot be recovered from the APK certificates. The first stable-key APK cannot update those installs; allowBackup=false means uninstall removes local data. Owner acknowledgement/data-preservation decision is required before merge or first stable-key Release.

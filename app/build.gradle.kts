@@ -1,9 +1,31 @@
+import org.gradle.api.GradleException
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.plugin.compose")
 }
 
 val stabilityTestBuild = providers.gradleProperty("stabilityTest").orNull == "true"
+val requireStableSigning = providers.gradleProperty("requireStableSigning").orNull == "true"
+val signingStoreFile = providers.environmentVariable("CURRENTLENS_SIGNING_KEYSTORE_PATH").orNull?.let { file(it) }
+val signingStorePassword = providers.environmentVariable("CURRENTLENS_SIGNING_STORE_PASSWORD").orNull
+val signingKeyAlias = providers.environmentVariable("CURRENTLENS_SIGNING_KEY_ALIAS").orNull
+val signingKeyPassword = providers.environmentVariable("CURRENTLENS_SIGNING_KEY_PASSWORD").orNull
+
+if (requireStableSigning) {
+    val missing = buildList {
+        if (signingStoreFile == null) add("CURRENTLENS_SIGNING_KEYSTORE_PATH")
+        if (signingStorePassword.isNullOrBlank()) add("CURRENTLENS_SIGNING_STORE_PASSWORD")
+        if (signingKeyAlias.isNullOrBlank()) add("CURRENTLENS_SIGNING_KEY_ALIAS")
+        if (signingKeyPassword.isNullOrBlank()) add("CURRENTLENS_SIGNING_KEY_PASSWORD")
+    }
+    if (missing.isNotEmpty()) {
+        throw GradleException("Stable APK signing is required; missing: ${missing.joinToString()}")
+    }
+    if (signingStoreFile?.isFile != true) {
+        throw GradleException("Stable APK signing keystore does not exist at CURRENTLENS_SIGNING_KEYSTORE_PATH")
+    }
+}
 
 android {
     namespace = "com.mangoloads.currentlens"
@@ -20,12 +42,12 @@ android {
     }
 
     signingConfigs {
-        if (stabilityTestBuild) {
-            create("stability") {
-                storeFile = rootProject.file(".ci/stability-debug.keystore")
-                storePassword = "currentlens-stability-test-only"
-                keyAlias = "currentlens-stability"
-                keyPassword = "currentlens-stability-test-only"
+        if (requireStableSigning) {
+            create("stable") {
+                storeFile = signingStoreFile!!
+                storePassword = signingStorePassword!!
+                keyAlias = signingKeyAlias!!
+                keyPassword = signingKeyPassword!!
             }
         }
     }
@@ -35,7 +57,9 @@ android {
             if (stabilityTestBuild) {
                 applicationIdSuffix = ".stability"
                 versionNameSuffix = "-stability"
-                signingConfig = signingConfigs.getByName("stability")
+            }
+            if (requireStableSigning) {
+                signingConfig = signingConfigs.getByName("stable")
             }
         }
     }

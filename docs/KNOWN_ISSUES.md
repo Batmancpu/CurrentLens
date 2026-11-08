@@ -171,3 +171,12 @@ Snapshot main: 73b8a0d1ba33503fede02db2c3c0af082d724a12 (6 Nov 2026).
 - Correction: `.semantics { this.selected = chosen }`. The change is one line, preserves the intended selected-state semantics and does not alter quiz answer/scoring/submission persistence.
 - PR #28's direct child commit was fast-forwarded into the active integration branch. Natural run #209 passed on the exact code head in PR context; natural active-branch run #210 passed the same exact SHA with `:app:testDebugUnitTest`, `:app:assembleDebug` and artifact upload.
 - This is a compile defect, not evidence of a device crash. TalkBack selected-state behaviour, font scaling and physical-device layout still require a real-device check.
+
+### KL-021 — Main APK signing identity changes between CI runs
+
+- Status: Verified from two downloaded main-branch APK artifacts; proposed fix is a draft stacked PR.
+- Main run #112 (commit 3cf4a1e9368cc6c74be6bb2e7711ffa113149c30, artifact 13497753209) and run #116 (commit 73b8a0d1ba33503fede02db2c3c0af082d724a12, artifact 13497522975) both build com.mangoloads.currentlens, versionCode 2, but their APK v2 signer certificate SHA-256 fingerprints differ: dba85a1c1ac6b3a7b829850353724e7a847e2fa456a13ab3f983d66c245f30dd vs 28c1fc47020366d8ad1fd689935039b7b3c8b79675e93112a68e2e47452adb64.
+- Main has no explicit signing config and no stable-keystore restore; it relies on the runner's default debug key. The active integration branch's cached key is selected only for Stability builds; main still uses the default.
+- Consequence: Android cannot update one of these APKs over the other. The next main APK is not guaranteed to update over the currently installed one either.
+- Proposed correction: use one private PKCS#12 key from GitHub Actions secrets for all main APKs, retain the separate .stability test key for branch builds, and verify the APK certificate against the configured keystore before artifact upload/release. Main build fails closed when signing secrets are absent.
+- Unavoidable migration: the private keys behind the old APK certificates cannot be reconstructed from public certificates. The first new stable-key APK will not update builds #112/#116; allowBackup=false means uninstalling loses local app data. Do not merge/publish until the owner accepts this and chooses a data-preservation path.

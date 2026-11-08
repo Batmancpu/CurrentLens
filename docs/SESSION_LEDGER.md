@@ -429,3 +429,25 @@ Branch: `fix/early-startup-crash-diagnostics-2026-11-06`.
 - **Rendering/cost:** no new Prismal surface, capture/readback, blur/refraction, shader, graphics layer, image decode, dependency, timer, network or persistence operation. Only bounded scalar alpha calculations were added; no measured performance claim.
 - **CI parent evidence:** exact parent SHA passed natural PR run #281 and push run #280. PR #281 full job log: WordNet builder 4/4, 151,456-word dictionary, `:app:testDebugUnitTest`, `:app:assembleDebug`, artifact upload; artifact `13596471410` (39,107,655 bytes). Push #280 also passed all build steps; artifact `13595943420` (39,107,647 bytes). The new commit requires its own natural run; no manual dispatch/rerun.
 - **Unverified:** OPPO Reno10 appearance, launch, visual contrast, accessibility, Reduce Motion, IME, frame timing, GPU overdraw, memory, thermal and battery remain UNVERIFIED. No release, main write, merge or source-branch mutation.
+
+## 8 November 2026 — verify CurrentLens APK update-signing continuity
+
+### Evidence and defect
+
+- Re-enumerated live main, branches, open/closed PRs, Actions history/queue, workflow, latest job logs/artifacts and Releases before repository changes.
+- Main remains 73b8a0d1ba33503fede02db2c3c0af082d724a12. Active integration branch was black-box-bihar-news@cc5a01b4e95b8f1250e5d0dda7535e8a485c7d84; PR #34 is the existing draft consolidation PR.
+- Downloaded the actual APKs from main Actions artifacts #13497753209 (run #112) and #13497522975 (run #116). Both source commits use applicationId=com.mangoloads.currentlens and versionCode=2, but parsing the APK v2 signing block produced different signer certificate SHA-256 fingerprints:
+  - #112: dba85a1c1ac6b3a7b829850353724e7a847e2fa456a13ab3f983d66c245f30dd.
+  - #116: 28c1fc47020366d8ad1fd689935039b7b3c8b79675e93112a68e2e47452adb64.
+- Main's Gradle file has no explicit signing configuration and its workflow does not restore a stable main signing key. The active integration branch configures its cached key only when stabilityTest=true; the main build path does not set that property.
+- Android package updates require a matching signing identity. The old builds therefore cannot update one another. The private keys cannot be recovered from the public certificates.
+- The manifest sets android:allowBackup=false; an uninstall to cross the signing boundary deletes app-private local data. This migration risk is explicit and must be owner-accepted before the first stable-key Release.
+
+### Isolated proposal
+
+- Branch created from the exact active integration SHA: fix/stable-release-signing-2026-11-08, parent cc5a01b4e95b8f1250e5d0dda7535e8a485c7d84.
+- Proposed files: app/build.gradle.kts, .github/workflows/build-apk.yml, scripts/verify_apk_signing.sh, docs/RELEASE_SIGNING.md, plus handoff/issue/build/decision/branch/ledger registers.
+- Main builds require a private PKCS#12 keystore via four GitHub Actions secrets and fail closed when absent. Non-main builds keep the separate cached Stability test key and package suffix. A post-assembly apksigner check compares the APK signer SHA-256 with the certificate exported from the configured keystore before artifact upload.
+- No private key or password is committed. No runtime dependency, permission, network, analytics or telemetry change.
+- The main secret-backed signing path cannot be exercised from a pull_request run; the PR build can verify the Stability-key path. Owner must configure and securely back up the release key before any main push using this workflow.
+- Verification status at authoring: code and docs staged in one branch commit; local shell syntax check and natural PR CI pending. No physical-device test. No direct-main edit, merge, manual dispatch/rerun or Release publication.

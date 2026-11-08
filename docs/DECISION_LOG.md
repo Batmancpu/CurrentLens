@@ -81,3 +81,7 @@ Reuse the current issue's open integration branch/PR and batch related work ther
 ## D-019 — Reduced transparency is a shared low-cost material profile
 
 The Appearance preference is app-wide, persisted locally and defaults off. When enabled, the existing Prismal material remains recognisable through a stronger tint and restrained edge highlight, while blur, refraction, chromatic aberration, depth and shadow are removed and the existing adaptive luminance readback is paused. Do not create a second renderer or backdrop. Slider motion updates a local preview; apply the shared alpha only on drag completion or preset selection so the app root is not persisted/recomposed on every pointer tick. This is an accessibility/low-effects fallback, not a measured performance claim.
+
+## D-020 — Main APKs require one private, stable signing identity
+
+Every APK published from main must use the same private keystore/alias across all builds. Never rely on a GitHub-hosted runner's default debug keystore or an expiring Actions cache as the main release identity. Fail the main build closed if the configured signing secrets are missing. Verify the assembled APK certificate against the configured keystore before uploading or publishing. Keep the separate cached .stability signing key only for non-main test builds. A signing-key transition is a user-data migration event when the old private key is unavailable; do not claim update compatibility or publish until the owner accepts the consequence.

@@ -1,3 +1,17 @@
+## Live snapshot — 8 November 2026, 11:47 IST
+
+- Main: 73b8a0d1ba33503fede02db2c3c0af082d724a12, unchanged.
+- Active integration: black-box-bihar-news@cc5a01b4e95b8f1250e5d0dda7535e8a485c7d84; 135 commits ahead / 0 behind main. PR #34 remains draft/open.
+- Actions: 314 runs fully paginated (188 success, 65 failure, 61 cancelled); queued 0, in-progress 0. Latest exact-head PR run #314 passed on the active integration SHA; JVM unit tests, APK assembly and artifact upload passed. Artifact #13602895434, 39,112,397 bytes, expires 22 Nov 2026. Publish job skipped.
+- Latest Release: v0.2.0-build-116 (6 November 2026); no Release was published by run #314.
+- New verified critical issue: main APK signing is not stable. Actual APK artifacts from main runs #112 and #116 have different v2 signer SHA-256 fingerprints despite the same application ID and versionCode. Android in-place update across those signatures fails. Main relies on the runner's default debug key; PR #34 uses its cached key only for the separate .stability package.
+- Focused proposal: fix/stable-release-signing-2026-11-08, stacked on black-box-bihar-news; a draft PR will be opened after the initial commit. It uses a private main-release keystore supplied through GitHub Actions secrets, verifies the APK signer against that keystore, and fails closed if the secrets are missing.
+- Migration blocker: the old private keys cannot be recovered from the APKs. The first stable-key APK cannot update builds #112/#116; manifest allowBackup=false means uninstall removes local Saved/read/quiz data. Owner acknowledgement and a data-preservation decision are required before merge or first stable-key Release.
+- Other unintegrated material proposals: #27 editorial action gate; #25/#26 publisher resource restrictions; #32 RSS concurrency; #33 relative Atom links; #35 bounded diagnostic reads; #36 IST midnight rollover; #38 per-feed parser entry budget. All are behind/diverged from the active integration branch and must be reconciled there, not blindly merged.
+- Device evidence: no fresh OPPO Reno10 logcat/tombstone, physical cold/warm launch, TalkBack, screenshot, Perfetto/frame-time, GPU/memory/thermal/battery evidence. CI remains build/JVM evidence only.
+- No main edit, PR merge, workflow dispatch/rerun or Release publication.
+
+---
 ## Live snapshot — 8 November 2026, 05:24 IST
 
 - **Main:** `73b8a0d1ba33503fede02db2c3c0af082d724a12`, unchanged.

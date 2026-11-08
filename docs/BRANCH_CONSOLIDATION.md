@@ -1398,3 +1398,11 @@ Repository/default: `Batmancpu/CurrentLens`, default `main@73b8a0d1ba33503fede02
 - This pass adds shared SupportingCardGeometryPolicy tokens and standardises You/Saved/Reading Stats/Quiz Stats supporting surfaces and empty states. Existing static SupportingGlassCard is reused; no additional blur, backdrop capture, sampler, shader, graphics layer, decode, dependency or persistence path. The exact implementation commits are d8b7146e3546e0e248bb5db766ccb0ec8ac09184, 41b572e77f1a7eca48abb11729ac5dd175b3ee69 and dfcc792887cd56d7e5272ca4087c6517c88b3a44.
 - Actions limitation: the connected GitHub actions expose exact-commit PR runs, job steps, logs and artifacts, but no repository-wide list-runs/queue action. Therefore run #256 is the latest verified exact active-branch PR run; the full queue/history could not be independently enumerated in this pass. The connector also exposes no Releases listing action; the last recorded Release v0.2.0-build-116 remains historical, not freshly verified here.
 - New exact-head CI is pending after the code and documentation commits; do not dispatch/rerun. No main change, Release publication, PR merge, source-branch deletion or device-backed performance claim.
+
+## 8 November 2026 — stable main-release signing continuity
+
+- New focused stacked branch: fix/stable-release-signing-2026-11-08.
+- Parent: active integration black-box-bihar-news@cc5a01b4e95b8f1250e5d0dda7535e8a485c7d84.
+- Draft PR will target black-box-bihar-news so the signing fix is reviewed against the same workflow/Gradle baseline as PR #34, without touching main.
+- Motivation is verified APK certificate drift between main runs #112 and #116; details and one-time migration warning are in KL-021 and docs/RELEASE_SIGNING.md.
+- Do not merge/publish before the owner configures the private signing secrets and accepts the unavoidable old-key migration. The old private keys cannot be recovered from the APK certificates.
