@@ -90,3 +90,14 @@ The current RSS registry is publisher-led (The Hindu, Indian Express, BBC, DW an
 ## Additional promotional-framing regression — 8 November 2026
 
 A linked institution, action verb and policy noun are still insufficient when the headline describes media content about the policy rather than a change to it. Synthetic false-positive fixtures now reject “Government announces new movie celebrating the Cinematograph Act”, “Ministry announces documentary portraying celebrity endorsement guidelines”, and “Government announces series featuring film certification rules”. The positive control for a government actually issuing film-certification rules remains eligible. These fixtures test headline framing only; they do not measure live-feed precision or recall.
+
+
+## Reality-show promotion exception-bypass regression — 8 November 2026
+
+| Label | Headline fixture | Expected result | Reason |
+|---|---|---|---|
+| False-positive rejection | “Government announces a new reality show on national sports policy” | Exclude | The government announces entertainment content; the sports-policy phrase is the programme's subject, not a policy action. |
+| False-positive rejection | “Ministry announces a reality show exploring anti-doping rules” | Exclude | Announcing a reality programme does not issue or amend anti-doping rules. |
+| Positive control | “Sports Ministry issues new anti-doping rules” | Include — GS II, Governance | A concrete institutional action changes a specific sports-governance rule. |
+
+These are synthetic regression fixtures, not observed live-feed items or statistical precision/recall evidence.
