@@ -86,6 +86,53 @@ class UpscFeedPolicyTest {
         )))
     }
 
+
+    @Test
+    fun gstCouncilRateDecisionIsEligibleAsGsThreeEconomy() {
+        val story = article(
+            "GST Council cuts GST rates on insurance premiums",
+            "The recommendation changes the indirect-tax treatment of insurance."
+        )
+        val relevance = UpscEngine.classify(story)
+
+        assertTrue(relevance.gsPaper == "GS III")
+        assertTrue(relevance.subject == "Indian Economy")
+        assertTrue(relevance.matchedTerms.contains("gst rate"))
+        assertTrue(UpscFeedPolicy.shouldInclude(story))
+    }
+
+    @Test
+    fun gstCouncilConstitutionalCompositionIsEligibleAsGsTwo() {
+        val story = article(
+            "GST Council composition and voting structure under Article 279A",
+            "The constitutional body reflects Centre-State representation."
+        )
+        val relevance = UpscEngine.classify(story)
+
+        assertTrue(relevance.gsPaper == "GS II")
+        assertTrue(relevance.subject == "Constitution")
+        assertTrue(UpscFeedPolicy.shouldInclude(story))
+    }
+
+    @Test
+    fun genericGstCouncilNameAloneDoesNotQualifyRoutineMeeting() {
+        assertFalse(UpscFeedPolicy.shouldInclude(article(
+            "GST Council holds a routine meeting",
+            "Officials discuss routine administrative arrangements."
+        )))
+    }
+
+    @Test
+    fun unrelatedTechnologyStoryCannotBorrowGstCouncilSignal() {
+        val story = article(
+            "Technology platform launched for GST Council event",
+            "A software vendor demonstrates an event-logistics dashboard."
+        )
+
+        assertTrue(UpscEngine.classify(story).subject == "Science & Technology")
+        assertFalse(UpscFeedPolicy.shouldInclude(story))
+    }
+
     @Test
     fun unrelatedWordArbitraryCannotBecomeAnRbiSyllabusSignal() {
         assertFalse(UpscFeedPolicy.shouldInclude(article(
