@@ -18,6 +18,21 @@ class FeedFieldPolicyTest {
     }
 
     @Test
+    fun textBoundsDoNotSplitSupplementaryCharacters() {
+        val title = "a".repeat(FeedFieldPolicy.MAX_TITLE_SOURCE_CHARS - 1) + "😀tail"
+        val description = "d".repeat(FeedFieldPolicy.MAX_DESCRIPTION_SOURCE_CHARS - 1) + "😀tail"
+
+        assertEquals(
+            "a".repeat(FeedFieldPolicy.MAX_TITLE_SOURCE_CHARS - 1),
+            FeedFieldPolicy.titleSource(title)
+        )
+        assertEquals(
+            "d".repeat(FeedFieldPolicy.MAX_DESCRIPTION_SOURCE_CHARS - 1),
+            FeedFieldPolicy.descriptionSource(description)
+        )
+    }
+
+    @Test
     fun shortTextIsPreservedWithoutTruncation() {
         assertEquals("A policy headline", FeedFieldPolicy.titleSource("A policy headline"))
         assertEquals("A useful RSS excerpt", FeedFieldPolicy.descriptionSource("A useful RSS excerpt"))
