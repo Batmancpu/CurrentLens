@@ -4288,12 +4288,9 @@ private fun AppearanceGlassEditor(
     }
 
     Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(24.dp),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
-            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
-        ) {
+        // This interactive panel uses the shared static supporting-glass tier.
+        // The compact preview below remains the only live Prismal surface in this editor.
+        SupportingGlassCard(modifier = Modifier.fillMaxWidth()) {
             Column(Modifier.fillMaxWidth().padding(18.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
                     Text("Liquid Glass", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
