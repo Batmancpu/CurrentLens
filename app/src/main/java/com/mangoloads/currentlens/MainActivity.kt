@@ -21,6 +21,7 @@ import android.webkit.CookieManager
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import androidx.activity.ComponentActivity
+import androidx.lifecycle.lifecycleScope
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.compose.animation.AnimatedContent
@@ -203,20 +204,41 @@ import kotlin.math.roundToInt
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.launch
 
 private const val INDIA_ZONE = "Asia/Kolkata"
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: android.os.Bundle?) {
         super.onCreate(savedInstanceState)
-        LaunchCrashDiagnostics.recordStage(applicationContext, "MainActivity.onCreate entered")
-        val previousCrashReport = LaunchCrashDiagnostics.read(this)
-        if (previousCrashReport != null) {
-            this.showCrashRecoveryScreen(previousCrashReport)
-            return
+        val startupPlaceholder = android.widget.FrameLayout(this).apply {
+            setBackgroundColor(AndroidColor.rgb(13, 17, 24))
+            addView(
+                android.widget.ProgressBar(this@MainActivity).apply {
+                    contentDescription = "Starting brrrNews"
+                },
+                android.widget.FrameLayout.LayoutParams(
+                    android.widget.FrameLayout.LayoutParams.WRAP_CONTENT,
+                    android.widget.FrameLayout.LayoutParams.WRAP_CONTENT,
+                    android.view.Gravity.CENTER
+                )
+            )
         }
-        LaunchCrashDiagnostics.recordStage(applicationContext, "MainActivity preparing Compose content")
-        setContent {
+        setContentView(startupPlaceholder)
+        lifecycleScope.launch {
+            val previousCrashReport = withContext(Dispatchers.IO) {
+                (application as? CurrentLensApplication)?.awaitStartupDiagnostics()
+                LaunchCrashDiagnostics.read(this@MainActivity)
+            }
+            if (previousCrashReport != null) {
+                showCrashRecoveryScreen(previousCrashReport)
+                return@launch
+            }
+            withContext(Dispatchers.IO) {
+                LaunchCrashDiagnostics.recordStage(applicationContext, "MainActivity.onCreate entered")
+                LaunchCrashDiagnostics.recordStage(applicationContext, "MainActivity preparing Compose content")
+            }
+            setContent {
             val dark = isSystemInDarkTheme()
             val colors = if (dark) {
                 darkColorScheme(
@@ -276,6 +298,7 @@ class MainActivity : ComponentActivity() {
             // Stability packages now enter the complete app directly. The
             // isolated rendering probes remain in source for engineering diagnosis,
             // but are not part of the owner's ordinary launch experience.
+            val startupScope = rememberCoroutineScope()
             var showFullApp by remember { mutableStateOf(true) }
             MaterialTheme(colorScheme = colors) {
                 Surface(
@@ -287,17 +310,23 @@ class MainActivity : ComponentActivity() {
                         BrrrNewsApp()
                     } else {
                         StabilityLaunchProbe {
-                            LaunchCrashDiagnostics.recordStage(
-                                applicationContext,
-                                "Full brrrNews composition requested from stability probe"
-                            )
-                            showFullApp = true
+                            startupScope.launch {
+                                withContext(Dispatchers.IO) {
+                                    LaunchCrashDiagnostics.recordStage(
+                                        applicationContext,
+                                        "Full brrrNews composition requested from stability probe"
+                                    )
+                                }
+                                showFullApp = true
+                            }
                         }
                     }
                 }
             }
+            withContext(Dispatchers.IO) {
+                LaunchCrashDiagnostics.recordStage(applicationContext, "MainActivity.setContent returned")
+            }
         }
-        LaunchCrashDiagnostics.recordStage(applicationContext, "MainActivity.setContent returned")
     }
 }
 
@@ -369,8 +398,11 @@ private fun MainActivity.showCrashRecoveryScreen(report: String) {
     val retryButton = android.widget.Button(this).apply {
         text = "Continue to brrrNews"
         setOnClickListener {
-            LaunchCrashDiagnostics.clear(activity)
-            activity.recreate()
+            isEnabled = false
+            activity.lifecycleScope.launch {
+                withContext(Dispatchers.IO) { LaunchCrashDiagnostics.clear(activity) }
+                activity.recreate()
+            }
         }
     }
     actions.addView(
@@ -415,9 +447,11 @@ private data class LocalAppSnapshot(
 private fun BrrrNewsApp() {
     val context = LocalContext.current
     LaunchedEffect(Unit) {
-        LaunchCrashDiagnostics.recordStage(context, "BrrrNewsApp composition started")
+        withContext(Dispatchers.IO) {
+            LaunchCrashDiagnostics.recordStage(context, "BrrrNewsApp composition started")
+        }
         repeat(3) { withFrameNanos { } }
-        LaunchCrashDiagnostics.markHealthy(context)
+        withContext(Dispatchers.IO) { LaunchCrashDiagnostics.markHealthy(context) }
     }
     val backdrop = rememberPrismalGlassLayer()
     val dark = isSystemInDarkTheme()

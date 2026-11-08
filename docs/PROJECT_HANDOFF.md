@@ -1,3 +1,18 @@
+# CurrentLens — Latest project handoff (8 November 2026)
+
+> This live snapshot supersedes older dated snapshots below where they conflict. Full history remains in SESSION_LEDGER.md.
+
+## Live snapshot — 8 November 2026
+- **Main:** 73b8a0d1ba33503fede02db2c3c0af082d724a12; unchanged.
+- **Active startup work:** draft PR #16, branch fix/early-startup-crash-diagnostics-2026-11-06. The current change moves previous-process inspection, diagnostic file reads/writes, ActivityManager exit-history lookup and recovery clearing off the startup/UI thread. It retains immediate local uncaught-handler installation in attachBaseContext.
+- **Bounded diagnostics:** startup-stage reads <=512 characters; report reads <=30,000 characters; oversized legacy reports are discarded without materialising them. Crash-handler flush remains synchronous on the failing thread.
+- **Verification:** exact-head run #352 passed on the parent commit before this change; it does not validate the new commit. Focused JVM tests are added. Wait for the natural push run; do not dispatch/rerun.
+- **Native crash:** user-reported native cold-start failure remains unverified. This change addresses code-evidenced main-thread diagnostic I/O only; it does not establish crash causality or claim device stability.
+- **Integration PR #34:** black-box-bihar-news@0e94d82be37a891dd4546a3f856a9cd47b5687d6, draft/open, 149 commits ahead of main. Its latest natural PR run #348 passed JVM tests, APK assembly and artifact upload; release job skipped.
+- **Repository Actions:** 352 runs fully paginated (100 + 100 + 100 + 52): 216 success, 67 failure, 69 cancelled; zero queued/running at this snapshot. Main's latest run #116 passed; main remains push-only with workflow-wide contents: write.
+- **Latest Release:** v0.2.0-build-116, published 6 November 2026. No new Release.
+- **Next priorities:** reconcile strict editorial gate PR #27; integrate RSS concurrency/entry limits and relative Atom links; complete publisher image/WebView subresource restrictions; reconcile article-host validation; obtain device-level evidence only if the owner chooses to provide it.
+
 # CurrentLens — Latest project handoff (7 November 2026)
 
 > This is the newest status snapshot and supersedes older dated snapshots below where they conflict. Full chronological context remains in SESSION_LEDGER.md.

@@ -162,3 +162,13 @@ Snapshot main: 73b8a0d1ba33503fede02db2c3c0af082d724a12 (6 Nov 2026).
 - The PR #16 correction exports only the numeric exit reason and numeric status/signal. It no longer forwards the opaque description, importance or memory measurements. Java/Kotlin reports continue to omit exception messages and raw addresses/traces.
 - Added focused JVM assertions for the exact allow-listed summary and the interrupted-startup report. Tests are added, not yet executed for this new commit.
 - This change improves report minimisation only. It does not establish the native launch crash's root cause or prove the app launches on a physical device.
+
+
+### KL-020 — Synchronous diagnostic I/O on the startup main thread
+- **Status:** Code-evidenced cold-start responsiveness risk; correction proposed on draft PR #16. No measured launch-time impact or crash causality is claimed.
+- CurrentLensApplication.attachBaseContext() previously called LaunchCrashDiagnostics.beginStartup() synchronously. That path read the previous startup-stage and crash-report files, queried Android historical process-exit records, and wrote a new stage before AndroidX Startup providers completed.
+- MainActivity.onCreate() also synchronously read the prior report and wrote checkpoints; the Compose startup effect wrote/deleted diagnostic files on the main thread. The recovery retry action synchronously deleted files.
+- Correction: install the uncaught-exception handler immediately in attachBaseContext, but run prior-process inspection, bounded file reads, stage writes, recovery reads and clear operations on Dispatchers.IO. The Activity displays a lightweight native placeholder while the best-effort inspection completes, then selects the native recovery UI or full Compose UI.
+- Startup-stage reads are capped at 512 characters; report reads at 30,000 characters. Oversized legacy reports are discarded by file length without loading them. Crash-handler persistence remains synchronous on the uncaught-exception thread so the report is flushed before the platform handler terminates the process.
+- Focused JVM tests cover bounded prefix reads and oversized/legacy report rejection. Tests are added; natural CI for the new head is pending.
+- This removes diagnostic disk/binder work from the normal startup UI path; it does not prove a measured cold-start improvement or identify/fix the reported native crash. Physical-device verification remains unavailable.

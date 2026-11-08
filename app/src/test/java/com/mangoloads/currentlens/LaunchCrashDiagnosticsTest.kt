@@ -1,5 +1,6 @@
 package com.mangoloads.currentlens
 
+import java.io.File
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -125,6 +126,42 @@ class LaunchCrashDiagnosticsTest {
         assertTrue(LaunchCrashDiagnostics.isKnownLegacyFalsePositive(report))
         assertFalse(LaunchCrashDiagnostics.isKnownLegacyFalsePositive(unrelated))
         assertFalse(LaunchCrashDiagnostics.isKnownLegacyFalsePositive(genuineExceptionReport))
+    }
+
+    @Test
+    fun diagnosticFileReadsStopAtRequestedPrefix() {
+        val file = File.createTempFile("currentlens-diagnostic", ".txt")
+        try {
+            val content = "header\n" + "x".repeat(100_000)
+            file.writeText(content, Charsets.UTF_8)
+
+            assertEquals(content.take(128), LaunchCrashDiagnostics.readTextPrefix(file, 128))
+            assertEquals("", LaunchCrashDiagnostics.readTextPrefix(file, 0))
+        } finally {
+            file.delete()
+        }
+    }
+
+    @Test
+    fun oversizedAndLegacyDiagnosticReportsAreDiscarded() {
+        assertTrue(
+            LaunchCrashDiagnostics.shouldDiscardExistingReport(
+                LaunchCrashDiagnostics.MAX_REPORT_CHARS.toLong() + 1L,
+                ""
+            )
+        )
+        assertTrue(
+            LaunchCrashDiagnostics.shouldDiscardExistingReport(
+                64L,
+                "Device: Example\nBuild fingerprint: private"
+            )
+        )
+        assertFalse(
+            LaunchCrashDiagnostics.shouldDiscardExistingReport(
+                64L,
+                "CurrentLens local startup crash report\nReason: CRASH_NATIVE"
+            )
+        )
     }
 
     @Test
