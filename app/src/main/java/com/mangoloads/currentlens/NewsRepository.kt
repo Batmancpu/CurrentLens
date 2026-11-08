@@ -116,9 +116,23 @@ object NewsRepository {
                         image = null
                     } else if (inItem) {
                         when (tag) {
-                            "title" -> title = clean(FeedFieldPolicy.titleSource(runCatching { parser.nextText() }.getOrDefault("")))
+                            "title" -> title = clean(
+                                FeedFieldPolicy.titleSource(
+                                    FeedXmlTextReader.readElementText(
+                                        parser,
+                                        FeedFieldPolicy.MAX_TITLE_SOURCE_CHARS
+                                    )
+                                )
+                            )
                             "description", "summary", "encoded" -> {
-                                val text = clean(FeedFieldPolicy.descriptionSource(runCatching { parser.nextText() }.getOrDefault("")))
+                                val text = clean(
+                                    FeedFieldPolicy.descriptionSource(
+                                        FeedXmlTextReader.readElementText(
+                                            parser,
+                                            FeedFieldPolicy.MAX_DESCRIPTION_SOURCE_CHARS
+                                        )
+                                    )
+                                )
                                 if (text.length > description.length) description = text
                             }
                             "link" -> {
