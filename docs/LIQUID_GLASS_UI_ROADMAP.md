@@ -1,3 +1,44 @@
+# Live implementation batch — coalesced feed scroll settling (8 November 2026, 22:25 IST)
+
+**Source:** `black-box-bihar-news@5863f29ab4e598230492b8c43d2f0d2d882112d5`  
+**Base:** `main@73b8a0d1ba33503fede02db2c3c0af082d724a12`  
+**PR:** #34 remains open/draft → main; no retarget or merge. This change stays on the owner-selected consolidation branch.
+
+## Freshness and dependency gate
+
+- Re-enumerated all **45 remote branches** (page 1 = 45; page 2 = 0) and **42 PRs** (**28 open / 14 closed**; page 2 = 0). Default branch remains `main`. Before this implementation, `black-box-bihar-news` was **151 ahead / 0 behind main**, with main as merge base; PR #34 head matched it.
+- The only branch ahead of the selected line with a newer timestamp is PR #42, `fix/gst-council-syllabus-disambiguation-2026-11-08@2629cfbe4ee6ece7a41fd13d35dc987abc1e26b8`, **6 ahead / 0 behind**. Its complete comparison is limited to `UpscEngine.kt`, `UpscFeedPolicy.kt`, their tests and `UPSC_EDITORIAL_BASELINE.md`; it is editorial-only and does not change the UI baseline, so it was not ported into this UI pass.
+- PR #16 `fix/early-startup-crash-diagnostics-2026-11-06@ebea0aac68ce2cf17aad376304f7915fe937e807` is **7 ahead / 94 behind** the selected line (merge base `6ab1e6a02ac8e91027f21900d64d63b9f2e6a890`). Its newer diagnostic/startup changes are not Reader/navigation prerequisites and overlap PR #35 diagnostic work; no diagnostic code was copied and no native launch fix is claimed.
+- PR #37's RowScope Search-clear correction is present in the current `SearchMorphField`: the 48dp trailing slot is reserved and `AnimatedVisibility` is inside a `Row`. PR #30's `TouchTargetPolicy`, PR #31's IO-restored appearance preferences and PR #36's Asia/Kolkata day policy are present in the active tree. The old `brrrNEWS` line is **4 ahead / 57 behind**; its 1,104-byte `GlassSurfacePolicy` is superseded by the active 6,222-byte policy covering supporting, transient, preview and filter-control tiers. The stale `ui/liquid-glass-performance` line is **3 ahead / 169 behind**; `redesign/v0.3-search-reader` is **245 behind**. Neither is a baseline.
+- PR #39 remains a separate signing/workflow/Gradle migration requiring owner-managed secrets, certificate pinning and an explicit first-install/local-data migration decision. RSS/parser/network proposals (#25, #26, #32, #33, #38, #40, #41), persistence proposals (#8, #22, #29), and editorial proposals (#6, #21, #27) were not modified by this UI pass. No source branch was deleted or changed.
+
+## Exact parent CI, Actions, workflow and Release
+
+- Exact parent SHA `5863f29ab4e598230492b8c43d2f0d2d882112d5` passed natural push run [#357](https://github.com/Batmancpu/CurrentLens/actions/runs/42498635717) and pull-request run [#358](https://github.com/Batmancpu/CurrentLens/actions/runs/42498640377). Run #358's complete build log confirms WordNet builder **4/4**, offline dictionary generation **151,456 unique words / 50,950,144 bytes**, `:app:testDebugUnitTest`, `:app:assembleDebug`, **BUILD SUCCESSFUL in 1m 12s**, and artifact upload. The separate publish job was skipped.
+- PR artifact [#13624666099](https://github.com/Batmancpu/CurrentLens/actions/runs/42498640377/artifacts/13624666099) is **39,123,522 bytes**, ZIP SHA-256 `9180dff13acee7f4627c6aed120a8afe0ccc15a27b84d1dc134aa588b4540ce9`, expires **22 November 2026 16:13:29 UTC**. It validates the parent SHA only; the new commit below requires its own natural run.
+- Actions history is fully paginated: **360 runs** (**222 success / 68 failure / 70 cancelled**), with **0 queued or in-progress**. Latest global run #360 is PR #42 on its separate editorial head `2629cfbe...`; it does not validate this UI branch. No manual dispatch/rerun.
+- Active branch workflow blob `6cef6ca19f3babd331c9deb59be9da0067c6fa66` has read-only build/test permissions, natural push/PR triggers, and a separate main-push-only Release-write job. Main's workflow remains push-only with workflow-wide `contents: write`; PR #34's natural validation is from the active branch workflow. Latest Release remains `v0.2.0-build-116` (published 6 November 2026 11:18:59Z); no Release was created.
+
+## Implementation — one idle-settle job per scroll gesture
+
+- `BrrrNewsApp` previously cancelled and launched a 550ms coroutine on every non-zero `NestedScrollConnection.onPostScroll` delta. That kept the shared 8×8 adaptive-luminance probe paused correctly, but created avoidable coroutine/job churn during long feed drags and flings.
+- `onPostScroll` now only marks the feed active and cancels a pending settle. The existing 550ms idle settle is scheduled once from `onPostFling`, after the drag/fling has completed; a new delta cancels that pending job. Tab/destination changes and composition disposal retain their existing cancellation/reset paths.
+- Feed direction thresholds, hysteresis, top reset, compact/expanded nav state, eligible destinations, 550ms quiet window, 4s/6s probe cadence, single 8×8 readback source and Reduce Transparency/Reader/Settings/background gates are unchanged. No polling, per-pixel Compose state, second sampler, or additional backdrop source.
+
+## Paired performance and accessibility strategy
+
+- **Render/effect delta:** 0 new or removed Prismal surfaces, blur/refraction passes, backdrop captures/readbacks, shaders, image decodes, graphics layers, dependencies, network calls or persistence operations.
+- **Cost-control change:** removes repeated coroutine creation/cancellation from the scroll-delta path; at most one settle coroutine is created per completed drag/fling. The existing 550ms pause remains, so the shared luminance sampler does not resume during an active gesture.
+- Existing `FeedNavigationPolicyTest` continues to cover directional threshold boundaries, hysteresis, ineligible destinations, top reset and tracker reset. No new pure-policy test was warranted because navigation policy and state transitions are unchanged; the exact-head natural build must compile the new nested-scroll callback.
+- This is source-level cost containment, **not** a measured frame-time, jank, memory, GPU, thermal or battery improvement. OPPO Reno10 screenshots, scroll traces, Perfetto/frame timing, GPU overdraw, allocations/memory, thermal and battery remain **UNVERIFIED**. Startup/launcher stability and native selection behaviour also remain device-unverified.
+
+## Next
+
+- Inspect the new exact-head natural push and PR jobs, complete logs and artifact before another implementation pass. Continue the whole-app coverage audit only where a concrete inconsistency remains; preserve calm high-contrast article/quiz reading surfaces, one background-only root capture, expanded-only tab glyph capture and the existing low-cadence shared luminance probe.
+- No main write, merge, retarget, force update, manual workflow dispatch/rerun, Release publication, package/app identity change or source-branch deletion.
+
+---
+
 # Live implementation batch — Reader hidden-chrome tap reveal (8 November 2026, 21:29 IST)
 
 **Pre-change source:** \`black-box-bihar-news@f65d72488497ed59ed492d4d24b6e8a2572f4185\`  

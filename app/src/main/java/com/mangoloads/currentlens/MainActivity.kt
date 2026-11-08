@@ -133,6 +133,7 @@ import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.unit.Velocity
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
@@ -501,11 +502,9 @@ private fun BrrrNewsApp() {
                 if (!feedNavigationEnabled) return Offset.Zero
                 if (consumed.y != 0f) {
                     if (!feedIsScrolling) feedIsScrolling = true
+                    // A new scroll delta supersedes a pending idle settle. The settle
+                    // coroutine is scheduled once after the nested fling/drag completes.
                     feedScrollSettleJob[0]?.cancel()
-                    feedScrollSettleJob[0] = persistenceScope.launch {
-                        delay(550L)
-                        feedIsScrolling = false
-                    }
                 }
                 // LazyColumn scrolls forward with positive consumed Y; pulling past its
                 // top edge leaves a negative unconsumed delta.
@@ -522,6 +521,22 @@ private fun BrrrNewsApp() {
                 }
                 if (nextCompact != compactNavigation) compactNavigation = nextCompact
                 return Offset.Zero
+            }
+
+            override suspend fun onPostFling(
+                consumed: Velocity,
+                available: Velocity
+            ): Velocity {
+                if (feedNavigationEnabled && feedIsScrolling) {
+                    // Keep adaptive luminance paused for the same 550ms settle window,
+                    // without creating a coroutine for every consumed scroll delta.
+                    feedScrollSettleJob[0]?.cancel()
+                    feedScrollSettleJob[0] = persistenceScope.launch {
+                        delay(550L)
+                        feedIsScrolling = false
+                    }
+                }
+                return Velocity.Zero
             }
         }
     }
