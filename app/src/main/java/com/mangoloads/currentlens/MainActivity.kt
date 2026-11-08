@@ -1457,6 +1457,7 @@ private fun SearchFeed(
                     keyboardController?.hide()
                     showFilters = true
                 },
+                modifier = Modifier.heightIn(min = 48.dp),
                 label = { Text(if (activeFilterCount == 0) "Filters" else "Filters · $activeFilterCount") },
                 leadingIcon = {
                     Icon(Icons.Outlined.Tune, contentDescription = null, modifier = Modifier.size(16.dp))
@@ -1983,6 +1984,44 @@ private fun SupportingEmptyPanel(title: String, description: String) {
 }
 
 @Composable
+private fun GlassFilterPill(
+    label: String,
+    selected: Boolean,
+    onClick: () -> Unit,
+    glassAlpha: Float? = null,
+    reduceTransparency: Boolean? = null
+) {
+    val colors = MaterialTheme.colorScheme
+    val intensity = glassAlpha ?: LocalGlassIntensity.current
+    val lowEffects = reduceTransparency ?: LocalGlassReduceTransparency.current
+    val fillAlpha = GlassSurfacePolicy.filterPillFillAlpha(intensity, selected, lowEffects)
+    val borderAlpha = GlassSurfacePolicy.filterPillBorderAlpha(intensity, selected, lowEffects)
+    val shape = remember { RoundedCornerShape(GlassSurfacePolicy.FILTER_PILL_CORNER_RADIUS_DP.dp) }
+    val fill = (if (selected) colors.primary else colors.surface).copy(alpha = fillAlpha)
+    val rim = (if (selected) colors.primary else colors.outline).copy(alpha = borderAlpha)
+
+    Box(
+        Modifier.clip(shape)
+            .background(fill)
+            .border(1.dp, rim, shape)
+            .selectable(selected = selected, role = Role.RadioButton, onClick = onClick)
+            .widthIn(min = TouchTargetPolicy.MIN_ICON_TARGET_DP.dp)
+            .heightIn(min = TouchTargetPolicy.MIN_ICON_TARGET_DP.dp)
+            .padding(horizontal = 12.dp, vertical = 8.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            label,
+            fontSize = 12.sp,
+            fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium,
+            color = if (selected) colors.onSurface else colors.onSurfaceVariant,
+            maxLines = 1,
+            softWrap = false
+        )
+    }
+}
+
+@Composable
 private fun FilterChipRow(
     title: String,
     options: List<String>,
@@ -1999,19 +2038,10 @@ private fun FilterChipRow(
         ) {
             distinctOptions.forEach { option ->
                 val isSelected = selected == option
-                FilterChip(
+                GlassFilterPill(
+                    label = option,
                     selected = isSelected,
-                    onClick = { onSelected(option) },
-                    modifier = Modifier.widthIn(min = 48.dp).heightIn(min = 48.dp),
-                    label = {
-                        Text(
-                            option,
-                            fontSize = 12.sp,
-                            fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Medium,
-                            maxLines = 1,
-                            softWrap = false
-                        )
-                    }
+                    onClick = { onSelected(option) }
                 )
             }
         }
@@ -2157,19 +2187,10 @@ private fun CompactFilterRow(
         ) {
             distinctOptions.forEach { option ->
                 val isSelected = selected == option
-                FilterChip(
+                GlassFilterPill(
+                    label = option,
                     selected = isSelected,
-                    onClick = { onSelected(option) },
-                    modifier = Modifier.widthIn(min = 48.dp).heightIn(min = 48.dp),
-                    label = {
-                        Text(
-                            option,
-                            fontSize = 12.sp,
-                            fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Medium,
-                            maxLines = 1,
-                            softWrap = false
-                        )
-                    }
+                    onClick = { onSelected(option) }
                 )
             }
         }
@@ -4308,23 +4329,26 @@ private fun AppearanceGlassEditor(
                     Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    FilterChip(
+                    GlassFilterPill(
+                        label = "Clear",
                         selected = selectedPreset == "Clear",
                         onClick = { applyPreset(0.12f) },
-                        modifier = Modifier.heightIn(min = 48.dp),
-                        label = { Text("Clear") }
+                        glassAlpha = previewGlassAlpha,
+                        reduceTransparency = reduceTransparency
                     )
-                    FilterChip(
+                    GlassFilterPill(
+                        label = "Balanced",
                         selected = selectedPreset == "Balanced",
                         onClick = { applyPreset(0.32f) },
-                        modifier = Modifier.heightIn(min = 48.dp),
-                        label = { Text("Balanced") }
+                        glassAlpha = previewGlassAlpha,
+                        reduceTransparency = reduceTransparency
                     )
-                    FilterChip(
+                    GlassFilterPill(
+                        label = "Frosted",
                         selected = selectedPreset == "Frosted",
                         onClick = { applyPreset(0.55f) },
-                        modifier = Modifier.heightIn(min = 48.dp),
-                        label = { Text("Frosted") }
+                        glassAlpha = previewGlassAlpha,
+                        reduceTransparency = reduceTransparency
                     )
                 }
                 Row(

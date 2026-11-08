@@ -133,4 +133,52 @@ class GlassSurfacePolicyTest {
         )
     }
 
+    @Test
+    fun filterPillsTrackClearFrostedIntensityAndSelectionHierarchy() {
+        val clear = AppearancePreferencesPolicy.MIN_GLASS_ALPHA
+        val frosted = AppearancePreferencesPolicy.MAX_GLASS_ALPHA
+
+        assertEquals(0.14f, GlassSurfacePolicy.filterPillFillAlpha(clear, true, false), 0.0001f)
+        assertEquals(0.22f, GlassSurfacePolicy.filterPillFillAlpha(frosted, true, false), 0.0001f)
+        assertEquals(0.04f, GlassSurfacePolicy.filterPillFillAlpha(clear, false, false), 0.0001f)
+        assertEquals(0.06f, GlassSurfacePolicy.filterPillFillAlpha(frosted, false, false), 0.0001f)
+        assertEquals(0.36f, GlassSurfacePolicy.filterPillBorderAlpha(clear, true, false), 0.0001f)
+        assertEquals(0.46f, GlassSurfacePolicy.filterPillBorderAlpha(frosted, true, false), 0.0001f)
+        assertEquals(0.18f, GlassSurfacePolicy.filterPillBorderAlpha(clear, false, false), 0.0001f)
+        assertEquals(0.24f, GlassSurfacePolicy.filterPillBorderAlpha(frosted, false, false), 0.0001f)
+
+        assertTrue(GlassSurfacePolicy.filterPillFillAlpha(clear, true, false) >
+            GlassSurfacePolicy.filterPillFillAlpha(clear, false, false))
+        assertTrue(GlassSurfacePolicy.filterPillBorderAlpha(clear, true, false) >
+            GlassSurfacePolicy.filterPillBorderAlpha(clear, false, false))
+    }
+
+    @Test
+    fun filterPillsUseHigherContrastStaticFallbackWhenTransparencyIsReduced() {
+        val clear = AppearancePreferencesPolicy.MIN_GLASS_ALPHA
+        assertEquals(0.24f, GlassSurfacePolicy.filterPillFillAlpha(clear, true, true), 0.0001f)
+        assertEquals(0.10f, GlassSurfacePolicy.filterPillFillAlpha(clear, false, true), 0.0001f)
+        assertEquals(0.48f, GlassSurfacePolicy.filterPillBorderAlpha(clear, true, true), 0.0001f)
+        assertEquals(0.30f, GlassSurfacePolicy.filterPillBorderAlpha(clear, false, true), 0.0001f)
+        assertEquals(16f, GlassSurfacePolicy.FILTER_PILL_CORNER_RADIUS_DP, 0f)
+    }
+
+    @Test
+    fun nonFiniteFilterPillIntensityUsesTheDefaultPreference() {
+        assertEquals(
+            GlassSurfacePolicy.filterPillFillAlpha(
+                AppearancePreferencesPolicy.DEFAULT_GLASS_ALPHA, true, false
+            ),
+            GlassSurfacePolicy.filterPillFillAlpha(Float.NaN, true, false),
+            0.0001f
+        )
+        assertEquals(
+            GlassSurfacePolicy.filterPillBorderAlpha(
+                AppearancePreferencesPolicy.DEFAULT_GLASS_ALPHA, false, false
+            ),
+            GlassSurfacePolicy.filterPillBorderAlpha(Float.POSITIVE_INFINITY, false, false),
+            0.0001f
+        )
+    }
+
 }

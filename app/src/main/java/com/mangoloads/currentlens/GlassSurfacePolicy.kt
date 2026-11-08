@@ -11,6 +11,7 @@ internal object GlassSurfacePolicy {
     const val TRANSIENT_REFRACTION_HEIGHT_DP = 2.5f
     const val TRANSIENT_REFRACTION_AMOUNT_DP = 3.5f
     const val TRANSIENT_TINT_SCALE = 0.42f
+    const val FILTER_PILL_CORNER_RADIUS_DP = 16f
 
     private const val SUPPORTING_SURFACE_ALPHA_DARK = 0.93f
     private const val SUPPORTING_SURFACE_ALPHA_LIGHT = 0.965f
@@ -64,6 +65,28 @@ internal object GlassSurfacePolicy {
     fun previewSelectedFillAlpha(glassAlpha: Float, reduceTransparency: Boolean): Float {
         val alpha = 0.10f + 0.12f * intensityProgress(glassAlpha)
         return if (reduceTransparency) maxOf(alpha, 0.20f) else alpha
+    }
+
+    fun filterPillFillAlpha(
+        glassAlpha: Float,
+        selected: Boolean,
+        reduceTransparency: Boolean
+    ): Float {
+        val progress = intensityProgress(glassAlpha)
+        val alpha = if (selected) 0.14f + 0.08f * progress else 0.04f + 0.02f * progress
+        val minimum = if (selected) 0.24f else 0.10f
+        return (if (reduceTransparency) maxOf(alpha, minimum) else alpha).coerceIn(0f, 1f)
+    }
+
+    fun filterPillBorderAlpha(
+        glassAlpha: Float,
+        selected: Boolean,
+        reduceTransparency: Boolean
+    ): Float {
+        val progress = intensityProgress(glassAlpha)
+        val alpha = if (selected) 0.36f + 0.10f * progress else 0.18f + 0.06f * progress
+        val minimum = if (selected) 0.48f else 0.30f
+        return (if (reduceTransparency) maxOf(alpha, minimum) else alpha).coerceIn(0f, 1f)
     }
 
     private fun intensityProgress(glassAlpha: Float): Float {
