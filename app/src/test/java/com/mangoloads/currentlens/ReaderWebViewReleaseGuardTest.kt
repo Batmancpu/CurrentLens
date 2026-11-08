@@ -47,4 +47,25 @@ class ReaderWebViewReleaseGuardTest {
             calls
         )
     }
+
+    @Test
+    fun fatalLinkageErrorsPropagateInsteadOfBeingSwallowed() {
+        val guard = ReaderWebViewReleaseGuard()
+        val calls = mutableListOf<String>()
+        var propagated = false
+
+        try {
+            guard.release(
+                listOf(
+                    { calls += "fatal"; throw LinkageError("synthetic fatal linkage failure") },
+                    { calls += "must-not-run-after-fatal-error" }
+                )
+            )
+        } catch (_: LinkageError) {
+            propagated = true
+        }
+
+        assertEquals(true, propagated)
+        assertEquals(listOf("fatal"), calls)
+    }
 }
