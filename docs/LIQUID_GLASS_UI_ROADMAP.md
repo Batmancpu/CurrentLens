@@ -1,3 +1,29 @@
+# Live implementation batch — Unified glass filter-control hierarchy
+**Audit:** 8 November 2026  
+**Active branch / PR:** `black-box-bihar-news`; code commit `a15984673f0b2c8b3cc032a38cfc7d08cdddc87b`; PR #34 remains open/draft against `main@73b8a0d1ba33503fede02db2c3c0af082d724a12`.  
+**Source baseline:** `black-box-bihar-news@df5a75cff6fe9e75570d5daec64cf3d1db8ae726`; the implementation is a direct child. The selected line is 130 commits ahead / 0 behind main and 73 ahead / 0 behind PR #16's corrected background-only Prismal/stability baseline `6ab1e6a02ac8e91027f21900d64d63b9f2e6a890`.
+
+- **Freshness gate:** 41 remote branches and 38 PRs (24 open, 14 closed) were fully paginated. No newer coherent UI baseline supersedes the owner-selected integration line. `brrrNEWS` is a divergent sibling (4 ahead / 35 behind); its earlier supporting-glass implementation is superseded by the more complete current `GlassSurfacePolicy` and shared card system. PR #37's Search RowScope compile repair is already present. PR #36's IST-midnight feed refresh and PR #35's bounded diagnostic reads remain separate changes; PR #38's RSS parser proposal is unported after its natural test failure. PRs #30 (48dp targets) and #31 (off-main appearance restore) are already represented in the active line.
+- **Implementation:** introduced one reusable `GlassFilterPill` for Search's filter sheet, Saved, Reading Stats, Quiz & Practice Stats, and Appearance presets. Selected and unselected fills/rims track Clear↔Frosted intensity; Reduce Transparency applies stronger static contrast floors. The Search “Filters” action now has a 48dp minimum height.
+- **Accessibility:** each choice pill exposes RadioButton role and selected state, has a minimum 48dp width and height, and keeps full labels in horizontally scrollable rows rather than truncating them. Appearance presets use the live preview intensity, not a stale committed value.
+- **Paired optimization:** the pills use static tint and border inside the already-existing `GlassFilterGroup` / `PrismalTransientSurface`; no new Prismal surface, backdrop capture/readback, blur, refraction, shader, graphics layer, image decode, dependency, network request or persistence path was added. No per-chip live glass effect was introduced.
+- **Tests:** `GlassSurfacePolicyTest` now covers Clear/Frosted endpoints, selected-vs-unselected hierarchy, reduced-transparency floors, non-finite preference fallback and the shared 16dp pill geometry.
+- **Natural CI:** exact code head `a15984673f0b2c8b3cc032a38cfc7d08cdddc87b` triggered push run #297 and PR run #298; both were in progress at this documentation sync, so no pass is claimed. The parent head `df5a75cff6fe9e75570d5daec64cf3d1db8ae726` passed natural runs #295 (push) and #296 (PR): WordNet builder 4/4, 151,456-word offline database, `:app:testDebugUnitTest`, `:app:assembleDebug` and APK artifact upload. Parent artifacts: #295 `13600453110` (39,111,082 bytes; SHA-256 `56a1e963541407d28c87dac55cf77761e4dee58fbe2805ad5d8ee29059842c80`); #296 `13600826632` (39,111,083 bytes; SHA-256 `47de6ba07042d58f1539f28689b567f0c72f9cc610faed96dc759b6f3165e3cb`). Those runs validate the parent, not the new filter code.
+- **Actions / workflow:** 296 runs were fully paginated (100 + 100 + 96; page 4 empty): 177 success, 64 failure, 55 cancelled. Before #297/#298 there were no queued or in-progress runs; the two new exact-head runs are the only active work observed. The integration workflow keeps build/test read-only and Release write isolated to main pushes; no manual dispatch/rerun was used.
+- **Release:** latest published tag remains `v0.2.0-build-116`; no Release was published.
+- **Device / performance:** OPPO Reno10 screenshots, TalkBack, font scaling, Reduce Motion, IME/safe-area behaviour, frame timing, GPU overdraw, allocation/memory, thermal and battery remain **UNVERIFIED**. Source inspection establishes only that this batch adds static fills/rims and no new live render pass; no measured performance gain is claimed.
+- **Next:** inspect the natural #297/#298 results on this exact code head, then continue the whole-app filter/secondary-screen consistency audit. No merge, main write, retarget, branch deletion, source-branch mutation or Release publication.
+
+## Coverage and paired-cost matrix — current filter batch
+
+| Screen/component | Material tier / reason | Effect and capture scope | Reuse / fallback | Accessibility and tests | Measured result |
+|---|---|---|---|---|---|
+| Search filter sheet | Interactive control glass; active filter choices need an unmistakable selected state | Static pill fill/rim inside its existing single transient glass surface | Shared `GlassFilterPill` and `GlassSurfacePolicy`; Reduce Transparency raises fill/rim | RadioButton role, selected state, 48dp minimum, horizontal scrolling; policy JVM tests | No new live effect; device metrics UNVERIFIED |
+| Saved / Reading Stats / Quiz Stats filters | Interactive control glass; distinguish Date, GS paper and Subject without adding more glass groups | Static pill fill/rim inside each existing shared `GlassFilterGroup` | Same helper and intensity policy; full option labels remain horizontally scrollable | RadioButton role, selected state, 48dp minimum; policy JVM tests | No new capture/readback; device metrics UNVERIFIED |
+| Appearance presets | Interactive control glass; Clear/Balanced/Frosted should match the live slider preview | Static fill/rim inside the existing Appearance control card | Explicit preview intensity and reduced-transparency state; no extra backdrop consumer | RadioButton role, selected state, 48dp minimum; policy JVM tests | No new live effect; device metrics UNVERIFIED |
+
+---
+
 # Live implementation batch — Shared shell optical clarity and compact-mode source lifecycle
 **Freshness audit:** 8 November 2026, 07:41 IST; **latest code/test-fix head:** 8 November 2026, 07:50 IST; **exact-head CI completed:** 08:23 IST.
 

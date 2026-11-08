@@ -1,3 +1,43 @@
+# Latest live freshness and integration audit — 8 November 2026
+
+**Repository:** `Batmancpu/CurrentLens`  
+**Default branch:** `main@73b8a0d1ba33503fede02db2c3c0af082d724a12`  
+**Owner-selected active line:** `black-box-bihar-news@a15984673f0b2c8b3cc032a38cfc7d08cdddc87b`; parent/source baseline `df5a75cff6fe9e75570d5daec64cf3d1db8ae726`.  
+**PR:** #34 remains open/draft, base `main`; no merge, retarget or main write. The active line is 130 ahead / 0 behind main and 73 ahead / 0 behind PR #16's corrected Prismal/stability head `6ab1e6a02ac8e91027f21900d64d63b9f2e6a890`.  
+**Inventory:** 41 remote branches; 38 PRs (24 open, 14 closed). Page 1 contained all branches/PRs; page 2 was empty for branches, open PRs and closed PRs. The current owner-selected line remains the newest coherent integration baseline, not a timestamp-only choice.
+
+## Relevant branch and PR dispositions
+
+- `black-box-bihar-news` is the only branch modified by this task. Its current code commit is `a15984673f0b2c8b3cc032a38cfc7d08cdddc87b`.
+- `main` remains unchanged. PR #16 remains the corrected background-only Prismal/stability ancestor; PR #34 is the single draft consolidation PR.
+- `brrrNEWS@e6fcfc25a4c8d5f363ced58f313552120aa7ff96` is divergent (4 ahead / 35 behind); its earlier supporting-glass and Saved/You implementation is superseded by the active branch's evolved policy and screen coverage.
+- PR #37 / `fix/search-clear-row-scope-compile-2026-11-08` is 6 ahead / 10 behind from its merge base; the RowScope repair and 48dp Search clear control are already present in active `MainActivity.kt`. Its remaining delta is handoff/ledger documentation, not a newer UI baseline.
+- PR #36's Asia/Kolkata midnight feed refresh remains a separate MainActivity/date-policy change; PR #35's bounded startup diagnostic reads remain a separate diagnostics change. Neither is needed for this filter-control batch.
+- PR #38's bounded RSS parser proposal remains unported: natural run #288 failed two `NewsRepositoryTest` cases and no APK artifact was uploaded. The failure is outside the UI branch.
+- PRs #30 (48dp icon targets) and #31 (off-main appearance preference restore) are represented in the active code. PR #13's conservative shared adaptive-contrast probe remains one 8×8 source at 4s/6s cadence, paused during feed motion and non-home/background states; no second sampler was added.
+- PRs #32/#33 still need joint `NewsRepository` parsing/concurrency review; PRs #25/#26 need a joint publisher asset/subresource host-security review. PR #27 remains newer editorial-only work. These are not UI baselines and were not blindly ported.
+
+## Natural CI, workflow and Release state
+
+- Actions history before the new code commit: 296 runs fully paginated (100 + 100 + 96; page 4 empty): 177 success, 64 failure, 55 cancelled. No older queued/in-progress runs remained.
+- Exact parent-head runs #295 (push) and #296 (pull_request) passed on `df5a75cff6fe9e75570d5daec64cf3d1db8ae726`. Both completed WordNet builder 4/4, 151,456-word database generation, `:app:testDebugUnitTest`, `:app:assembleDebug` and APK artifact upload. Artifacts: #295 `13600453110` (39,111,082 bytes; SHA-256 `56a1e963541407d28c87dac55cf77761e4dee58fbe2805ad5d8ee29059842c80`); #296 `13600826632` (39,111,083 bytes; SHA-256 `47de6ba07042d58f1539f28689b567f0c72f9cc610faed96dc759b6f3165e3cb`).
+- New code head `a15984673f0b2c8b3cc032a38cfc7d08cdddc87b` triggered natural push run #297 and PR run #298; both were in progress at this audit. The parent runs do **not** validate this new commit.
+- Active integration workflow `.github/workflows/build-apk.yml` uses read-only build/test permissions, natural push/PR triggers for the integration line and a separate main-push-only Release-write job. No manual dispatch/rerun was used. Main's workflow remains push-only; do not overstate PR-to-main validation.
+- Latest published Release remains `v0.2.0-build-116`. No Release was created.
+
+## Latest implementation batch — filter-control material consistency
+
+- `GlassFilterPill` now unifies selected/unselected control styling across Search's filter sheet, Saved, Reading Stats, Quiz & Practice Stats and Appearance presets. Choice pills use RadioButton selected semantics and minimum 48dp width/height; Search's Filters action now has a 48dp minimum height.
+- Fill/rim alpha follows Clear↔Frosted and uses higher static opacity floors when Reduce Transparency is enabled. Full option labels remain horizontally scrollable.
+- The change adds only static fills/borders inside existing parent glass surfaces. No new Prismal surface, backdrop capture/readback, blur/refraction, shader, graphics layer, image decode, dependency, network request or persistence path was added.
+- Added pure JVM coverage for intensity endpoints, selected-state hierarchy, reduced-transparency fallback and non-finite preference fallback. Exact-head CI is pending on #297/#298.
+
+## Device and safety status
+
+OPPO Reno10 launch, screenshots, visual fidelity, TalkBack, font scaling, Reduce Motion, IME/safe areas, scroll smoothness, Perfetto/frame timing, GPU overdraw, allocations/memory, thermal and battery remain **UNVERIFIED**. CI does not establish device launch stability or performance. No main write, PR merge/retarget, Release publication, package/app identity change, source-branch mutation or branch deletion occurred.
+
+---
+
 # Live branch inventory and freshness decision — 8 November 2026, 07:41 IST
 
 **Repository:** `Batmancpu/CurrentLens`  
