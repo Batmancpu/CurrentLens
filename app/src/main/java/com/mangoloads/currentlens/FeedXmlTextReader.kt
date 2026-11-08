@@ -47,9 +47,10 @@ internal object FeedXmlTextReader {
                 return result.toString()
             }
 
+            val blockTag = parser.name?.lowercase(Locale.ROOT)
             if (parser.depth > elementDepth &&
                 (event == XmlPullParser.START_TAG || event == XmlPullParser.END_TAG) &&
-                parser.name?.lowercase(Locale.ROOT) in blockElements
+                blockTag != null && blockTag in blockElements
             ) {
                 appendBoundarySpace()
             }
