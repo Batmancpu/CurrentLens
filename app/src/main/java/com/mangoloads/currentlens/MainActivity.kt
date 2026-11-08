@@ -2775,28 +2775,36 @@ private class ReaderWebView(context: android.content.Context) : WebView(context)
             listOf(
                 { flushReadingPosition() },
                 { stopLoading() },
-                {
-                    readingPositionSave?.let { removeCallbacks(it) }
-                    readingPositionSave = null
-                    cancelReadingPositionRestore()
-                    cancelShortPageEndCheck(resetStability = true)
-                    cancelPendingAutoDefine()
-                },
-                {
-                    selectionBridgeEnabled = false
-                    onReachedBottom = {}
-                    onDefineWord = { _, _ -> }
-                    onReaderPageFinished = {}
-                    onReaderMainFrameError = {}
-                    allowReaderNavigation = { false }
-                    onOpenPublisherLink = {}
-                    onReadingProgressChanged = {}
-                },
-                {
-                    settings.javaScriptEnabled = false
-                    webViewClient = WebViewClient()
-                    webChromeClient = null
-                },
+                // Keep every teardown operation independent: a failed callback removal
+                // must not prevent clearing references or cancelling other callbacks.
+                { readingPositionSave?.let { removeCallbacks(it) } },
+                { readingPositionSave = null },
+                { readingPositionRestore?.let { removeCallbacks(it) } },
+                { readingPositionRestore = null },
+                { readingPositionRestoreSettle?.let { removeCallbacks(it) } },
+                { readingPositionRestoreSettle = null },
+                { restoringReadingPosition = false },
+                { pendingReadingPositionRestore = null },
+                { stableRestoreSamples = 0 },
+                { lastRestoreContentHeight = -1 },
+                { shortPageEndCheck?.let { removeCallbacks(it) } },
+                { shortPageEndCheck = null },
+                { shortPageStabilityGate.reset() },
+                { selectionModeGeneration += 1 },
+                { pendingAutoDefine?.let { removeCallbacks(it) } },
+                { pendingAutoDefine = null },
+                { autoDefineEvaluationPending = false },
+                { selectionBridgeEnabled = false },
+                { onReachedBottom = {} },
+                { onDefineWord = { _, _ -> } },
+                { onReaderPageFinished = {} },
+                { onReaderMainFrameError = {} },
+                { allowReaderNavigation = { false } },
+                { onOpenPublisherLink = {} },
+                { onReadingProgressChanged = {} },
+                { settings.javaScriptEnabled = false },
+                { webViewClient = WebViewClient() },
+                { webChromeClient = null },
                 { clearHistory() },
                 { (parent as? android.view.ViewGroup)?.removeView(this) },
                 { removeAllViews() },
