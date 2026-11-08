@@ -282,3 +282,11 @@ The user continues in ChatGPT and does not want to repeat project context. Start
 - PR #39 run #318 passed WordNet generation, JVM unit tests and APK assembly, then failed closed in the signer parser. Actual apksigner output uses the prefix 'V2 Signer: certificate SHA-256 digest:' rather than the assumed 'Signer #1 certificate SHA-256 digest:'.
 - This is a parser-format mismatch, not a certificate mismatch. The verifier now extracts all SHA-256 certificate lines independent of signer-prefix format, deduplicates fingerprints across signing schemes, and requires exactly one distinct 64-hex signer. The next natural PR run is the verification point.
 - The workflow now passes private store/key passwords only to the main Gradle build and main verifier steps (or the non-main test steps); passwords are no longer persisted through GITHUB_ENV for artifact-upload actions.
+## PR #39 final validation snapshot — 8 November 2026, 12:02 IST
+
+- Draft PR #39: https://github.com/Batmancpu/CurrentLens/pull/39; branch fix/stable-release-signing-2026-11-08; base black-box-bihar-news; final code head 31ee6d08d825fae0980b046f407a5dd5e3152bf1; 5 commits, 10 files, mergeable/clean.
+- Exact-head natural run #319 passed: WordNet checks, :app:testDebugUnitTest, :app:assembleDebug, Stability APK signer comparison and artifact upload. Artifact #13607833092, 39,115,994 bytes, expires 22 November 2026 07:02 UTC. Main release signing and Release publication skipped as expected on pull_request.
+- Main signing path remains unverified until owner-configured secrets and CURRENTLENS_RELEASE_CERT_SHA256 variable are used by a natural main push.
+- Full Actions history paginated: 319 runs (189 success, 67 failure, 63 cancelled); queued 0, in-progress 0. Latest main remains 73b8a0d1; latest Release remains v0.2.0-build-116. Main unchanged.
+- Repository now has 43 branches, 26 open PRs and 14 closed PRs. PR #40 is a new draft main-based RSS article-host validation proposal; it has no CI run yet and overlaps the NewsRepository/privacy integration work.
+- PR #39 remains draft. The first stable-key main Release is blocked on owner acknowledgement of the unrecoverable old-key migration and local-data loss risk (manifest allowBackup=false).

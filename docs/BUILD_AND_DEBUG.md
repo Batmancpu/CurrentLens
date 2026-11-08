@@ -208,3 +208,9 @@ CI establishes that the code compiles and JVM tests pass. It cannot establish th
 - PR #39 run #318 passed WordNet generation, JVM unit tests and APK assembly, then failed closed in the signer parser. Actual apksigner output uses the prefix 'V2 Signer: certificate SHA-256 digest:' rather than the assumed 'Signer #1 certificate SHA-256 digest:'.
 - This is a parser-format mismatch, not a certificate mismatch. The verifier now extracts all SHA-256 certificate lines independent of signer-prefix format, deduplicates fingerprints across signing schemes, and requires exactly one distinct 64-hex signer. The next natural PR run is the verification point.
 - The workflow now passes private store/key passwords only to the main Gradle build and main verifier steps (or the non-main test steps); passwords are no longer persisted through GITHUB_ENV for artifact-upload actions.
+## 8 November 2026 — PR #39 exact-head validation
+
+- Natural Actions run #319 on exact head 31ee6d08d825fae0980b046f407a5dd5e3152bf1 passed. WordNet builder checks, :app:testDebugUnitTest, :app:assembleDebug, the Stability APK signer-to-keystore comparison and artifact upload all succeeded; the main release-signing steps and Release job were correctly skipped on pull_request.
+- Verified test signer SHA-256: bde1edc88fc1c9bc0b3a060293dc0889262a22378a41ea5fe252532a49004d14.
+- Artifact #13607833092: 39,115,994 bytes; expires 22 November 2026 07:02 UTC. The APK is the separate .stability package, not a main-release APK.
+- The main secret-backed release path remains unverified until the owner configures the four secrets and public fingerprint variable, then a main push runs naturally. No main push or Release was performed.
