@@ -68,4 +68,33 @@ class ReaderWebViewReleaseGuardTest {
         assertEquals(true, propagated)
         assertEquals(listOf("fatal"), calls)
     }
+
+    @Test
+    fun multipleCleanupFailuresDoNotSkipIndependentReleaseSteps() {
+        val guard = ReaderWebViewReleaseGuard()
+        val calls = mutableListOf<String>()
+
+        guard.release(
+            listOf(
+                { calls += "remove-save-callback"; throw IllegalStateException("synthetic callback failure") },
+                { calls += "clear-save-reference" },
+                { calls += "remove-restore-callback"; throw IllegalStateException("synthetic restore failure") },
+                { calls += "clear-restore-reference" },
+                { calls += "clear-web-view-client" },
+                { calls += "destroy" }
+            )
+        )
+
+        assertEquals(
+            listOf(
+                "remove-save-callback",
+                "clear-save-reference",
+                "remove-restore-callback",
+                "clear-restore-reference",
+                "clear-web-view-client",
+                "destroy"
+            ),
+            calls
+        )
+    }
 }
