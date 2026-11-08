@@ -141,6 +141,7 @@ import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Brush
@@ -2440,7 +2441,6 @@ private fun NewsCard(
     relevanceOverride: Relevance? = null
 ) {
     val context = LocalContext.current
-    val density = LocalDensity.current
     val relevance = remember(article.id, article.title, article.description, relevanceOverride) {
         relevanceOverride ?: UpscEngine.classify(article)
     }
@@ -2468,19 +2468,35 @@ private fun NewsCard(
     Box(
         modifier = Modifier.fillMaxWidth().padding(vertical = FeedCardGeometryPolicy.CARD_VERTICAL_INSET_DP.dp)
             .graphicsLayer { clip = false }
-            .drawBehind {
-                val sampled = palette ?: return@drawBehind
-                val overscan = with(density) { 24.dp.toPx() }
-                drawRoundRect(
-                    brush = Brush.radialGradient(
-                        colors = listOf(sampled.copy(alpha = 0.30f), sampled.copy(alpha = 0.16f), Color.Transparent),
+            // Cache the palette glow's brush and geometry by card size/palette rather
+            // than allocating a new radial gradient on every draw invalidation.
+            .drawWithCache {
+                val sampled = palette
+                val overscan = 24.dp.toPx()
+                val glowTopLeft = Offset(-overscan, -overscan)
+                val glowSize = Size(size.width + overscan * 2f, size.height + overscan * 2f)
+                val glowCornerRadius = CornerRadius(34.dp.toPx())
+                val glowBrush = sampled?.let {
+                    Brush.radialGradient(
+                        colors = listOf(
+                            it.copy(alpha = 0.30f),
+                            it.copy(alpha = 0.16f),
+                            Color.Transparent
+                        ),
                         center = Offset(size.width * 0.5f, size.height * 0.40f),
                         radius = maxOf(size.width, size.height) * 0.82f
-                    ),
-                    topLeft = Offset(-overscan, -overscan),
-                    size = Size(size.width + overscan * 2f, size.height + overscan * 2f),
-                    cornerRadius = CornerRadius(with(density) { 34.dp.toPx() })
-                )
+                    )
+                }
+                onDrawBehind {
+                    if (glowBrush != null) {
+                        drawRoundRect(
+                            brush = glowBrush,
+                            topLeft = glowTopLeft,
+                            size = glowSize,
+                            cornerRadius = glowCornerRadius
+                        )
+                    }
+                }
             }
     ) {
         Card(
