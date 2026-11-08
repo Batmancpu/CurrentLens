@@ -1,3 +1,20 @@
+# Live implementation batch — Shared shell optical clarity and compact-mode source lifecycle
+**Audit time:** 8 November 2026, 07:41 IST
+
+- **Active branch:** `black-box-bihar-news`; implementation parent `c7d50bb2bafe29a43c106e4fb71b607e9830adea`, new code commit `c6deffb96a89d56642374456e92477fbabb8e4b0`. Draft PR #34 remains open against `main@73b8a0d1ba33503fede02db2c3c0af082d724a12`; no merge, retarget or main write.
+- **Freshness gate:** 41 remote branches and 38 PRs were re-enumerated (24 open, 14 closed; page 2 empty for branches and PRs). `black-box-bihar-news` is 125 ahead / 0 behind main and 68 ahead / 0 behind PR #16's corrected background-only Prismal/stability head `6ab1e6a02ac8e91027f21900d64d63b9f2e6a890`. PR #34 head matched the selected branch before this commit. No newer coherent UI baseline supersedes this owner-selected line.
+- **New source branch:** PR #38, `perf/bound-rss-entry-parsing-2026-11-08@9daad62c852ad87ae7b82888892c6dc4f26c31eb`, is a direct 2-commit child of the previous integration head `c7d50bb2`; its diff is limited to `NewsRepository.kt` and `NewsRepositoryTest.kt` (100 parsed entries per feed, including malformed entries). Natural run #288 was in progress during this audit. It is a separate RSS/parser change, not a newer UI baseline and does not overlap this shell batch; it remains unmerged and unmodified.
+- **Other branch dispositions:** PR #37's Search RowScope repair is already in the active branch; PR #36's Asia/Kolkata midnight refresh is a separate date/index change (3 ahead / 7 behind from `4a7a8f8c`); PR #35 is bounded startup-diagnostic reads (6 ahead / 15 behind); PR #27 is editorial-only (44 ahead / 26 behind); PRs #32/#33 jointly touch `NewsRepository.kt`; PRs #25/#26 require joint publisher-resource security review. PRs #29/#30/#31 are represented; PR #13's conservative shared adaptive-contrast policy remains integrated. Stale Liquid Glass/v0.3 branches remain excluded.
+- **Latest exact active-branch CI before this change:** natural PR run [#287](https://github.com/Batmancpu/CurrentLens/actions/runs/42437176437) and push run [#286](https://github.com/Batmancpu/CurrentLens/actions/runs/42437172792) both passed on `c7d50bb2`. WordNet builder 4/4, 151,456 unique words (50,950,144-byte database), `:app:testDebugUnitTest`, `:app:assembleDebug` and artifact upload passed. PR artifact [13598894928](https://github.com/Batmancpu/CurrentLens/actions/runs/42437176437/artifacts/13598894928), 39,110,932 bytes, SHA-256 `84140d6901c7638e10b14e8b3911a69833312e7553b37407db2192cc1fa9b0a1`, expires 22 November 2026 02:09:47 UTC. Push artifact `13600401190`, 39,110,930 bytes. Publish jobs skipped.
+- **Actions / workflow / Release:** 288 runs fully paginated (100 + 100 + 88; page 4 empty): 173 success, 61 failure, 53 cancelled, 1 in progress, 0 queued. The sole active run #288 belongs to PR #38, not this branch. Integration `.github/workflows/build-apk.yml` uses read-only build/test permissions and a separate main-push-only Release-write job; main's workflow remains push-only with broader write permission. Latest published Release remains `v0.2.0-build-116` (6 November 2026); no Release was published.
+- **Implementation:** `HomeGlassHeader` now uses a shared `GlassOpticsPolicy.header()` profile: blur 13→9dp, refraction height 4→3dp, amount 6→4dp, chromatic aberration 0.003→0.0015, specular 0.28→0.22, shadow 0.20→0.16, inset 0.05→0.04 and tint multiplier 0.13→0.10. The header retains its existing single Prismal surface and root background-only backdrop; the aim is clearer context with less optical work, not a measured performance claim.
+- **Navigation lifecycle:** the hidden tab-glyph capture and merged droplet source are now created only inside the expanded-navigation branch. Compact mode retains the same single shared active-destination pill and no longer remembers those unused source objects. No second bar, extra sampler, readback, root capture or new Prismal surface was added.
+- **Tests / cost evidence:** `GlassOpticsPolicyTest` asserts the header's bounded lower-cost profile. Source diff: three files, 42 additions / 12 deletions. No Compose screenshot test or device trace was available. Parameter reductions are source-level evidence only; frame timing, jank, GPU overdraw, allocation/memory, battery and thermal impact remain unmeasured.
+- **Device / release safety:** OPPO Reno10 launch, header contrast, nav morph smoothness, TalkBack, font scaling, Reduce Motion runtime, safe-area/gesture navigation, Perfetto, GPU, memory, thermal and battery remain **UNVERIFIED**. CI is not device evidence. No manual dispatch/rerun, merge, main write, Release publication, package change or source-branch mutation.
+- **Next:** inspect the exact natural push/PR runs for `c6deffb9`; then finish the shared-shell/header-to-filter spacing and whole-app transient-control consistency review. Preserve the one root background-only capture, expanded-only tab glyph source, one Coil decode and 4s/6s foreground-idle luminance cadence.
+
+---
+
 # Live implementation batch — Quiz controls and current branch audit
 **Audit time:** 8 November 2026, 07:32 IST
 
@@ -40,7 +57,7 @@
 
 # Liquid Glass UI Roadmap
 
-**Status:** Cohesive Prismal coverage spans the shared shell, full/compact navigation, Search, Explore filters, Reader auto-hide, definition and completion controls, You/Saved/stats supporting materials, Appearance preview and Quiz transient chrome. This pass closes the remaining shared Reduce Motion gaps in destination transitions and the definition popover.
+**Status:** Cohesive Prismal coverage spans the shared shell, full/compact navigation, Search, Explore filters, Reader auto-hide, definition and completion controls, You/Saved/stats supporting materials, Appearance preview and Quiz transient chrome. The latest shell pass reduces the shared header's optical intensity and limits hidden tab-glyph/merged droplet sources to expanded navigation; no measured device-performance claim is made.
 **Feature branch:** `black-box-bihar-news` — sole active integration/UI branch by explicit owner direction.
 **Source baseline for this pass:** `black-box-bihar-news@d9a4d1eac035172da0f8d7c40a984eb6c40c1b8b`; 121 ahead / 0 behind `main@73b8a0d1ba33503fede02db2c3c0af082d724a12`, and 64 ahead / 0 behind PR #16's corrected stability/Prismal head.
 **Latest exact active-branch validation:** natural PR run #279 and push run #278 both passed on `d9a4d1eac035172da0f8d7c40a984eb6c40c1b8b`; WordNet 4/4, 151,456-word offline database, JVM tests, APK assembly and artifact upload all passed. New reduced-motion commit is pending its own natural CI.
@@ -127,8 +144,8 @@ Recheck every branch head and dependency before each future implementation commi
 
 | Screen / component | Material tier | Intended treatment | Current status |
 |---|---|---|---|
-| Shared home header | Primary floating glass | Clear translucent header, restrained edge/specular, stable height across destinations | Existing Prismal glass; contrast/hierarchy polish remains |
-| Four-tab navigation | Primary floating glass | One droplet bar with selected glyph aligned to its hit region | Existing Prismal droplet, hidden glyph capture and merged source; no new sampler |
+| Shared home header | Primary floating glass | Clear translucent header, restrained edge/specular, stable height across destinations | Shared 9dp-blur / 3×4dp-refraction profile now reduces the dark-slab risk; OPPO contrast remains unverified |
+| Four-tab navigation | Primary floating glass | One droplet bar with selected glyph aligned to its hit region | Hidden glyph capture and merged droplet source exist only in expanded state; compact mode releases both |
 | Compact feed navigation | Primary floating glass | Morph the same bar into one active-destination pill on eligible feed scroll only | Implemented; state policy validated in runs #186 and #187; physical animation still needs device validation |
 | Search morph field | Interactive control glass | Preserve tab-to-IME geometry/focus; trailing clear affordance only for non-empty expanded query | 48dp clear target and existing onClear/focus path integrated; run #183 passed |
 | Explore category rail | Interactive control glass | One shared capsule; selected fill/border and >=48dp targets | 48dp target, selected semantics and Geography filter integrated |
@@ -155,8 +172,8 @@ Recheck every branch head and dependency before each future implementation commi
 | Component | Live effect / scope | Cost-control strategy | Fallback / verification |
 |---|---|---|---|
 | Root backdrop | One full-window background-only Prismal capture source | Capture background pixels only; no descendants; reuse same source | Do not reintroduce self-capture; code reviewed, device launch still unverified |
-| Navigation | One floating capsule plus existing tab-glyph source/merged droplet | Preserve existing two-source architecture; no new sampler/readback | Static/low-effects presentation under Reduce Motion; OPPO GPU cost unmeasured |
-| Home header | One small header glass surface | Existing shared backdrop; no duplicate captures | Theme-derived contrast; no adaptive readback added |
+| Navigation | One floating capsule plus expanded-only tab-glyph source/merged droplet | Create hidden glyph capture and merged droplet source only while expanded; compact pill uses the same shared bar surface | No new sampler/readback; compact state disposes unused sources; OPPO GPU cost unmeasured |
+| Home header | One 9dp-blur / low-refraction glass surface | Reuse root background-only source; static profile reduces blur/refraction/chromatic work; no duplicate capture | Theme-derived contrast; Reduce Transparency still removes live optics; device GPU cost unmeasured |
 | Search | One morphing capsule | Reuse existing anchor/dock geometry and single backdrop | Preserve IME; clear affordance must not alter layout or focus |
 | Explore filters | One shared capsule, not one glass surface per chip | Reuse same backdrop; keep chip fills/borders as simple drawing | >=48dp target and selected semantics still require device/TalkBack checks |
 | Feed cards | No live blur | One Coil request per image; palette sampled from that decoded bitmap; cached per article | Standard content card if palette unavailable; no duplicate decode |
