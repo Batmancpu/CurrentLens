@@ -1180,7 +1180,7 @@ private fun ExploreGlassCategories(
     val reduceTransparency = LocalGlassReduceTransparency.current
     val surfaceTint = MaterialTheme.colorScheme.surface
     val luminance = if (dark) 0.14f else 0.80f
-    val chipShape = ContinuousCornerShape(18.dp)
+    val chipShape = glassControlShape
     Box(
         Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 5.dp)
             .drawPrismalGlass(
@@ -1522,7 +1522,7 @@ private fun SearchFeed(
         ModalBottomSheet(
             onDismissRequest = { showFilters = false },
             sheetState = filterSheetState,
-            shape = RoundedCornerShape(28.dp),
+            shape = glassFilterSheetShape,
             containerColor = Color.Transparent,
             contentColor = MaterialTheme.colorScheme.onSurface,
             tonalElevation = 0.dp,
@@ -2026,7 +2026,7 @@ private fun GlassFilterPill(
     val lowEffects = reduceTransparency ?: LocalGlassReduceTransparency.current
     val fillAlpha = GlassSurfacePolicy.filterPillFillAlpha(intensity, selected, lowEffects)
     val borderAlpha = GlassSurfacePolicy.filterPillBorderAlpha(intensity, selected, lowEffects)
-    val shape = remember { RoundedCornerShape(GlassSurfacePolicy.FILTER_PILL_CORNER_RADIUS_DP.dp) }
+    val shape = glassControlShape
     val fill = (if (selected) colors.primary else colors.surface).copy(alpha = fillAlpha)
     val rim = (if (selected) colors.primary else colors.outline).copy(alpha = borderAlpha)
 
@@ -2607,6 +2607,13 @@ private data class ContinuousCornerShape(private val radius: androidx.compose.ui
         return Outline.Generic(path)
     }
 }
+
+private val glassControlShape =
+    ContinuousCornerShape(GlassSurfacePolicy.CONTROL_CORNER_RADIUS_DP.dp)
+private val glassFilterSheetShape =
+    ContinuousCornerShape(GlassSurfacePolicy.FILTER_SHEET_CORNER_RADIUS_DP.dp)
+private val readerTextSizeMenuShape =
+    ContinuousCornerShape(GlassSurfacePolicy.READER_MENU_CORNER_RADIUS_DP.dp)
 
 private fun sampleImagePalette(bitmap: Bitmap): Color {
     if (bitmap.width <= 0 || bitmap.height <= 0) return Color(0xFF527AA8)
@@ -3613,7 +3620,7 @@ private fun ReaderGlassToolbar(
                     expanded = textSizeMenuExpanded,
                     onDismissRequest = { onTextSizeMenuExpandedChange(false) },
                     modifier = Modifier.widthIn(min = 196.dp),
-                    shape = RoundedCornerShape(18.dp),
+                    shape = readerTextSizeMenuShape,
                     containerColor = Color.Transparent,
                     tonalElevation = 0.dp,
                     shadowElevation = 0.dp
@@ -4530,7 +4537,7 @@ private fun AppearanceGlassEditor(
                         )
                     }
 
-                    val searchShape = RoundedCornerShape(16.dp)
+                    val searchShape = glassControlShape
                     Row(
                         Modifier.fillMaxWidth().heightIn(min = 48.dp)
                             .clip(searchShape)

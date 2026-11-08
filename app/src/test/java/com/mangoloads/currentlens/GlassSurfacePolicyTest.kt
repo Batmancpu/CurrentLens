@@ -73,6 +73,18 @@ class GlassSurfacePolicyTest {
     }
 
     @Test
+    fun interactiveGlassControlsShareContinuousCornerTokens() {
+        assertEquals(16f, GlassSurfacePolicy.CONTROL_CORNER_RADIUS_DP, 0f)
+        assertEquals(
+            GlassSurfacePolicy.CONTROL_CORNER_RADIUS_DP,
+            GlassSurfacePolicy.FILTER_PILL_CORNER_RADIUS_DP,
+            0f
+        )
+        assertEquals(28f, GlassSurfacePolicy.FILTER_SHEET_CORNER_RADIUS_DP, 0f)
+        assertEquals(18f, GlassSurfacePolicy.READER_MENU_CORNER_RADIUS_DP, 0f)
+    }
+
+    @Test
     fun supportingCardsShareConsistentReadableGeometry() {
         assertEquals(16f, SupportingCardGeometryPolicy.CONTENT_PADDING_DP, 0f)
         assertEquals(6f, SupportingCardGeometryPolicy.CONTENT_GAP_DP, 0f)

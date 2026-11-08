@@ -11,7 +11,10 @@ internal object GlassSurfacePolicy {
     const val TRANSIENT_REFRACTION_HEIGHT_DP = 2.5f
     const val TRANSIENT_REFRACTION_AMOUNT_DP = 3.5f
     const val TRANSIENT_TINT_SCALE = 0.42f
-    const val FILTER_PILL_CORNER_RADIUS_DP = 16f
+    const val CONTROL_CORNER_RADIUS_DP = 16f
+    const val FILTER_PILL_CORNER_RADIUS_DP = CONTROL_CORNER_RADIUS_DP
+    const val FILTER_SHEET_CORNER_RADIUS_DP = 28f
+    const val READER_MENU_CORNER_RADIUS_DP = 18f
 
     private const val SUPPORTING_SURFACE_ALPHA_DARK = 0.93f
     private const val SUPPORTING_SURFACE_ALPHA_LIGHT = 0.965f
