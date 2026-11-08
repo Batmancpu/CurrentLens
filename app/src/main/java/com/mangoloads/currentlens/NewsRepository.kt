@@ -102,7 +102,7 @@ object NewsRepository {
                 connection.disconnect()
             }
         }
-        articles
+        articles ?: emptyList()
     } catch (_: Exception) {
         emptyList()
     }
