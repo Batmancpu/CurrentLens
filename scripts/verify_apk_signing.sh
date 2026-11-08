@@ -43,11 +43,20 @@ if [[ -n "$pinned_sha256" ]]; then
   fi
 fi
 verification_output="$("$apksigner" verify --print-certs "$apk_path" 2>&1)"
-signer_count="$(printf '%s\n' "$verification_output" | grep -Eic 'Signer #[0-9]+ certificate SHA-?256 digest:' || true)"
-actual_sha256="$(printf '%s\n' "$verification_output" | awk 'tolower($0) ~ /certificate sha-?256 digest:/ {sub(/^.*digest:[[:space:]]*/, "", $0); gsub(/[[:space:]]+$/, "", $0); print tolower($0); exit}')"
+mapfile -t signer_fingerprints < <(
+  printf '%s\n' "$verification_output" |
+    awk 'tolower($0) ~ /certificate sha-?256 digest:/ {
+      sub(/^.*digest:[[:space:]]*/, "", $0)
+      gsub(/[[:space:]]+$/, "", $0)
+      print tolower($0)
+    }' |
+    sort -u
+)
+signer_count="${#signer_fingerprints[@]}"
+actual_sha256="${signer_fingerprints[0]:-}"
 
-if [[ "$signer_count" != "1" || -z "$actual_sha256" ]]; then
-  echo "::error::APK must have exactly one verifiable signer certificate; apksigner output follows"
+if [[ "$signer_count" != "1" || ! "$actual_sha256" =~ ^[0-9a-f]{64}$ ]]; then
+  echo "::error::APK must have exactly one distinct verifiable signer certificate; apksigner output follows"
   printf '%s\n' "$verification_output"
   exit 1
 fi

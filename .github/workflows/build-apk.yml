@@ -70,7 +70,6 @@ jobs:
           CURRENTLENS_RELEASE_KEYSTORE_BASE64: ${{ secrets.CURRENTLENS_RELEASE_KEYSTORE_BASE64 }}
           CURRENTLENS_RELEASE_STORE_PASSWORD: ${{ secrets.CURRENTLENS_RELEASE_STORE_PASSWORD }}
           CURRENTLENS_RELEASE_KEY_ALIAS: ${{ secrets.CURRENTLENS_RELEASE_KEY_ALIAS }}
-          CURRENTLENS_RELEASE_KEY_PASSWORD: ${{ secrets.CURRENTLENS_RELEASE_KEY_PASSWORD }}
           CURRENTLENS_RELEASE_CERT_SHA256: ${{ vars.CURRENTLENS_RELEASE_CERT_SHA256 }}
         run: |
           set -euo pipefail
@@ -99,9 +98,6 @@ jobs:
           chmod 600 "$signing_keystore"
           {
             printf 'CURRENTLENS_SIGNING_KEYSTORE_PATH=%s\n' "$signing_keystore"
-            printf 'CURRENTLENS_SIGNING_STORE_PASSWORD=%s\n' "$CURRENTLENS_RELEASE_STORE_PASSWORD"
-            printf 'CURRENTLENS_SIGNING_KEY_ALIAS=%s\n' "$CURRENTLENS_RELEASE_KEY_ALIAS"
-            printf 'CURRENTLENS_SIGNING_KEY_PASSWORD=%s\n' "$CURRENTLENS_RELEASE_KEY_PASSWORD"
             printf 'CURRENTLENS_SIGNING_EXPECTED_SHA256=%s\n' "$expected_certificate_sha256"
           } >> "$GITHUB_ENV"
 
@@ -114,9 +110,6 @@ jobs:
           test -s "$signing_keystore"
           {
             printf 'CURRENTLENS_SIGNING_KEYSTORE_PATH=%s\n' "$signing_keystore"
-            printf 'CURRENTLENS_SIGNING_STORE_PASSWORD=currentlens-stability-test-only\n'
-            printf 'CURRENTLENS_SIGNING_KEY_ALIAS=currentlens-stability\n'
-            printf 'CURRENTLENS_SIGNING_KEY_PASSWORD=currentlens-stability-test-only\n'
           } >> "$GITHUB_ENV"
 
       - name: Set up Gradle
@@ -141,18 +134,38 @@ jobs:
             --min-unique-words 100000
           test -s app/src/main/assets/wordnet.db
 
-      - name: Compile APK and run JVM tests
+      - name: Compile main APK and run JVM tests
+        if: github.ref == 'refs/heads/main'
         shell: bash
-        run: |
-          set -euo pipefail
-          if [[ "$GITHUB_REF" == "refs/heads/main" ]]; then
-            gradle --no-daemon --stacktrace -PrequireStableSigning=true :app:testDebugUnitTest :app:assembleDebug
-          else
-            gradle --no-daemon --stacktrace -PstabilityTest=true -PrequireStableSigning=true :app:testDebugUnitTest :app:assembleDebug
-          fi
+        env:
+          CURRENTLENS_SIGNING_STORE_PASSWORD: ${{ secrets.CURRENTLENS_RELEASE_STORE_PASSWORD }}
+          CURRENTLENS_SIGNING_KEY_ALIAS: ${{ secrets.CURRENTLENS_RELEASE_KEY_ALIAS }}
+          CURRENTLENS_SIGNING_KEY_PASSWORD: ${{ secrets.CURRENTLENS_RELEASE_KEY_PASSWORD }}
+        run: gradle --no-daemon --stacktrace -PrequireStableSigning=true :app:testDebugUnitTest :app:assembleDebug
 
-      - name: Verify APK signer matches configured keystore
+      - name: Compile Stability APK and run JVM tests
+        if: github.ref != 'refs/heads/main'
         shell: bash
+        env:
+          CURRENTLENS_SIGNING_STORE_PASSWORD: currentlens-stability-test-only
+          CURRENTLENS_SIGNING_KEY_ALIAS: currentlens-stability
+          CURRENTLENS_SIGNING_KEY_PASSWORD: currentlens-stability-test-only
+        run: gradle --no-daemon --stacktrace -PstabilityTest=true -PrequireStableSigning=true :app:testDebugUnitTest :app:assembleDebug
+
+      - name: Verify main APK signer matches pinned release keystore
+        if: github.ref == 'refs/heads/main'
+        shell: bash
+        env:
+          CURRENTLENS_SIGNING_STORE_PASSWORD: ${{ secrets.CURRENTLENS_RELEASE_STORE_PASSWORD }}
+          CURRENTLENS_SIGNING_KEY_ALIAS: ${{ secrets.CURRENTLENS_RELEASE_KEY_ALIAS }}
+        run: bash scripts/verify_apk_signing.sh app/build/outputs/apk/debug/app-debug.apk
+
+      - name: Verify Stability APK signer matches test keystore
+        if: github.ref != 'refs/heads/main'
+        shell: bash
+        env:
+          CURRENTLENS_SIGNING_STORE_PASSWORD: currentlens-stability-test-only
+          CURRENTLENS_SIGNING_KEY_ALIAS: currentlens-stability
         run: bash scripts/verify_apk_signing.sh app/build/outputs/apk/debug/app-debug.apk
 
       - name: Upload installable APK artifact

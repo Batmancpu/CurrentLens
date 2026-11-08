@@ -1412,3 +1412,8 @@ Repository/default: `Batmancpu/CurrentLens`, default `main@73b8a0d1ba33503fede02
 - Initial commit: 69cf8a8e14f417f025721197f1013e0b53d87051. A follow-up commit splits main-only secret injection from non-main Stability-key setup; verify the final head from live GitHub.
 - Signing continuity is pinned with repository variable CURRENTLENS_RELEASE_CERT_SHA256 in addition to the private keystore secrets; the main build fails on fingerprint drift.
 - PR #39 run #317: WordNet, JVM tests and APK assembly passed; the first signer-output parser failed closed and upload was skipped. The parser was hardened to capture stdout/stderr and accept SHA-256 label variants; wait for the next natural PR run.
+## 8 November 2026 — signer output format and secret scope
+
+- PR #39 run #318 passed WordNet generation, JVM unit tests and APK assembly, then failed closed in the signer parser. Actual apksigner output uses the prefix 'V2 Signer: certificate SHA-256 digest:' rather than the assumed 'Signer #1 certificate SHA-256 digest:'.
+- This is a parser-format mismatch, not a certificate mismatch. The verifier now extracts all SHA-256 certificate lines independent of signer-prefix format, deduplicates fingerprints across signing schemes, and requires exactly one distinct 64-hex signer. The next natural PR run is the verification point.
+- The workflow now passes private store/key passwords only to the main Gradle build and main verifier steps (or the non-main test steps); passwords are no longer persisted through GITHUB_ENV for artifact-upload actions.

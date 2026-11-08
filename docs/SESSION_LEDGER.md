@@ -462,3 +462,8 @@ Branch: `fix/early-startup-crash-diagnostics-2026-11-06`.
 - PR #39 run #317 on head 7af010e726038395eb6d2c02c3ddd067145dc266 completed with failure at the new signer-verification step. WordNet generation, JVM unit tests and :app:assembleDebug all passed; artifact upload was correctly skipped.
 - The verifier's first parser captured stdout only and matched one exact SHA-256 label. The run produced no matching captured line, so the verifier failed closed before upload. This is a verifier-output parsing failure, not evidence that the APK was signed with the wrong key.
 - Updated the verifier to capture both stdout/stderr, accept SHA-256/SHA256 label variants case-insensitively, and print safe certificate output if parsing still fails. A new natural PR run is required; no dispatch/rerun was used.
+## 8 November 2026 — signer output format and secret scope
+
+- PR #39 run #318 passed WordNet generation, JVM unit tests and APK assembly, then failed closed in the signer parser. Actual apksigner output uses the prefix 'V2 Signer: certificate SHA-256 digest:' rather than the assumed 'Signer #1 certificate SHA-256 digest:'.
+- This is a parser-format mismatch, not a certificate mismatch. The verifier now extracts all SHA-256 certificate lines independent of signer-prefix format, deduplicates fingerprints across signing schemes, and requires exactly one distinct 64-hex signer. The next natural PR run is the verification point.
+- The workflow now passes private store/key passwords only to the main Gradle build and main verifier steps (or the non-main test steps); passwords are no longer persisted through GITHUB_ENV for artifact-upload actions.

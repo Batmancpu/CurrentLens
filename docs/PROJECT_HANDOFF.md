@@ -277,3 +277,8 @@ The user continues in ChatGPT and does not want to repeat project context. Start
 - Exact-head run #317 (commit 7af010e726038395eb6d2c02c3ddd067145dc266) failed only at the new APK signer-verification step. WordNet generation, JVM unit tests and APK assembly passed; artifact upload was skipped.
 - The verifier captured stdout only and did not match the emitted SHA-256 label. This is a verifier-output parsing failure, not evidence of a wrong APK signer. The follow-up captures stdout/stderr and accepts SHA-256/SHA256 variants; the next natural PR run must verify it.
 - PR #39 remains draft and must not be merged until the signer check passes, the owner configures the main release secrets and fingerprint variable, and the old-key migration decision is explicit.
+## 8 November 2026 — signer output format and secret scope
+
+- PR #39 run #318 passed WordNet generation, JVM unit tests and APK assembly, then failed closed in the signer parser. Actual apksigner output uses the prefix 'V2 Signer: certificate SHA-256 digest:' rather than the assumed 'Signer #1 certificate SHA-256 digest:'.
+- This is a parser-format mismatch, not a certificate mismatch. The verifier now extracts all SHA-256 certificate lines independent of signer-prefix format, deduplicates fingerprints across signing schemes, and requires exactly one distinct 64-hex signer. The next natural PR run is the verification point.
+- The workflow now passes private store/key passwords only to the main Gradle build and main verifier steps (or the non-main test steps); passwords are no longer persisted through GITHUB_ENV for artifact-upload actions.
