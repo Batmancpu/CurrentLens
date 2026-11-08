@@ -65,6 +65,20 @@ internal object GlassOpticsPolicy {
         )
     }
 
+    /** Lower-cost primary page header: enough lensing to read as glass without a dark blur slab. */
+    private val HEADER_PROFILE = GlassOpticsProfile(
+        blurDp = 9f,
+        refractionHeightDp = 3f,
+        refractionAmountDp = 4f,
+        chromaticAberration = 0.0015f,
+        specularAlpha = 0.22f,
+        shadowAlpha = 0.16f,
+        insetAlpha = 0.04f,
+        tintAlpha = 0.10f
+    )
+
+    fun header(): GlassOpticsProfile = HEADER_PROFILE
+
     /** Adds a small contrast reserve only as the sampled scene approaches either extreme. */
     fun adaptiveTintAlpha(
         baseAlpha: Float,

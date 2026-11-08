@@ -1106,6 +1106,7 @@ private fun HomeGlassHeader(
     val reduceTransparency = LocalGlassReduceTransparency.current
     val surfaceTint = MaterialTheme.colorScheme.surface
     val luminance = if (dark) 0.12f else 0.82f
+    val optics = remember { GlassOpticsPolicy.header() }
     Box(
         Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 5.dp)
             .drawPrismalGlass(
@@ -1114,26 +1115,26 @@ private fun HomeGlassHeader(
                 effects = {
                     applyPrismalGlassEffects(
                         density = density, adaptiveLuminance = true, luminance = luminance,
-                        blurRadiusPx = with(density) { GlassRenderingPolicy.blurDp(13f, reduceTransparency).dp.toPx() },
-                        refractionHeightPx = with(density) { GlassRenderingPolicy.refractionDp(4f, reduceTransparency).dp.toPx() },
-                        refractionAmountPx = with(density) { GlassRenderingPolicy.refractionDp(6f, reduceTransparency).dp.toPx() },
+                        blurRadiusPx = with(density) { GlassRenderingPolicy.blurDp(optics.blurDp, reduceTransparency).dp.toPx() },
+                        refractionHeightPx = with(density) { GlassRenderingPolicy.refractionDp(optics.refractionHeightDp, reduceTransparency).dp.toPx() },
+                        refractionAmountPx = with(density) { GlassRenderingPolicy.refractionDp(optics.refractionAmountDp, reduceTransparency).dp.toPx() },
                         depthEffect = GlassRenderingPolicy.depthEnabled(true, reduceTransparency),
-                        chromaticAberration = GlassRenderingPolicy.chromaticAberration(0.003f, reduceTransparency),
+                        chromaticAberration = GlassRenderingPolicy.chromaticAberration(optics.chromaticAberration, reduceTransparency),
                         adaptiveTuning = PrismalAdaptiveTuning.Subtle
                     )
                 },
                 specular = {
-                    PrismalSpecular.Default.copy(width = 0.55.dp, blurRadius = 0.35.dp, alpha = GlassRenderingPolicy.specularAlpha(0.28f, reduceTransparency))
+                    PrismalSpecular.Default.copy(width = 0.55.dp, blurRadius = 0.35.dp, alpha = GlassRenderingPolicy.specularAlpha(optics.specularAlpha, reduceTransparency))
                 },
                 depthShadow = {
                     PrismalDepthShadow(radius = 12.dp, offset = DpOffset(0.dp, 2.dp),
-                        color = Color.Black.copy(alpha = 0.09f), alpha = GlassRenderingPolicy.shadowAlpha(0.20f, reduceTransparency))
+                        color = Color.Black.copy(alpha = 0.09f), alpha = GlassRenderingPolicy.shadowAlpha(optics.shadowAlpha, reduceTransparency))
                 },
                 depthInset = {
                     PrismalDepthInset(radius = 4.dp, offset = DpOffset(0.dp, 1.dp),
-                        color = Color.Black.copy(alpha = 0.05f), alpha = GlassRenderingPolicy.shadowAlpha(0.05f, reduceTransparency))
+                        color = Color.Black.copy(alpha = 0.05f), alpha = GlassRenderingPolicy.shadowAlpha(optics.insetAlpha, reduceTransparency))
                 },
-                onDrawSurface = { drawRect(surfaceTint.copy(alpha = GlassRenderingPolicy.tintAlpha(glassAlpha * 0.13f, reduceTransparency))) }
+                onDrawSurface = { drawRect(surfaceTint.copy(alpha = GlassRenderingPolicy.tintAlpha(glassAlpha * optics.tintAlpha, reduceTransparency))) }
             )
     ) {
         Row(Modifier.fillMaxWidth().padding(start = 14.dp, end = 8.dp, top = 8.dp, bottom = 8.dp),
@@ -2643,10 +2644,8 @@ private fun GlassTabBar(
     val isLtr = LocalLayoutDirection.current == LayoutDirection.Ltr
     val animationScope = rememberCoroutineScope()
     val latestOnSelect = rememberUpdatedState(onSelect)
-    // These sources are reused by the expanded state; the compact state does not
-    // read or render the hidden glyph capture or selected droplet.
-    val tabsBackdrop = rememberPrismalGlassLayer()
-    val dropletBackdrop = rememberPrismalMergedSource(backdrop, tabsBackdrop)
+    // The expanded branch owns the hidden glyph capture and merged droplet source.
+    // Keeping them inside that branch disposes both while the compact pill is active.
     val glassTint = if (adaptiveContentColor == Color.Black) Color(0xFFEAF0FA) else Color(0xFF1C2E49)
     val baseTintAlpha = GlassRenderingPolicy.tintAlpha(
         GlassOpticsPolicy.adaptiveTintAlpha(
@@ -2795,6 +2794,8 @@ private fun GlassTabBar(
         )
 
         if (!compact) {
+            val tabsBackdrop = rememberPrismalGlassLayer()
+            val dropletBackdrop = rememberPrismalMergedSource(backdrop, tabsBackdrop)
             Box(
                 Modifier.align(Alignment.Center).width(barWidth).height(barHeight)
                     .clip(PrismalCapsule()).then(rippleDrawModifier)

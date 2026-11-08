@@ -97,4 +97,19 @@ class GlassOpticsPolicyTest {
         assertEquals(bright, dark, 0.0001f)
         assertEquals(0.14f, GlassOpticsPolicy.adaptiveTintAlpha(1f, 1f, 0.04f, 0.14f), 0.0001f)
     }
+    @Test
+    fun sharedHeaderUsesClearerLowerCostOpticsThanTheSelectedDroplet() {
+        val header = GlassOpticsPolicy.header()
+        val droplet = GlassOpticsPolicy.droplet(0f)
+
+        assertEquals(9f, header.blurDp, 0.0001f)
+        assertTrue(header.blurDp < droplet.blurDp)
+        assertTrue(header.refractionHeightDp <= 3f)
+        assertTrue(header.refractionAmountDp <= 4f)
+        assertTrue(header.chromaticAberration <= 0.002f)
+        assertTrue(header.specularAlpha <= 0.24f)
+        assertTrue(header.shadowAlpha <= 0.18f)
+        assertTrue(header.tintAlpha <= 0.10f)
+    }
+
 }
