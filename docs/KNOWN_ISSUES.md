@@ -180,3 +180,12 @@ Snapshot main: 73b8a0d1ba33503fede02db2c3c0af082d724a12 (6 Nov 2026).
 - RFC 4287 defines Atom content constructs with text, HTML and XHTML forms. PR #41's follow-up commit `e4ca4a522dd236052142aa31dc518979bfafe891` reads inline Atom content only for the Atom namespace and accepted text/HTML/XHTML types, while preserving URL-backed Media RSS image handling and ignoring external Atom `src` references.
 - Added policy tests for default/text/html/xhtml/MIME forms, external `src`, binary media and Media RSS, plus a nested-XHTML parser-cursor fixture. Tests are added, not run; main's workflow is still push-only.
 - This is a standards-derived false-negative risk, not an observed live-feed count or measured editorial recall result. It adds no network request and does not make the 2 MiB whole-document parser streaming. Relative Atom links, entry ceilings, concurrency and publisher-host validation remain separate issues.
+
+
+### KL-023 — RSS endpoint redirects are not constrained to the configured publisher
+
+- **Status:** Evidence-backed network-boundary defect; correction proposed in draft PR [#40](https://github.com/Batmancpu/CurrentLens/pull/40), exact-head tests added but not run.
+- `NewsRepository.fetchOne()` previously relied on `HttpURLConnection` automatic redirect following. The initial RSS endpoint was publisher-configured, but a 3xx response could send the next request to an arbitrary host before article URL validation.
+- PR #40 disables automatic redirects, validates the initial feed host and each resolved `Location` against the configured publisher's HTTPS allowlist, accepts only standard redirect codes, caps the chain at five and fails closed on cross-publisher/lookalike/cleartext/credential/non-standard-port/oversized targets. `bbci.co.uk` is included for the configured `feeds.bbci.co.uk` source.
+- Four focused redirect-policy tests and one BBC feed-host assertion were added. Tests are **added, not run**; main's workflow is push-only and PR #40 has no statuses/check-runs.
+- This prevents an RSS endpoint from silently widening the app's network boundary. It does not restrict image URLs or WebView subresources; those remain separate PRs #25/#26. It adds no new network request and does not prove every live publisher feed's redirect chain.

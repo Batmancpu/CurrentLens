@@ -1,3 +1,21 @@
+## Live snapshot — 8 November 2026, 16:05 IST
+
+- **Canonical main:** `73b8a0d1ba33503fede02db2c3c0af082d724a12`, unchanged.
+- **Active integration:** `black-box-bihar-news@9efd103a0cd8a272bbce3c61140e40bfa6a8b707`; PR [#34](https://github.com/Batmancpu/CurrentLens/pull/34) is draft/open, 141 commits ahead and 0 behind main. The current snapshot is the code/documentation head before this handoff refresh.
+- **Repository inventory:** 44 branches, 27 open PRs, 14 closed PRs. No branch deletion or PR merge.
+- **Actions:** 332 runs across four pages; 201 success, 67 failure, 64 cancelled; queue and in-progress 0. Latest natural push run [#331](https://github.com/Batmancpu/CurrentLens/actions/runs/42471818414) and PR run [#332](https://github.com/Batmancpu/CurrentLens/actions/runs/42471821932) both passed on exact integration head `9efd103a0cd8a272bbce3c61140e40bfa6a8b707`. WordNet builder 4/4; 151,456 unique words; `:app:testDebugUnitTest`; `:app:assembleDebug`; artifact upload. Release jobs skipped. Artifacts: push [13613817606](https://github.com/Batmancpu/CurrentLens/actions/runs/42471818414/artifacts/13613817606), 39,121,079 bytes, SHA-256 `c7b46466803b5da8e78c58410f51c0a2db5110c11f7bae2d0983c336934daa00`; PR [13613339920](https://github.com/Batmancpu/CurrentLens/actions/runs/42471821932/artifacts/13613339920), 39,121,080 bytes, SHA-256 `4b1c580f4224a731a1523e2df5e477ab64efb6543e6f3bea3b5ba63b059e4245`. Both expire 22 November 2026 around 10:34 UTC. These runs validate PR #34's integration/docs head, not the separate PR #40/#41 heads.
+- **Workflow:** main has one push-only `.github/workflows/build-apk.yml` with workflow-wide `contents: write`; it does not validate PR #40/#41. The integration branch's workflow is a separate unmerged version with read-only build/test and isolated main-push release-write. PR #18 remains the main-workflow proposal.
+- **Latest Release:** [v0.2.0-build-116](https://github.com/Batmancpu/CurrentLens/releases/tag/v0.2.0-build-116), published 6 November 2026 11:18:59 UTC. No Release created.
+- **RSS PRs:** [#40](https://github.com/Batmancpu/CurrentLens/pull/40) now validates both RSS article destinations and every publisher-feed redirect. Head `552b96e7948ac5ade821a711ea8dd225984824a9`; 6 commits, 7 files, draft/open/mergeable; tests added, not run. [#41](https://github.com/Batmancpu/CurrentLens/pull/41) bounds untrusted RSS fields and preserves Atom XHTML summaries plus inline Atom content; head `e4ca4a522dd236052142aa31dc518979bfafe891`; 8 commits, 6 files, draft/open/mergeable; tests added, not run. Both are main-based and both modify `NewsRepository.kt`; reconcile their parser/redirect changes before integration rather than merging independently.
+- **Editorial:** current integration `UpscFeedPolicy.kt` still has a generic action-term exception and global syllabus-signal gate. PR #27 remains the existing strict-gate proposal without verified exact-head CI. Entertainment false positives and unrelated-excerpt false positives are not certified resolved.
+- **Remaining RSS/security work:** #32 concurrency limit, #38 per-feed parser-entry budget, #33 relative Atom links, #25 publisher image hosts, #26 WebView subresource restrictions, #35 bounded startup diagnostic reads. These require coordinated review.
+- **Primary-source evidence:** configured live feeds remain publisher RSS; no per-story independently verified PIB/Gazette/ministry/Parliament/PRS/RBI/Supreme Court/regulator corroboration is yet implemented. Publisher RSS remains secondary provenance.
+- **UPSC baseline:** official 2026 Prelims GS I–II and Mains GS I–IV papers are available from UPSC; the 2017–2026 ten-year reference window is current. [Official UPSC previous papers](https://www.upsc.gov.in/examinations/previous-question-papers).
+- **Device evidence:** no fresh OPPO Reno10 logcat/tombstone or Perfetto trace. Cold-start causality, visual/IME/TalkBack/font-scale/Reduce Motion and GPU/frame-time/memory/battery/thermal remain **UNVERIFIED**.
+- **Safety:** no main edit, merge, workflow dispatch/rerun, Release publication or branch deletion.
+
+---
+
 ## Live snapshot — 8 November 2026, 15:55 IST
 
 - **Canonical main:** `73b8a0d1ba33503fede02db2c3c0af082d724a12`, unchanged.

@@ -1,5 +1,18 @@
 # CurrentLens — Build, Test, Release and Debug Record
 
+## Live review snapshot — 8 November 2026, 16:05 IST
+
+- Canonical main: `73b8a0d1ba33503fede02db2c3c0af082d724a12`, unchanged.
+- Full Actions history: 332 runs across four pages; 201 success, 67 failure, 64 cancelled; 0 queued/in progress.
+- Latest natural PR #34 run #332 and push run #331 both passed on exact integration/docs head `9efd103a0cd8a272bbce3c61140e40bfa6a8b707`. WordNet builder 4/4, 151,456 unique words, `:app:testDebugUnitTest`, `:app:assembleDebug`, artifact upload; publish jobs skipped. PR artifact 13613339920 (39,121,080 bytes, SHA-256 `4b1c580f4224a731a1523e2df5e477ab64efb6543e6f3bea3b5ba63b059e4245`); push artifact 13613817606 (39,121,079 bytes, SHA-256 `c7b46466803b5da8e78c58410f51c0a2db5110c11f7bae2d0983c336934daa00`). Both expire 22 Nov 2026 around 10:34 UTC.
+- Latest Release by publication timestamp: v0.2.0-build-116, published 6 Nov 2026 11:18:59 UTC. No Release created.
+- Main workflow remains push-only with workflow-wide `contents: write`; integration branch workflow is a separate unmerged proposal with read-only build/test and isolated main-push release-write.
+- PR #40 exact head `552b96e7948ac5ade821a711ea8dd225984824a9` and PR #41 exact head `e4ca4a522dd236052142aa31dc518979bfafe891` both have zero status/check-run entries. Their tests are added, not run.
+- Non-blocking CI warnings in #331/#332: deprecated Android system-bar APIs, ArrowBack icon, Compose scale/updateTransition and LinearProgressIndicator overloads; Node 20 action deprecation forced to Node 24; punycode and url.parse() warnings.
+- These runs validate the integration/docs head only, not PR #40/#41 or Android device behaviour.
+
+---
+
 ## Live review snapshot — 8 November 2026, 15:55 IST
 
 - Canonical main: `73b8a0d1ba33503fede02db2c3c0af082d724a12`, unchanged.
