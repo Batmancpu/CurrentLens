@@ -91,4 +91,34 @@ class FeedXmlTextReaderTest {
         assertEquals(XmlPullParser.START_TAG, parser.nextTag())
         assertEquals("next", parser.name)
     }
+    @Test
+    fun readsAtomXhtmlContentAndLeavesParserAtOuterEndTag() {
+        val parser = parser(
+            """
+            <feed xmlns="http://www.w3.org/2005/Atom">
+              <entry>
+                <content type="xhtml">
+                  <div xmlns="http://www.w3.org/1999/xhtml">
+                    RBI <b>retains</b> the repo rate.
+                  </div>
+                </content>
+                <updated>2026-11-08T10:00:00Z</updated>
+              </entry>
+            </feed>
+            """.trimIndent()
+        )
+        moveToStartTag(parser, "content")
+
+        val text = FeedXmlTextReader.readElementText(
+            parser,
+            FeedFieldPolicy.MAX_DESCRIPTION_SOURCE_CHARS
+        )
+
+        assertEquals("RBI retains the repo rate.", text.replace(Regex("\\s+"), " ").trim())
+        assertEquals(XmlPullParser.END_TAG, parser.eventType)
+        assertEquals("content", parser.name)
+        assertEquals(XmlPullParser.START_TAG, parser.nextTag())
+        assertEquals("updated", parser.name)
+    }
+
 }

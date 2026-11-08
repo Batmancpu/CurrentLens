@@ -149,9 +149,33 @@ object NewsRepository {
                                     runCatching { parser.nextText() }.getOrDefault("")
                                 ).orEmpty()
                             "enclosure" -> image = FeedFieldPolicy.url(parser.getAttributeValue(null, "url").orEmpty())
-                            "thumbnail", "content" -> {
+                            "thumbnail" -> {
                                 val candidate = FeedFieldPolicy.url(parser.getAttributeValue(null, "url").orEmpty())
                                 if (candidate?.startsWith("http") == true) image = candidate
+                            }
+                            "content" -> {
+                                val rawUrl = parser.getAttributeValue(null, "url")
+                                val candidate = FeedFieldPolicy.url(rawUrl.orEmpty())
+                                if (candidate?.startsWith("http") == true) {
+                                    image = candidate
+                                } else if (
+                                    FeedFieldPolicy.isInlineAtomTextContent(
+                                        namespace = parser.namespace,
+                                        type = parser.getAttributeValue(null, "type"),
+                                        src = parser.getAttributeValue(null, "src"),
+                                        url = rawUrl
+                                    )
+                                ) {
+                                    val text = clean(
+                                        FeedFieldPolicy.descriptionSource(
+                                            FeedXmlTextReader.readElementText(
+                                                parser,
+                                                FeedFieldPolicy.MAX_DESCRIPTION_SOURCE_CHARS
+                                            )
+                                        )
+                                    )
+                                    if (text.length > description.length) description = text
+                                }
                             }
                         }
                     }

@@ -1,7 +1,9 @@
 package com.mangoloads.currentlens
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class FeedFieldPolicyTest {
@@ -55,4 +57,58 @@ class FeedFieldPolicyTest {
         assertNull(FeedFieldPolicy.date(""))
         assertNull(FeedFieldPolicy.date("x".repeat(FeedFieldPolicy.MAX_DATE_CHARS + 1)))
     }
+    @Test
+    fun inlineAtomContentRecognisesTextHtmlAndXhtmlConstructs() {
+        val atom = "http://www.w3.org/2005/Atom"
+        listOf(
+            null,
+            "text",
+            "html",
+            "xhtml",
+            "text/plain",
+            "text/html",
+            "application/xhtml+xml",
+            "text/html; charset=utf-8"
+        ).forEach { type ->
+            assertTrue(
+                "Expected inline Atom text type to be accepted: $type",
+                FeedFieldPolicy.isInlineAtomTextContent(
+                    namespace = atom,
+                    type = type,
+                    src = null,
+                    url = null
+                )
+            )
+        }
+    }
+
+    @Test
+    fun externalAtomContentAndMediaRssImagesAreNotReadAsInlineText() {
+        val atom = "http://www.w3.org/2005/Atom"
+        assertFalse(
+            FeedFieldPolicy.isInlineAtomTextContent(
+                namespace = atom,
+                type = "text",
+                src = "https://publisher.example/content/123",
+                url = null
+            )
+        )
+        assertFalse(
+            FeedFieldPolicy.isInlineAtomTextContent(
+                namespace = atom,
+                type = "image/png",
+                src = null,
+                url = null
+            )
+        )
+        assertFalse(
+            FeedFieldPolicy.isInlineAtomTextContent(
+                namespace = "http://search.yahoo.com/mrss/",
+                type = "image/jpeg",
+                src = null,
+                url = "https://publisher.example/image.jpg"
+            )
+        )
+    }
+
 }
