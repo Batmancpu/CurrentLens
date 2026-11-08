@@ -20,7 +20,7 @@ class NewsRepositoryTest {
     }
 
     @Test
-    fun malformedEntriesConsumeBudgetBeforeA laterValidEntryCanBeParsed() {
+    fun malformedEntriesConsumeBudgetBeforeALaterValidEntryCanBeParsed() {
         val limit = NewsRepository.MAX_ENTRIES_PER_FEED
         // The parser calls consume at each item/entry start tag, before checking
         // title/link validity. Model a feed with 100 malformed records then a valid one.
