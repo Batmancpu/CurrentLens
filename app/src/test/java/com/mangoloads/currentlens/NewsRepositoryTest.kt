@@ -10,6 +10,11 @@ class NewsRepositoryTest {
         url = "https://www.thehindu.com/feed.xml"
     )
 
+    // Android's Html.fromHtml is a framework stub in local JVM tests. The parser
+    // receives an identity sanitizer here so these tests exercise XML/entry limits,
+    // while production keeps the default Android HTML sanitizer.
+    private val plainTextSanitizer: (String) -> String = { it }
+
     @Test
     fun parserCapsValidEntriesBeforeTheCrossFeedMerge() {
         val xml = buildString {
@@ -23,7 +28,7 @@ class NewsRepositoryTest {
             append("</channel></rss>")
         }
 
-        val articles = NewsRepository.parse(source, xml)
+        val articles = NewsRepository.parse(source, xml, plainTextSanitizer)
 
         assertEquals(NewsRepository.MAX_ENTRIES_PER_FEED, articles.size)
         assertEquals(
@@ -46,7 +51,7 @@ class NewsRepositoryTest {
 
         assertEquals(
             emptyList<Article>(),
-            NewsRepository.parse(source, xml)
+            NewsRepository.parse(source, xml, plainTextSanitizer)
         )
     }
 }
