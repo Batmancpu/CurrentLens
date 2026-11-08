@@ -20,6 +20,9 @@ internal object FeedXmlTextReader {
         "li", "main", "nav", "ol", "p", "pre", "section",
         "table", "tbody", "td", "tfoot", "th", "thead", "tr", "ul"
     )
+    // Executable/presentation-only XHTML is not article evidence and must not
+    // contribute syllabus keywords to the editorial classifier.
+    private val ignoredSubtreeElements = setOf("script", "style")
 
     fun readElementText(parser: XmlPullParser, maxChars: Int): String {
         require(maxChars >= 0) { "maxChars must be non-negative" }
@@ -30,6 +33,7 @@ internal object FeedXmlTextReader {
         val elementDepth = parser.depth
         val result = StringBuilder(minOf(maxChars, 256))
         var limitReached = maxChars == 0
+        val ignoredElementDepths = mutableListOf<Int>()
 
         fun appendBoundarySpace() {
             if (result.isNotEmpty() && !result.last().isWhitespace()) {
@@ -48,14 +52,21 @@ internal object FeedXmlTextReader {
             }
 
             val blockTag = parser.name?.lowercase(Locale.ROOT)
-            if (parser.depth > elementDepth &&
+            if (event == XmlPullParser.START_TAG && parser.depth > elementDepth &&
+                blockTag != null && blockTag in ignoredSubtreeElements
+            ) {
+                ignoredElementDepths.add(parser.depth)
+            }
+            val insideIgnoredSubtree = ignoredElementDepths.isNotEmpty()
+
+            if (!insideIgnoredSubtree && parser.depth > elementDepth &&
                 (event == XmlPullParser.START_TAG || event == XmlPullParser.END_TAG) &&
                 blockTag != null && blockTag in blockElements
             ) {
                 appendBoundarySpace()
             }
 
-            if (!limitReached &&
+            if (!insideIgnoredSubtree && !limitReached &&
                 (event == XmlPullParser.TEXT ||
                     event == XmlPullParser.CDSECT ||
                     event == XmlPullParser.ENTITY_REF)
@@ -79,6 +90,13 @@ internal object FeedXmlTextReader {
                     offset += charCount
                 }
                 if (result.length >= maxChars) limitReached = true
+            }
+
+            if (event == XmlPullParser.END_TAG &&
+                ignoredElementDepths.lastOrNull() == parser.depth
+            ) {
+                ignoredElementDepths.removeAt(ignoredElementDepths.lastIndex)
+                if (ignoredElementDepths.isEmpty()) appendBoundarySpace()
             }
 
             event = parser.next()
