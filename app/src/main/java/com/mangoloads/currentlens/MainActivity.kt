@@ -2602,6 +2602,7 @@ private class ReaderWebView(context: android.content.Context) : WebView(context)
     private var autoDefineEvaluationPending = false
     private var pendingReadingPositionRestore: Float? = null
     private var readingPositionRestore: Runnable? = null
+    private var readingPositionRestoreSettle: Runnable? = null
     private var readingPositionSave: Runnable? = null
     private var lastRestoreContentHeight = -1
     private var stableRestoreSamples = 0
@@ -2664,10 +2665,14 @@ private class ReaderWebView(context: android.content.Context) : WebView(context)
                 if (targetY != null && targetY > 0) {
                     restoringReadingPosition = true
                     scrollTo(0, targetY)
-                    postDelayed({
+                    readingPositionRestoreSettle?.let { removeCallbacks(it) }
+                    val settle = Runnable {
+                        readingPositionRestoreSettle = null
                         restoringReadingPosition = false
                         if (!readingPositionCompleted) scheduleReadingPositionSave()
-                    }, READING_POSITION_RESTORE_SETTLE_MS)
+                    }
+                    readingPositionRestoreSettle = settle
+                    postDelayed(settle, READING_POSITION_RESTORE_SETTLE_MS)
                 }
             } else {
                 scheduleReadingPositionRestoreAttempt(attempt + 1)
@@ -2680,6 +2685,9 @@ private class ReaderWebView(context: android.content.Context) : WebView(context)
     private fun cancelReadingPositionRestore() {
         readingPositionRestore?.let { removeCallbacks(it) }
         readingPositionRestore = null
+        readingPositionRestoreSettle?.let { removeCallbacks(it) }
+        readingPositionRestoreSettle = null
+        restoringReadingPosition = false
         pendingReadingPositionRestore = null
         stableRestoreSamples = 0
         lastRestoreContentHeight = -1
@@ -2765,6 +2773,7 @@ private class ReaderWebView(context: android.content.Context) : WebView(context)
     fun releaseForDisposal() {
         releaseGuard.release(
             listOf(
+                { flushReadingPosition() },
                 { stopLoading() },
                 {
                     readingPositionSave?.let { removeCallbacks(it) }
