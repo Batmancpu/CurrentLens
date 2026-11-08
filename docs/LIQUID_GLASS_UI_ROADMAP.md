@@ -1,3 +1,46 @@
+# Live implementation batch — Search clear active-state visibility (9 November 2026, 02:27 IST)
+
+**Source before change:** `black-box-bihar-news@4f3d0491e63619d48193316a0e8d370af5941a9f`  
+**Base:** `main@73b8a0d1ba33503fede02db2c3c0af082d724a12` — **156 ahead / 0 behind**, with main as merge base.  
+**PR:** #34 remains open/draft → main, unmerged and unretargeted. Only the owner-selected `black-box-bihar-news` branch is modified.
+
+## Branch freshness and dependency gate
+
+- Re-enumerated the complete remote branch endpoint: **46 branches** (page 1 = 46; page 2 = 0), **29 open PRs** and **14 closed PRs** (page 2 empty). PR #34 head matched the selected branch before this change.
+- The newest independent relevant branch is PR #43, `fix/release-reader-webview-resources-2026-11-09@a3b079aac118da140c32492a6acc787f6090bc59` (2026-11-08 20:29:32Z, “test(reader): ensure fatal teardown errors propagate”): **9 ahead / 0 behind main**, but **9 ahead / 156 behind black-box**. Its complete three-file Reader delta is not a viable application baseline. The permanent-disposal implementation from its earlier head is already present on black-box through `86e095d858784b59b231f64f647aed869698f992`, validated by exact-head runs #365/#366; current `AndroidView.onRelease`, `ReaderWebViewReleaseGuard` and its cleanup tests were inspected. The latest source-only fatal-error test is a separate Reader lifecycle follow-up, not copied into this Search pass.
+- PR #37’s RowScope compile repair is present in the current 48dp trailing Search slot; PR #30’s `TouchTargetPolicy`, PR #31’s IO-restored appearance preferences and PR #36’s `AsiaKolkataDayPolicy` are present. PR #13’s adaptive contrast is represented by the single conservative 8×8 shared probe (4s/6s cadence, paused during feed motion and outside foreground home).
+- PR #42 is editorial-only and diverged (6 ahead / 5 behind); PR #39’s signing/workflow/Gradle migration remains owner-gated on secrets, certificate pinning and install/local-data migration. RSS/parser/security work in #25/#26/#32/#33/#38/#40/#41, diagnostic work in #35/#16 and older persistence/editorial branches were not changed. The old `brrrNEWS`, `ui/liquid-glass-performance`, continuation and v0.3 lines are not selected baselines.
+- The active line remains coherent and newer than main; no other branch, PR, repository setting or source branch was changed.
+
+## Exact parent CI, Actions, workflow and Release
+
+- Fully paginated **370 Actions runs**: **232 success / 68 failure / 70 cancelled**, queued/in-progress **0**.
+- Exact parent SHA `4f3d0491e63619d48193316a0e8d370af5941a9f` passed natural push run [#369](https://github.com/Batmancpu/CurrentLens/actions/runs/42518716005) and pull-request run [#370](https://github.com/Batmancpu/CurrentLens/actions/runs/42518721737). Full PR job log and every step were inspected: WordNet builder **4/4**, offline dictionary **151,456 unique words / 50,950,144 bytes**, `:app:testDebugUnitTest`, `:app:assembleDebug` and artifact upload all succeeded; build completed in 1m 34s. PR artifact [#13632193707](https://github.com/Batmancpu/CurrentLens/actions/runs/42518721737/artifacts/13632193707) is **39,128,048 bytes**, SHA-256 `f67452eb7efced1bc1b612f9fc204b404991132c1c4d11ed38d90beb3858703d`, expires **22 November 2026 20:12:21 UTC**. Push artifact #13633005379 is 39,128,040 bytes. Publish jobs skipped.
+- Active `.github/workflows/build-apk.yml` has read-only build/test permissions, natural push/PR triggers and a separate main-push-only Release-write job. Main’s own workflow remains push-only with `contents: write`; the natural PR run above is PR #34’s integration-branch workflow, not a claim that main’s workflow changed.
+- Latest published Release remains `v0.2.0-build-116` (6 November 2026 11:18:59Z); no Release was created.
+
+## Implementation — clear affordance follows active Search state
+
+- `SearchMorphField` already reserves a fixed **48dp** trailing slot while the capsule is expanded, so clearing never shifts the text field/cursor. Its existing `onClear` callback clears only `searchQuery`, explicitly re-requests the Search field focus and keyboard, and leaves filters and expanded state unchanged.
+- The clear icon’s visibility previously depended only on a non-blank query. During the IME-docked collapse transition, `searchCollapseRequested` disabled the field while the icon remained visible until the morph crossed its progress threshold. Added pure `SearchClearActionPolicy.shouldShow(query, fieldActive)`; the icon now appears only for a non-blank query while the field is active. The 48dp slot remains reserved through the morph, preventing an abrupt cursor/text shift.
+- Existing fade timing and Reduce Motion snap are unchanged. No second clear control, filter reset, focus/IME callback change or Search morph geometry change.
+
+## Paired material/performance strategy and coverage
+
+| Component | Material tier / reason | Effect and capture scope | Reuse / fallback | Accessibility and tests | Measured result |
+|---|---|---|---|---|---|
+| SearchMorphField clear action | Tier 2 interactive glass; a contextual action belongs inside the active Search capsule | Existing capsule and one root background-only source; **0** added blur/refraction passes, captures/readbacks or graphics layers | Existing 48dp reserved slot, fade and Reduce Motion snap; no duplicate surface | Clear search description and 48dp target retained; pure visibility-policy test covers active/non-blank boundaries | Source audit only; device animation/focus and performance unverified |
+
+- Added `SearchClearActionPolicyTest` for active non-blank, empty, whitespace-only and inactive-query states. The existing focus/keyboard callback is preserved.
+- No new Prismal surface, blur/refraction, shader, capture/readback, image decode, dependency, timer, network request or persistence operation. This is a state-visibility correction, not a measured rendering or battery improvement.
+- OPPO Reno10 Search collapse, focus/IME retention, cursor stability, TalkBack, font scaling, Reduce Motion, light/dark contrast, Perfetto/frame timing, GPU overdraw, allocation/memory, thermal and battery remain **UNVERIFIED**. Parent #369/#370 do not validate the new commit; inspect its own natural push/PR jobs before another implementation pass.
+
+## Next
+
+- Inspect the exact new-head natural push and PR jobs, full logs and APK artifact. If they pass, continue the final whole-app visual/accessibility audit without adding glass to dense article/quiz reading surfaces or duplicating the shared backdrop.
+
+---
+
 # Live implementation batch — Reader WebView permanent-disposal guard (9 November 2026, 00:31 IST)
 
 **Source:** `black-box-bihar-news@58c2e5d99f87701eb7e6f68a53bfadcf8eb9c8e4`  

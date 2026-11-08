@@ -1,3 +1,33 @@
+# Latest live branch/PR/CI audit — 9 November 2026, 02:27 IST
+
+**Repository:** `Batmancpu/CurrentLens`  
+**Default:** `main@73b8a0d1ba33503fede02db2c3c0af082d724a12`  
+**Owner-selected integration/UI line:** `black-box-bihar-news@4f3d0491e63619d48193316a0e8d370af5941a9f` — **156 ahead / 0 behind main**; main is the merge base.  
+**PR:** #34 remains open/draft → main, unmerged and unretargeted; before this pass its head matched the branch.
+
+## Live inventory and ancestry
+
+- Full remote branch inventory: **46** (page 1 = 46; page 2 = 0). Open PRs: **29** (page 2 = 0). Closed PRs: **14** (page 2 = 0). The detailed 46-row table immediately below remains the inventory; the current black-box and PR #43 heads are updated in the table.
+- `black-box-bihar-news` is the only active integration/UI line. Its latest pre-change commit is 2026-11-08 20:10:01Z, “perf(startup): move local diagnostics off the main thread”. PR #34 has 156 commits, 82 changed files, 12,201 additions and 872 deletions; base remains main.
+- PR #43 `fix/release-reader-webview-resources-2026-11-09@a3b079aac118da140c32492a6acc787f6090bc59` is 9 ahead / 0 behind main and 9 ahead / 156 behind black-box. It is a divergent three-file Reader teardown branch, not a replacement baseline. Its permanent-disposal implementation is already ported on black-box and passed #365/#366; its latest fatal-error test remains a separate follow-up.
+- PR #37’s Search RowScope repair, #30’s 48dp target policy, #31’s off-main appearance restore, #36’s Asia/Kolkata date policy, PR #13’s conservative adaptive-contrast policy, and the earlier PR #43 Reader disposal implementation are represented in the current tree. PR #42 remains editorial-only; PR #39 remains an owner-gated signing migration. RSS/parser/security proposals #25/#26/#32/#33/#38/#40/#41, diagnostic proposals #16/#35 and older persistence/editorial lines were not modified. The old brrrNEWS and v0.3/legacy UI lines are not baselines.
+- The current Search clear action now uses an explicit active-field visibility policy while retaining its fixed 48dp slot and existing focus/IME callback. Only black-box is changed.
+
+## Actions, workflow and Release
+
+- All **370** Actions runs were paginated (100 + 100 + 100 + 70): **232 success / 68 failure / 70 cancelled**; queued/in-progress **0**.
+- Exact parent `4f3d0491e63619d48193316a0e8d370af5941a9f` passed natural push run [#369](https://github.com/Batmancpu/CurrentLens/actions/runs/42518716005) and PR run [#370](https://github.com/Batmancpu/CurrentLens/actions/runs/42518721737). PR artifact [#13632193707](https://github.com/Batmancpu/CurrentLens/actions/runs/42518721737/artifacts/13632193707) is 39,128,048 bytes, SHA-256 `f67452eb7efced1bc1b612f9fc204b404991132c1c4d11ed38d90beb3858703d`, expires 22 November 2026 20:12:21 UTC. Both jobs passed WordNet builder 4/4, 151,456-word database generation, `:app:testDebugUnitTest`, `:app:assembleDebug` and artifact upload. Release jobs skipped.
+- Integration workflow blob `6cef6ca19f3babd331c9deb59be9da0067c6fa66` has read-only build/test permissions, natural push/PR triggers and a separate main-push-only Release-write job. Main’s own workflow is still push-only with `contents: write`.
+- Latest published Release: `v0.2.0-build-116`, 6 November 2026 11:18:59Z. No Release was created.
+
+## Device and performance status
+
+No new OPPO Reno10 screenshot, logcat, tombstone or Perfetto trace is available. Search focus/IME/cursor behaviour, Reader WebView disposal/re-entry, TalkBack, font scaling, Reduce Motion, frame timing/jank, GPU overdraw, allocations/memory, thermal and battery remain **UNVERIFIED**. Source inspection and CI do not establish device smoothness, launch stability or power savings.
+
+> This live snapshot supersedes the older inventory/status snapshots below; historical evidence remains in the chronological ledger.
+
+---
+
 # Latest live branch/PR/CI audit — 9 November 2026, 00:31 IST
 
 **Repository:** `Batmancpu/CurrentLens`  
@@ -12,7 +42,7 @@ The GitHub branch endpoint was fully paginated: **46 branches** on page 1 and **
 | Branch | Head SHA | Latest commit UTC | Latest commit message | PR relationship |
 |---|---|---|---|---|
 | `a11y/48dp-icon-targets-2026-11-07` | `25107ce905b70bde1a41282ffd1d606819ebf58d` | 2026-11-07 11:02:12Z | test(a11y): cover minimum icon action target | PR #30 open |
-| `black-box-bihar-news` | `86e095d858784b59b231f64f647aed869698f992` | 2026-11-08 19:11:33Z | fix(reader): release WebView resources on permanent disposal | PR #34 open/draft; active code head at inventory snapshot |
+| `black-box-bihar-news` | `4f3d0491e63619d48193316a0e8d370af5941a9f` | 2026-11-08 20:10:01Z | perf(startup): move local diagnostics off the main thread | PR #34 open/draft; active integration/UI line |
 | `brrrNEWS` | `e6fcfc25a4c8d5f363ced58f313552120aa7ff96` | 2026-11-07 04:13:30Z | ui: consolidate lightweight supporting glass surfaces | Base of PR #24 |
 | `ci/read-only-pr-validation-isolated-release-write-2026-11-06` | `963118f0abe5f7e38f2aa66a49d4b8e74548660c` | 2026-11-06 17:18:53Z | ci: validate pull requests with read-only build permissions | PR #18 open |
 | `ci/stacked-pr-validation-2026-11-07` | `5dc3179361835b77fb3186a99d9b5791301463fd` | 2026-11-06 21:41:27Z | ci: restore Android SDK setup before sdkmanager | PR #20 closed/merged into black-box |
@@ -31,7 +61,7 @@ The GitHub branch endpoint was fully paginated: **46 branches** on page 1 and **
 | `fix/parliamentary-syllabus-signal-gate-2026-11-07` | `9d754953a29c0355ce55306ce4fd5463193c9dbb` | 2026-11-07 03:49:44Z | test: preserve Parliament bill headline variants | PR #23 closed/merged |
 | `fix/publisher-redirect-allowlist-2026-11-06` | `83a94ac9c3fdc4e70f1ef35c65e9cf793aa9b306` | 2026-11-06 12:15:39Z | Validate RSS redirects against publisher allowlists | PR #15 closed, unmerged |
 | `fix/quiz-option-selected-semantics-compile-2026-11-07` | `6f9b3c1e1a484233721863d0b736734c0d282cd5` | 2026-11-07 08:12:10Z | fix(quiz): qualify selected semantics receiver | PR #28 closed/merged |
-| `fix/release-reader-webview-resources-2026-11-09` | `d1ec6fa51bf002cdf9f20cbfe6edbfa327eeb614` | 2026-11-08 18:54:05Z | test(reader): verify parent removal before WebView destroy | PR #43 open/draft |
+| `fix/release-reader-webview-resources-2026-11-09` | `a3b079aac118da140c32492a6acc787f6090bc59` | 2026-11-08 20:29:32Z | test(reader): ensure fatal teardown errors propagate | PR #43 open/draft; divergent Reader-only follow-up |
 | `fix/resolve-relative-atom-links-2026-11-07` | `c97d6b960e2cc6b93ac6444ebf9ceb6eabd320a4` | 2026-11-07 14:59:24Z | test(rss): correct relative xml base fixture | PR #33 open |
 | `fix/rss-image-host-allowlist-2026-11-07` | `7a51c9c2c40aa89997db55194a6db3d0d65ac95d` | 2026-11-07 06:28:46Z | test(reader): cover publisher-only image resources | PR #25 open |
 | `fix/rss-tracking-variant-dedup-2026-11-06` | `2093990be43a8a9b8eed43f8e4ec1e49c0b29f1b` | 2026-11-06 16:42:29Z | fix: deduplicate RSS tracking URL variants | PR #17 open |

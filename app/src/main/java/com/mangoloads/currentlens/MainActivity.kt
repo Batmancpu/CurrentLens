@@ -1728,7 +1728,7 @@ private fun SearchMorphField(
                     // The fixed outer slot preserves the text field's width while the
                     // clear affordance fades in/out.
                     AnimatedVisibility(
-                        visible = query.isNotBlank(),
+                        visible = SearchClearActionPolicy.shouldShow(query, enabled),
                         enter = fadeIn(if (reduceMotion) snap() else tween(120)),
                         exit = fadeOut(if (reduceMotion) snap() else tween(90))
                     ) {
