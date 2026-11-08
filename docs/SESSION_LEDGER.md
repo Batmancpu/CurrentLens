@@ -433,3 +433,10 @@ Branch: `fix/early-startup-crash-diagnostics-2026-11-06`.
 - **Next:** inspect natural CI for the exact new head, then reconcile PR #27 with the current integration branch and validate the combined gate.
 
 The resulting GitHub commit SHA is recorded in the PR history; this entry intentionally does not attempt to embed its own SHA.
+
+
+## 2026-11-08 05:40 IST / 00:10 UTC — Correct regex escaping before validation
+
+- Review of the just-created promotional-framing commit found that its Kotlin raw-string regex contained doubled backslashes. In a raw string, that would match literal backslashes rather than word boundaries/whitespace classes, so the new predicate would not reliably reject the intended headlines.
+- Corrected the pattern to single backslashes inside the Kotlin triple-quoted raw string before any natural CI validation. The three synthetic false-positive tests and existing film-certification positive control remain unchanged.
+- The initial commit has no natural Actions run and is not treated as tested. The corrected branch head must receive its own natural build/test run; no manual dispatch or rerun.
