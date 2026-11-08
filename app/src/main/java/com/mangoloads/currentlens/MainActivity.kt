@@ -323,6 +323,7 @@ class MainActivity : ComponentActivity() {
                     }
                 }
             }
+            }
             withContext(Dispatchers.IO) {
                 LaunchCrashDiagnostics.recordStage(applicationContext, "MainActivity.setContent returned")
             }

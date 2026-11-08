@@ -4,6 +4,21 @@
 
 ## Live snapshot — 8 November 2026
 - **Main:** 73b8a0d1ba33503fede02db2c3c0af082d724a12; unchanged.
+- **Active startup work:** draft PR #16, branch fix/early-startup-crash-diagnostics-2026-11-06. The change moves prior-process inspection, diagnostic file reads/writes, ActivityManager exit-history lookup and recovery clearing off the startup/UI thread while retaining immediate uncaught-handler installation.
+- **Latest source head before this correction:** cf885a1f1af02214f520d15a93ccd88000cbe71d. Natural run #353 failed Kotlin compilation because the setContent closing brace was omitted around the new lifecycleScope wrapper. Corrected in this follow-up commit; wait for the next natural run.
+- **Bounded diagnostics:** startup-stage reads <=512 characters; report reads <=30,000 characters; oversized legacy reports are discarded without materialising them. Crash-handler flush remains synchronous on the failing thread.
+- **Native crash:** user-reported native cold-start failure remains unverified. This change addresses code-evidenced main-thread diagnostic I/O only; it does not establish crash causality or claim device stability.
+- **Integration PR #34:** black-box-bihar-news@0e94d82be37a891dd4546a3f856a9cd47b5687d6, draft/open; exact-head run #348 passed JVM tests, APK assembly and artifact upload; release job skipped.
+- **Actions:** 353 runs at this snapshot; 216 success, 68 failure, 69 cancelled; zero queued/running after #353 completed. Main's latest run #116 passed; main remains push-only with workflow-wide contents: write.
+- **Latest Release:** v0.2.0-build-116, published 6 November 2026. No new Release.
+- **Next priorities:** reconcile strict editorial gate PR #27; integrate RSS concurrency/entry limits and relative Atom links; complete publisher image/WebView subresource restrictions; reconcile article-host validation; obtain device-level evidence only if the owner chooses to provide it.
+
+# CurrentLens — Latest project handoff (8 November 2026)
+
+> This live snapshot supersedes older dated snapshots below where they conflict. Full history remains in SESSION_LEDGER.md.
+
+## Live snapshot — 8 November 2026
+- **Main:** 73b8a0d1ba33503fede02db2c3c0af082d724a12; unchanged.
 - **Active startup work:** draft PR #16, branch fix/early-startup-crash-diagnostics-2026-11-06. The current change moves previous-process inspection, diagnostic file reads/writes, ActivityManager exit-history lookup and recovery clearing off the startup/UI thread. It retains immediate local uncaught-handler installation in attachBaseContext.
 - **Bounded diagnostics:** startup-stage reads <=512 characters; report reads <=30,000 characters; oversized legacy reports are discarded without materialising them. Crash-handler flush remains synchronous on the failing thread.
 - **Verification:** exact-head run #352 passed on the parent commit before this change; it does not validate the new commit. Focused JVM tests are added. Wait for the natural push run; do not dispatch/rerun.

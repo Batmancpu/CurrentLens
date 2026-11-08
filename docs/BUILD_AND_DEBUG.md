@@ -160,3 +160,10 @@ CI establishes that the code compiles and JVM tests pass. It cannot establish th
 - Latest main run remains #116 / https://github.com/Batmancpu/CurrentLens/actions/runs/42209037417, success on main SHA 73b8a0d1ba33503fede02db2c3c0af082d724a12; it published v0.2.0-build-116. The latest main Release does not contain the unmerged PR #16 changes.
 - PR #18's read-only pull-request build / isolated release-write workflow passed run #165 / https://github.com/Batmancpu/CurrentLens/actions/runs/42260538402; PR #18 remains open/draft. Main still has the older push-only workflow with contents: write at workflow scope. Reconcile PR #16's branch-specific workflow and PR #18 before any merge; no workflow was changed in this review.
 - The current PR #16 privacy-minimisation change adds focused JVM tests. Its new natural CI run must be checked before describing those tests as passed. No Actions workflow was manually dispatched or rerun.
+
+
+## 8 November 2026 — startup diagnostics main-thread correction attempt
+
+- Run #353 (`42492971718`) failed at Kotlin compilation on the first off-main diagnostics commit. Exact diagnostics: `MainActivity.kt:326:13 Suspension functions can only be called within coroutine body`; `MainActivity.kt:3513:2 Syntax error: Missing '}'`.
+- Root cause: the closing brace for the `setContent` lambda was omitted while wrapping `MainActivity.onCreate()` in `lifecycleScope.launch`; the post-setContent IO checkpoint was parsed inside the composable lambda. A follow-up commit restores the lambda boundary. This is not runtime/device evidence.
+- No artifact was uploaded and no Release job ran. The next natural push run must validate the correction.
