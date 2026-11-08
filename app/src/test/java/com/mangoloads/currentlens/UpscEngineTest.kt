@@ -87,6 +87,60 @@ class UpscEngineTest {
         assertEquals("GS III", UpscEngine.classify(disaster).gsPaper)
     }
 
+
+    @Test
+    fun gstCouncilRateDecisionMapsToGsThreeIndianEconomy() {
+        val article = Article(
+            id = "gst-council-rates",
+            title = "GST Council cuts GST rates on insurance premiums",
+            description = "The recommendation changes the indirect-tax treatment of insurance.",
+            url = "https://example.test/gst-council-rates",
+            source = "Test",
+            section = "Economy",
+            published = "2026-11-08T10:00:00Z"
+        )
+
+        val relevance = UpscEngine.classify(article)
+
+        assertEquals("GS III", relevance.gsPaper)
+        assertEquals("Indian Economy", relevance.subject)
+        assertTrue(relevance.matchedTerms.contains("gst rate"))
+    }
+
+    @Test
+    fun gstCouncilConstitutionalCompositionMapsToGsTwoConstitution() {
+        val article = Article(
+            id = "gst-council-composition",
+            title = "GST Council composition and voting structure under Article 279A",
+            description = "The constitutional body reflects Centre-State representation.",
+            url = "https://example.test/gst-council-composition",
+            source = "Test",
+            section = "India",
+            published = "2026-11-08T10:00:00Z"
+        )
+
+        val relevance = UpscEngine.classify(article)
+
+        assertEquals("GS II", relevance.gsPaper)
+        assertEquals("Constitution", relevance.subject)
+        assertTrue(relevance.matchedTerms.contains("article 279a"))
+    }
+
+    @Test
+    fun bareGstCouncilMeetingDoesNotCreateASyllabusMapping() {
+        val article = Article(
+            id = "gst-council-meeting",
+            title = "GST Council holds a routine meeting",
+            description = "Officials discuss routine administrative arrangements.",
+            url = "https://example.test/gst-council-meeting",
+            source = "Test",
+            section = "India",
+            published = "2026-11-08T10:00:00Z"
+        )
+
+        assertEquals("Unmapped", UpscEngine.classify(article).gsPaper)
+    }
+
     @Test
     fun quizAlwaysContainsFiveQuestionsAndMarksAuthoredPromptsHonestly() {
         val article = Article(
