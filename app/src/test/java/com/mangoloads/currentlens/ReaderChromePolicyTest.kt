@@ -151,4 +151,108 @@ class ReaderChromePolicyTest {
         assertEquals(-1, state.direction)
     }
 
+    @Test
+    fun shortStationaryTapCanRevealHiddenChrome() {
+        assertTrue(
+            ReaderChromePolicy.shouldRevealOnTap(
+                durationMs = 220,
+                deltaX = 3f,
+                deltaY = 4f,
+                touchSlopPx = 8f,
+                selectionActive = false,
+                chromePinned = false,
+                selectionPending = false
+            )
+        )
+        assertTrue(
+            ReaderChromePolicy.shouldRevealOnTap(
+                durationMs = ReaderChromePolicy.TAP_REVEAL_MAX_DURATION_MS,
+                deltaX = 0f,
+                deltaY = 0f,
+                touchSlopPx = 8f,
+                selectionActive = false,
+                chromePinned = false,
+                selectionPending = false
+            )
+        )
+    }
+
+    @Test
+    fun longPressAndMovementDoNotRevealChromeAsATap() {
+        assertFalse(
+            ReaderChromePolicy.shouldRevealOnTap(
+                durationMs = ReaderChromePolicy.TAP_REVEAL_MAX_DURATION_MS + 1,
+                deltaX = 0f,
+                deltaY = 0f,
+                touchSlopPx = 8f,
+                selectionActive = false,
+                chromePinned = false,
+                selectionPending = false
+            )
+        )
+        assertFalse(
+            ReaderChromePolicy.shouldRevealOnTap(
+                durationMs = 180,
+                deltaX = 9f,
+                deltaY = 0f,
+                touchSlopPx = 8f,
+                selectionActive = false,
+                chromePinned = false,
+                selectionPending = false
+            )
+        )
+    }
+
+    @Test
+    fun selectionAndPinnedReaderStatesSuppressTapReveal() {
+        assertFalse(
+            ReaderChromePolicy.shouldRevealOnTap(
+                durationMs = 180,
+                deltaX = 2f,
+                deltaY = 2f,
+                touchSlopPx = 8f,
+                selectionActive = true,
+                chromePinned = false,
+                selectionPending = false
+            )
+        )
+        assertFalse(
+            ReaderChromePolicy.shouldRevealOnTap(
+                durationMs = 180,
+                deltaX = 2f,
+                deltaY = 2f,
+                touchSlopPx = 8f,
+                selectionActive = false,
+                chromePinned = true,
+                selectionPending = false
+            )
+        )
+        assertFalse(
+            ReaderChromePolicy.shouldRevealOnTap(
+                durationMs = 180,
+                deltaX = 2f,
+                deltaY = 2f,
+                touchSlopPx = 8f,
+                selectionActive = false,
+                chromePinned = false,
+                selectionPending = true
+            )
+        )
+    }
+
+    @Test
+    fun invalidTapMeasurementsAreRejected() {
+        assertFalse(
+            ReaderChromePolicy.shouldRevealOnTap(
+                durationMs = 180,
+                deltaX = Float.NaN,
+                deltaY = 0f,
+                touchSlopPx = 8f,
+                selectionActive = false,
+                chromePinned = false,
+                selectionPending = false
+            )
+        )
+    }
+
 }

@@ -3743,6 +3743,8 @@ private class ReaderWebView(context: android.content.Context) : WebView(context)
     private var readingPositionCompleted = false
     private var readerChromeVisible = true
     private var readerChromePinned = false
+    // Track native ActionMode locally so a long-press is never treated as a tap.
+    private var selectionActionModeActive = false
     private var readerChromeScrollState = ReaderChromeScrollState()
     private var pendingReaderChromeHide: Runnable? = null
 
@@ -3798,6 +3800,8 @@ private class ReaderWebView(context: android.content.Context) : WebView(context)
             cancelPendingReaderChromeHide()
             readerChromeScrollState = ReaderChromeScrollState()
             readerChromePinned = false
+            selectionActionModeActive = false
+            onSelectionActionModeChanged(false)
             setReaderChromeVisible(true)
             readingPositionCompleted = false
         }
@@ -3947,6 +3951,12 @@ private class ReaderWebView(context: android.content.Context) : WebView(context)
         cancelShortPageEndCheck(resetStability = true)
         cancelPendingAutoDefine()
         cancelPendingReaderChromeHide()
+        selectionActionModeActive = false
+        touchDownX = null
+        touchDownY = null
+        touchDownAtMillis = null
+        tapCandidate = false
+        upwardSwipeDetected = false
         onSelectionActionModeChanged(false)
         super.onDetachedFromWindow()
     }
@@ -3997,7 +4007,10 @@ private class ReaderWebView(context: android.content.Context) : WebView(context)
         object : ActionMode.Callback2() {
             override fun onCreateActionMode(mode: ActionMode, menu: Menu): Boolean {
                 val created = original.onCreateActionMode(mode, menu)
-                if (created) onSelectionActionModeChanged(true)
+                if (created) {
+                    selectionActionModeActive = true
+                    onSelectionActionModeChanged(true)
+                }
                 if (created && selectionBridgeEnabled) {
                     menu.add(0, MENU_DEFINE_WORD, menu.size(), "Define")
                         .setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS)
@@ -4063,6 +4076,7 @@ private class ReaderWebView(context: android.content.Context) : WebView(context)
 
             override fun onDestroyActionMode(mode: ActionMode) {
                 cancelPendingAutoDefine()
+                selectionActionModeActive = false
                 onSelectionActionModeChanged(false)
                 original.onDestroyActionMode(mode)
             }
@@ -4074,6 +4088,8 @@ private class ReaderWebView(context: android.content.Context) : WebView(context)
         }
     private var touchDownX: Float? = null
     private var touchDownY: Float? = null
+    private var touchDownAtMillis: Long? = null
+    private var tapCandidate = false
     private var upwardSwipeDetected = false
 
     private fun cancelPendingAutoDefineIfGestureInvalidated(
@@ -4109,6 +4125,8 @@ private class ReaderWebView(context: android.content.Context) : WebView(context)
                 }
                 touchDownX = event.x
                 touchDownY = event.y
+                touchDownAtMillis = event.eventTime
+                tapCandidate = true
                 upwardSwipeDetected = false
             }
             MotionEvent.ACTION_POINTER_DOWN -> {
@@ -4116,19 +4134,49 @@ private class ReaderWebView(context: android.content.Context) : WebView(context)
                     // A second pointer changes selection into a multi-touch gesture (for example,
                     // pinch zoom). Keep WebView's native gesture, but stop definition/end tracking.
                     cancelPendingAutoDefine()
+                    tapCandidate = false
+                    touchDownAtMillis = null
                     touchDownX = null
                     touchDownY = null
                     upwardSwipeDetected = false
                 }
             }
             MotionEvent.ACTION_MOVE -> {
+                val startX = touchDownX
                 val startY = touchDownY
+                val touchSlop = ViewConfiguration.get(context).scaledTouchSlop.toFloat()
+                if (startX == null || startY == null) {
+                    tapCandidate = false
+                } else {
+                    val deltaX = event.x - startX
+                    val deltaY = event.y - startY
+                    if (deltaX * deltaX + deltaY * deltaY > touchSlop * touchSlop) {
+                        tapCandidate = false
+                    }
+                }
                 cancelPendingAutoDefineIfGestureInvalidated(event)
                 if (startY != null && startY - event.y > 24f) upwardSwipeDetected = true
             }
             MotionEvent.ACTION_UP -> {
                 // ACTION_UP is the final safety net if the platform omitted a MOVE sample.
                 cancelPendingAutoDefineIfGestureInvalidated(event)
+                val startX = touchDownX
+                val startY = touchDownY
+                val tapDuration = touchDownAtMillis?.let { (event.eventTime - it).coerceAtLeast(0L) }
+                    ?: Long.MAX_VALUE
+                val tapDeltaX = startX?.let { event.x - it } ?: Float.POSITIVE_INFINITY
+                val tapDeltaY = startY?.let { event.y - it } ?: Float.POSITIVE_INFINITY
+                val shouldRevealForTap = tapCandidate && ReaderChromePolicy.shouldRevealOnTap(
+                    durationMs = tapDuration,
+                    deltaX = tapDeltaX,
+                    deltaY = tapDeltaY,
+                    touchSlopPx = ViewConfiguration.get(context).scaledTouchSlop.toFloat(),
+                    selectionActive = selectionActionModeActive,
+                    chromePinned = readerChromePinned,
+                    selectionPending = pendingAutoDefine != null || autoDefineEvaluationPending
+                )
+                // Reveal only; always forward the event to WebView's native link/selection handling.
+                if (shouldRevealForTap && !readerChromeVisible) revealReaderChrome()
                 val attemptedToReadDown = upwardSwipeDetected
                 if (attemptedToReadDown) {
                     post {
@@ -4142,6 +4190,8 @@ private class ReaderWebView(context: android.content.Context) : WebView(context)
                 }
                 touchDownX = null
                 touchDownY = null
+                touchDownAtMillis = null
+                tapCandidate = false
                 upwardSwipeDetected = false
             }
             MotionEvent.ACTION_CANCEL -> {
@@ -4149,6 +4199,8 @@ private class ReaderWebView(context: android.content.Context) : WebView(context)
                 cancelPendingAutoDefineIfGestureInvalidated(event, gestureCancelled = true)
                 touchDownX = null
                 touchDownY = null
+                touchDownAtMillis = null
+                tapCandidate = false
                 upwardSwipeDetected = false
             }
         }

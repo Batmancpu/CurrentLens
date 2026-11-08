@@ -1,3 +1,41 @@
+# Latest live branch/PR/CI audit — 8 November 2026, 21:29 IST
+
+**Repository:** \`Batmancpu/CurrentLens\`  
+**Default:** \`main@73b8a0d1ba33503fede02db2c3c0af082d724a12\`  
+**Active integration/UI line:** \`black-box-bihar-news@f65d72488497ed59ed492d4d24b6e8a2572f4185\` — **150 ahead / 0 behind main**; main is the merge base.  
+**PR:** #34 remains open/draft → main, head matches the active branch, unmerged and not retargeted.
+
+## Complete branch/PR freshness gate
+- Re-enumerated all **44 remote branches** (page 1 = 44, page 2 = 0) and **41 PRs** (27 open, 14 closed; page 2 empty). Current open PRs: #41, #40, #39, #38, #37, #36, #35, #34, #33, #32, #31, #30, #29, #27, #26, #25, #24, #22, #21, #18, #17, #16, #13, #12, #11, #8, #6. Closed PRs: #28, #23, #20, #19, #15, #14, #10, #9, #7, #5, #4, #3, #2, #1.
+- The preceding complete 44-row branch table remains the inventory source; only these two refs advanced since that table:
+  | Branch | Current head | Latest commit UTC/message | PR relationship |
+  |---|---|---|---|
+  | \`black-box-bihar-news\` | \`f65d72488497ed59ed492d4d24b6e8a2572f4185\` | 2026-11-08 15:05:55Z — ui: unify Search action pill continuous geometry | #34 open/draft → main |
+  | \`fix/early-startup-crash-diagnostics-2026-11-06\` | \`ebea0aac68ce2cf17aad376304f7915fe937e807\` | 2026-11-08 15:11:25Z — docs: record off-main diagnostics verification [skip ci] | #16 open/draft → main |
+  All other 42 branch names, head SHAs, latest commit timestamps/messages and PR relationships were rechecked and match the prior full table.
+- Comparison: active branch vs main = **150 ahead / 0 behind**; PR #16 vs active = **7 ahead / 93 behind**, merge base \`6ab1e6a02ac8e91027f21900d64d63b9f2e6a890\`; former PR #19 UI head = **0 ahead / 80 behind** active. The owner-selected branch remains the only coherent current UI/integration line.
+- PR #16's four appearance preference/alpha changes are superseded by the active branch's richer \`LocalAppearancePreferences\` and IO-restored glass-alpha + Reduce Transparency snapshot. Its two newer code commits move startup diagnostics off-main across \`CurrentLensApplication\`, \`LaunchCrashDiagnostics\`, tests and the top-level \`MainActivity\` startup path; the latest PR #16 head is docs-only \`[skip ci]\`. PR #35 also modifies \`LaunchCrashDiagnostics\` and its tests, so those changes require a joint diagnostic review before any port. They are not a dependency of this Reader UI change and no native startup fix is claimed.
+- PR #39 remains separate (**6 ahead / 15 behind**) for stable signing/workflow/Gradle migration; owner-managed secrets, certificate fingerprint pinning and explicit first-install/local-data migration approval remain required. PR #41 is parser-only (**14 ahead / 150 behind**); PR #40/#32/#33/#38 remain RSS/network/parser work. PR #25/#26 require joint publisher-resource security review; #27 is editorial-only. PR #37/#36/#30/#31/#29 and the former PR #19 UI are represented in the active tree. Old \`ui/liquid-glass-performance\` and \`redesign/v0.3-search-reader\` remain excluded.
+
+## Exact parent Actions / workflow / Release
+- Fully paginated **356 Actions runs**: **219 success, 68 failure, 69 cancelled**; queued/in-progress: **0**.
+- Exact active parent \`f65d72488497ed59ed492d4d24b6e8a2572f4185\` passed push run [#354](https://github.com/Batmancpu/CurrentLens/actions/runs/42493059399) and PR run [#355](https://github.com/Batmancpu/CurrentLens/actions/runs/42493063222). The PR build job passed WordNet builder **4/4**, generated **151,456 words / 50,950,144 bytes**, \`:app:testDebugUnitTest\`, \`:app:assembleDebug\` and artifact upload; Release job skipped. PR artifact #13622606443: **39,122,460 bytes**; push artifact #13621439638: **39,000,680 bytes**. These validate the parent only.
+- Latest global run #356 is on PR #16's preceding code head \`5e36e52915f1232cdfefc7dc28abd5a5360b388b\`; current PR #16 head \`ebea0aac...\` is documentation-only \`[skip ci]\`. It does not validate the active branch.
+- Active workflow blob \`6cef6ca19f3babd331c9deb59be9da0067c6fa66\` has read-only build/test permissions, natural push/PR triggers and isolated main-push-only Release write. Main's workflow remains push-only with broader write permission. Latest published Release: \`v0.2.0-build-116\`, 2026-11-06 11:18:59Z. No Release was created.
+
+## Reader hidden-chrome tap reveal — implementation batch
+- Reader auto-hide previously revealed on upward scroll but not on a stationary tap after the toolbar had hidden. Added a 360ms/touch-slop pure policy and ACTION_DOWN/MOVE/UP bookkeeping on the existing ReaderWebView path.
+- A qualifying tap reveals only when chrome is hidden and no native ActionMode/selection, pending dictionary selection, definition, IME, accessibility or Aa state pins it. The event always continues to \`super.onTouchEvent\`; links, native Copy/Select/share and the dictionary bridge are not replaced.
+- Added JVM tests for accepted tap/boundary, long-press and movement rejection, selection/pinned suppression and invalid measurements. Article reset/detach clear local gesture/ActionMode state.
+- Render/capture delta: **0** new surfaces, blur/refraction, shaders, readbacks, image decodes, dependencies, timers, network or persistence. One policy check on ACTION_UP; at most one visibility transition; no per-pixel Compose state.
+- New exact-head natural CI is pending. No device claim: OPPO launch/visual/IME/TalkBack/Reduce Motion/Perfetto/frame timing/GPU/memory/thermal/battery remain **UNVERIFIED**.
+
+## Safety
+- No main write, merge, retarget, force update, workflow dispatch/rerun, Release publication, package identity change, source-branch deletion or modification outside \`black-box-bihar-news\`.
+
+
+---
+
 # Latest live branch/PR/CI audit — 8 November 2026, 19:28 IST
 
 **Repository:** `Batmancpu/CurrentLens`  

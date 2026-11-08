@@ -1,3 +1,46 @@
+# Live implementation batch — Reader hidden-chrome tap reveal (8 November 2026, 21:29 IST)
+
+**Pre-change source:** \`black-box-bihar-news@f65d72488497ed59ed492d4d24b6e8a2572f4185\`  
+**Base:** \`main@73b8a0d1ba33503fede02db2c3c0af082d724a12\`  
+**PR:** #34 remains open/draft → main; no retarget or merge. The implementation and this roadmap update are committed together on the existing owner-selected branch.
+
+## Branch freshness and dependency gate
+- Re-enumerated the complete remote branch endpoint: **44 branches** (page 1 = 44; page 2 = 0), and **41 PRs** (**27 open / 14 closed**; page 2 empty). Default \`main\` is unchanged. The selected branch is **150 ahead / 0 behind main**, with main as merge base.
+- Current open PRs: #41, #40, #39, #38, #37, #36, #35, #34, #33, #32, #31, #30, #29, #27, #26, #25, #24, #22, #21, #18, #17, #16, #13, #12, #11, #8 and #6. Closed PRs: #28, #23, #20, #19, #15, #14, #10, #9, #7, #5, #4, #3, #2 and #1.
+- Since the prior complete 44-row inventory, only two branch heads changed: \`black-box-bihar-news@f65d72488497ed59ed492d4d24b6e8a2572f4185\` (2026-11-08 15:05:55Z, “ui: unify Search action pill continuous geometry”, PR #34 open/draft → main) and \`fix/early-startup-crash-diagnostics-2026-11-06@ebea0aac68ce2cf17aad376304f7915fe937e807\` (2026-11-08 15:11:25Z, “docs: record off-main diagnostics verification [skip ci]”, PR #16 open/draft → main). The other 42 branch names, heads, timestamps/messages and PR relationships match the preceding full inventory table in \`BRANCH_CONSOLIDATION.md\`.
+- PR #16 is **7 commits ahead / 93 behind** this selected branch (merge base \`6ab1e6a02ac8e91027f21900d64d63b9f2e6a890\`). Its appearance-alpha/first-read changes are superseded by the active branch's richer \`LocalAppearancePreferences\` (glass alpha + Reduce Transparency) and IO-restored snapshot. Its two newer code commits move startup diagnostic work off the main thread across \`CurrentLensApplication\`, \`LaunchCrashDiagnostics\` and the top-level \`MainActivity\` startup path; these are not Reader prerequisites. PR #35 also changes \`LaunchCrashDiagnostics\` and its tests, so those diagnostic hunks need one joint review before porting. No startup/device-stability claim is made.
+- PR #19's old UI head is **0 ahead / 80 behind** this branch; its Reader/Search implementation is already in the consolidated ancestry. PR #37's Search RowScope repair, #36's Asia/Kolkata rollover, #30's 48dp target policy, #31's appearance IO snapshot, #29's bookmark persistence and the conservative shared adaptive-contrast policy are represented.
+- PR #39 remains a separate signing/workflow proposal (**6 ahead / 15 behind**) requiring owner-managed secrets, certificate pinning and explicit install/local-data migration approval. PR #40/#41 and #32/#33/#38 remain separate RSS/parser/network review work; #25/#26 require a joint publisher-resource security review; #27 is editorial-only. The stale \`ui/liquid-glass-performance\` and \`redesign/v0.3-search-reader\` branches remain excluded. No other branch was modified.
+
+## Exact parent CI and repository state
+- Fully paginated **356 Actions runs**: **219 success, 68 failure, 69 cancelled**; queued/in-progress: **0**.
+- Exact parent SHA \`f65d72488497ed59ed492d4d24b6e8a2572f4185\` passed natural push run [#354](https://github.com/Batmancpu/CurrentLens/actions/runs/42493059399) and PR run [#355](https://github.com/Batmancpu/CurrentLens/actions/runs/42493063222). The PR build job passed checkout, Java, signing-key restore, Android SDK/platform setup, Gradle, WordNet builder tests (**4/4**), offline dictionary generation (**151,456 unique words / 50,950,144 bytes**), \`:app:testDebugUnitTest\`, \`:app:assembleDebug\` and artifact upload; Release job skipped.
+- PR artifact [#13622606443](https://github.com/Batmancpu/CurrentLens/actions/runs/42493063222/artifacts/13622606443) is **39,122,460 bytes**; push artifact #13621439638 is **39,000,680 bytes**. These validate the parent only; the new Reader commit requires its own natural run.
+- Latest global run #356 is a separate PR #16 run on code head \`5e36e52915f1232cdfefc7dc28abd5a5360b388b\`; PR #16's current \`ebea0aac...\` head is a documentation-only \`[skip ci]\` child. Run #356 does not validate this branch.
+- Active workflow blob \`6cef6ca19f3babd331c9deb59be9da0067c6fa66\` keeps build/test read-only, natural push/PR triggers and a separate main-push-only Release-write job. Main's workflow remains push-only with broader write permission. Latest Release remains \`v0.2.0-build-116\` (published 6 November 2026 11:18:59Z); no Release was created.
+
+## Reader interaction gap and implementation
+- Reader auto-hide already reveals on upward scroll and pins controls for definition, native selection ActionMode, IME, enabled accessibility services and the open Aa menu. It did not reveal hidden controls on a short intentional tap in the reading canvas.
+- Added pure \`ReaderChromePolicy.shouldRevealOnTap\`: a tap must complete within **360ms**, remain within Android touch slop, and have no active/pending native selection or pinned transient state.
+- \`ReaderWebView\` records only the existing ACTION_DOWN/MOVE/UP/CANCEL gesture stream. A qualifying tap calls the existing reveal path only when chrome is hidden; the original event is always forwarded to \`super.onTouchEvent\`, so links and native Copy/Select/share/selection behaviour are not consumed or replaced. Local ActionMode tracking closes the timing gap before Compose pin state propagates. Article changes and detach clear gesture/selection state.
+- The existing 160ms hide settle, directional thresholds, completion dock, definition anchor, WebView permissions, publisher fallback, saved reading position and quiz persistence are unchanged.
+
+## Policy tests and state matrix
+- Added JVM coverage for a valid short tap and inclusive 360ms boundary; long-press and touch-slop rejection; selection, pending-definition and pinned-state suppression; and invalid measurement rejection.
+- Reader states remain one shared chrome component: **visible**, **hidden while reading**, **tap-revealed**, **upward-scroll revealed**, **definition-open**, **native ActionMode/selection pinned**, **IME/accessibility/Aa pinned**, and **completion visible/dismissed**. No duplicate toolbar or bottom bar is introduced.
+- Existing Reduce Motion path still sets Reader chrome transition duration to zero (snap); no new spring or continuous animation is added. Device smoothness and native selection behaviour remain unverified.
+
+## Paired rendering/performance strategy
+- **Added/removed render passes:** 0. New Prismal surfaces, blur/refraction, backdrop captures/readbacks, shaders, graphics layers, image decodes, dependencies, timers, network calls and persistence operations: **0**.
+- The only new work is constant-time gesture bookkeeping on the existing WebView touch stream and one pure policy call on ACTION_UP; Compose visibility changes only once when hidden chrome is revealed. No scroll-pixel state updates, polling or new capture source.
+- This is source-level cost containment, not a measured frame-time, memory, GPU, thermal or battery improvement. The OPPO Reno10 remains the target device, but screenshots, logcat/tombstone, TalkBack, IME, Reduce Motion, Perfetto/frame timing, GPU overdraw, memory/allocation, thermal and battery are **UNVERIFIED**.
+
+## Next
+- Inspect the new exact-head natural push/PR jobs, full logs and artifact before another implementation pass. Then continue the whole-app coverage review without expanding live blur on repeated cards or adding another backdrop system.
+- No main write, merge, retarget, force update, manual dispatch/rerun, Release publication, package identity change, or source-branch deletion.
+
+---
+
 # Live implementation batch — Search filter action corner parity (8 November 2026, 20:28 IST)
 
 **Source:** black-box-bihar-news@0e94d82be37a891dd4546a3f856a9cd47b5687d6
@@ -409,7 +452,7 @@ Recheck every branch head and dependency before each future implementation commi
 | You dashboard | Supporting glass | Theme-aware translucent tint/rim, continuous 22dp geometry, single-line metric values | Static surface opacity preserves readability; shared Clear↔Frosted intensity now scales cached tint/rim tokens; no live blur; OPPO contrast unverified |
 | Saved | One shared interactive Prismal filter group + editorial cards | Date/GS/subject rails share one 22dp rounded control surface; story cards remain calm, high-contrast content | `GlassFilterGroup` batch authored; one panel, three 48dp horizontal rails; selected filters and existing saved data semantics unchanged |
 | Reading / Quiz Stats | One shared interactive Prismal filter group + supporting glass data cards | Date/GS/subject controls use one small live-glass group; metric/day/attempt values stay high contrast | Supporting cards use the same committed Clear↔Frosted tint/rim intensity; no live blur; summaries memoized |
-| Reader toolbar | Primary floating glass | Back, source/date/status and compact Aa control; direction-aware auto-hide | Implemented; pinned during selection, definition, IME and accessibility states; device motion unverified |
+| Reader toolbar | Primary floating glass | Back, source/date/status and compact Aa; direction-aware auto-hide plus short content-tap reveal while hidden | Implemented; tap preserves native links/selection; pinned during selection, definition, IME and accessibility states; device motion unverified |
 | Reader progress | Minimal indicator | Reuse existing saved progress; no polling or animated readback | Implemented in this batch |
 | Reader article canvas | Editorial content | Clear, high-contrast text; responsive max width and paragraph rhythm | Existing responsive CSS; keep non-glass |
 | Reader completion action | Transient contextual glass | Compact, dismissible, only after true completion; hide with reader chrome and avoid definition/action-mode overlap | Implemented; physical safe-area/selection checks unverified |
@@ -433,7 +476,7 @@ Recheck every branch head and dependency before each future implementation commi
 | Search | One morphing capsule | Reuse existing anchor/dock geometry and single backdrop | Preserve IME; clear affordance must not alter layout or focus |
 | Explore filters | One shared capsule, not one glass surface per chip | Reuse same backdrop; keep chip fills/borders as simple drawing | >=48dp target and selected semantics still require device/TalkBack checks |
 | Feed cards | No live blur | One Coil request per image; palette sampled from that decoded bitmap; cached per article | Standard content card if palette unavailable; no duplicate decode |
-| Reader toolbar | One 8dp-blur glass toolbar, 60dp minimum height | Reuse root backdrop; one small bounded surface; Aa menu exists only when opened | Static material/Reduce Motion fallback; device GPU cost unmeasured |
+| Reader toolbar | One 8dp-blur glass toolbar, 60dp minimum height | Reuse root backdrop; one small bounded surface; Aa menu exists only when opened; tap reveal adds no surface/effect | Static material/Reduce Motion fallback; tap is one ACTION_UP policy check; device GPU cost unmeasured |
 | Reader progress | 2dp content indicator | Reuse existing debounced `savedReadingProgress`; no polling, WebView injection or readback | Hidden at zero/completion; visual timing needs device validation |
 | Completion dock | One 7dp-blur surface, only after end detection | Render only when complete, not dismissed and no definition open | No large persistent panel; safe-area and collision checks still need device validation |
 | Definition popover | Existing anchored Prismal surface | Keep one existing popover; do not add another capture; action buttons use native Compose controls | Compact scroll bounds retained; selection/ActionMode requires device validation |

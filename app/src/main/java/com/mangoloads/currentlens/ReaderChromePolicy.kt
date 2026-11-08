@@ -27,6 +27,28 @@ internal object ReaderChromePolicy {
     fun reveal(state: ReaderChromeScrollState): ReaderChromeScrollState =
         state.copy(visible = true, direction = 0, accumulatedDeltaPx = 0)
 
+    const val TAP_REVEAL_MAX_DURATION_MS = 360L
+
+    /**
+     * A short, stationary content tap may reveal hidden controls. Selection, long-press,
+     * drag, multi-touch and any pinned/transient state are deliberately excluded.
+     */
+    fun shouldRevealOnTap(
+        durationMs: Long,
+        deltaX: Float,
+        deltaY: Float,
+        touchSlopPx: Float,
+        selectionActive: Boolean,
+        chromePinned: Boolean,
+        selectionPending: Boolean
+    ): Boolean {
+        if (selectionActive || chromePinned || selectionPending) return false
+        if (durationMs !in 0L..TAP_REVEAL_MAX_DURATION_MS) return false
+        if (!deltaX.isFinite() || !deltaY.isFinite() || !touchSlopPx.isFinite()) return false
+        val slop = touchSlopPx.coerceAtLeast(0f)
+        return deltaX * deltaX + deltaY * deltaY <= slop * slop
+    }
+
     /**
      * Downward document movement hides chrome after a larger threshold; upward movement
      * reveals it after a smaller threshold. Direction changes reset accumulated distance.
