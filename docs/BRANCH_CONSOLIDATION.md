@@ -1,3 +1,16 @@
+## Live branch-graph audit — 8 November 2026, 06:23 IST
+
+- **Repository/default:** `Batmancpu/CurrentLens`, default `main@73b8a0d1ba33503fede02db2c3c0af082d724a12`.
+- **Authoritative integration/UI branch:** `black-box-bihar-news@31e3bf753f91002b26b1e02e281899d10d0e590f`; **122 ahead / 0 behind main**, merge base main; **65 ahead / 0 behind** PR #16's corrected stability/Prismal head `6ab1e6a02ac8e91027f21900d64d63b9f2e6a890`. Its latest commit is `a11y(ui): honor system Reduce Motion across app transitions` (2026-11-07 23:59:46 UTC), parent `d9a4d1eac035172da0f8d7c40a984eb6c40c1b8b`. PR #34 is open/draft, head equals the selected branch, base main.
+- **Complete inventory:** 40 remote branches (page 1: 40, page 2: 0); 37 PRs (23 open, 14 closed). The complete 40-name/head table follows in this document; this audit supersedes older rows where the same branch head has advanced. No source branch was changed, merged, retargeted or deleted.
+- **Relevant branch comparisons against current black-box head:** PR #37 Search clear is 6 ahead / 3 behind; its six-line RowScope receiver fix is already present in current SearchMorphField, so no duplicate port. PR #36 IST rollover is 3 ahead / 4 behind from its older base and changes MainActivity/date-index logic; defer for a separate correctness review. PR #35 diagnostic-read bounds are 6 ahead / 12 behind and startup-only. PR #30 48dp policy (3/18), PR #31 appearance restore (5/17) and PR #29 bookmark IO (1/21) are already represented. PR #27 (41/23) is editorial-only. PR #25 asset-host and #26 WebView subresource controls remain a joint security review; PR #32 RSS concurrency and #33 relative Atom resolution both touch NewsRepository and remain a joint review. PR #24 is based on divergent brrrNEWS.
+- **Sibling/stale lines:** brrrNEWS is 4 ahead / 28 behind (divergent); `ui/liquid-glass-performance-2026-11-06` is 3 ahead / 140 behind; `redesign/v0.3-search-reader` is 0 ahead / 215 behind; `ui/liquid-glass-system-continuation-2026-11-07` is 0 ahead / 38 behind. PR #19's source branch is 0 ahead / 52 behind; its approved Reader changes are already in black-box. PR #16 remains an ancestor, not the selected work branch.
+- **CI:** all 281 runs paginated (100 + 100 + 81), 168 success / 61 failure / 52 cancelled, no queued/in-progress. Natural PR #281 and push #280 both passed on exact head `31e3bf7`; WordNet, JVM tests, APK assembly and artifact upload succeeded. PR artifact `13596471410`, push artifact `13595943420`; publish jobs skipped.
+- **Workflow / release:** black-box workflow has read-only build/test and separate main-push-only Release write; main workflow is still push-only. Latest Release remains `v0.2.0-build-116`; no Release was created by #280/#281.
+- **Safety:** only `black-box-bihar-news` may receive this task's commits. No main write, merge, retarget, workflow edit, manual dispatch/rerun, Release publication or source-branch deletion.
+
+---
+
 ## Live branch-graph audit — 8 November 2026, 05:24 IST
 
 - **Repository/default:** `Batmancpu/CurrentLens`, default `main@73b8a0d1ba33503fede02db2c3c0af082d724a12`.
@@ -46,7 +59,7 @@
 | Branch | Head SHA | Latest commit UTC / message | PR relationship |
 |---|---|---|---|
 | `a11y/48dp-icon-targets-2026-11-07` | `25107ce905b70bde1a41282ffd1d606819ebf58d` | 2026-11-07 11:02:12 — test(a11y): cover minimum icon action target | #30 open; base black-box |
-| `black-box-bihar-news` | `6f777f8777b3168383361dc79109b3d1d75b612b` | 2026-11-07 22:00:29 — fix(search): provide RowScope for clear animation | #34 open head/base main; selected; base of #37/#36/#35/#33/#32/#31/#30/#29/#27/#26/#25/#11 and other stacked PRs |
+| `black-box-bihar-news` | `31e3bf753f91002b26b1e02e281899d10d0e590f` | 2026-11-07 23:59:46 — a11y(ui): honor system Reduce Motion across app transitions | #34 open head/base main; selected; base/ancestor for the active stacked proposals |
 | `brrrNEWS` | `e6fcfc25a4c8d5f363ced58f313552120aa7ff96` | 2026-11-07 04:13:30 — ui: consolidate lightweight supporting glass surfaces | Base of #24; divergent, not selected |
 | `ci/read-only-pr-validation-isolated-release-write-2026-11-06` | `963118f0abe5f7e38f2aa66a49d4b8e74548660c` | 2026-11-06 17:18:53 — ci: validate pull requests with read-only build permissions | #18 open; workflow intent represented in black-box |
 | `ci/stacked-pr-validation-2026-11-07` | `5dc3179361835b77fb3186a99d9b5791301463fd` | 2026-11-06 21:41:27 — ci: restore Android SDK setup before sdkmanager | #20 closed/merged into black-box, not main |
@@ -55,7 +68,7 @@
 | `fix/atom-alternate-link-selection-2026-11-06` | `cdf4c3846dde1c05894284e48b8f7d69cb7541ad` | 2026-11-06 09:14:27 — fix: select Atom article alternate links deterministically | #12 open; core policy represented |
 | `fix/cache-publication-date-integrity-2026-11-06` | `be5151e674c2bd4fa9beb166fc38ddf622781f84` | 2026-11-06 14:26:32 — feat: expose publication date and publisher RSS provenance on cards | #11 open; equivalent code represented |
 | `fix/early-startup-crash-diagnostics-2026-11-06` | `6ab1e6a02ac8e91027f21900d64d63b9f2e6a890` | 2026-11-06 19:33:20 — fix: minimise shareable process-exit diagnostics | #16 open; ancestor of integration |
-| `fix/editorial-action-gate-blackbox-2026-11-07` | `cef7f1267cf2ca67ceacaf2acd9cfcbfa7dbf6fc` | 2026-11-07 19:06:26 — test(editorial): reject institutional film-promotion false positives | #27 open; separate editorial review |
+| `fix/editorial-action-gate-blackbox-2026-11-07` | `bd0bfce055e4d91737ff0d43e9eaa96c70a28519` | 2026-11-08 00:11:33 — fix(editorial): correct promotional framing regex escaping | #27 open; separate editorial review |
 | `fix/editorial-heatwave-bill-signals-2026-11-07` | `89464104e300f48da10e3e32e33715cbe2405084` | 2026-11-06 22:05:40 — Verify a specific parliamentary bill remains eligible for the GS II feed | #21 open; combined policy represented |
 | `fix/editorial-policy-exception-guard-2026-11-07` | `1f7a3c2a7b74cc02cfee6fe451f4576feb291acf` | 2026-11-07 04:46:47 — fix(editorial): match policy action and target as separate words | #24 open on brrrNEWS; divergent |
 | `fix/editorial-signal-count-test` | `4738690d6e7f6c7c02a621742f25d5ebf1d631fb` | 2026-11-06 05:16:32 — test: align economy signal count with repo-rate mapping | #2 closed/merged into main |

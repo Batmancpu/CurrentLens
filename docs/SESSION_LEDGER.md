@@ -417,3 +417,15 @@ Branch: `fix/early-startup-crash-diagnostics-2026-11-06`.
 - **Tests / status:** no dedicated Compose UI test was added for animation-spec wiring. The new exact head awaits its own natural push/PR CI; runs #278/#279 validate only the parent SHA. OPPO Reno10 Reduce Motion, visual, TalkBack, font-scale, selection/IME, frame-time, GPU, memory, thermal and battery checks remain UNVERIFIED.
 - **Safety:** no main write, merge, retarget, workflow edit, manual dispatch/rerun, Release publication, source-branch mutation or deletion.
 
+
+ 
+## 2026-11-08 06:23 IST / 00:53 UTC — Appearance preview control-state parity
+
+- **Repository / branch:** Batmancpu/CurrentLens, `black-box-bihar-news`; selected parent `31e3bf753f91002b26b1e02e281899d10d0e590f`; base `main@73b8a0d1ba33503fede02db2c3c0af082d724a12`. The selected branch remains 122 ahead / 0 behind main and 65 ahead / 0 behind PR #16's corrected background-only Prismal baseline.
+- **Freshness:** 40 branches and 37 PRs were re-enumerated. PR #37's RowScope repair is already present; PR #36 IST rollover remains a separate diverged MainActivity change; PR #30/#31/#29 policies are represented. No other branch was changed or merged.
+- **Files:** `MainActivity.kt`, `GlassSurfacePolicy.kt`, `GlassSurfacePolicyTest.kt`, `docs/LIQUID_GLASS_UI_ROADMAP.md`, `docs/BRANCH_CONSOLIDATION.md`, and this ledger.
+- **Behaviour:** the Appearance preview's mini Search surface, rim and selected navigation fill now interpolate with Clear↔Frosted intensity; Reduce Transparency raises their opacity/rim. The Search preview sample has a 48dp minimum height. The outer `PrismalTransientSurface` remains the only live-glass preview; slider drag stays local and commits to the app-wide preference only on release or preset selection.
+- **Tests:** added pure JVM assertions for clear/frosted endpoints, monotonic intensity, reduced-transparency floors and non-finite fallback. Tests are added but await the next natural exact-head CI run.
+- **Rendering/cost:** no new Prismal surface, capture/readback, blur/refraction, shader, graphics layer, image decode, dependency, timer, network or persistence operation. Only bounded scalar alpha calculations were added; no measured performance claim.
+- **CI parent evidence:** exact parent SHA passed natural PR run #281 and push run #280. PR #281 full job log: WordNet builder 4/4, 151,456-word dictionary, `:app:testDebugUnitTest`, `:app:assembleDebug`, artifact upload; artifact `13596471410` (39,107,655 bytes). Push #280 also passed all build steps; artifact `13595943420` (39,107,647 bytes). The new commit requires its own natural run; no manual dispatch/rerun.
+- **Unverified:** OPPO Reno10 appearance, launch, visual contrast, accessibility, Reduce Motion, IME, frame timing, GPU overdraw, memory, thermal and battery remain UNVERIFIED. No release, main write, merge or source-branch mutation.

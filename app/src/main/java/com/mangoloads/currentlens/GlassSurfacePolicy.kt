@@ -46,6 +46,26 @@ internal object GlassSurfacePolicy {
         return clear + (frosted - clear) * progress
     }
 
+    /**
+     * Preview-only control tokens. The mini Search surface and selected tab should visibly
+     * follow the same intensity preference as the outer Prismal material. Reduced
+     * transparency uses a clearer, more opaque fallback without adding another blur pass.
+     */
+    fun previewControlSurfaceAlpha(glassAlpha: Float, reduceTransparency: Boolean): Float {
+        val alpha = 0.38f + 0.18f * intensityProgress(glassAlpha)
+        return if (reduceTransparency) maxOf(alpha, 0.62f) else alpha
+    }
+
+    fun previewControlRimAlpha(glassAlpha: Float, reduceTransparency: Boolean): Float {
+        val alpha = 0.16f + 0.10f * intensityProgress(glassAlpha)
+        return if (reduceTransparency) maxOf(alpha, 0.28f) else alpha
+    }
+
+    fun previewSelectedFillAlpha(glassAlpha: Float, reduceTransparency: Boolean): Float {
+        val alpha = 0.10f + 0.12f * intensityProgress(glassAlpha)
+        return if (reduceTransparency) maxOf(alpha, 0.20f) else alpha
+    }
+
     private fun intensityProgress(glassAlpha: Float): Float {
         val normalized = AppearancePreferencesPolicy.normalizeGlassAlpha(glassAlpha)
         return ((normalized - AppearancePreferencesPolicy.MIN_GLASS_ALPHA) /

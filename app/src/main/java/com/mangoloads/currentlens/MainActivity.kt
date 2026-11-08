@@ -4237,6 +4237,17 @@ private fun AppearanceGlassEditor(
         kotlin.math.abs(previewGlassAlpha - 0.55f) < 0.015f -> "Frosted"
         else -> "Custom"
     }
+    // The miniature controls use the same Clear↔Frosted intensity and reduced-
+    // transparency response as the app, without adding another live glass surface.
+    val previewControlSurfaceAlpha = GlassSurfacePolicy.previewControlSurfaceAlpha(
+        previewGlassAlpha, reduceTransparency
+    )
+    val previewControlRimAlpha = GlassSurfacePolicy.previewControlRimAlpha(
+        previewGlassAlpha, reduceTransparency
+    )
+    val previewSelectedFillAlpha = GlassSurfacePolicy.previewSelectedFillAlpha(
+        previewGlassAlpha, reduceTransparency
+    )
     val previewTabs = remember {
         listOf(
             "Today" to Icons.Outlined.Today,
@@ -4389,10 +4400,10 @@ private fun AppearanceGlassEditor(
 
                     val searchShape = RoundedCornerShape(16.dp)
                     Row(
-                        Modifier.fillMaxWidth().heightIn(min = 44.dp)
+                        Modifier.fillMaxWidth().heightIn(min = 48.dp)
                             .clip(searchShape)
-                            .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.56f))
-                            .border(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.20f), searchShape)
+                            .background(MaterialTheme.colorScheme.surface.copy(alpha = previewControlSurfaceAlpha))
+                            .border(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = previewControlRimAlpha), searchShape)
                             .padding(horizontal = 12.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
@@ -4457,7 +4468,7 @@ private fun AppearanceGlassEditor(
                                 Modifier.weight(1f).heightIn(min = 48.dp)
                                     .clip(CircleShape)
                                     .background(
-                                        if (selected) MaterialTheme.colorScheme.primary.copy(alpha = 0.13f)
+                                        if (selected) MaterialTheme.colorScheme.primary.copy(alpha = previewSelectedFillAlpha)
                                         else Color.Transparent
                                     )
                                     .padding(vertical = 4.dp),

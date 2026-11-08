@@ -87,4 +87,50 @@ class GlassSurfacePolicyTest {
                 SupportingCardGeometryPolicy.SECTION_GAP_DP
         )
     }
+
+    @Test
+    fun appearancePreviewControlsTrackClearFrostedAndReducedTransparency() {
+        val clear = AppearancePreferencesPolicy.MIN_GLASS_ALPHA
+        val balanced = AppearancePreferencesPolicy.DEFAULT_GLASS_ALPHA
+        val frosted = AppearancePreferencesPolicy.MAX_GLASS_ALPHA
+
+        assertEquals(0.38f, GlassSurfacePolicy.previewControlSurfaceAlpha(clear, false), 0.0001f)
+        assertEquals(0.56f, GlassSurfacePolicy.previewControlSurfaceAlpha(frosted, false), 0.0001f)
+        assertTrue(
+            GlassSurfacePolicy.previewControlSurfaceAlpha(clear, false) <
+                GlassSurfacePolicy.previewControlSurfaceAlpha(balanced, false)
+        )
+        assertTrue(
+            GlassSurfacePolicy.previewControlSurfaceAlpha(balanced, false) <
+                GlassSurfacePolicy.previewControlSurfaceAlpha(frosted, false)
+        )
+        assertEquals(0.62f, GlassSurfacePolicy.previewControlSurfaceAlpha(clear, true), 0.0001f)
+
+        assertEquals(0.16f, GlassSurfacePolicy.previewControlRimAlpha(clear, false), 0.0001f)
+        assertEquals(0.26f, GlassSurfacePolicy.previewControlRimAlpha(frosted, false), 0.0001f)
+        assertEquals(0.28f, GlassSurfacePolicy.previewControlRimAlpha(clear, true), 0.0001f)
+
+        assertEquals(0.10f, GlassSurfacePolicy.previewSelectedFillAlpha(clear, false), 0.0001f)
+        assertEquals(0.22f, GlassSurfacePolicy.previewSelectedFillAlpha(frosted, false), 0.0001f)
+        assertEquals(0.20f, GlassSurfacePolicy.previewSelectedFillAlpha(clear, true), 0.0001f)
+    }
+
+    @Test
+    fun nonFinitePreviewIntensityUsesTheDefaultPreference() {
+        assertEquals(
+            GlassSurfacePolicy.previewControlSurfaceAlpha(
+                AppearancePreferencesPolicy.DEFAULT_GLASS_ALPHA, false
+            ),
+            GlassSurfacePolicy.previewControlSurfaceAlpha(Float.NaN, false),
+            0.0001f
+        )
+        assertEquals(
+            GlassSurfacePolicy.previewControlRimAlpha(
+                AppearancePreferencesPolicy.DEFAULT_GLASS_ALPHA, false
+            ),
+            GlassSurfacePolicy.previewControlRimAlpha(Float.POSITIVE_INFINITY, false),
+            0.0001f
+        )
+    }
+
 }
