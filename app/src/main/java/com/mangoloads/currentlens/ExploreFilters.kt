@@ -2,8 +2,21 @@ package com.mangoloads.currentlens
 
 /** Deterministic Explore matching over publisher sections and RSS metadata only. */
 internal object ExploreFilters {
-    fun matches(article: Article, category: String, query: String): Boolean =
-        matchesCategory(article, category) && matchesSearchTerms(article, query)
+    private val relevanceQueryTerms = setOf(
+        "gs1", "gsi", "gs-i",
+        "gs2", "gsii", "gs-ii",
+        "gs3", "gsiii", "gs-iii",
+        "gs4", "gsiv", "gs-iv",
+        "geography", "geographic", "geographical"
+    )
+
+    fun matches(
+        article: Article,
+        category: String,
+        query: String,
+        relevance: Relevance? = null
+    ): Boolean =
+        matchesCategory(article, category) && matchesSearchTerms(article, query, relevance)
 
     fun matchesCategory(article: Article, category: String): Boolean {
         if (category.equals("All", true)) return true
@@ -35,21 +48,33 @@ internal object ExploreFilters {
         }
     }
 
-    fun matchesSearchTerms(article: Article, query: String): Boolean {
+    fun matchesSearchTerms(
+        article: Article,
+        query: String,
+        relevance: Relevance? = null
+    ): Boolean {
         val terms = query.split(",").map { it.trim() }.filter { it.isNotBlank() }
         if (terms.isEmpty()) return true
+
+        // Resolve at most once for all GS/Geography terms. SearchFeed supplies its
+        // already-cached relevance; other callers retain the original lazy behaviour.
+        val needsRelevance = terms.any {
+            it.lowercase().replace(" ", "") in relevanceQueryTerms
+        }
+        val resolvedRelevance = if (needsRelevance) relevance ?: UpscEngine.classify(article) else null
         val text = (article.title + " " + article.description + " " + article.section + " " + article.source).lowercase()
+
         return terms.all { raw ->
             when (raw.lowercase().replace(" ", "")) {
-                "gs1", "gsi", "gs-i" -> UpscEngine.classify(article).gsPaper == "GS I"
-                "gs2", "gsii", "gs-ii" -> UpscEngine.classify(article).gsPaper == "GS II"
-                "gs3", "gsiii", "gs-iii" -> UpscEngine.classify(article).gsPaper == "GS III"
-                "gs4", "gsiv", "gs-iv" -> UpscEngine.classify(article).gsPaper == "GS IV"
+                "gs1", "gsi", "gs-i" -> resolvedRelevance?.gsPaper == "GS I"
+                "gs2", "gsii", "gs-ii" -> resolvedRelevance?.gsPaper == "GS II"
+                "gs3", "gsiii", "gs-iii" -> resolvedRelevance?.gsPaper == "GS III"
+                "gs4", "gsiv", "gs-iv" -> resolvedRelevance?.gsPaper == "GS IV"
                 "india", "indian" -> text.contains("india") || text.contains("indian") || text.contains("new delhi")
                 "world", "global", "international" -> article.section.contains("world", true) || article.section.contains("international", true) || text.contains("global")
                 "economy", "economic" -> text.contains("econom") || text.contains("rbi") || text.contains("inflation")
                 "environment", "climate" -> text.contains("environment") || text.contains("climate") || text.contains("biodiversity")
-                "geography", "geographic", "geographical" -> UpscEngine.classify(article).subject == "Geography"
+                "geography", "geographic", "geographical" -> resolvedRelevance?.subject == "Geography"
                 "science", "technology", "tech" -> text.contains("science") || text.contains("technology") || text.contains("space") || text.contains("isro") || text.contains("semiconductor")
                 else -> text.contains(raw.lowercase())
             }

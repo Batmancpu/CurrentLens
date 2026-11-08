@@ -1373,8 +1373,17 @@ private fun SearchFeed(
     val reduceTransparency = LocalGlassReduceTransparency.current
     val glassSurfaceColor = MaterialTheme.colorScheme.surface
     val categories = listOf("All", "India", "World", "Politics", "Geography", "Economy", "Environment", "Science", "Explained", "UPSC", "Opinion")
-    val subjects = remember(eligibleArticles) {
-        listOf("All") + eligibleArticles.map { UpscEngine.classify(it).subject }.distinct().sorted()
+    val classificationInputs = remember(eligibleArticles) {
+        ArticleRelevanceIndexPolicy.keys(eligibleArticles)
+    }
+    // Classification depends only on id/title/description. Reuse the same index for
+    // subject choices, query filters and visible Search cards instead of rerunning the
+    // keyword engine for every query change.
+    val relevanceById = remember(classificationInputs) {
+        ArticleRelevanceIndexPolicy.build(eligibleArticles)
+    }
+    val subjects = remember(relevanceById) {
+        listOf("All") + relevanceById.values.map { it.subject }.distinct().sorted()
     }
     val gsPapers = listOf("All", "GS I", "GS II", "GS III", "GS IV")
     val activeFilterCount = listOf(
@@ -1387,10 +1396,10 @@ private fun SearchFeed(
         selectedGsPaper.takeIf { it != "All" },
         selectedSubject.takeIf { it != "All" }
     ).joinToString(" · ")
-    val filtered = remember(eligibleArticles, query, selectedCategory, selectedSubject, selectedGsPaper) {
+    val filtered = remember(eligibleArticles, relevanceById, query, selectedCategory, selectedSubject, selectedGsPaper) {
         eligibleArticles.filter { article ->
-            val relevance = UpscEngine.classify(article)
-            ExploreFilters.matches(article, selectedCategory, query) &&
+            val relevance = relevanceById[article.id] ?: return@filter false
+            ExploreFilters.matches(article, selectedCategory, query, relevance) &&
                 (selectedSubject == "All" || relevance.subject == selectedSubject) &&
                 (selectedGsPaper == "All" || relevance.gsPaper == selectedGsPaper)
         }
@@ -1480,7 +1489,10 @@ private fun SearchFeed(
             } else if (filtered.isEmpty()) item {
                 EmptyPanel("No matching articles", "Change your search or remove one of the filters.")
             } else items(filtered, key = { it.id }, contentType = { "article" }) { article ->
-                NewsCard(article, bookmarks.contains(article.url), onOpenArticle, onToggleBookmark)
+                NewsCard(
+                    article, bookmarks.contains(article.url), onOpenArticle, onToggleBookmark,
+                    relevanceOverride = relevanceById[article.id]
+                )
             }
         }
     }
@@ -2403,11 +2415,14 @@ private fun NewsCard(
     article: Article,
     saved: Boolean,
     onOpenArticle: (Article) -> Unit,
-    onToggleBookmark: (Article) -> Unit
+    onToggleBookmark: (Article) -> Unit,
+    relevanceOverride: Relevance? = null
 ) {
     val context = LocalContext.current
     val density = LocalDensity.current
-    val relevance = remember(article.id, article.title, article.description) { UpscEngine.classify(article) }
+    val relevance = remember(article.id, article.title, article.description, relevanceOverride) {
+        relevanceOverride ?: UpscEngine.classify(article)
+    }
     val syllabusHint = remember(article.id, article.title, article.description, relevance.gsPaper, relevance.subject, relevance.matchedTerms, relevance.syllabusLink) {
         ArticleCardMetaPolicy.syllabusHint(
             gsPaper = relevance.gsPaper,
