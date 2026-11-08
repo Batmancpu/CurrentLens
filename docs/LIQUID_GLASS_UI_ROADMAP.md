@@ -1,3 +1,45 @@
+# Live implementation batch — Reader disposal callback ownership (9 November 2026, 03:27 IST)
+
+**Source before change:** `black-box-bihar-news@98a5ee09e51c03e8a253305c485a91693ba3c735`  
+**Base:** `main@73b8a0d1ba33503fede02db2c3c0af082d724a12` — **157 ahead / 0 behind**, with main as merge base.  
+**PR:** #34 remains open/draft → main, unmerged and unretargeted. Only the owner-selected `black-box-bihar-news` branch is modified.
+
+## Branch freshness and dependency gate
+
+- Re-enumerated the complete remote inventory: **46 branches** (page 1 = 46, page 2 = 0), **29 open PRs** (page 1 = 29, page 2 = 0) and **14 closed PRs** (page 1 = 14, page 2 = 0). Default branch remains main. PR #34 head matched the selected branch immediately before this patch.
+- The newest Reader-relevant source is PR #43, `fix/release-reader-webview-resources-2026-11-09@e5b7b9f8f5d9e33021bd6ccb7b7cb3f827218e3c` (8 November 2026 21:25:23 UTC; “test(reader): cover independent cleanup after repeated failures”). It is **11 commits ahead / 157 behind black-box** and **11 ahead / 0 behind main**: divergent, not a safe application baseline. Its full three-file diff was reviewed: `MainActivity.kt` (+65/-2), `ReaderWebViewReleaseGuard.kt` (+22) and `ReaderWebViewReleaseGuardTest.kt` (+100). The earlier permanent-disposal implementation is already integrated on black-box through `86e095d858784b59b231f64f647aed869698f992`; this pass selectively ports only the cancellable restore-settle callback and the ordinary-vs-fatal cleanup semantics/tests.
+- PR #37's Search RowScope repair and active-field clear visibility, PR #30's 48dp touch-target policy, PR #31's off-main appearance restore, PR #36's Asia/Kolkata day policy and PR #13's single conservative 8×8 adaptive-contrast probe are already represented on the active line. The old `brrrNEWS` branch is **4 ahead / 63 behind**; its `GlassSurfacePolicy`/supporting-card changes are superseded by the current richer shared `GlassSurfacePolicy` (intensity, reduced-transparency, filter/action/preview tokens) and `SupportingCardGeometryPolicy`. No duplicate material stack was ported.
+- PR #42 is editorial-only; PR #39 remains owner-gated on signing secrets/certificate pinning/first-install migration. RSS/parser/security branches #25/#26/#32/#33/#38/#40/#41 and diagnostic branches #16/#35 remain separate. No other branch, PR, main, workflow or repository setting was changed.
+
+## Exact parent CI, Actions, workflow and Release
+
+- All **372 Actions runs** were paginated (100 + 100 + 100 + 72; page 5 empty). Queued and in-progress runs are both **0**.
+- Exact parent `98a5ee09e51c03e8a253305c485a91693ba3c735` passed natural push run [#371](https://github.com/Batmancpu/CurrentLens/actions/runs/42523296936) and pull-request run [#372](https://github.com/Batmancpu/CurrentLens/actions/runs/42523300944). PR job **128861297626** completed every step successfully: checkout, Java, stable test-signing cache, Android SDK/platform, Gradle, WordNet builder/database, `:app:testDebugUnitTest`, `:app:assembleDebug` and artifact upload. Full job log reports **BUILD SUCCESSFUL in 1m 33s** (44 actionable tasks). PR artifact [#13634735445](https://github.com/Batmancpu/CurrentLens/actions/runs/42523300944/artifacts/13634735445), **39,128,215 bytes**, SHA-256 `1d41e6ed1088e6dd38eb3f8cc94c93ccf78e545018f95531643825e79dd61902`, expires **22 November 2026 21:06:22 UTC**. The publish job was skipped; these runs created no Release.
+- The integration workflow `.github/workflows/build-apk.yml` retains read-only build/test permissions and a separate main-push-only Release-write job. Main's own workflow remains push-only with workflow-wide `contents: write`. Latest published Release remains `v0.2.0-build-116` (6 November 2026 11:18:59 UTC).
+
+## Implementation — cancel the final Reader restore callback; preserve fatal failures
+
+- The existing `ReaderScreen` owns one WebView through `AndroidView`; permanent Compose disposal uses `onRelease` and calls `releaseForDisposal()`. Temporary detach remains non-destructive.
+- The final 260ms reading-position restore settle callback was previously an anonymous `postDelayed` lambda. It is now stored as `readingPositionRestoreSettle`, cleared when it runs, and removed by `cancelReadingPositionRestore()`; cancellation also resets `restoringReadingPosition`. Existing article-change, completion, detach and permanent-disposal paths already call this cancellation method, so no new timer/poller or lifecycle observer is introduced.
+- `ReaderWebViewReleaseGuard` now catches ordinary `Exception` per cleanup action rather than using `runCatching` (which also swallows `Error`). Independent cleanup continues after ordinary failures; fatal VM/linkage errors propagate instead of being hidden. Added JVM coverage for multiple independent ordinary failures and fatal `LinkageError` propagation. The guard remains one-shot and preserves cleanup order.
+- No article HTML, WebView permissions, JavaScript/DOM-storage policy, native selection/ActionMode, dictionary bridge, reading-session accounting, saved-position semantics or quiz persistence changed.
+
+## Paired resource/material strategy and coverage
+
+| Component | Material tier / reason | Effect/capture delta | Reuse / fallback | Tests / evidence |
+|---|---|---|---|---|
+| Reader WebView restore/disposal lifecycle | No glass; lifecycle/resource ownership only | **0** new Prismal passes, blur/refraction, backdrop captures/readbacks, shaders, graphics layers or image decodes | Existing single WebView and existing `onRelease`; cancel one stored delayed callback; temporary detach remains safe | JVM guard tests added; CI for this new head pending; device resource/jank impact unmeasured |
+| Reader toolbar / definition / completion | Existing Tier 1 transient Prismal surfaces | No change to active surface area, shared root capture or hidden tab glyph source | Existing material tokens and reader chrome policy retained | No new visual/device claim |
+
+- This is a source-level lifecycle/resource correction, not a measured memory, frame-time, battery or thermal improvement. No new rendering work was added, so no additional glass cost is introduced.
+- OPPO Reno10 WebView disposal/re-entry, native selection, TalkBack, font scaling, Reduce Motion, IME, screenshot appearance, Perfetto/frame timing, GPU overdraw, allocations/memory, thermal and battery remain **UNVERIFIED**. Parent #371/#372 do not validate this new commit; inspect its own natural push/PR runs before another implementation batch.
+
+## Next
+
+- Inspect the exact new-head natural push and PR jobs, full logs and artifact. If they pass, continue the whole-app consistency audit from the existing per-screen/material/optimization matrix; do not add another live effect without its paired cost-control strategy.
+
+---
+
 # Live implementation batch — Search clear active-state visibility (9 November 2026, 02:27 IST)
 
 **Source before change:** `black-box-bihar-news@4f3d0491e63619d48193316a0e8d370af5941a9f`  

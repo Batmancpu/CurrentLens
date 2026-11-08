@@ -11,7 +11,12 @@ internal class ReaderWebViewReleaseGuard {
         if (released) return
         released = true
         cleanup.forEach { action ->
-            runCatching { action() }
+            try {
+                action()
+            } catch (_: Exception) {
+                // Continue best-effort cleanup after ordinary failures. Fatal VM/linkage
+                // errors are deliberately allowed to propagate.
+            }
         }
     }
 }
