@@ -1207,3 +1207,29 @@ Next: after natural CI validates this exact head, perform the Appearance preview
 
 **Next**
 - Inspect the new exact-head natural push/PR jobs, complete logs and artifact before another UI batch. Continue only with an evidence-backed whole-app inconsistency; preserve one root background-only capture, the expanded-only tab glyph source, low-cadence adaptive luminance and calm high-contrast article/quiz content. No Release publication, main write, merge, manual dispatch/rerun, retarget or source-branch deletion.
+
+
+## 9 November 2026, 01:27 IST — Off-main startup diagnostics and bounded reads
+
+### Freshness gate
+- Source parent: `black-box-bihar-news@3173bd9a4af5483d134fda1d5b756a2f5657d03d`; PR #34 remains the single open/draft PR to `main@73b8a0d1ba33503fede02db2c3c0af082d724a12`, 155 ahead / 0 behind.
+- Complete inventory: 46 branches and 43 PRs (29 open, 14 closed); full branch SHA/timestamp/message/PR mapping is appended in `docs/BRANCH_CONSOLIDATION.md`.
+- PR #16 head `ebea0aac68ce2cf17aad376304f7915fe937e807` is 98 ahead / 7 behind active from common base `6ab1e6a02ac8e91027f21900d64d63b9f2e6a890`. Four Appearance commits are superseded by the active richer `LocalAppearancePreferences` and combined IO snapshot; three diagnostic commits are selectively ported. PR #43's remaining Reader settle-callback/Exception-only guard delta is deferred to a separate Reader lifecycle batch. PR #30's 48dp targets and PR #37's Search RowScope fix are already present. No source branch is modified.
+- `brrrNEWS` is 4 ahead / 61 behind active and its supporting-glass policy is superseded by the current `GlassSurfacePolicy`. Stale `ui/liquid-glass-performance` and `redesign/v0.3-search-reader` are not baselines.
+- Active workflow is read-only for build/test with isolated main-push Release-write; main remains push-only with workflow-wide `contents: write`. No workflow change.
+
+### Implementation and paired cost control
+- Application prior-process inspection, bounded report reads, exit-history lookup and checkpoint writes now run on `Dispatchers.IO` behind completion gates; the uncaught-exception handler is still installed immediately.
+- Activity shows a temporary native progress placeholder, reads prior report on IO, then enters the existing full Compose/Prismal tree. Stage writes, first-frame healthy marker and recovery-report deletion are also on IO. No diagnostic menu is made part of the consumer home UI.
+- Stage reads are capped at 512 characters; report reads at 30,000; oversized legacy reports are rejected by file length before full materialisation. Final crash-report flush remains synchronous on the uncaught-exception thread.
+- 13 focused JVM tests are carried forward, including bounded prefix reads and oversized/legacy-report rejection. Tests are added but not run on this new head.
+- No Prismal capture, blur/refraction, readback, shader, graphics layer, image decode, dependency, network, permission or persistence-schema change.
+
+### Exact parent CI
+- Parent `3173bd9a4af5483d134fda1d5b756a2f5657d03d` passed natural push #367 and PR #368. WordNet builder: 151,456 unique words; `:app:testDebugUnitTest`, `:app:assembleDebug`, artifact upload passed; Release skipped.
+- Artifact #13630179831: 39,122,992 bytes; SHA-256 `f10f20cdd0d078648c5bf0fb069bbafafb0105b54133f247f01a083e0f482a92`; expires 22 November 2026 19:17:20 UTC. Parent runs do not validate this new commit.
+- Actions: 368 runs (100+100+100+68), 230 success, 68 failure, 70 cancelled; queue/in-progress 0. Latest Release by publication time is v0.2.0-build-116, published 6 November 2026 11:18:59 UTC; no new Release.
+
+### Remaining verification
+- OPPO Reno10 launch/crash causality and all device visuals/performance/accessibility remain **UNVERIFIED**. No startup-time, memory, frame-time, battery or thermal gain is claimed.
+- After exact-head natural CI passes, next: selectively port PR #43's tracked WebView settle callback cancellation and Exception-only release guard, then continue Today skeleton/header/filter and app-wide material consistency.

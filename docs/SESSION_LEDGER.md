@@ -475,3 +475,17 @@ Branch: `fix/early-startup-crash-diagnostics-2026-11-06`.
 - **Device / risks:** OPPO Reno10 cold/warm launch, Saved visual layout, TalkBack, font scale, Reduce Motion, frame timing/jank, GPU overdraw, allocations/memory, thermal and battery remain **UNVERIFIED**. No device-backed launch or performance claim.
 - **Safety:** no main write, PR merge/retarget, force update, workflow change, manual dispatch/rerun, Release publication, package identity change or source-branch deletion. The new commit SHA is in the GitHub branch history and will be recorded in the next ledger refresh.
 
+
+
+## 2026-11-09 01:27 IST / 2026-11-08 19:57 UTC — Port off-main startup diagnostics into the active consolidation branch
+
+- **Source:** `black-box-bihar-news@3173bd9a4af5483d134fda1d5b756a2f5657d03d`; PR #34 draft/open to main. Pre-change branch: 155 ahead / 0 behind main. Complete inventory: 46 branches, 43 PRs (29 open, 14 closed). The exact resulting commit SHA is recorded by GitHub/PR #34 and will be copied in the next ledger refresh.
+- **Freshness:** PR #16 `ebea0aac68ce2cf17aad376304f7915fe937e807` is 7 ahead / 98 behind active from common base `6ab1e6a02ac8e91027f21900d64d63b9f2e6a890`. Four Appearance changes are superseded by the active combined snapshot; three diagnostic changes were adapted. PR #43 `cb080e547ad4469dcf81c1f04e866e89c6f86b42` is 8 ahead / 155 behind; its remaining settle-callback/Exception-only guard change is deferred. PR #30 and #37 fixes are already present.
+- **Files:** `CurrentLensApplication.kt`, `LaunchCrashDiagnostics.kt`, `LaunchCrashDiagnosticsTest.kt`, `MainActivity.kt`, roadmap, branch-consolidation record, project handoff and this ledger.
+- **Behaviour:** Application inspection/exit-history work runs on IO behind completion gates; the uncaught handler is still installed immediately. Activity shows a temporary native progress placeholder, reads the prior report on IO, then enters the existing Compose/Prismal tree. Checkpoint writes, healthy marker and recovery-report deletion run on IO.
+- **Bounds/privacy:** startup-stage reads capped at 512 characters; report reads capped at 30,000; oversized legacy reports rejected by file length before loading. Final crash-report flush remains synchronous on the uncaught-exception thread. No identifiers/raw traces, network, telemetry, permissions or cloud services added.
+- **Tests:** 13 pure JVM tests, including bounded prefix read and oversized/legacy report rejection, are added but not run on this new head. Natural exact-head CI is pending.
+- **Performance:** no new Prismal surface, capture/readback, blur, shader, graphics layer, image decode, dependency or timer. Disk/binder work moved off main; no measured startup, memory, frame-time, battery or thermal gain claimed.
+- **Parent CI:** #367/#368 passed on parent `3173bd9a4af5483d134fda1d5b756a2f5657d03d`; WordNet 151,456 unique words, unit tests, APK assembly and artifact upload. Artifact #13630179831 (39,122,992 bytes). Release skipped. Parent runs do not validate this change.
+- **Device:** native launch-crash root cause remains unestablished; OPPO, Reader/IME/selection, accessibility, Reduce Motion and Perfetto remain **UNVERIFIED**.
+- **Safety:** no main edit, merge/retarget, workflow change, manual dispatch/rerun, Release publication, package identity change or branch deletion.

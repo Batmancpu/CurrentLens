@@ -1,3 +1,18 @@
+## Live snapshot — 9 November 2026, 01:27 IST
+
+- **Main:** `73b8a0d1ba33503fede02db2c3c0af082d724a12`, unchanged.
+- **Active branch:** `black-box-bihar-news`, source parent `3173bd9a4af5483d134fda1d5b756a2f5657d03d`; PR #34 remains the single draft/open PR to main, 155 ahead / 0 behind.
+- **Freshness:** 46 branches, 43 PRs (29 open, 14 closed). PR #16 head `ebea0aac68ce2cf17aad376304f7915fe937e807` is 7 commits ahead / 98 behind active from common base `6ab1e6a02ac8e91027f21900d64d63b9f2e6a890`; four Appearance commits are superseded by active code, three diagnostic commits are adapted here. PR #43's remaining Reader settle-callback/guard delta is deferred. No other branch changed.
+- **Parent CI:** natural push #367 and PR #368 passed on `3173bd9a4af5483d134fda1d5b756a2f5657d03d`; WordNet 151,456 unique words, `:app:testDebugUnitTest`, `:app:assembleDebug`, artifact upload. Artifact #13630179831, 39,122,992 bytes, SHA-256 `f10f20cdd0d078648c5bf0fb069bbafafb0105b54133f247f01a083e0f482a92`. These runs do not validate the new commit.
+- **Actions:** 368 total, 230 success, 68 failure, 70 cancelled; queue/in-progress 0.
+- **Workflow:** active branch read-only build/test plus isolated main-push Release-write; main push-only with workflow-wide `contents: write`.
+- **Latest Release:** v0.2.0-build-116, published 6 November 2026 11:18:59 UTC; no new Release.
+- **Current change:** startup diagnostic inspection, bounded report reads, stage writes and recovery deletion move to IO; immediate uncaught-handler install and synchronous final crash-report flush remain.
+- **Device:** OPPO cold/warm launch, native crash causality, screenshots, Reader/IME/selection, TalkBack, font scaling, Reduce Motion, Perfetto, GPU, memory, thermal and battery remain **UNVERIFIED**.
+- **Safety:** no main write, merge, retarget, dispatch/rerun, Release publication, package identity change or branch deletion.
+
+---
+
 ## Live snapshot — 8 November 2026, 19:28 IST
 
 - **Canonical main:** `73b8a0d1ba33503fede02db2c3c0af082d724a12`, unchanged.

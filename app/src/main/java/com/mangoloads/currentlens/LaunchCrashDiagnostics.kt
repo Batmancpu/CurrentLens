@@ -17,6 +17,7 @@ import kotlin.system.exitProcess
  */
 internal object LaunchCrashDiagnostics {
     const val MAX_REPORT_CHARS = 30_000
+    private const val MAX_STAGE_CHARS = 512
     private const val REPORT_NAME = "currentlens-last-crash.txt"
     private const val REPORT_TEMP_NAME = "currentlens-last-crash.tmp"
     private const val STAGE_NAME = "currentlens-last-startup-stage.txt"
@@ -62,18 +63,15 @@ internal object LaunchCrashDiagnostics {
         runCatching {
             val directory = context.applicationContext?.filesDir ?: context.filesDir
             val stageFile = File(directory, STAGE_NAME)
-            val previousStage = runCatching {
-                stageFile.takeIf { it.isFile }?.readText(Charsets.UTF_8)
-            }.getOrNull()
+            val previousStage = readTextPrefix(stageFile, MAX_STAGE_CHARS)
             val reportFile = File(directory, REPORT_NAME)
-            val existingReport = runCatching {
-                reportFile.takeIf { it.isFile }?.readText(Charsets.UTF_8).orEmpty()
-            }.getOrDefault("")
-            if (reportFile.isFile && (
-                    isKnownLegacyFalsePositive(existingReport) ||
-                        hasLegacyDeviceMetadata(existingReport)
-                    )
-            ) {
+            val reportLength = reportFile.takeIf { it.isFile }?.length() ?: 0L
+            val existingReport = if (reportLength > MAX_REPORT_CHARS) {
+                ""
+            } else {
+                readTextPrefix(reportFile, MAX_REPORT_CHARS).orEmpty()
+            }
+            if (reportFile.isFile && shouldDiscardExistingReport(reportLength, existingReport)) {
                 // Remove pre-privacy diagnostic reports that exposed device/build identifiers.
                 reportFile.delete()
             }
@@ -118,12 +116,9 @@ internal object LaunchCrashDiagnostics {
         recordStage(context, completedStage)
     }
 
-    fun read(context: Context): String? = runCatching {
-        File((context.applicationContext ?: context).filesDir, REPORT_NAME)
-            .takeIf { it.isFile }
-            ?.readText(Charsets.UTF_8)
-            ?.take(MAX_REPORT_CHARS)
-    }.getOrNull()
+    /** Blocking file read; callers outside the uncaught-exception path must use Dispatchers.IO. */
+    fun read(context: Context): String? =
+        readTextPrefix(File((context.applicationContext ?: context).filesDir, REPORT_NAME), MAX_REPORT_CHARS)
 
     fun clear(context: Context): Boolean {
         val directory = (context.applicationContext ?: context).filesDir
@@ -135,6 +130,30 @@ internal object LaunchCrashDiagnostics {
         runCatching { File(directory, STAGE_NAME).delete() }
         return reportDeleted && (tempDeleted || !File(directory, REPORT_TEMP_NAME).exists())
     }
+
+    /** Read at most maxChars UTF-16 characters without materialising the full file. */
+    internal fun readTextPrefix(file: File, maxChars: Int): String? {
+        if (maxChars < 0) return null
+        return runCatching {
+            file.inputStream().bufferedReader(Charsets.UTF_8).use { reader ->
+                val result = StringBuilder(minOf(maxChars, 4_096))
+                val buffer = CharArray(minOf(maxChars, 4_096).coerceAtLeast(1))
+                var remaining = maxChars
+                while (remaining > 0) {
+                    val count = reader.read(buffer, 0, minOf(buffer.size, remaining))
+                    if (count <= 0) break
+                    result.append(buffer, 0, count)
+                    remaining -= count
+                }
+                result.toString()
+            }
+        }.getOrNull()
+    }
+
+    internal fun shouldDiscardExistingReport(reportLength: Long, report: String): Boolean =
+        reportLength > MAX_REPORT_CHARS ||
+            isKnownLegacyFalsePositive(report) ||
+            hasLegacyDeviceMetadata(report)
 
     internal fun formatInterruptedStartupReport(
         lastCompletedStage: String,
@@ -270,9 +289,7 @@ internal object LaunchCrashDiagnostics {
 
     private fun writeCrashReport(context: Context, threadName: String, throwable: Throwable) {
         val directory = context.filesDir
-        val stage = runCatching {
-            File(directory, STAGE_NAME).takeIf { it.isFile }?.readText(Charsets.UTF_8)
-        }.getOrNull()
+        val stage = readTextPrefix(File(directory, STAGE_NAME), MAX_STAGE_CHARS)
         val versionName = runCatching {
             context.packageManager.getPackageInfo(context.packageName, 0).versionName
         }.getOrNull()
