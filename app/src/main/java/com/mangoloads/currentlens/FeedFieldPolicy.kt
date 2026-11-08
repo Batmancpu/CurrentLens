@@ -14,15 +14,29 @@ internal object FeedFieldPolicy {
     const val MAX_URL_CHARS = 2_048
     const val MAX_DATE_CHARS = 256
 
-    fun titleSource(value: String): String = value.take(MAX_TITLE_SOURCE_CHARS)
+    fun titleSource(value: String): String = boundedPrefix(value, MAX_TITLE_SOURCE_CHARS)
 
-    fun descriptionSource(value: String): String = value.take(MAX_DESCRIPTION_SOURCE_CHARS)
+    fun descriptionSource(value: String): String =
+        boundedPrefix(value, MAX_DESCRIPTION_SOURCE_CHARS)
 
-    fun url(value: String): String? = value.trim().takeIf {
-        it.isNotEmpty() && it.length <= MAX_URL_CHARS
+    fun url(value: String): String? {
+        if (value.length > MAX_URL_CHARS) return null
+        return value.trim().takeIf { it.isNotEmpty() }
     }
 
-    fun date(value: String): String? = value.trim().takeIf {
-        it.isNotEmpty() && it.length <= MAX_DATE_CHARS
+    fun date(value: String): String? {
+        if (value.length > MAX_DATE_CHARS) return null
+        return value.trim().takeIf { it.isNotEmpty() }
+    }
+
+    /** Avoid leaving an unmatched high surrogate at a UTF-16 truncation boundary. */
+    private fun boundedPrefix(value: String, maxChars: Int): String {
+        if (value.length <= maxChars) return value
+        val end = if (maxChars > 0 && Character.isHighSurrogate(value[maxChars - 1])) {
+            maxChars - 1
+        } else {
+            maxChars
+        }
+        return value.substring(0, end)
     }
 }
