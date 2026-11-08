@@ -65,7 +65,7 @@ internal object UpscFeedPolicy {
     // Cover equivalent movie/documentary/series/biopic verbs so a broad policy noun
     // cannot turn an announcement about media content into a regulatory action.
     private val promotionalMediaFramingPattern = Regex(
-        """\b(?:film|movie|documentary|series|reality\\s+show|reality\\s+tv|reality\\s+television)\b(?:\s+\w+){0,2}\s+\b(?:about|on|highlighting|celebrating|depicting|featuring|starring|exploring|showcasing|portraying)\b|\bbiopic\b(?:\s+\w+){0,2}\s+\b(?:about|on|of|highlighting|celebrating|depicting|featuring|starring|exploring|showcasing|portraying)\b"""
+        """\b(?:film|movie|documentary|series|reality\s+show|reality\s+tv|reality\s+television)\b(?:\s+\w+){0,2}\s+\b(?:about|on|highlighting|celebrating|depicting|featuring|starring|exploring|showcasing|portraying)\b|\bbiopic\b(?:\s+\w+){0,2}\s+\b(?:about|on|of|highlighting|celebrating|depicting|featuring|starring|exploring|showcasing|portraying)\b"""
     )
 
     private val policyExceptions = listOf(
