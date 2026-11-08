@@ -2,17 +2,17 @@
 
 **Repository:** `Batmancpu/CurrentLens`  
 **Default branch:** `main@73b8a0d1ba33503fede02db2c3c0af082d724a12` (unchanged)  
-**Owner-selected active line:** `black-box-bihar-news@c7d50bb2bafe29a43c106e4fb71b607e9830adea` at audit start; parent of the shared-shell implementation commit `c6deffb96a89d56642374456e92477fbabb8e4b0`.  
+**Owner-selected active line:** `black-box-bihar-news@400496d3a24e7ed9e1f2d4b62c964aa07ebb7348`; code commit `c6deffb96a89d56642374456e92477fbabb8e4b0`, docs sync `12f5831122067cf7996b14d8b8aed4d8dc3bbd4d`, test correction at current head.  
 **Branch inventory:** 41 remote branches; **38 PRs** (24 open, 14 closed). Full pagination completed; no additional branch or PR page. PR #34 is the only active consolidation draft targeting main.
 
-The active source is not selected by timestamp alone: it is the owner-directed consolidation line, 125 ahead / 0 behind main, 68 ahead / 0 behind PR #16's corrected background-only Prismal/stability baseline. Its lineage includes the PR #19 Reader work, the read-only stacked workflow, the selected network/cache/persistence/editorial ports, conservative adaptive contrast, Reader/Search/feed-navigation policies, shared supporting materials, Appearance preview and system Reduce Motion handling. PR #34 remains draft; no merge, retarget, main write or branch deletion.
+The active source is not selected by timestamp alone: it is the owner-directed consolidation line, 128 ahead / 0 behind main, 71 ahead / 0 behind PR #16's corrected background-only Prismal/stability baseline. Its lineage includes the PR #19 Reader work, the read-only stacked workflow, the selected network/cache/persistence/editorial ports, conservative adaptive contrast, Reader/Search/feed-navigation policies, shared supporting materials, Appearance preview and system Reduce Motion handling. PR #34 remains draft; no merge, retarget, main write or branch deletion.
 
 ## Complete remote branch inventory
 
 | Branch | Head SHA | Latest commit (UTC) | Latest commit subject | PR relationship / disposition |
 |---|---|---|---|---|
 | `a11y/48dp-icon-targets-2026-11-07` | `25107ce905b7` | 2026-11-07 11:02Z | test(a11y): cover minimum icon action target | PR #30 open; policy represented |
-| `black-box-bihar-news` | `c7d50bb2bafe` | 2026-11-08 02:07Z | docs(ui): record Quiz batch and live branch audit | PR #34 open; active consolidation |
+| `black-box-bihar-news` | `400496d3a24e` | 2026-11-08 02:20Z | test(glass): compare header blur against prior profile | PR #34 open; active consolidation |
 | `brrrNEWS` | `e6fcfc25a4c8` | 2026-11-07 04:13Z | ui: consolidate lightweight supporting glass surfaces | Base of PR #24; divergent sibling |
 | `ci/read-only-pr-validation-isolated-release-write-2026-11-06` | `963118f0abe5` | 2026-11-06 17:18Z | ci: validate pull requests with read-only build permissions | PR #18 open; compatible workflow intent represented |
 | `ci/stacked-pr-validation-2026-11-07` | `5dc317936183` | 2026-11-06 21:41Z | ci: restore Android SDK setup before sdkmanager | PR #20 closed; integrated into consolidation |
@@ -57,14 +57,14 @@ The active source is not selected by timestamp alone: it is the owner-directed c
 
 | Candidate | Comparison against active branch | Changed files / relationship | Decision |
 |---|---|---|---|
-| PR #16 stability head | Active branch is 66 commits ahead; PR #16 is an ancestor | Corrected background-only Prismal capture and startup stability prerequisite | Keep as ancestor; do not switch back |
-| PR #38 bounded RSS parser entries | 2 ahead / 0 behind from current head `c7d50bb2` | `NewsRepository.kt` and `NewsRepositoryTest.kt`; caps each feed at 100 entries, including malformed records | Separate parser/performance proposal; natural run #288 in progress; no MainActivity/Prismal overlap and no blind port |
-| PR #37 Search compile repair | Diverged: PR head 6 ahead / active 4 ahead from `d451d225`; its code fix is already in active commit `6f777f87` | `MainActivity.kt` RowScope receiver repair plus handoff docs | No cherry-pick; preserve source PR untouched |
-| PR #36 IST midnight rollover | 3 ahead / 5 behind from `4a7a8f8c` | `AsiaKolkataDayPolicy.kt`, 11-line `MainActivity.kt` change, JVM tests | Defer to a separate data/date pass; it is not a UI baseline |
-| PR #35 bounded diagnostic reads | 6 ahead / 13 behind from `ed6c9419` | `LaunchCrashDiagnostics.kt`, tests and handoff docs | Diagnostics-only; do not mix into Quiz/UI pass |
-| PR #27 strict editorial action gate | 44 ahead / 24 behind from `3a08bb95`; latest branch commit is newer than active head | `UpscEngine.kt`, `UpscFeedPolicy.kt`, tests/docs | Newer but editorial-only; keep separate until full editorial regression review |
-| PRs #32 and #33 | #32: 2 ahead / 18 behind; #33: 4 ahead / 16 behind | Both modify `NewsRepository.kt`; concurrency policy and relative Atom-link resolution | Jointly review before any port; no blind merge |
-| PRs #25 and #26 | #25: 7 ahead / 25 behind; #26: 1 ahead / 24 behind | Reader repository, `MainActivity.kt`, publisher asset/subresource host policies and tests | Joint security/redirect review required; no port in this UI task |
+| PR #16 stability head | Active branch is 71 commits ahead; PR #16 is an ancestor | Corrected background-only Prismal capture and startup stability prerequisite | Keep as ancestor; do not switch back |
+| PR #38 bounded RSS parser entries | 2 ahead / 3 behind from merge base `c7d50bb2` | `NewsRepository.kt` and `NewsRepositoryTest.kt`; caps each feed at 100 entries, including malformed records | Separate parser/performance proposal; run #288 failed two parser tests; no MainActivity/Prismal overlap and no blind port |
+| PR #37 Search compile repair | Diverged: PR head 6 ahead / active 9 ahead from `d451d225`; its code fix is already in active commit `6f777f87` | `MainActivity.kt` RowScope receiver repair plus handoff docs | No cherry-pick; preserve source PR untouched |
+| PR #36 IST midnight rollover | 3 ahead / 10 behind from `4a7a8f8c` | `AsiaKolkataDayPolicy.kt`, 11-line `MainActivity.kt` change, JVM tests | Defer to a separate data/date pass; it is not a UI baseline |
+| PR #35 bounded diagnostic reads | 6 ahead / 18 behind from `ed6c9419` | `LaunchCrashDiagnostics.kt`, tests and handoff docs | Diagnostics-only; do not mix into Quiz/UI pass |
+| PR #27 strict editorial action gate | 44 ahead / 29 behind from `3a08bb95`; latest branch commit is newer than active head | `UpscEngine.kt`, `UpscFeedPolicy.kt`, tests/docs | Newer but editorial-only; keep separate until full editorial regression review |
+| PRs #32 and #33 | #32: 2 ahead / 23 behind; #33: 4 ahead / 21 behind | Both modify `NewsRepository.kt`; concurrency policy and relative Atom-link resolution | Jointly review before any port; no blind merge |
+| PRs #25 and #26 | #25: 7 ahead / 30 behind; #26: 1 ahead / 29 behind | Reader repository, `MainActivity.kt`, publisher asset/subresource host policies and tests | Joint security/redirect review required; no port in this UI task |
 | PRs #29, #30 and #31 | Diverged from older bases; their current useful policies are already present | Bookmark persistence, 48dp target policy, off-main appearance preferences | Treat as represented; source branches remain untouched |
 | PRs #22 and #8 | Separate persistence lineage | Ordered 5,000-entry supplemental new-marker window; legacy unordered set retained | Reconciled; do not claim all historical read storage is bounded |
 | PRs #11, #12 and #17 | Independent cache/parser/URL identity lineages | Provenance/date, Atom alternate selection and tracking-variant identity | Selectively represented in current code; no wholesale merge |
@@ -77,15 +77,15 @@ The active source is not selected by timestamp alone: it is the owner-directed c
 
 The exact full patch review was scoped by subsystem: Search/Reader/Prismal and Compose receiver fixes were checked against current `MainActivity.kt`; persistence and network candidates were reviewed by their actual touched files and ancestry, not by branch names. No unrelated source branch was modified.
 
-## 8 November 2026, 07:41 IST — Shared shell optical clarity and compact capture lifecycle
+## 8 November 2026, 07:41 IST — Shared shell optical clarity and compact capture lifecycle (CI follow-up 07:54 IST)
 
-- **Source / parent:** `black-box-bihar-news@c7d50bb2bafe29a43c106e4fb71b607e9830adea`; new code commit `c6deffb96a89d56642374456e92477fbabb8e4b0`. PR #34 remains open/draft to main; no merge or retarget.
-- **Branch freshness:** 41 branches / 38 PRs (24 open, 14 closed). Active branch is 125 ahead / 0 behind main and 68 ahead / 0 behind PR #16. PR #38 is a direct 2-commit child of the previous head, limited to RSS parser entry caps and tests; run #288 was in progress and it is not a UI baseline. PR #37's RowScope fix is already present. PR #36, #35, #27, #32/#33 and #25/#26 remain separate as described in the live inventory above.
-- **Exact parent CI:** PR run #287 and push run #286 passed on `c7d50bb2`: WordNet 4/4, 151,456 unique words, `:app:testDebugUnitTest`, `:app:assembleDebug` and artifacts. PR artifact #13598894928 (39,110,932 bytes; SHA-256 `84140d6901c7638e10b14e8b3911a69833312e7553b37407db2192cc1fa9b0a1`); push artifact #13600401190 (39,110,930 bytes). Both publish jobs skipped. These validate the parent only.
-- **Implementation:** shared HomeGlassHeader optics were reduced from 13dp to 9dp blur, 4/6dp to 3/4dp refraction, 0.003 to 0.0015 chromatic aberration, and lower specular/shadow/inset/tint values. The same root background-only capture and one header Prismal surface remain.
-- **Navigation resource lifecycle:** hidden tab-glyph and merged droplet sources are now composed only inside the expanded branch; compact mode retains one active-destination pill and disposes the unused sources. No extra capture/readback or second navigation layer.
-- **Tests / cost:** one GlassOpticsPolicyTest asserts the header profile. No new live effect or dependency. Source-level parameter reduction only; no measured GPU/frame/memory/battery benefit.
-- **Next verification:** natural push/PR runs for `c6deffb9` must validate the exact new head. Do not dispatch/rerun or use parent runs as new-head evidence. OPPO Reno10 visual, launch, accessibility, Reduce Motion, scroll, frame, GPU, memory, thermal and battery checks remain UNVERIFIED.
+- **Source baseline:** `black-box-bihar-news@c7d50bb2bafe29a43c106e4fb71b607e9830adea`; code commit `c6deffb96a89d56642374456e92477fbabb8e4b0`; docs sync `12f5831122067cf7996b14d8b8aed4d8dc3bbd4d`; test correction `400496d3a24e7ed9e1f2d4b62c964aa07ebb7348` (current head). PR #34 remains open/draft to main.
+- **Current comparison:** 128 ahead / 0 behind main; 71 ahead / 0 behind PR #16. Branch inventory 41; PR inventory 38 (24 open, 14 closed). PR #38 is now 2 ahead / 3 behind the active branch from merge base `c7d50bb2`; it only touches RSS parsing/tests and remains separate.
+- **Natural CI:** PR run #294 and push run #293 both passed exact head `400496d3`; WordNet 4/4, 151,456 unique words, JVM tests, APK assembly and artifact upload passed. Artifacts #13600736327 (39,111,083 bytes) and #13599529948 (39,111,082 bytes).
+- **Failure/fix:** #289 and #291 each failed one test because the assertion compared the 9dp header profile against the 5.5dp droplet profile. The test now compares against the previous 13dp header value; #294/#293 pass. No production value was softened to hide a failure.
+- **Separate RSS branch:** PR #38 run #288 failed two parser tests with RuntimeException at the test parse call sites; no artifact. Not ported.
+- **Device / cost:** one existing root capture; expanded-only hidden glyph/merged droplet source; no extra readback. Header optical parameters are lower, but GPU/frame/memory/battery impact is unmeasured. OPPO Reno10, accessibility, motion and safe-area checks remain UNVERIFIED.
+- **Next:** continue the shared-shell/transient-control audit. No dispatch/rerun, merge, main write, Release publication or source-branch mutation.
 
 ## Current Quiz batch
 
