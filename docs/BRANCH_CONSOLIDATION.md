@@ -2,17 +2,17 @@
 
 **Repository:** `Batmancpu/CurrentLens`  
 **Default:** `main@73b8a0d1ba33503fede02db2c3c0af082d724a12`  
-**Owner-selected integration/UI line:** `black-box-bihar-news@58c2e5d99f87701eb7e6f68a53bfadcf8eb9c8e4` — **153 ahead / 0 behind main**; main is the merge base.  
+**Owner-selected integration/UI line:** `black-box-bihar-news@86e095d858784b59b231f64f647aed869698f992` — **154 ahead / 0 behind main**; main is the merge base.  
 **PR:** #34 remains open/draft → main, unmerged; head matches the active branch.
 
 ## Complete remote branch inventory
 
-The GitHub branch endpoint was fully paginated: **46 branches** on page 1 and **0** on page 2. Each row records the live head, latest commit timestamp/message and current PR relationship.
+The GitHub branch endpoint was fully paginated: **46 branches** on page 1 and **0** on page 2. This inventory snapshot records the complete branch heads immediately before the documentation-only follow-up; the black-box row is the validated code head `86e095d858784b59b231f64f647aed869698f992`, parent of the docs-sync commit.
 
 | Branch | Head SHA | Latest commit UTC | Latest commit message | PR relationship |
 |---|---|---|---|---|
 | `a11y/48dp-icon-targets-2026-11-07` | `25107ce905b70bde1a41282ffd1d606819ebf58d` | 2026-11-07 11:02:12Z | test(a11y): cover minimum icon action target | PR #30 open |
-| `black-box-bihar-news` | `58c2e5d99f87701eb7e6f68a53bfadcf8eb9c8e4` | 2026-11-08 18:06:05Z | ui(search): remove competing inline glass panel | PR #34 open/draft; active head |
+| `black-box-bihar-news` | `86e095d858784b59b231f64f647aed869698f992` | 2026-11-08 19:11:33Z | fix(reader): release WebView resources on permanent disposal | PR #34 open/draft; active code head at inventory snapshot |
 | `brrrNEWS` | `e6fcfc25a4c8d5f363ced58f313552120aa7ff96` | 2026-11-07 04:13:30Z | ui: consolidate lightweight supporting glass surfaces | Base of PR #24 |
 | `ci/read-only-pr-validation-isolated-release-write-2026-11-06` | `963118f0abe5f7e38f2aa66a49d4b8e74548660c` | 2026-11-06 17:18:53Z | ci: validate pull requests with read-only build permissions | PR #18 open |
 | `ci/stacked-pr-validation-2026-11-07` | `5dc3179361835b77fb3186a99d9b5791301463fd` | 2026-11-06 21:41:27Z | ci: restore Android SDK setup before sdkmanager | PR #20 closed/merged into black-box |
@@ -62,15 +62,17 @@ The GitHub branch endpoint was fully paginated: **46 branches** on page 1 and **
 
 - **Open (29):** #43, #42, #41, #40, #39, #38, #37, #36, #35, #34, #33, #32, #31, #30, #29, #27, #26, #25, #24, #22, #21, #18, #17, #16, #13, #12, #11, #8, #6.
 - **Closed (14):** #28, #23, #20, #19, #15, #14, #10, #9, #7, #5, #4, #3, #2, #1. PR #20 and #19 are integrated into black-box only; no merge to main is implied.
-- `black-box-bihar-news` is the coherent current app/UI baseline: 153 commits ahead / 0 behind main. PR #43 is 5 commits ahead / 0 behind main but only 5 ahead / 153 behind black-box; its three-file Reader WebView disposal delta was inspected and selectively ported. It cannot replace the 153-commit app baseline.
-- PR #42 is 6 ahead / 2 behind black-box and is editorial-only (`UpscEngine`, `UpscFeedPolicy`, tests and baseline). PR #39 is 6 ahead / 18 behind and remains owner-gated on signing secrets/certificate pinning/migration. PR #16 is 7 ahead / 96 behind and has separate startup/diagnostic changes; no old MainActivity was copied.
+- `black-box-bihar-news` is the coherent current app/UI baseline: 153 commits ahead / 0 behind main. PR #43 is 5 commits ahead / 0 behind main but only 5 ahead / 154 behind black-box; its three-file Reader WebView disposal delta was inspected and selectively ported. It cannot replace the 153-commit app baseline.
+- PR #42 is 6 ahead / 3 behind black-box and is editorial-only (`UpscEngine`, `UpscFeedPolicy`, tests and baseline). PR #39 is 6 ahead / 19 behind and remains owner-gated on signing secrets/certificate pinning/migration. PR #16 is 7 ahead / 97 behind and has separate startup/diagnostic changes; no old MainActivity was copied.
 - PR #37's RowScope Search-clear compile fix, #30's 48dp touch-target policy, #31's off-main appearance preference snapshot and #36's Asia/Kolkata day policy are already represented. The old `brrrNEWS` supporting-glass branch is superseded; `ui/liquid-glass-performance`, `ui/liquid-glass-system-continuation` and `redesign/v0.3-search-reader` are not viable baselines.
 - Only `black-box-bihar-news` is modified. No source branch was changed/deleted, no PR merged/retargeted, no main write and no Release publication.
 
 ## Exact Actions, workflow and Release
 
-- Fully paginated **364 Actions runs**: **226 success / 68 failure / 70 cancelled**; queued/in-progress **0**.
+- Fully paginated **366 Actions runs**: **228 success / 68 failure / 70 cancelled**; queued/in-progress **0**.
 - Exact parent head `58c2e5d99f87701eb7e6f68a53bfadcf8eb9c8e4` passed natural push run [#363](https://github.com/Batmancpu/CurrentLens/actions/runs/42508268534) and PR run [#364](https://github.com/Batmancpu/CurrentLens/actions/runs/42508274576). Full PR log and job steps show WordNet builder 4/4, 151,456 unique words / 50,950,144-byte offline database, `:app:testDebugUnitTest`, `:app:assembleDebug` and artifact upload succeeded. PR artifact [#13628606698](https://github.com/Batmancpu/CurrentLens/actions/runs/42508274576/artifacts/13628606698) is 39,118,210 bytes, SHA-256 `a6ab2c44ed3d971d76daa488a49661231c15d781711a00158b7df0e8e1db7d0e`, expires 22 November 2026 18:07:43 UTC. Publish jobs skipped.
+
+- Implementation commit `86e095d858784b59b231f64f647aed869698f992` passed natural push run [#365](https://github.com/Batmancpu/CurrentLens/actions/runs/42513792786) and PR run [#366](https://github.com/Batmancpu/CurrentLens/actions/runs/42513796390). Both build jobs passed WordNet builder 4/4, 151,456 unique words / 50,950,144-byte database, `:app:testDebugUnitTest`, `:app:assembleDebug` and artifact upload. Push artifact [#13630731515](https://github.com/Batmancpu/CurrentLens/actions/runs/42513792786/artifacts/13630731515): 39,122,994 bytes, ZIP SHA-256 `a6c812e2d8a9236f688aa9af9003ddc22bc2a78f94a5c41dd3ebd4d79f1a743b`; PR artifact [#13630621916](https://github.com/Batmancpu/CurrentLens/actions/runs/42513796390/artifacts/13630621916): 39,122,992 bytes, ZIP SHA-256 `bcc28a9a47df203d99b4621427d7bf11c627264fca83074e4ec87c899567b93e`. Both expire 22 November 2026 19:13 UTC; publish jobs skipped. Full push/PR logs were inspected. Non-blocking Node.js 20/action-runtime and `punycode`/`url.parse()` deprecation warnings remain. This docs-only follow-up is a new branch head and needs its own natural CI.
 - Active branch workflow has read-only build/test permissions and a separate main-push-only Release-write job; it naturally validates pushes/PRs for black-box. Main's workflow remains push-only with workflow-wide `contents: write`. Latest Release is `v0.2.0-build-116`; no new Release.
 - PR #43 exact head `d1ec6fa51bf002cdf9f20cbfe6edbfa327eeb614` has 0 check-runs and 0 statuses. Its source branch was not modified; the reviewed delta is ported only on black-box.
 
@@ -80,7 +82,7 @@ The GitHub branch endpoint was fully paginated: **46 branches** on page 1 and **
 - Disposal flushes the last debounced position, stops loading, cancels delayed reader callbacks, clears selection/Compose callbacks, disables JavaScript/DOM storage on the disposed WebView, replaces clients, clears history, detaches/removes children and destroys the native view. `onDetachedFromWindow()` remains temporary-detach-safe.
 - PR #43's full patch was reviewed. Its failure-isolation test omitted the expected `remove-parent` action; the consolidated test now asserts all subsequent cleanup actions run and that a failed release is not repeated.
 - No additional Prismal surface, blur/refraction, shader, backdrop capture/readback, image decode, dependency, network or persistence path. This is source-level lifecycle/resource hygiene, not measured memory/battery/jank improvement.
-- The new head's natural CI is pending. OPPO Reno10 WebView re-entry/disposal, screenshots, launch stability, TalkBack, font scaling, Reduce Motion, IME, Perfetto/frame timing, GPU overdraw, allocations/memory, thermal and battery remain **UNVERIFIED**.
+- Implementation commit `86e095d858784b59b231f64f647aed869698f992` passed exact-head CI; this documentation-only sync advances the branch and its own natural CI is pending. OPPO Reno10 WebView re-entry/disposal, screenshots, launch stability, TalkBack, font scaling, Reduce Motion, IME, Perfetto/frame timing, GPU overdraw, allocations/memory, thermal and battery remain **UNVERIFIED**.
 
 ---
 
