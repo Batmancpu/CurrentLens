@@ -12,6 +12,8 @@ class ReaderWebViewReleaseGuardTest {
             { calls += "stop" },
             { calls += "cancel-callbacks" },
             { calls += "clear-client-closures" },
+            { calls += "clear-history" },
+            { calls += "remove-parent" },
             { calls += "remove-children" },
             { calls += "destroy" }
         )
@@ -20,7 +22,7 @@ class ReaderWebViewReleaseGuardTest {
         guard.release(cleanup)
 
         assertEquals(
-            listOf("stop", "cancel-callbacks", "clear-client-closures", "remove-children", "destroy"),
+            listOf("stop", "cancel-callbacks", "clear-client-closures", "clear-history", "remove-parent", "remove-children", "destroy"),
             calls
         )
     }
@@ -34,6 +36,7 @@ class ReaderWebViewReleaseGuardTest {
             listOf(
                 { calls += "stop" },
                 { calls += "cancel-callbacks"; error("synthetic cleanup failure") },
+                { calls += "remove-parent" },
                 { calls += "remove-children" },
                 { calls += "destroy" }
             )
