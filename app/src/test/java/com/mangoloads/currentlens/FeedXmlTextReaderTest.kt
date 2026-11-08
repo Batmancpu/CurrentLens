@@ -144,4 +144,35 @@ class FeedXmlTextReaderTest {
         assertEquals(XmlPullParser.START_TAG, parser.nextTag())
         assertEquals("updated", parser.name)
     }
+
+    @Test
+    fun ignoresScriptAndStyleSubtreesWhenExtractingEditorialText() {
+        val parser = parser(
+            """
+            <feed xmlns="http://www.w3.org/2005/Atom">
+              <entry>
+                <summary type="xhtml">
+                  <div xmlns="http://www.w3.org/1999/xhtml">
+                    RBI
+                    <script>climate change biodiversity policy</script>
+                    retains the repo rate
+                    <style>.policy { color: red; }</style>
+                    after reviewing monetary conditions.
+                  </div>
+                </summary>
+              </entry>
+            </feed>
+            """.trimIndent()
+        )
+        moveToStartTag(parser, "summary")
+
+        val text = FeedXmlTextReader.readElementText(
+            parser,
+            FeedFieldPolicy.MAX_DESCRIPTION_SOURCE_CHARS
+        ).replace(Regex("\\s+"), " ").trim()
+
+        assertEquals("RBI retains the repo rate after reviewing monetary conditions.", text)
+        assertEquals(XmlPullParser.END_TAG, parser.eventType)
+        assertEquals("summary", parser.name)
+    }
 }
