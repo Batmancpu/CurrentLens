@@ -1,3 +1,36 @@
+# Live implementation batch — Search filter action corner parity (8 November 2026, 20:28 IST)
+
+**Source:** black-box-bihar-news@0e94d82be37a891dd4546a3f856a9cd47b5687d6
+**Base:** main@73b8a0d1ba33503fede02db2c3c0af082d724a12
+**PR:** #34 remains open/draft, targets main, and is not merged or retargeted.
+
+## Branch freshness and dependency decision
+- Complete remote inventory: 44 branches (page 1 = 44; page 2 = 0); 41 PRs (27 open, 14 closed). The owner-selected consolidation branch remains 149 commits ahead / 0 behind main.
+- PR #16 is newer by timestamp at c9dc394e920542d1e329c123bcf354310753b9a7 (4 commits ahead / 92 behind the consolidation branch). Its four-commit delta only adds appearance-alpha normalization and moves the first alpha read into the startup IO snapshot. The active branch already has the richer LocalAppearancePreferences snapshot (glass alpha plus Reduce Transparency), AppearancePreferencesPolicy.create/normalize, LocalStore.appearancePreferences, and restores both values inside LocalAppSnapshot on Dispatchers.IO; the current JVM test covers finite/range fallback and Reduce Transparency. This is a functional superset, so the four commits are superseded and were not cherry-picked.
+- PR #37's RowScope Search-clear repair, #36's Asia/Kolkata midnight policy, #30's 48dp icon-target policy, #31's off-main appearance snapshot, #29's off-main bookmark persistence, #13's conservative adaptive contrast, and the earlier PR #19 Reader UI are already represented in the active branch.
+- PR #39 remains a separate stable-signing proposal requiring owner-managed secrets, certificate pinning and explicit install/data migration approval. PRs #40/#41 and #32/#33/#38 touch RSS/network/parser boundaries and remain separate joint review work; #25/#26 require a combined publisher-resource security review; #35 is diagnostic-only; #27 is editorial-only. No other branch was modified.
+- Stale ui/liquid-glass-performance and redesign/v0.3-search-reader remain excluded. PR #34 is the only branch/PR modified by this automation.
+
+## Exact-head verification before this batch
+- Natural push run #347 and pull-request run #348 both passed on exact parent SHA 0e94d82be37a891dd4546a3f856a9cd47b5687d6. Full logs show WordNet builder 4/4, 151,456 unique offline words (50,950,144-byte database), :app:testDebugUnitTest, :app:assembleDebug and APK artifact upload all succeeded; both Release jobs were skipped.
+- PR artifact #13620755048 is 39,122,676 bytes and expires 22 November 2026 14:08 UTC. Push artifact #13620281982 is 39,122,679 bytes. These runs validate the parent, not the new commit.
+- PR #16's separate exact-head push run #352 passed on c9dc394e920542d1e329c123bcf354310753b9a7; artifact #13620729002 is 38,996,580 bytes. This validates PR #16 only, not PR #34.
+- Actions history is fully paginated: 352 runs (216 success, 67 failure, 69 cancelled), queue empty. Latest published Release remains v0.2.0-build-116; no Release was published.
+
+## Implementation — shared continuous control geometry
+- Whole-app source audit found one remaining functional glass control that still constructed RoundedCornerShape: Search's GlassActionPill. All sibling filter/category chips use the immutable shared glassControlShape (ContinuousCornerShape, 16dp).
+- Replaced that one remembered RoundedCornerShape instance with glassControlShape. The Search Filters action now shares the exact same continuous geometry as the rest of the control system; its static fill/rim, active-count label, 48dp minimum height, Button role, state description, sheet action, keyboard dismissal and filter state are unchanged.
+
+## Paired optimization and verification
+- Added/removed render passes: 0. Added/removed live blur/refraction, Prismal surfaces, backdrop captures/readbacks, shaders, graphics layers, image decodes, dependencies, timers, network calls and persistence operations: 0.
+- Reuses the existing immutable shared Shape instance rather than constructing a separate rounded shape during composition. No measured allocation/frame-time/battery improvement is claimed.
+- No new policy test was warranted for a one-line reference to the already-used shared shape. The new exact-head natural push/PR runs are pending; do not treat #347/#348 or #352 as validation of this new commit.
+- OPPO Reno10 visuals, touch/IME behaviour, TalkBack, font scaling, Reduce Motion, startup, Perfetto/frame timing, GPU overdraw, memory/allocation churn, thermal and battery remain UNVERIFIED.
+
+## Next
+- Inspect the new exact-head natural push and pull-request jobs, complete logs and artifact before another UI change. Continue the whole-app material audit only where a concrete inconsistency is present; preserve one root background-only capture, the expanded-only hidden tab glyph source, and calm high-contrast article/quiz content.
+- No main write, merge, retarget, force update, manual dispatch/rerun, Release publication, app identity change or source-branch deletion.
+
 # Live implementation batch — Saved “Previously Opened” relevance reuse
 **Audit:** 8 November 2026, 19:28 IST  
 **Pre-change source:** `black-box-bihar-news@261c387bb196e1bb74d5a20df9b3d1bc4f9ebc18`  

@@ -2086,7 +2086,7 @@ private fun GlassActionPill(
     val reduceTransparency = LocalGlassReduceTransparency.current
     val fillAlpha = GlassSurfacePolicy.actionPillFillAlpha(intensity, selected, reduceTransparency)
     val borderAlpha = GlassSurfacePolicy.actionPillBorderAlpha(intensity, selected, reduceTransparency)
-    val shape = remember { RoundedCornerShape(GlassSurfacePolicy.FILTER_PILL_CORNER_RADIUS_DP.dp) }
+    val shape = glassControlShape
     val fill = (if (selected) colors.primary else colors.surface).copy(alpha = fillAlpha)
     val rim = (if (selected) colors.primary else colors.outline).copy(alpha = borderAlpha)
 
