@@ -1,3 +1,38 @@
+# Live branch, PR, CI and implementation audit — 8 November 2026, 10:27 IST
+
+**Repository:** `Batmancpu/CurrentLens`  
+**Default branch:** `main@73b8a0d1ba33503fede02db2c3c0af082d724a12`  
+**Owner-selected active line:** `black-box-bihar-news@45a3264319dfb16cd43a6912a354c1625054c8dc`; PR #34 remains open/draft and targets main.  
+**Ancestry:** 133 ahead / 0 behind main (merge base main); 76 ahead / 0 behind PR #16's corrected background-only Prismal/stability head `6ab1e6a02ac8e91027f21900d64d63b9f2e6a890`. PR #34 currently changes 74 files (9,782 additions / 806 deletions).  
+**Inventory:** 41 remote branches (page 1: 41, page 2: 0); 38 PRs (24 open, 14 closed). The full branch/head/timestamp/PR table below is current; the active branch row has been advanced to the new Search UI commit.
+
+## Freshness comparisons and source dispositions
+
+- The selected integration line is still the latest coherent UI baseline. Main and PR #16 heads are unchanged. No newer relevant UI branch supersedes it.
+- PR #37 Search clear compile repair is already represented in active `MainActivity.kt`; its six-commit branch also carries continuity documentation. Do not port again.
+- PR #38 remains parser-only and diverged (8 ahead / 7 behind); PR #36 is a separate Today date/index refresh (3 ahead / 14 behind); PR #35 is startup diagnostic bounds (6 ahead / 22 behind); PR #27 is editorial-only (46 ahead / 33 behind). These are not UI baselines.
+- PR #32/#33 still overlap `NewsRepository.kt`; PR #25/#26 still require combined publisher image/subresource security review. PR #29/#30/#31 and PR #13's conservative shared luminance policy are already represented. Stale `brrrNEWS`, `ui/liquid-glass-performance` and `redesign/v0.3-search-reader` remain excluded.
+- No source branch was modified, cherry-picked, deleted or merged.
+
+## Exact-head CI and workflow
+
+- Parent head `748683f156ea05f650a49603f86750e8902551ed` passed natural push run [#307](https://github.com/Batmancpu/CurrentLens/actions/runs/42445240820) and PR run [#308](https://github.com/Batmancpu/CurrentLens/actions/runs/42445244470). Both completed WordNet builder/database generation, `:app:testDebugUnitTest`, `:app:assembleDebug` and artifact upload; publish job skipped. PR artifact [#13602938183](https://github.com/Batmancpu/CurrentLens/actions/runs/42445244470/artifacts/13602938183): 39,111,930 bytes, SHA-256 `e5767c219b24cff2526bba8e4c94676e0a12cfe8a390a95738a5be31f4078138`.
+- Exact Search code head `45a3264319dfb16cd43a6912a354c1625054c8dc` triggered natural push run [#309](https://github.com/Batmancpu/CurrentLens/actions/runs/42449182759) and PR run [#310](https://github.com/Batmancpu/CurrentLens/actions/runs/42449186429). At this audit both were in progress: #309 had completed checkout, Java, signing-key restore, Android SDK/platform, Gradle and WordNet generation; compile/JVM tests were running. #310 had completed setup and was generating WordNet. No exact-head pass/artifact yet; parent evidence is not a substitute.
+- Queue: 0 queued. The integration workflow retains read-only build/test permissions and a separate main-push-only Release-write job. Main's workflow remains push-only; no PR-to-main validation is inferred.
+- Latest published testing Release remains `v0.2.0-build-116`; no Release was published.
+
+## Search UI change
+
+- Search's Material3 FilterChip action is replaced by `GlassActionPill` inside the existing Search header glass group. The static fill/rim uses Clear↔Frosted and Reduce Transparency policy, 48dp minimum sizing, Button role and active-state semantics. Tapping preserves the existing hide-keyboard/open-filter-sheet behaviour.
+- Added `actionPillFillAlpha` / `actionPillBorderAlpha` and JVM tests for intensity endpoints, active hierarchy, reduced-transparency floors and non-finite fallback.
+- No new Prismal surface, capture/readback, blur/refraction, sampler, shader, graphics layer, decode, dependency, network, timer or persistence path.
+
+## Safety / device status
+
+No main write, merge, retarget, manual dispatch/rerun, Release publication, package identity change or source-branch mutation/deletion. OPPO Reno10 launch, screenshots, TalkBack, font scaling, Reduce Motion, IME, frame timing/jank, GPU overdraw, allocations/memory, thermal and battery remain **UNVERIFIED**.
+
+---
+
 # Live branch-freshness, CI and consolidation audit — 8 November 2026, 09:27 IST
 
 **Repository:** `Batmancpu/CurrentLens`  
@@ -11,7 +46,7 @@
 | Branch | Head SHA | Latest commit UTC | Latest commit subject | PR relationship / disposition |
 |---|---|---|---|---|
 | `a11y/48dp-icon-targets-2026-11-07` | `25107ce905b70bde1a41282ffd1d606819ebf58d` | 2026-11-07 11:02Z | test(a11y): cover minimum icon action target | PR #30 open head; based on black-box |
-| `black-box-bihar-news` | `7ee0976c18c2987854f870b51d5531e9b9185fe6` | 2026-11-08 03:06Z | docs: record unified glass filter control batch | PR #34 open head; base for open #11, #25–27, #29–33, #35–38 |
+| `black-box-bihar-news` | `45a3264319dfb16cd43a6912a354c1625054c8dc` | 2026-11-08 05:02Z | ui(search): align filter action with shared glass controls | PR #34 open head; base for open #11, #25–27, #29–33, #35–38 |
 | `brrrNEWS` | `e6fcfc25a4c8d5f363ced58f313552120aa7ff96` | 2026-11-07 04:13Z | ui: consolidate lightweight supporting glass surfaces | Base of open PR #24; divergent sibling |
 | `ci/read-only-pr-validation-isolated-release-write-2026-11-06` | `963118f0abe5f7e38f2aa66a49d4b8e74548660c` | 2026-11-06 17:18Z | ci: validate pull requests with read-only build permissions | PR #18 open head; based on main |
 | `ci/stacked-pr-validation-2026-11-07` | `5dc3179361835b77fb3186a99d9b5791301463fd` | 2026-11-06 21:41Z | ci: restore Android SDK setup before sdkmanager | PR #20 closed/merged into black-box |
