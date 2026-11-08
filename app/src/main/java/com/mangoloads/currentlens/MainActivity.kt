@@ -2788,6 +2788,8 @@ private class ReaderWebView(context: android.content.Context) : WebView(context)
                     webViewClient = WebViewClient()
                     webChromeClient = null
                 },
+                { clearHistory() },
+                { (parent as? android.view.ViewGroup)?.removeView(this) },
                 { removeAllViews() },
                 { destroy() }
             )
