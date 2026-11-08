@@ -28,6 +28,10 @@ internal object ReaderChromePolicy {
      * reveals it after a smaller threshold. Direction changes reset accumulated distance.
      * Pinning (selection/definition/IME/accessibility/transient menu) and returning to the top always reveal.
      */
+    /** Explicit reveal resets directional accumulation and any stale hide intent. */
+    fun reveal(state: ReaderChromeScrollState): ReaderChromeScrollState =
+        state.copy(visible = true, direction = 0, accumulatedDeltaPx = 0)
+
     fun onScroll(
         state: ReaderChromeScrollState,
         deltaY: Int,
@@ -36,7 +40,7 @@ internal object ReaderChromePolicy {
         pinned: Boolean,
         atTop: Boolean
     ): ReaderChromeScrollState {
-        if (pinned || atTop) return ReaderChromeScrollState()
+        if (pinned || atTop) return reveal(state)
         if (deltaY == 0) return state
         val direction = if (deltaY > 0) 1 else -1
         val magnitude = kotlin.math.abs(deltaY.toLong()).coerceAtMost(Int.MAX_VALUE.toLong()).toInt()

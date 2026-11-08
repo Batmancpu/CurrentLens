@@ -1,3 +1,40 @@
+# Live implementation batch — Reader completion chrome reveal
+**Audit:** 8 November 2026, 13:26 IST  
+**Source branch / SHA before this batch:** `black-box-bihar-news@5f7e8cfe7c536dec2923a67348fb028916ca637c`  
+**Base:** `main@73b8a0d1ba33503fede02db2c3c0af082d724a12`; PR #34 remains open/draft and unmerged.
+
+## Freshness and dependency gate
+- Re-enumerated all **43 remote branches** (page 1: 43; page 2: 0) and all **40 PRs** (26 open, 14 closed). Main is unchanged. The active branch is **136 commits ahead / 0 behind main** and **79 ahead / 0 behind PR #16**; its lineage contains the corrected background-only Prismal capture, consolidated Reader/Search/feed-navigation work and the current app architecture.
+- PR #34 is the sole active consolidation PR: `black-box-bihar-news@5f7e8cfe7c536dec2923a67348fb028916ca637c` → `main@73b8a0d1ba33503fede02db2c3c0af082d724a12`, open/draft, mergeable. The branch remains the freshest coherent UI baseline.
+- PR #39 (`fix/stable-release-signing-2026-11-08@4250de5040a8ca0efbf96a990218ef7d69ef26e8`) is 6 ahead / 1 behind the active head; its diff is workflow, Gradle signing and release documentation only. It requires owner-managed secrets and a first-install/data-migration decision; it is not a UI baseline and was not ported.
+- PR #37's RowScope repair is already in the active Search clear implementation; PR #30's 48dp TouchTargetPolicy and PR #31's off-main appearance restore are represented. PR #13's adaptive-contrast intent is already integrated with the more conservative shared 8×8 probe at 4s/6s cadence, paused during scrolling and outside foreground home.
+- The divergent `brrrNEWS` line is 4 ahead / 42 behind the active branch; its fixed-intensity supporting material is superseded by the active Clear↔Frosted-aware GlassSurfacePolicy and shared card geometry. `ui/liquid-glass-system-continuation-2026-11-07` is 52 behind; `redesign/v0.3-search-reader` is 230 behind. Neither is a safe baseline.
+- PR #40's publisher-bound RSS URL validation, PRs #25/#26 publisher-resource security, #35 diagnostic-read bounds, #36 IST rollover, #38 parser budget and #32/#33 RSS changes remain separate review streams; no blind cherry-pick or source-branch mutation.
+
+## Parent exact-head Actions verification
+- Fully paginated **322 workflow runs** (100 + 100 + 100 + 22): 192 success, 67 failure, 63 cancelled; queued/in-progress runs: **0**.
+- Natural push run [#321](https://github.com/Batmancpu/CurrentLens/actions/runs/42457787922) and pull-request run [#322](https://github.com/Batmancpu/CurrentLens/actions/runs/42457791091) both passed on the exact parent SHA `5f7e8cfe7c536dec2923a67348fb028916ca637c`. Full job logs were inspected: WordNet builder 4/4, 151,456 unique words (50,950,144-byte database), `:app:testDebugUnitTest`, `:app:assembleDebug` and artifact upload all succeeded. Publish job skipped.
+- PR artifact [#13608536799](https://github.com/Batmancpu/CurrentLens/actions/runs/42457791091) is 39,117,807 bytes, SHA-256 `b65f0f9beb0a0468beaa7e99e33c122aed6f160987e0d0ca898b9019db1aea3f`, expires 22 November 2026 07:14 UTC. Push artifact #13607972960 is the same size and expires 22 November 2026 07:13 UTC.
+- Active workflow `.github/workflows/build-apk.yml` uses read-only build permissions and natural push/pull_request triggers for main, the PR #16 base and this branch; the separate contents:write publish job runs only on a main push. Main's own workflow remains push-only with contents:write. Latest published Release remains `v0.2.0-build-116` (6 November 2026 11:18:59 UTC); no Release was created by #321/#322.
+
+## Implementation — completion must reveal its contextual action
+- ReaderWebView's final downward `onScrollChanged` can schedule the 160ms chrome-hide callback immediately before the end detector reports true completion. Because the completion dock is gated by `readerChromeVisible`, it could disappear just after the reader reached the end.
+- Added a small pure `ReaderChromePolicy.reveal(state)` transition that restores visibility and clears directional accumulation. ReaderWebView now cancels a pending hide and reveals its existing chrome when true completion is reported; it does **not** pin controls permanently. Subsequent downward reading can still hide the toolbar/action layer normally.
+- The same reveal policy is used for existing pinned/top resets. Native selection ActionMode, definition anchoring, IME/accessibility pinning, saved reading position, completion dismissal and five-question submit-only persistence are unchanged.
+
+## Coverage and paired-cost matrix — Reader completion
+| Screen/component | Material tier / reason | Effect and capture scope | Reuse / fallback | Accessibility and tests | Measured result |
+|---|---|---|---|---|---|
+| Reader toolbar + completion action | Tier 1/2 transient glass; source/Aa controls and the contextual completion CTA must be discoverable at the actual end state | Reuses the existing Reader toolbar/completion surfaces and one root background-only backdrop; no added blur, capture, readback or render pass | Existing PrismalTransientSurface; existing 160ms auto-hide and Reduced Motion timing remain unchanged | Pure policy test covers explicit reveal and hysteresis reset; selection, definition, IME, accessibility and native ActionMode paths unchanged | Source audit: 0 new render passes/captures; visual timing and OPPO cost UNVERIFIED |
+
+## Tests, risks and next step
+- Added `ReaderChromePolicyTest.explicitRevealRestoresHiddenChromeAndClearsDirectionalAccumulation`. Natural CI must run on the new exact commit; the successful #321/#322 runs validate only the parent SHA above.
+- No new timer, polling, frame callback, WebView JavaScript, network, image decode, persistence path, dependency, shader, blur, refraction, graphics layer or GPU readback was introduced.
+- OPPO Reno10 screenshots/logcat/tombstone, reader-end dock visibility, native selection collision, TalkBack, font scaling, Reduce Motion, frame timing/jank, GPU overdraw, allocation/memory, thermal and battery remain **UNVERIFIED**. CI success does not prove device launch or animation smoothness.
+- Next: inspect the new exact-head natural CI jobs/logs/artifact, then continue the remaining transient-control and whole-app consistency audit. No main write, PR merge/retarget, manual dispatch/rerun, Release publication, package identity change or source-branch deletion.
+
+---
+
 # Live implementation batch — Today feed rhythm and loading accessibility
 **Audit:** 8 November 2026, 12:31 IST  
 **Source branch / SHA:** `black-box-bihar-news@cc5a01b4e95b8f1250e5d0dda7535e8a485c7d84`  

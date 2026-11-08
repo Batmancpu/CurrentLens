@@ -99,6 +99,16 @@ class ReaderChromePolicyTest {
     }
 
     @Test
+    fun explicitRevealRestoresHiddenChromeAndClearsDirectionalAccumulation() {
+        val hidden = ReaderChromeScrollState(
+            visible = false,
+            direction = 1,
+            accumulatedDeltaPx = 31
+        )
+        assertEquals(ReaderChromeScrollState(), ReaderChromePolicy.reveal(hidden))
+    }
+
+    @Test
     fun downwardScrollHidesOnlyAfterLargerThreshold() {
         var state = ReaderChromeScrollState()
         state = ReaderChromePolicy.onScroll(state, 10, 24, 12, pinned = false, atTop = false)

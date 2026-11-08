@@ -3310,6 +3310,9 @@ private fun ReaderScreen(
                     }
                     webView.setReaderChromePinned(readerChromePinned)
                     webView.onReachedBottom = {
+                        // The final downward scroll may already have scheduled chrome auto-hide.
+                        // Reveal it again so the completion action is actually discoverable.
+                        webView.revealReaderChrome()
                         webView.markReadingPositionCompleted()
                         onClearReaderPosition(article.url)
                         savedReadingProgress = 0f
@@ -3695,6 +3698,13 @@ private class ReaderWebView(context: android.content.Context) : WebView(context)
             cancelPendingReaderChromeHide()
             setReaderChromeVisible(true)
         }
+    }
+
+    /** Reveal controls after true completion without permanently pinning them. */
+    fun revealReaderChrome() {
+        cancelPendingReaderChromeHide()
+        readerChromeScrollState = ReaderChromePolicy.reveal(readerChromeScrollState)
+        setReaderChromeVisible(readerChromeScrollState.visible)
     }
 
     private fun setReaderChromeVisible(visible: Boolean) {
