@@ -810,3 +810,35 @@ Next: after natural CI validates this exact head, perform the Appearance preview
 **Unverified / next**
 - OPPO Reno10 appearance fidelity, card text contrast at large font scale, TalkBack, Reduce Motion, frame timing, jank, allocation/memory, GPU overdraw, thermal and battery remain UNVERIFIED. No performance win is claimed from code inspection.
 - Next: inspect this exact head's natural CI logs/artifact; then run the final whole-app shared-header, transient-control, accessibility and performance audit. Keep article text and repeated feed cards non-glass/no-per-card blur, one root background-only source, expanded-only tab glyph capture and the 4s/6s foreground-idle luminance cadence.
+
+
+---
+
+# Live implementation batch — Today index follows Asia/Kolkata midnight
+**Audit:** 8 November 2026, 14:23 IST  
+**Source branch / parent SHA:** `black-box-bihar-news@d5fab2ae9aa097e24180d831d6e0e8d64e441b43`  
+**Base:** `main@73b8a0d1ba33503fede02db2c3c0af082d724a12`; PR #34 remains open/draft, unmerged, targeting main.
+
+## Freshness and dependency gate
+- Re-enumerated the complete remote inventory: **44 branches** (page 1: 44, page 2: 0) and **41 PRs** (**27 open, 14 closed**). Exact branch heads/timestamps/messages and PR head/base refs are recorded in `docs/BRANCH_CONSOLIDATION.md`.
+- Active integration head `d5fab2ae9aa097e24180d831d6e0e8d64e441b43` is **138 ahead / 0 behind main** and **81 ahead / 0 behind** PR #16's corrected background-only Prismal/stability head `6ab1e6a02ac8e91027f21900d64d63b9f2e6a890`. PR #34 head/base match the active branch and unchanged main.
+- PR #36 (`fix/today-ist-midnight-rollover-2026-11-08@5fbd14e6ef9be33d04a882ba463d4c72473419e2`) is 3 commits ahead / 20 behind the current integration head, based on `black-box-bihar-news@4a7a8f8c1db651d8b06d636836c8221569938ff8`. Its isolated delta is `AsiaKolkataDayPolicy.kt`, the BrrrNewsApp date-state/timer insertion and two pure JVM tests. Its exact source head passed natural run #268; this selective port needs its own exact-head natural CI.
+- PR #37's Search-clear RowScope repair is already present in the active Search field. PR #30's 48dp target policy and PR #31's off-main appearance restore are represented. PR #39 remains separate because its stable signing path needs owner-managed secrets and an explicit first-install/local-data migration decision. PRs #40/#41 are unvalidated main-based RSS security/field-bound proposals that need reconciliation against the newer `NewsRepository`; PR #38 overlaps #32/#33 parser work. The divergent `brrrNEWS`, old Liquid Glass and v0.3 branches are not valid baselines.
+- No other branch was changed. No main write, merge, retarget, force update, source-branch mutation, manual workflow dispatch/rerun or Release publication.
+
+## Parent exact-head natural CI
+- PR run [#326](https://github.com/Batmancpu/CurrentLens/actions/runs/42461549072) and push run [#325](https://github.com/Batmancpu/CurrentLens/actions/runs/42461544503) passed on exact parent SHA `d5fab2ae9aa097e24180d831d6e0e8d64e441b43`. Full PR job log: WordNet builder 4/4; 151,456 unique words (50,950,144-byte database); `:app:testDebugUnitTest`; `:app:assembleDebug`; APK artifact upload. Gradle reported `BUILD SUCCESSFUL in 1m 9s`; Release job skipped.
+- PR artifact [#13610236262](https://github.com/Batmancpu/CurrentLens/actions/runs/42461549072/artifacts/13610236262): 39,118,591 bytes; ZIP SHA-256 `db1f34ac9d690e85d398f5b25d5defea6686b5af477b6f70653f3b5fdf464b44`; expires 22 November 2026 08:09 UTC.
+- Actions history is fully paginated: **326 runs** (195 success, 67 failure, 64 cancelled); queue/in-progress **0**. Active workflow `.github/workflows/build-apk.yml` has read-only build/test permissions, natural push/PR triggers for main, PR #16's base and black-box, and a separate main-push-only Release-write job. Latest Release remains `v0.2.0-build-116`; no Release was published.
+
+## Implementation
+- Replaced BrrrNewsApp's immutable composition-time Today date with a state-backed Asia/Kolkata calendar date.
+- While the app is resumed, one cancellable coroutine waits directly until the next IST midnight, refreshes the date, and lets the existing `LaunchedEffect(articles, todayDate, localStateLoaded)` rebuild the editorial index. The timer is cancelled on pause/stop and the date is refreshed immediately on resume.
+- This fixes a foreground-across-midnight stale Today index without refetching RSS, changing publisher timestamps, altering Explore retention, or touching saved/read/quiz data. Manual wall-clock changes while continuously resumed are not polled; resume refresh covers changes after backgrounding.
+
+## Paired cost control, tests and remaining verification
+- One lifecycle-scoped delay, no polling, no background wakeup, no new network request, classification pass, backdrop capture/readback, blur/refraction, shader, graphics layer, image decode, dependency or persistence path. Existing off-main feed-index build and state invalidation are reused.
+- Added pure tests for the 18:30 UTC / 00:00 IST date boundary and the next-midnight delay (1 second before boundary; 24 hours at boundary). The source PR's run #268 passed, but this integration commit still requires its own natural CI.
+- No material/render-pass changes. OPPO Reno10 midnight transition, device launch, TalkBack, font scaling, Reduce Motion, frame timing/jank, GPU overdraw, allocations/memory, thermal and battery remain **UNVERIFIED**.
+
+**Next:** inspect the new exact-head natural push/PR jobs, full logs and APK artifact; then continue the remaining transient-control and whole-app consistency audit without adding glass to dense reading/data surfaces.

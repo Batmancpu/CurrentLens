@@ -565,7 +565,17 @@ private fun BrrrNewsApp() {
         isLightTheme = !dark,
         bandHeight = 104.dp
     )
-    val todayDate = LocalDate.now(ZoneId.of(INDIA_ZONE))
+    var todayDate by remember { mutableStateOf(AsiaKolkataDayPolicy.today()) }
+    // Today is a calendar-day view, not a fetch-time snapshot. Keep its index current
+    // across IST midnight while foregrounded, and refresh immediately after backgrounding.
+    LaunchedEffect(appResumed) {
+        if (!appResumed) return@LaunchedEffect
+        todayDate = AsiaKolkataDayPolicy.today()
+        while (true) {
+            delay(AsiaKolkataDayPolicy.millisUntilNextMidnight(Instant.now()))
+            todayDate = AsiaKolkataDayPolicy.today()
+        }
+    }
     var feedIndex by remember {
         mutableStateOf(EditorialFeedIndex(emptyList(), emptyList(), emptyList()))
     }
