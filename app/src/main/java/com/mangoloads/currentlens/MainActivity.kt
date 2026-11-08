@@ -40,6 +40,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.core.animateDp
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.updateTransition
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -93,6 +94,7 @@ import androidx.compose.material.icons.outlined.Tune
 import androidx.compose.material.icons.outlined.TextDecrease
 import androidx.compose.material.icons.outlined.TextIncrease
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -102,6 +104,7 @@ import androidx.compose.material3.FilterChip
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Surface
@@ -157,6 +160,7 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.focus.FocusRequester
@@ -4519,6 +4523,9 @@ private fun QuizScreen(
         mutableStateOf(false)
     }
     val score = questions.indices.count { selected[it] == questions[it].correctIndex }
+    val reduceTransparency = LocalGlassReduceTransparency.current
+    val optionShape = remember { ContinuousCornerShape(16.dp) }
+    val successColor = Color(0xFF168653)
 
     Column(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
         PrismalTransientSurface(
@@ -4598,7 +4605,11 @@ private fun QuizScreen(
                 Text("Answered: " + selected.size + "/" + questions.size,
                     style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.secondary)
             }
-            items(questions.size) { index ->
+            items(
+                count = questions.size,
+                key = { index -> "quiz-question-$index" },
+                contentType = { "quiz-question" }
+            ) { index ->
                 val question = questions[index]
                 Card(shape = ContinuousCornerShape(22.dp),
                     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
@@ -4608,17 +4619,61 @@ private fun QuizScreen(
                         Text(question.prompt, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
                         question.options.forEachIndexed { optionIndex, option ->
                             val chosen = selected[index] == optionIndex
-                            val correct = submitted && optionIndex == question.correctIndex
+                            val optionState = QuizOptionStylePolicy.resolve(
+                                selected = chosen,
+                                submitted = submitted,
+                                correct = optionIndex == question.correctIndex
+                            )
+                            val optionColor = when (optionState) {
+                                QuizOptionVisualState.SELECTED -> MaterialTheme.colorScheme.primary
+                                QuizOptionVisualState.CORRECT -> successColor
+                                QuizOptionVisualState.INCORRECT -> MaterialTheme.colorScheme.error
+                                QuizOptionVisualState.IDLE,
+                                QuizOptionVisualState.DISABLED -> MaterialTheme.colorScheme.outlineVariant
+                            }
+                            val optionTextColor = when (optionState) {
+                                QuizOptionVisualState.CORRECT -> successColor
+                                QuizOptionVisualState.INCORRECT -> MaterialTheme.colorScheme.error
+                                QuizOptionVisualState.DISABLED -> MaterialTheme.colorScheme.onSurfaceVariant
+                                QuizOptionVisualState.IDLE,
+                                QuizOptionVisualState.SELECTED -> MaterialTheme.colorScheme.onSurface
+                            }
+                            val optionFill = optionColor.copy(
+                                alpha = QuizOptionStylePolicy.fillAlpha(optionState, reduceTransparency)
+                            )
+                            val optionBorder = optionColor.copy(
+                                alpha = QuizOptionStylePolicy.borderAlpha(optionState, reduceTransparency)
+                            )
+                            val optionStateDescription = when (optionState) {
+                                QuizOptionVisualState.IDLE -> "Not selected"
+                                QuizOptionVisualState.SELECTED -> "Selected"
+                                QuizOptionVisualState.CORRECT -> "Correct answer"
+                                QuizOptionVisualState.INCORRECT -> "Incorrect selected answer"
+                                QuizOptionVisualState.DISABLED -> "Not selected"
+                            }
                             OutlinedButton(
                                 onClick = { if (!submitted) selected = selected + (index to optionIndex) },
-                                modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)
-                                    .semantics { this.selected = chosen },
-                                shape = ContinuousCornerShape(16.dp),
+                                modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp)
+                                    .semantics {
+                                        this.selected = chosen
+                                        stateDescription = optionStateDescription
+                                    },
+                                shape = optionShape,
+                                border = BorderStroke(1.dp, optionBorder),
+                                colors = ButtonDefaults.outlinedButtonColors(
+                                    containerColor = optionFill,
+                                    contentColor = optionTextColor,
+                                    disabledContainerColor = optionFill,
+                                    disabledContentColor = optionTextColor
+                                ),
+                                contentPadding = PaddingValues(horizontal = 14.dp, vertical = 10.dp),
                                 enabled = !submitted
                             ) {
-                                Text((if (chosen) "●  " else "○  ") + option,
+                                Text(
+                                    (if (chosen) "●  " else "○  ") + option,
                                     modifier = Modifier.fillMaxWidth(),
-                                    color = if (correct) Color(0xFF168653) else MaterialTheme.colorScheme.onSurface)
+                                    color = optionTextColor
+                                )
                             }
                         }
                         Text(question.provenance, style = MaterialTheme.typography.labelSmall,
@@ -4661,6 +4716,12 @@ private fun QuizScreen(
                     Modifier.fillMaxWidth().padding(horizontal = 10.dp, vertical = 9.dp),
                     verticalArrangement = Arrangement.spacedBy(7.dp)
                 ) {
+                    LinearProgressIndicator(
+                        progress = selected.size.toFloat() / questions.size.coerceAtLeast(1),
+                        modifier = Modifier.fillMaxWidth().height(3.dp).clip(CircleShape),
+                        color = MaterialTheme.colorScheme.primary,
+                        trackColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.42f)
+                    )
                     Text(
                         selected.size.toString() + " of " + questions.size + " answered",
                         style = MaterialTheme.typography.labelSmall,
