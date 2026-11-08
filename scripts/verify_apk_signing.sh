@@ -34,6 +34,14 @@ keytool -exportcert \
   -file "$certificate_file" >/dev/null
 
 expected_sha256="$(sha256sum "$certificate_file" | awk '{print tolower($1)}')"
+pinned_sha256="${CURRENTLENS_SIGNING_EXPECTED_SHA256:-}"
+if [[ -n "$pinned_sha256" ]]; then
+  pinned_sha256="$(printf '%s' "$pinned_sha256" | tr '[:upper:]' '[:lower:]')"
+  if [[ ! "$pinned_sha256" =~ ^[0-9a-f]{64}$ || "$expected_sha256" != "$pinned_sha256" ]]; then
+    echo "::error::Configured signing keystore does not match the pinned release certificate fingerprint"
+    exit 1
+  fi
+fi
 verification_output="$("$apksigner" verify --print-certs "$apk_path")"
 signer_count="$(printf '%s\n' "$verification_output" | grep -Ec 'Signer #[0-9]+ certificate SHA-256 digest:' || true)"
 actual_sha256="$(printf '%s\n' "$verification_output" | awk -F': ' '/Signer #[0-9]+ certificate SHA-256 digest:/ {print tolower($2); exit}')"

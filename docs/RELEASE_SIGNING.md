@@ -49,3 +49,4 @@ The manifest has android:allowBackup=false; uninstalling erases app-private Save
 
 After the first stable-key APK is installed, all future main-branch APKs must use the same keystore and alias. Loss or regeneration of that private key breaks updates again.
 Release secrets are injected only into the step gated to a push on main. Pull-request builds do not receive the main release secrets; they use only the separate Stability test keystore.
+Also set the repository Actions variable CURRENTLENS_RELEASE_CERT_SHA256 to the lowercase SHA-256 fingerprint of the DER certificate exported from this keystore. The main workflow compares the keystore to this pinned public fingerprint before Gradle runs, and the post-build verifier compares the APK signer to both. This catches an accidental or unauthorised keystore replacement instead of silently publishing an incompatible update.

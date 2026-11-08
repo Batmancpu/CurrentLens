@@ -270,3 +270,5 @@ The user continues in ChatGPT and does not want to repeat project context. Start
 - Stability version is advanced to 0.2.7 / versionCode 9, preserving the same signing key and separate package so it can replace the prior Stability APK.
 - The user declined another staged diagnostic round. Do not ask for one. CI and source review are the available verification in this session; device-level causality remains unverified.
 - Fetch live PR #16 metadata for its exact current head and CI run; do not rely on a self-referential branch SHA inside this handoff.
+
+- PR #39 follow-up hardening: main release signing now also requires the public repository variable CURRENTLENS_RELEASE_CERT_SHA256 and checks the keystore certificate against it before building; the APK verifier checks the same fingerprint. This makes accidental key rotation fail closed.
