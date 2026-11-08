@@ -11,7 +11,7 @@ internal object PublisherHostPolicy {
     private val domains = mapOf(
         "the hindu" to setOf("thehindu.com"),
         "indian express" to setOf("indianexpress.com"),
-        "bbc" to setOf("bbc.com", "bbc.co.uk"),
+        "bbc" to setOf("bbc.com", "bbc.co.uk", "bbci.co.uk"),
         "dw" to setOf("dw.com"),
         "al jazeera" to setOf("aljazeera.com")
     )

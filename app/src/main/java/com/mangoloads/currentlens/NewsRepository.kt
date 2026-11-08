@@ -65,23 +65,44 @@ object NewsRepository {
     }
 
     private fun fetchOne(source: FeedSource): List<Article> = try {
-        val connection = (URL(source.url).openConnection() as HttpURLConnection).apply {
-            connectTimeout = 8000
-            readTimeout = 10000
-            requestMethod = "GET"
-            setRequestProperty("User-Agent", "CurrentLens/0.2 RSS reader")
-            setRequestProperty("Accept", "application/rss+xml, application/atom+xml, application/xml, text/xml")
-        }
-        try {
-            val tooLarge = connection.contentLengthLong > NetworkLimits.MAX_RSS_BYTES
-            val status = if (tooLarge) -1 else connection.responseCode
-            if (tooLarge || status !in 200..299) emptyList()
-            else connection.inputStream.use { input ->
-                parse(source, NetworkLimits.readUtf8Limited(input, NetworkLimits.MAX_RSS_BYTES))
+        var currentUrl = source.url
+        var redirectsFollowed = 0
+        var articles: List<Article>? = null
+
+        while (articles == null) {
+            if (!PublisherHostPolicy.allows(source.name, currentUrl)) return emptyList()
+
+            val connection = (URL(currentUrl).openConnection() as HttpURLConnection).apply {
+                connectTimeout = 8000
+                readTimeout = 10000
+                requestMethod = "GET"
+                instanceFollowRedirects = false
+                setRequestProperty("User-Agent", "CurrentLens/0.2 RSS reader")
+                setRequestProperty("Accept", "application/rss+xml, application/atom+xml, application/xml, text/xml")
             }
-        } finally {
-            connection.disconnect()
+            try {
+                val status = connection.responseCode
+                if (PublisherRedirectPolicy.isRedirectStatus(status)) {
+                    val nextUrl = PublisherRedirectPolicy.resolveAllowedTarget(
+                        source = source.name,
+                        currentUrl = currentUrl,
+                        location = connection.getHeaderField("Location").orEmpty(),
+                        redirectsFollowed = redirectsFollowed
+                    ) ?: return emptyList()
+                    currentUrl = nextUrl
+                    redirectsFollowed += 1
+                } else {
+                    if (status !in 200..299) return emptyList()
+                    if (connection.contentLengthLong > NetworkLimits.MAX_RSS_BYTES) return emptyList()
+                    articles = connection.inputStream.use { input ->
+                        parse(source, NetworkLimits.readUtf8Limited(input, NetworkLimits.MAX_RSS_BYTES))
+                    }
+                }
+            } finally {
+                connection.disconnect()
+            }
         }
+        articles
     } catch (_: Exception) {
         emptyList()
     }
