@@ -1,4 +1,42 @@
-# Latest live branch/PR/CI audit — 8 November 2026, 22:25 IST
+# Latest live branch/PR/CI audit — 8 November 2026, 23:27 IST
+
+**Repository:** `Batmancpu/CurrentLens`  
+**Default:** `main@73b8a0d1ba33503fede02db2c3c0af082d724a12`  
+**Owner-selected integration/UI line:** `black-box-bihar-news@6160d58cd54719c83d8dace2f99ba2104e27efcb` — **152 ahead / 0 behind main**; main is the merge base.  
+**PR:** #34 remains open/draft → main, head matches the active branch, unmerged and unretargeted.
+
+## Freshness delta and branch selection
+
+- Re-enumerated all **45 remote branches** (page 1 = 45, page 2 = 0) and **42 PRs** (**28 open / 14 closed**). The default branch remains main. The selected branch head is `6160d58cd54719c83d8dace2f99ba2104e27efcb` (8 November 17:05:33 UTC, “perf(ui): coalesce feed scroll idle settling”); PR #34 head matches it and targets main.
+- PR #42 is **6 ahead / 1 behind** this line; its five-file delta is only `UpscEngine.kt`, `UpscFeedPolicy.kt`, their tests and `UPSC_EDITORIAL_BASELINE.md`, so it is not a UI baseline. PR #16 is **7 ahead / 95 behind** and its newer startup/diagnostic changes overlap PR #35; no startup code was copied. PR #37's Search RowScope fix, #30's 48dp target policy, #31's IO appearance snapshot and #36's Asia/Kolkata policy are represented in the active tree.
+- `brrrNEWS` is **4 ahead / 58 behind** and its earlier GlassSurfacePolicy is superseded by the active supporting/transient/preview/filter policy. `ui/liquid-glass-system-continuation` is 68 behind; `ui/liquid-glass-performance` is 3 ahead / 170 behind; `redesign/v0.3-search-reader` is 246 behind. PR #39's signing migration remains owner-gated; RSS/parser/security, persistence and editorial branches remain separate. No source branch was modified.
+- The complete 45-row head/timestamp/message/PR table below is the prior 22:25 IST snapshot; since then only the selected branch advanced from `5863f29ab4e598230492b8c43d2f0d2d882112d5` to `6160d58cd54719c83d8dace2f99ba2104e27efcb`. All other 44 branch heads and commit metadata are unchanged.
+
+## PR inventory
+
+- Open (28): #42, #41, #40, #39, #38, #37, #36, #35, #34, #33, #32, #31, #30, #29, #27, #26, #25, #24, #22, #21, #18, #17, #16, #13, #12, #11, #8, #6.
+- Closed (14): #28, #23, #20, #19, #15, #14, #10, #9, #7, #5, #4, #3, #2, #1.
+
+## Exact Actions, workflow and Release
+
+- Fully paginated **362 Actions runs**: **224 success / 68 failure / 70 cancelled**; queued/in-progress **0**.
+- Exact active head `6160d58cd54719c83d8dace2f99ba2104e27efcb` passed natural push run [#361](https://github.com/Batmancpu/CurrentLens/actions/runs/42503199872) and PR run [#362](https://github.com/Batmancpu/CurrentLens/actions/runs/42503204114). Run #362's full job log and steps show WordNet builder 4/4, 151,456 unique words / 50,950,144-byte offline database, `:app:testDebugUnitTest`, `:app:assembleDebug` and APK artifact upload. PR artifact [#13625902905](https://github.com/Batmancpu/CurrentLens/actions/runs/42503204114/artifacts/13625902905) is 39,124,172 bytes, SHA-256 `ca03ff3dce7fa10a8b13f84cbe0eb7ebda245bec00cfa96ea9c9a1081ae48a9d`, expires 22 November 2026 17:07:33 UTC. Both Release jobs skipped.
+- Active branch workflow `.github/workflows/build-apk.yml` has read-only build/test permissions, natural push/PR triggers and a separate main-push-only Release-write job. Main's workflow remains push-only with workflow-wide `contents: write`. Latest Release remains `v0.2.0-build-116`; no Release was published.
+- The new Search hierarchy commit described in the roadmap below has not yet received CI; #361/#362 validate its parent only. No manual dispatch/rerun.
+
+## Current UI pass — Search hierarchy de-duplication
+
+- Removed the redundant inline Search `drawPrismalGlass` slab (7dp blur, 3dp/4dp refraction, specular and depth effects). The Search header already names the destination and the lower morphing capsule owns query entry; the inline panel repeated the same hierarchy.
+- Replaced it with a plain 48dp result/active-filter row and the existing static glass Filters action. The filter sheet, filter state, query classification, search clear/focus/IME behaviour and root capture are unchanged.
+- One resting Search live-glass surface and its associated optics are removed; no new capture/readback, shader, graphics layer, image decode, dependency, network or persistence path. Source-level cost reduction only; device/GPU/battery measurements remain unverified.
+
+## Device and measurement boundary
+
+OPPO Reno10 cold/warm launch, screenshots, Search/IME/selection, TalkBack, Reduce Motion, font scaling, Perfetto/frame timing, GPU overdraw, allocation/memory churn, thermal and battery remain **UNVERIFIED**. CI compile/JVM success is not device-launch, animation or performance certification.
+
+---
+
+# Previous live branch/PR/CI audit — 8 November 2026, 22:25 IST
 
 **Repository:** `Batmancpu/CurrentLens`  
 **Default:** `main@73b8a0d1ba33503fede02db2c3c0af082d724a12`  

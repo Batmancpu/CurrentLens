@@ -1406,9 +1406,6 @@ private fun SearchFeed(
     val filterSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val keyboardController = LocalSoftwareKeyboardController.current
     val eligibleArticles = articles
-    val density = LocalDensity.current
-    val reduceTransparency = LocalGlassReduceTransparency.current
-    val glassSurfaceColor = MaterialTheme.colorScheme.surface
     val categories = listOf("All", "India", "World", "Politics", "Geography", "Economy", "Environment", "Science", "Explained", "UPSC", "Opinion")
     val classificationInputs = remember(eligibleArticles) {
         ArticleRelevanceIndexPolicy.keys(eligibleArticles)
@@ -1442,60 +1439,26 @@ private fun SearchFeed(
         }
     }
     Column(Modifier.fillMaxSize()) {
-        Box(
-            Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 5.dp)
-                .drawPrismalGlass(
-                    backdrop = backdrop,
-                    shape = { PrismalRoundedRectangle(22.dp) },
-                    effects = {
-                        applyPrismalGlassEffects(
-                            density = density,
-                            adaptiveLuminance = true,
-                            luminance = if (dark) 0.10f else 0.90f,
-                            blurRadiusPx = with(density) { GlassRenderingPolicy.blurDp(7f, reduceTransparency).dp.toPx() },
-                            refractionHeightPx = with(density) { GlassRenderingPolicy.refractionDp(3f, reduceTransparency).dp.toPx() },
-                            refractionAmountPx = with(density) { GlassRenderingPolicy.refractionDp(4f, reduceTransparency).dp.toPx() },
-                            depthEffect = GlassRenderingPolicy.depthEnabled(true, reduceTransparency),
-                            chromaticAberration = GlassRenderingPolicy.chromaticAberration(0.001f, reduceTransparency),
-                            adaptiveTuning = PrismalAdaptiveTuning.Subtle
-                        )
-                    },
-                    specular = {
-                        PrismalSpecular.Default.copy(width = 0.42.dp, blurRadius = 0.28.dp, alpha = GlassRenderingPolicy.specularAlpha(0.19f, reduceTransparency))
-                    },
-                    depthShadow = {
-                        PrismalDepthShadow(radius = 8.dp, offset = DpOffset(0.dp, 1.dp),
-                            color = Color.Black.copy(alpha = 0.06f), alpha = GlassRenderingPolicy.shadowAlpha(0.12f, reduceTransparency))
-                    },
-                    depthInset = {
-                        PrismalDepthInset(radius = 3.dp, offset = DpOffset(0.dp, 1.dp),
-                            color = Color.Black.copy(alpha = 0.04f), alpha = GlassRenderingPolicy.shadowAlpha(0.04f, reduceTransparency))
-                    },
-                    onDrawSurface = {
-                        drawRect(glassSurfaceColor.copy(alpha = GlassRenderingPolicy.tintAlpha(glassAlpha * 0.10f, reduceTransparency)))
-                    }
-                )
+        Row(
+            Modifier.fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 3.dp)
+                .heightIn(min = TouchTargetPolicy.MIN_ICON_TARGET_DP.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Row(
-                Modifier.fillMaxWidth().padding(start = 12.dp, end = 8.dp, top = 7.dp, bottom = 7.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                Text(
-                    if (query.isBlank()) "UPSC-RELEVANT ARTICLES" else "UPSC SEARCH RESULTS",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.secondary,
-                    letterSpacing = 1.0.sp,
-                    fontWeight = FontWeight.SemiBold
-                )
-                Text(
-                    if (activeFilterCount == 0) "Syllabus-linked topics and subjects" else activeSummary,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
+            val resultStatus = when {
+                loading && filtered.isEmpty() -> "Finding articles"
+                activeFilterCount > 0 -> activeSummary
+                filtered.size == 1 -> "1 article"
+                else -> "${filtered.size} articles"
             }
+            Text(
+                resultStatus,
+                modifier = Modifier.weight(1f),
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
             GlassActionPill(
                 label = if (activeFilterCount == 0) "Filters" else "Filters · $activeFilterCount",
                 selected = activeFilterCount > 0,
@@ -1505,7 +1468,6 @@ private fun SearchFeed(
                     showFilters = true
                 }
             )
-            }
         }
         LazyColumn(
             Modifier.weight(1f),

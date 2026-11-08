@@ -1,3 +1,46 @@
+# Live implementation batch — Search hierarchy de-duplication (8 November 2026, 23:27 IST)
+
+**Source:** `black-box-bihar-news@6160d58cd54719c83d8dace2f99ba2104e27efcb`  
+**Base:** `main@73b8a0d1ba33503fede02db2c3c0af082d724a12` — source is **152 ahead / 0 behind**, with main as merge base.  
+**PR:** #34 remains open/draft → main, unmerged and unretargeted. This pass stays on the owner-selected consolidation branch.
+
+## Branch freshness and dependency gate
+
+- Re-enumerated the complete remote inventory: **45 branches** (page 1 = 45, page 2 = 0) and **42 PRs** (**28 open / 14 closed**). The default branch remains main. The selected branch head is `6160d58cd54719c83d8dace2f99ba2104e27efcb` (8 November 17:05:33 UTC, “perf(ui): coalesce feed scroll idle settling”); PR #34 head matches it and targets main.
+- PR #42, `fix/gst-council-syllabus-disambiguation-2026-11-08@2629cfbe4ee6ece7a41fd13d35dc987abc1e26b8`, is **6 ahead / 1 behind** the selected line. Its complete diff is limited to `UpscEngine.kt`, `UpscFeedPolicy.kt`, their tests and `UPSC_EDITORIAL_BASELINE.md`; it is editorial-only and was not ported into this UI pass.
+- PR #16, `fix/early-startup-crash-diagnostics-2026-11-06@ebea0aac68ce2cf17aad376304f7915fe937e807`, is **7 ahead / 95 behind**. Its newer startup/diagnostic and MainActivity/LocalStore changes overlap separate PR #35 diagnostic work and are not Search prerequisites; no diagnostic code was copied and no native launch fix is claimed.
+- PR #37's Search RowScope compile correction is already present in the active 48dp trailing clear slot; PR #30's TouchTargetPolicy, #31's IO-restored appearance preferences and #36's Asia/Kolkata day policy are also present. The old `brrrNEWS` line is **4 ahead / 58 behind** and its small GlassSurfacePolicy is superseded by the active supporting/transient/preview/filter policy. `ui/liquid-glass-system-continuation` is 68 behind; `ui/liquid-glass-performance` is 3 ahead / 170 behind; `redesign/v0.3-search-reader` is 246 behind. None is a safe newer UI baseline.
+- PR #39's signing/workflow migration remains owner-gated on secrets, certificate pinning and first-install/local-data migration. RSS/parser/security proposals (#25, #26, #32, #33, #38, #40, #41), persistence proposals (#8, #22, #29), and editorial proposals (#6, #21, #27, #42) were not changed. No source branch was modified.
+
+## Exact parent CI, Actions, workflow and Release
+
+- Fully paginated **362 Actions runs** (100 + 100 + 100 + 62): **224 success / 68 failure / 70 cancelled**, with **0 queued or in-progress**.
+- Exact parent SHA `6160d58cd54719c83d8dace2f99ba2104e27efcb` passed natural push run [#361](https://github.com/Batmancpu/CurrentLens/actions/runs/42503199872) and pull-request run [#362](https://github.com/Batmancpu/CurrentLens/actions/runs/42503204114). Both build jobs passed WordNet builder tests (**4/4**), generated **151,456 unique words** (**50,950,144 bytes**), passed `:app:testDebugUnitTest` and `:app:assembleDebug`, and uploaded the debug APK. PR artifact [#13625902905](https://github.com/Batmancpu/CurrentLens/actions/runs/42503204114/artifacts/13625902905) is **39,124,172 bytes**, SHA-256 `ca03ff3dce7fa10a8b13f84cbe0eb7ebda245bec00cfa96ea9c9a1081ae48a9d`, expires **22 November 2026 17:07:33 UTC**. Both Release jobs were skipped. The full PR build log and every job step were inspected.
+- The active `.github/workflows/build-apk.yml` uses read-only build/test permissions, natural push/PR triggers for the integration branch and a separate main-push-only Release-write job. Main's workflow remains push-only with workflow-wide `contents: write`. Latest published Release remains `v0.2.0-build-116`; no Release was created.
+
+## Implementation — remove the competing inline Search glass slab
+
+- Search already has the shared glass page header, the morphing Search capsule and a functional Filters action. Its additional inline `drawPrismalGlass` panel repeated the “UPSC-relevant articles / syllabus-linked topics” hierarchy and placed another full glass slab between those controls.
+- Replaced that panel with one compact **48dp plain status row**: result count when no filters are active, or the existing active-filter summary when filters are selected; the existing `GlassActionPill` remains the sole inline Filters affordance. It stays a static tinted/rimmed control rather than another live backdrop consumer.
+- The filter sheet, topic/GS/subject state, active-filter count, query classification/index reuse, search-clear callback, focus, keyboard/IME docking and root backdrop ownership are unchanged. No duplicate control or second clear affordance was introduced.
+
+## Paired material/performance strategy
+
+- **Removed:** one resting Search-feed `drawPrismalGlass` surface and its 7dp blur, 3dp/4dp refraction, specular, shadow and inset effects.
+- **Retained:** the one shared root background-only capture, the existing morphing Search capsule, the static `GlassActionPill`, and the conditional 5dp `PrismalTransientSurface` only while the filter sheet is open. No new sampler/readback, shader, graphics layer, image decode, dependency, timer, network or persistence path.
+- The result/status row derives only from the already-computed filtered list and filter state; no new classifier pass or per-pixel state. This is a source-level reduction of one active glass surface, not a measured frame-time, GPU, memory, battery or thermal improvement.
+
+## Tests and remaining verification
+
+- No new pure-policy test was warranted: filter state, classification, navigation and IME semantics are unchanged; this is a Compose hierarchy/material-scope change. Parent run #362 validates the source before this change only; the new commit requires its own natural push/PR run. No manual dispatch/rerun.
+- OPPO Reno10 Search hierarchy, light/dark contrast, filter target reachability, keyboard/cursor/IME behaviour, TalkBack, font scaling, Reduce Motion, launch stability, Perfetto/frame timing, GPU overdraw, allocation/memory, thermal and battery remain **UNVERIFIED**. No device or performance claim is made.
+
+## Next
+
+- Inspect the exact new-head natural push/PR jobs, complete logs and APK artifact before another implementation pass. Continue the whole-app audit only where a concrete inconsistency remains; preserve the one root background-only capture, expanded-only tab glyph source, static content surfaces and low-cadence shared luminance probe.
+
+---
+
 # Live implementation batch — coalesced feed scroll settling (8 November 2026, 22:25 IST)
 
 **Source:** `black-box-bihar-news@5863f29ab4e598230492b8c43d2f0d2d882112d5`  
@@ -487,7 +530,8 @@ Recheck every branch head and dependency before each future implementation commi
 | Shared home header | Primary floating glass | Clear translucent header, restrained edge/specular, stable height across destinations | Shared 9dp-blur / 3×4dp-refraction profile now reduces the dark-slab risk; OPPO contrast remains unverified |
 | Four-tab navigation | Primary floating glass | One droplet bar with selected glyph aligned to its hit region | Hidden glyph capture and merged droplet source exist only in expanded state; compact mode releases both |
 | Compact feed navigation | Primary floating glass | Morph the same bar into one active-destination pill on eligible feed scroll only | Implemented; state policy validated in runs #186 and #187; physical animation still needs device validation |
-| Search morph field | Interactive control glass | Preserve tab-to-IME geometry/focus; trailing clear affordance only for non-empty expanded query | 48dp clear target and existing onClear/focus path integrated; run #183 passed |
+| Search morph field | Interactive control glass | Preserve tab-to-IME geometry/focus; trailing clear affordance only for non-empty expanded query | 48dp clear target and existing onClear/focus path integrated; filter clearing remains independent |
+| Search results hierarchy | Plain status row + static control glass | One result/active-filter label beside the existing Filters action; no redundant inline live-glass slab | One 7dp blur/refraction panel removed; conditional filter sheet and morph field retained; device hierarchy unverified |
 | Explore category rail | Interactive control glass | One shared capsule; selected fill/border and >=48dp targets | 48dp target, selected semantics and Geography filter integrated |
 | Today / Explore / Search article cards | Editorial content | Continuous corners, clear typography, image-derived ambient colour; no live blur per card | Existing standard cards, single Coil request and same-bitmap palette |
 | You dashboard | Supporting glass | Theme-aware translucent tint/rim, continuous 22dp geometry, single-line metric values | Static surface opacity preserves readability; shared Clear↔Frosted intensity now scales cached tint/rim tokens; no live blur; OPPO contrast unverified |
@@ -514,7 +558,7 @@ Recheck every branch head and dependency before each future implementation commi
 | Root backdrop | One full-window background-only Prismal capture source | Capture background pixels only; no descendants; reuse same source | Do not reintroduce self-capture; code reviewed, device launch still unverified |
 | Navigation | One floating capsule plus expanded-only tab-glyph source/merged droplet | Create hidden glyph capture and merged droplet source only while expanded; compact pill uses the same shared bar surface | No new sampler/readback; compact state disposes unused sources; OPPO GPU cost unmeasured |
 | Home header | One 9dp-blur / low-refraction glass surface | Reuse root background-only source; static profile reduces blur/refraction/chromatic work; no duplicate capture | Theme-derived contrast; Reduce Transparency still removes live optics; device GPU cost unmeasured |
-| Search | One morphing capsule | Reuse existing anchor/dock geometry and single backdrop | Preserve IME; clear affordance must not alter layout or focus |
+| Search | One morphing capsule + one static glass Filters pill; no inline live-blur panel | Reuse existing anchor/dock geometry and root backdrop; result/status row is plain text | Preserve IME; clear and Filters controls retain 48dp targets; no extra readback |
 | Explore filters | One shared capsule, not one glass surface per chip | Reuse same backdrop; keep chip fills/borders as simple drawing | >=48dp target and selected semantics still require device/TalkBack checks |
 | Feed cards | No live blur | One Coil request per image; palette sampled from that decoded bitmap; cached per article | Standard content card if palette unavailable; no duplicate decode |
 | Reader toolbar | One 8dp-blur glass toolbar, 60dp minimum height | Reuse root backdrop; one small bounded surface; Aa menu exists only when opened; tap reveal adds no surface/effect | Static material/Reduce Motion fallback; tap is one ACTION_UP policy check; device GPU cost unmeasured |
