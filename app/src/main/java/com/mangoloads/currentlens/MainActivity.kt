@@ -1753,12 +1753,21 @@ private fun SavedFeed(
     val savedArticles = remember(articles, bookmarks) {
         articles.filter { bookmarks.contains(it.url) }
     }
-    val subjects = remember(savedArticles) {
-        listOf("All") + savedArticles.map { UpscEngine.classify(it).subject }.distinct().sorted()
+    // Relevance depends only on ID/title/description. Reuse one index for filter choices,
+    // filtering and visible cards; date/source/image updates do not rerun the keyword engine.
+    val classificationInputs = remember(savedArticles) {
+        ArticleRelevanceIndexPolicy.keys(savedArticles)
     }
-    val filtered = remember(savedArticles, dateRange, selectedSubject, selectedGsPaper, today) {
+    val relevanceById = remember(classificationInputs) {
+        ArticleRelevanceIndexPolicy.build(savedArticles)
+    }
+    val subjects = remember(relevanceById) {
+        listOf("All") + relevanceById.values.map { it.subject }.distinct().sorted()
+    }
+    val filtered = remember(savedArticles, relevanceById, dateRange, selectedSubject, selectedGsPaper, today) {
         StudyStatsPolicy.filterArticles(
-            savedArticles, dateRange, selectedSubject, selectedGsPaper, today
+            savedArticles, dateRange, selectedSubject, selectedGsPaper, today,
+            relevanceByArticleId = relevanceById
         )
     }
     val previouslyOpened = remember(articles, readHistory, bookmarks) {
@@ -1795,7 +1804,10 @@ private fun SavedFeed(
             } else if (filtered.isEmpty()) item {
                 SupportingEmptyPanel("No saved articles match", "Change the publication-date, subject or GS-paper filter.")
             } else items(filtered, key = { it.id }, contentType = { "article" }) { article ->
-                NewsCard(article, true, onOpenArticle, onToggleBookmark)
+                NewsCard(
+                    article, true, onOpenArticle, onToggleBookmark,
+                    relevanceOverride = relevanceById[article.id]
+                )
             }
             if (previouslyOpened.isNotEmpty()) {
                 item {

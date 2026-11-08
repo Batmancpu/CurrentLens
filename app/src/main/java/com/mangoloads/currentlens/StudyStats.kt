@@ -242,9 +242,10 @@ internal object StudyStatsPolicy {
         subject: String,
         gsPaper: String,
         today: LocalDate,
-        zone: ZoneId = indiaZone
+        zone: ZoneId = indiaZone,
+        relevanceByArticleId: Map<String, Relevance>? = null
     ): List<Article> = articles.filter { article ->
-        val relevance = UpscEngine.classify(article)
+        val relevance = relevanceByArticleId?.get(article.id) ?: UpscEngine.classify(article)
         val date = ArticleFilters.publishedDate(article, zone)
         val dateMatches = if (dateRange == StatsDateRange.ALL_TIME) {
             date == null || dateRange.includes(date, today)

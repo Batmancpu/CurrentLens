@@ -180,4 +180,32 @@ class StudyStatsTest {
         )
         assertEquals(listOf("1"), filtered.map { it.id })
     }
+
+    @Test
+    fun savedArticleFiltersReuseSuppliedRelevanceIndex() {
+        val article = Article(
+            "cached", "Parliament passes bill", "", "url-cached", "The Hindu", "India",
+            "Tue, 03 Nov 2026 06:00:00 GMT"
+        )
+        // Deliberately differs from the headline's normal Constitution/GS II mapping:
+        // the supplied index must be the source used by the saved-filter pass.
+        val cached = Relevance(
+            gsPaper = "GS III",
+            subject = "Indian Economy",
+            syllabusLink = "Cached relevance for this feed snapshot.",
+            matchedTerms = listOf("repo rate"),
+            signalLabel = "1 matched keyword",
+            topicKey = "economy"
+        )
+        val filtered = StudyStatsPolicy.filterArticles(
+            listOf(article),
+            StatsDateRange.TODAY,
+            "Indian Economy",
+            "GS III",
+            today,
+            zone,
+            relevanceByArticleId = mapOf(article.id to cached)
+        )
+        assertEquals(listOf(article.id), filtered.map { it.id })
+    }
 }
