@@ -57,6 +57,10 @@ object NewsRepository {
         FeedSource("Al Jazeera", "World", "https://www.aljazeera.com/xml/rss/all.xml")
     )
 
+    // A byte ceiling alone still permits thousands of tiny entries in one response.
+    // Keep parser allocations bounded before the cross-feed 250-article merge.
+    internal const val MAX_ENTRIES_PER_FEED = 100
+
     suspend fun fetchAll(): List<Article> = withContext(Dispatchers.IO) {
         val fetched = feeds.map { source -> async { fetchOne(source) } }
             .awaitAll()
@@ -144,7 +148,7 @@ object NewsRepository {
         Html.fromHtml(value, Html.FROM_HTML_MODE_LEGACY).toString()
             .replace(Regex("\\s+"), " ").trim()
 
-    private fun parse(source: FeedSource, xml: String): List<Article> {
+    internal fun parse(source: FeedSource, xml: String): List<Article> {
         val result = mutableListOf<Article>()
         val factory = XmlPullParserFactory.newInstance().apply { setNamespaceAware(true) }
         val parser = factory.newPullParser()
@@ -160,11 +164,16 @@ object NewsRepository {
         var atomUpdated = ""
         var genericDate = ""
         var image: String? = null
+        var entriesSeen = 0
         while (event != XmlPullParser.END_DOCUMENT) {
             when (event) {
                 XmlPullParser.START_TAG -> {
                     val tag = parser.name?.substringAfter(':')?.lowercase(Locale.ROOT).orEmpty()
                     if (tag == "item" || tag == "entry") {
+                        // Count malformed entries too, so a publisher cannot force
+                        // unbounded parser work with empty or unusable records.
+                        if (entriesSeen >= MAX_ENTRIES_PER_FEED) break
+                        entriesSeen += 1
                         inItem = true
                         title = ""
                         description = ""
