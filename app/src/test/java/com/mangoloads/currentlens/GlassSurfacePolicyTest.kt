@@ -163,6 +163,49 @@ class GlassSurfacePolicyTest {
         assertEquals(16f, GlassSurfacePolicy.FILTER_PILL_CORNER_RADIUS_DP, 0f)
     }
 
+
+    @Test
+    fun searchActionPillHasAVisibleIdleStateAndStrongerActiveState() {
+        val clear = AppearancePreferencesPolicy.MIN_GLASS_ALPHA
+        val frosted = AppearancePreferencesPolicy.MAX_GLASS_ALPHA
+
+        assertEquals(0.08f, GlassSurfacePolicy.actionPillFillAlpha(clear, false, false), 0.0001f)
+        assertEquals(0.12f, GlassSurfacePolicy.actionPillFillAlpha(frosted, false, false), 0.0001f)
+        assertEquals(0.16f, GlassSurfacePolicy.actionPillFillAlpha(clear, true, false), 0.0001f)
+        assertEquals(0.22f, GlassSurfacePolicy.actionPillFillAlpha(frosted, true, false), 0.0001f)
+        assertEquals(0.24f, GlassSurfacePolicy.actionPillBorderAlpha(clear, false, false), 0.0001f)
+        assertEquals(0.32f, GlassSurfacePolicy.actionPillBorderAlpha(frosted, false, false), 0.0001f)
+        assertEquals(0.42f, GlassSurfacePolicy.actionPillBorderAlpha(clear, true, false), 0.0001f)
+        assertEquals(0.52f, GlassSurfacePolicy.actionPillBorderAlpha(frosted, true, false), 0.0001f)
+        assertTrue(GlassSurfacePolicy.actionPillFillAlpha(clear, true, false) >
+            GlassSurfacePolicy.actionPillFillAlpha(clear, false, false))
+        assertTrue(GlassSurfacePolicy.actionPillBorderAlpha(clear, true, false) >
+            GlassSurfacePolicy.actionPillBorderAlpha(clear, false, false))
+    }
+
+    @Test
+    fun searchActionPillUsesHighContrastFallbackAndDefaultForNonFiniteIntensity() {
+        val clear = AppearancePreferencesPolicy.MIN_GLASS_ALPHA
+        assertEquals(0.16f, GlassSurfacePolicy.actionPillFillAlpha(clear, false, true), 0.0001f)
+        assertEquals(0.28f, GlassSurfacePolicy.actionPillFillAlpha(clear, true, true), 0.0001f)
+        assertEquals(0.38f, GlassSurfacePolicy.actionPillBorderAlpha(clear, false, true), 0.0001f)
+        assertEquals(0.54f, GlassSurfacePolicy.actionPillBorderAlpha(clear, true, true), 0.0001f)
+        assertEquals(
+            GlassSurfacePolicy.actionPillFillAlpha(
+                AppearancePreferencesPolicy.DEFAULT_GLASS_ALPHA, true, false
+            ),
+            GlassSurfacePolicy.actionPillFillAlpha(Float.NaN, true, false),
+            0.0001f
+        )
+        assertEquals(
+            GlassSurfacePolicy.actionPillBorderAlpha(
+                AppearancePreferencesPolicy.DEFAULT_GLASS_ALPHA, false, false
+            ),
+            GlassSurfacePolicy.actionPillBorderAlpha(Float.POSITIVE_INFINITY, false, false),
+            0.0001f
+        )
+    }
+
     @Test
     fun nonFiniteFilterPillIntensityUsesTheDefaultPreference() {
         assertEquals(

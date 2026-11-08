@@ -89,6 +89,34 @@ internal object GlassSurfacePolicy {
         return (if (reduceTransparency) maxOf(alpha, minimum) else alpha).coerceIn(0f, 1f)
     }
 
+
+    /**
+     * Search's filter-sheet entry point is an action, not a choice chip. Give it a
+     * slightly stronger static rim/fill so it remains discoverable inside the
+     * existing shared glass header without adding another live material surface.
+     */
+    fun actionPillFillAlpha(
+        glassAlpha: Float,
+        selected: Boolean,
+        reduceTransparency: Boolean
+    ): Float {
+        val progress = intensityProgress(glassAlpha)
+        val alpha = if (selected) 0.16f + 0.06f * progress else 0.08f + 0.04f * progress
+        val minimum = if (selected) 0.28f else 0.16f
+        return (if (reduceTransparency) maxOf(alpha, minimum) else alpha).coerceIn(0f, 1f)
+    }
+
+    fun actionPillBorderAlpha(
+        glassAlpha: Float,
+        selected: Boolean,
+        reduceTransparency: Boolean
+    ): Float {
+        val progress = intensityProgress(glassAlpha)
+        val alpha = if (selected) 0.42f + 0.10f * progress else 0.24f + 0.08f * progress
+        val minimum = if (selected) 0.54f else 0.38f
+        return (if (reduceTransparency) maxOf(alpha, minimum) else alpha).coerceIn(0f, 1f)
+    }
+
     private fun intensityProgress(glassAlpha: Float): Float {
         val normalized = AppearancePreferencesPolicy.normalizeGlassAlpha(glassAlpha)
         return ((normalized - AppearancePreferencesPolicy.MIN_GLASS_ALPHA) /

@@ -100,7 +100,6 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -1451,16 +1450,13 @@ private fun SearchFeed(
                     overflow = TextOverflow.Ellipsis
                 )
             }
-            FilterChip(
+            GlassActionPill(
+                label = if (activeFilterCount == 0) "Filters" else "Filters · $activeFilterCount",
                 selected = activeFilterCount > 0,
+                icon = Icons.Outlined.Tune,
                 onClick = {
                     keyboardController?.hide()
                     showFilters = true
-                },
-                modifier = Modifier.heightIn(min = 48.dp),
-                label = { Text(if (activeFilterCount == 0) "Filters" else "Filters · $activeFilterCount") },
-                leadingIcon = {
-                    Icon(Icons.Outlined.Tune, contentDescription = null, modifier = Modifier.size(16.dp))
                 }
             )
             }
@@ -2013,6 +2009,52 @@ private fun GlassFilterPill(
         Text(
             label,
             fontSize = 12.sp,
+            fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium,
+            color = if (selected) colors.onSurface else colors.onSurfaceVariant,
+            maxLines = 1,
+            softWrap = false
+        )
+    }
+}
+
+@Composable
+private fun GlassActionPill(
+    label: String,
+    selected: Boolean,
+    icon: ImageVector,
+    onClick: () -> Unit
+) {
+    val colors = MaterialTheme.colorScheme
+    val intensity = LocalGlassIntensity.current
+    val reduceTransparency = LocalGlassReduceTransparency.current
+    val fillAlpha = GlassSurfacePolicy.actionPillFillAlpha(intensity, selected, reduceTransparency)
+    val borderAlpha = GlassSurfacePolicy.actionPillBorderAlpha(intensity, selected, reduceTransparency)
+    val shape = remember { RoundedCornerShape(GlassSurfacePolicy.FILTER_PILL_CORNER_RADIUS_DP.dp) }
+    val fill = (if (selected) colors.primary else colors.surface).copy(alpha = fillAlpha)
+    val rim = (if (selected) colors.primary else colors.outline).copy(alpha = borderAlpha)
+
+    Row(
+        Modifier.clip(shape)
+            .background(fill)
+            .border(1.dp, rim, shape)
+            .clickable(role = Role.Button, onClick = onClick)
+            .heightIn(min = TouchTargetPolicy.MIN_ICON_TARGET_DP.dp)
+            .semantics {
+                stateDescription = if (selected) "Filters active" else "No filters active"
+            }
+            .padding(horizontal = 12.dp, vertical = 8.dp),
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(
+            icon,
+            contentDescription = null,
+            tint = if (selected) colors.primary else colors.onSurfaceVariant,
+            modifier = Modifier.size(16.dp)
+        )
+        Text(
+            label,
+            style = MaterialTheme.typography.labelLarge,
             fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium,
             color = if (selected) colors.onSurface else colors.onSurfaceVariant,
             maxLines = 1,
