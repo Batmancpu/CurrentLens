@@ -272,3 +272,8 @@ The user continues in ChatGPT and does not want to repeat project context. Start
 - Fetch live PR #16 metadata for its exact current head and CI run; do not rely on a self-referential branch SHA inside this handoff.
 
 - PR #39 follow-up hardening: main release signing now also requires the public repository variable CURRENTLENS_RELEASE_CERT_SHA256 and checks the keystore certificate against it before building; the APK verifier checks the same fingerprint. This makes accidental key rotation fail closed.
+## PR #39 verification update — 8 November 2026
+
+- Exact-head run #317 (commit 7af010e726038395eb6d2c02c3ddd067145dc266) failed only at the new APK signer-verification step. WordNet generation, JVM unit tests and APK assembly passed; artifact upload was skipped.
+- The verifier captured stdout only and did not match the emitted SHA-256 label. This is a verifier-output parsing failure, not evidence of a wrong APK signer. The follow-up captures stdout/stderr and accepts SHA-256/SHA256 variants; the next natural PR run must verify it.
+- PR #39 remains draft and must not be merged until the signer check passes, the owner configures the main release secrets and fingerprint variable, and the old-key migration decision is explicit.

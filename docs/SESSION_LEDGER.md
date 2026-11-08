@@ -457,3 +457,8 @@ Branch: `fix/early-startup-crash-diagnostics-2026-11-06`.
 - Follow-up review caught a security boundary issue before CI: the first workflow draft mapped release secrets into a step that also ran on PR refs. The workflow is split into two mutually exclusive steps; release secrets are now injected only into the main-branch push step, while pull_request builds receive only the cached Stability test key. No PR workflow step receives the main release secrets.
 - This is a pre-CI correction. Natural PR validation remains pending; no dispatch/rerun.
 - Follow-up: pin the main release certificate fingerprint in repository variable CURRENTLENS_RELEASE_CERT_SHA256. The main-only step checks the keystore against this public SHA-256 before Gradle; the post-build verifier checks the APK signer against the same pin. This prevents a changed secret from silently rotating the APK signing identity.
+## 8 November 2026 — signer-verifier CI correction
+
+- PR #39 run #317 on head 7af010e726038395eb6d2c02c3ddd067145dc266 completed with failure at the new signer-verification step. WordNet generation, JVM unit tests and :app:assembleDebug all passed; artifact upload was correctly skipped.
+- The verifier's first parser captured stdout only and matched one exact SHA-256 label. The run produced no matching captured line, so the verifier failed closed before upload. This is a verifier-output parsing failure, not evidence that the APK was signed with the wrong key.
+- Updated the verifier to capture both stdout/stderr, accept SHA-256/SHA256 label variants case-insensitively, and print safe certificate output if parsing still fails. A new natural PR run is required; no dispatch/rerun was used.

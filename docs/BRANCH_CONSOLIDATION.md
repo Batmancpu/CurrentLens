@@ -1411,3 +1411,4 @@ Repository/default: `Batmancpu/CurrentLens`, default `main@73b8a0d1ba33503fede02
 - Draft PR #39: https://github.com/Batmancpu/CurrentLens/pull/39, base black-box-bihar-news.
 - Initial commit: 69cf8a8e14f417f025721197f1013e0b53d87051. A follow-up commit splits main-only secret injection from non-main Stability-key setup; verify the final head from live GitHub.
 - Signing continuity is pinned with repository variable CURRENTLENS_RELEASE_CERT_SHA256 in addition to the private keystore secrets; the main build fails on fingerprint drift.
+- PR #39 run #317: WordNet, JVM tests and APK assembly passed; the first signer-output parser failed closed and upload was skipped. The parser was hardened to capture stdout/stderr and accept SHA-256 label variants; wait for the next natural PR run.

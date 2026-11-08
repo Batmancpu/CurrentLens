@@ -42,12 +42,13 @@ if [[ -n "$pinned_sha256" ]]; then
     exit 1
   fi
 fi
-verification_output="$("$apksigner" verify --print-certs "$apk_path")"
-signer_count="$(printf '%s\n' "$verification_output" | grep -Ec 'Signer #[0-9]+ certificate SHA-256 digest:' || true)"
-actual_sha256="$(printf '%s\n' "$verification_output" | awk -F': ' '/Signer #[0-9]+ certificate SHA-256 digest:/ {print tolower($2); exit}')"
+verification_output="$("$apksigner" verify --print-certs "$apk_path" 2>&1)"
+signer_count="$(printf '%s\n' "$verification_output" | grep -Eic 'Signer #[0-9]+ certificate SHA-?256 digest:' || true)"
+actual_sha256="$(printf '%s\n' "$verification_output" | awk 'tolower($0) ~ /certificate sha-?256 digest:/ {sub(/^.*digest:[[:space:]]*/, "", $0); gsub(/[[:space:]]+$/, "", $0); print tolower($0); exit}')"
 
 if [[ "$signer_count" != "1" || -z "$actual_sha256" ]]; then
-  echo "::error::APK must have exactly one verifiable signer certificate"
+  echo "::error::APK must have exactly one verifiable signer certificate; apksigner output follows"
+  printf '%s\n' "$verification_output"
   exit 1
 fi
 if [[ "$expected_sha256" != "$actual_sha256" ]]; then
