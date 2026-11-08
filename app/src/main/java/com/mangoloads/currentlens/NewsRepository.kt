@@ -139,13 +139,14 @@ object NewsRepository {
                 XmlPullParser.END_TAG -> {
                     val tag = parser.name?.lowercase(Locale.ROOT).orEmpty()
                     if (tag == "item" || tag == "entry") {
-                        if (title.isNotBlank() && link.startsWith("http")) {
+                        val articleUrl = FeedArticleUrlPolicy.select(source.name, link)
+                        if (title.isNotBlank() && articleUrl != null) {
                             result.add(
                                 Article(
-                                    id = link,
+                                    id = articleUrl,
                                     title = title,
                                     description = description.take(420),
-                                    url = link,
+                                    url = articleUrl,
                                     source = source.name,
                                     section = source.section,
                                     published = published,
