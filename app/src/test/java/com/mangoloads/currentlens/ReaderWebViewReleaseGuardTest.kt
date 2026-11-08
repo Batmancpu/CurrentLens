@@ -43,7 +43,7 @@ class ReaderWebViewReleaseGuardTest {
         )
 
         assertEquals(
-            listOf("stop", "cancel-callbacks", "remove-children", "destroy"),
+            listOf("stop", "cancel-callbacks", "remove-parent", "remove-children", "destroy"),
             calls
         )
     }
