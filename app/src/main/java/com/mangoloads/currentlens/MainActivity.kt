@@ -4300,52 +4300,53 @@ private fun GlassSettingsScreen(
     onGlassAlphaChange: (Float) -> Unit,
     onBack: () -> Unit
 ) {
-    Column(
-        Modifier.fillMaxSize().verticalScroll(rememberScrollState())
-            .padding(horizontal = 18.dp).padding(bottom = 28.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
-    ) {
-        Row(
-            Modifier.fillMaxWidth().padding(top = 8.dp).heightIn(min = 52.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            IconButton(onClick = onBack) {
-                Icon(Icons.Outlined.ArrowBack, contentDescription = "Back")
-            }
-            Column(verticalArrangement = Arrangement.spacedBy(1.dp)) {
-                Text("Appearance", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-                Text(
-                    "Personalise controls and reading surfaces",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.secondary
-                )
-            }
-        }
-
-        AppearanceGlassEditor(
+    val dark = isSystemInDarkTheme()
+    Column(Modifier.fillMaxSize()) {
+        HomeGlassHeader(
             backdrop = backdrop,
             glassAlpha = glassAlpha,
-            reduceTransparency = reduceTransparency,
-            dark = isSystemInDarkTheme(),
-            onReduceTransparencyChange = onReduceTransparencyChange,
-            onGlassAlphaChange = onGlassAlphaChange
+            dark = dark,
+            pageTitle = "Appearance",
+            subtitle = "Personalise controls and reading surfaces",
+            showRefresh = false,
+            onRefresh = {},
+            refreshing = false,
+            showBack = true,
+            onBack = onBack
         )
 
-        SupportingGlassCard(modifier = Modifier.fillMaxWidth()) {
-            Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) {
-                Text("Designed for reading first", fontWeight = FontWeight.SemiBold)
-                Text(
-                    "Navigation and controls borrow the glass material; article text, imagery and study data stay clear and high-contrast. Your appearance choice is saved locally on this device.",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+        Column(
+            Modifier.weight(1f).fillMaxWidth()
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 18.dp)
+                .padding(top = 8.dp, bottom = 28.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            AppearanceGlassEditor(
+                backdrop = backdrop,
+                glassAlpha = glassAlpha,
+                reduceTransparency = reduceTransparency,
+                dark = dark,
+                onReduceTransparencyChange = onReduceTransparencyChange,
+                onGlassAlphaChange = onGlassAlphaChange
+            )
+
+            SupportingGlassCard(modifier = Modifier.fillMaxWidth()) {
+                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) {
+                    Text("Designed for reading first", fontWeight = FontWeight.SemiBold)
+                    Text(
+                        "Navigation and controls borrow the glass material; article text, imagery and study data stay clear and high-contrast. Your appearance choice is saved locally on this device.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
             }
+            Text(
+                "Unsupported shader effects fall back automatically. Reduce transparency removes live blur and refraction; appearance settings use no cloud service.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.secondary
+            )
         }
-        Text(
-            "Unsupported shader effects fall back automatically. Reduce transparency removes live blur and refraction; appearance settings use no cloud service.",
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.secondary
-        )
     }
 }
 
