@@ -154,9 +154,11 @@ import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.stateDescription
@@ -1255,8 +1257,12 @@ private fun TodayFeed(
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text("UPSC CURRENT AFFAIRS", color = MaterialTheme.colorScheme.primary, fontSize = 10.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.4.sp)
                 Spacer(Modifier.weight(1f))
-                Text(if (refreshing || loading) "Updating" else articles.size.toString() + " relevant stories",
-                    color = MaterialTheme.colorScheme.secondary, fontSize = 11.sp)
+                Text(
+                    if (refreshing || loading) "Updating" else articles.size.toString() + " relevant stories",
+                    modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite },
+                    color = MaterialTheme.colorScheme.secondary,
+                    fontSize = 11.sp
+                )
             }
         }
         when {
@@ -1283,14 +1289,19 @@ private fun TodayFeed(
 private fun WeekendPanel(articles: List<Article>, onOpenArticle: (Article) -> Unit) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Text("WEEKEND READING", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold, fontSize = 10.sp, letterSpacing = 1.4.sp)
-        Card(shape = RoundedCornerShape(24.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)) {
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = ContinuousCornerShape(FeedCardGeometryPolicy.CARD_CORNER_RADIUS_DP.dp),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+        ) {
             Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(9.dp)) {
                 Text("The best of the weekend", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
                 Text("Express Sunday Eye stories published in the latest weekend window.",
                     style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.secondary)
                 articles.forEach { article ->
                     Text(article.title,
-                        modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(10.dp)).clickable { onOpenArticle(article) }.padding(vertical = 7.dp),
+                        modifier = Modifier.fillMaxWidth().clip(ContinuousCornerShape(12.dp)).clickable { onOpenArticle(article) }.padding(vertical = 7.dp),
                         style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
                 }
             }
@@ -2629,7 +2640,8 @@ private fun FeedSkeletonCard() {
     val line = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.075f)
     Card(
         modifier = Modifier.fillMaxWidth()
-            .padding(vertical = FeedCardGeometryPolicy.CARD_VERTICAL_INSET_DP.dp),
+            .padding(vertical = FeedCardGeometryPolicy.CARD_VERTICAL_INSET_DP.dp)
+            .clearAndSetSemantics { },
         shape = ContinuousCornerShape(FeedCardGeometryPolicy.CARD_CORNER_RADIUS_DP.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
