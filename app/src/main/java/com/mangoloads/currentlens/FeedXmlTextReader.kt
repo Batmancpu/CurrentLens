@@ -1,5 +1,6 @@
 package com.mangoloads.currentlens
 
+import java.util.Locale
 import org.xmlpull.v1.XmlPullParser
 
 /**
@@ -48,7 +49,7 @@ internal object FeedXmlTextReader {
 
             if (parser.depth > elementDepth &&
                 (event == XmlPullParser.START_TAG || event == XmlPullParser.END_TAG) &&
-                parser.name?.lowercase() in blockElements
+                parser.name?.lowercase(Locale.ROOT) in blockElements
             ) {
                 appendBoundarySpace()
             }
