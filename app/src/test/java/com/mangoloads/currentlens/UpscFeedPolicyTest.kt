@@ -433,4 +433,25 @@ class UpscFeedPolicyTest {
             "Governance"
         )
     }
+    @Test
+    fun realityShowContentAboutPolicyCannotUseInstitutionalActionException() {
+        assertRejectedDespiteKeywordMatch(article(
+            "Government announces a new reality show on national sports policy",
+            "The headline promotes a reality programme; it does not announce a sports-governance policy change.",
+            "Entertainment"
+        ))
+        assertRejectedDespiteKeywordMatch(article(
+            "Ministry announces a reality show exploring anti-doping rules",
+            "The ministry promotes a reality programme rather than issuing or amending anti-doping rules.",
+            "Entertainment"
+        ))
+        // The same sports-governance subject remains eligible when the institution
+        // actually changes the rules rather than announcing entertainment content.
+        assertSyllabusMapped(article(
+            "Sports Ministry issues new anti-doping rules",
+            "The ministry announces a current regulatory change to sports-governance compliance.",
+            "Sports"
+        ), "GS II", "Governance")
+    }
+
 }
