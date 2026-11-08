@@ -1,5 +1,18 @@
 # CurrentLens — Build, Test, Release and Debug Record
 
+## Live review snapshot — 8 November 2026, 15:55 IST
+
+- Canonical main: `73b8a0d1ba33503fede02db2c3c0af082d724a12`, unchanged.
+- Full Actions history: 330 runs across four pages; 199 success, 67 failure, 64 cancelled; 0 queued/in progress.
+- Latest natural integration run #330: https://github.com/Batmancpu/CurrentLens/actions/runs/42469858410; exact integration head `90508dad6d8ce1327051f78eedf8273a1c5010cc`. WordNet builder 4/4, 151,456 unique words, `:app:testDebugUnitTest`, `:app:assembleDebug`, artifact upload passed; publish job skipped. Artifact 13612618168, 39,121,080 bytes, SHA-256 `e5556d4be8c6e760329f9919caad83af93f822611fa6b6be9762355f868e1f9a`, expires 22 Nov 2026 10:06:44 UTC.
+- Latest Release sorted by publication timestamp: v0.2.0-build-116, published 6 Nov 2026 11:18:59 UTC. No Release created in this review.
+- Main workflow remains push-only with workflow-wide `contents: write`; the integration branch's workflow is a separate unmerged proposal with read-only build/test and isolated main-push release-write.
+- PR #41 now points to `e4ca4a522dd236052142aa31dc518979bfafe891`, draft/open/mergeable, base main. It adds bounded RSS fields and inline Atom content handling. Exact-head statuses/check-runs are empty; tests are added, not run.
+- CI warnings observed in run #330: deprecated Android system-bar APIs, ArrowBack icon, Compose scale/updateTransition and LinearProgressIndicator overloads; Node 20 action deprecation forced to Node 24; punycode and url.parse() warnings. They did not fail the build.
+- CI does not establish OPPO Reno10 launch stability, screenshot correctness, TalkBack, IME, frame time, GPU, memory, thermal or battery performance.
+
+---
+
 ## Application and toolchain at snapshot
 
 - Repository: Batmancpu/CurrentLens. Repository name remains CurrentLens.

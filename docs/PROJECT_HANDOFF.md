@@ -1,3 +1,19 @@
+## Live snapshot — 8 November 2026, 15:55 IST
+
+- **Canonical main:** `73b8a0d1ba33503fede02db2c3c0af082d724a12`, unchanged.
+- **Active integration:** `black-box-bihar-news@90508dad6d8ce1327051f78eedf8273a1c5010cc`; PR [#34](https://github.com/Batmancpu/CurrentLens/pull/34) remains draft/open, 140 commits ahead and 0 behind main. The branch-specific workflow is not the workflow currently on main.
+- **Repository inventory:** 44 branches, 27 open PRs, 14 closed PRs. No branch deletion or PR merge occurred.
+- **Actions:** all four history pages were inspected (330 runs): 199 success, 67 failure, 64 cancelled; 0 queued and 0 in progress. Latest run [#330](https://github.com/Batmancpu/CurrentLens/actions/runs/42469858410) passed on the exact integration head. WordNet builder 4/4; 151,456 unique words; `:app:testDebugUnitTest`; `:app:assembleDebug`; artifact upload. Release job skipped. Artifact [13612618168](https://github.com/Batmancpu/CurrentLens/actions/runs/42469858410/artifacts/13612618168), 39,121,080 bytes, SHA-256 `e5556d4be8c6e760329f9919caad83af93f822611fa6b6be9762355f868e1f9a`, expires 22 November 2026 10:06:44 UTC. This validates the pre-documentation integration head, not PR #41.
+- **Workflow:** main still has one push-only `.github/workflows/build-apk.yml` with workflow-wide `contents: write`; it does not validate PR #41. The integration branch's one workflow uses read-only build/test permissions and a separate main-push release-write job. PR #18's main workflow proposal remains open; no workflow was changed.
+- **Latest Release:** [v0.2.0-build-116](https://github.com/Batmancpu/CurrentLens/releases/tag/v0.2.0-build-116), published 6 November 2026 11:18:59 UTC. Release list was sorted by publication time; API's default first item was not the newest by timestamp. No Release was created.
+- **RSS parser follow-up:** existing draft [PR #41](https://github.com/Batmancpu/CurrentLens/pull/41), based on main, was extended rather than duplicated. New head `e4ca4a522dd236052142aa31dc518979bfafe891`; 8 commits, 6 files, draft/open/mergeable. It now bounds individual RSS fields, preserves nested Atom XHTML summaries, and reads inline Atom `content` text/html/xhtml when no external `src` is present. URL-backed Media RSS content remains an image; external Atom `src` is not fetched. Three additional focused tests were added across field-policy and XML-reader tests. Exact-head statuses/check-runs are empty; tests are **added, not run**.
+- **Editorial:** integration `UpscFeedPolicy.kt` still has the generic action-term exception and global syllabus-signal gate. PR #27 is the existing strict-gate proposal, but its head remains unvalidated; do not claim the entertainment false-positive class is resolved.
+- **Other integration blockers:** PRs #32/#38 RSS concurrency/entry bounds; #33 relative Atom links; #25/#26 image/WebView resource restrictions; #35 bounded startup diagnostic reads; #40 publisher article-host validation still need reconciliation with shared parser/security files.
+- **Device evidence:** no fresh OPPO Reno10 logcat/tombstone or Perfetto trace was available. Native cold-start causality, visual/IME/TalkBack/font-scale/Reduce Motion and GPU/frame-time/memory/battery/thermal behaviour remain **UNVERIFIED**. CI is not device verification.
+- **Safety:** no main edit, merge, workflow dispatch/rerun, Release publication or branch deletion.
+
+---
+
 ## Live snapshot — 8 November 2026, 05:24 IST
 
 - **Main:** `73b8a0d1ba33503fede02db2c3c0af082d724a12`, unchanged.

@@ -171,3 +171,12 @@ Snapshot main: 73b8a0d1ba33503fede02db2c3c0af082d724a12 (6 Nov 2026).
 - Correction: `.semantics { this.selected = chosen }`. The change is one line, preserves the intended selected-state semantics and does not alter quiz answer/scoring/submission persistence.
 - PR #28's direct child commit was fast-forwarded into the active integration branch. Natural run #209 passed on the exact code head in PR context; natural active-branch run #210 passed the same exact SHA with `:app:testDebugUnitTest`, `:app:assembleDebug` and artifact upload.
 - This is a compile defect, not evidence of a device crash. TalkBack selected-state behaviour, font scaling and physical-device layout still require a real-device check.
+
+
+### KL-022 — Inline Atom content is discarded when no summary is present
+
+- **Status:** Standards-based parser false-negative risk; correction proposed in draft PR [#41](https://github.com/Batmancpu/CurrentLens/pull/41), exact-head tests added but not run.
+- On main, `NewsRepository.parse()` treats the local-name `content` element only as an image URL candidate. A valid Atom entry can put its readable text in `atom:content` without a separate `summary`; the parser then discards that content. This can remove the explanatory excerpt used for syllabus classification.
+- RFC 4287 defines Atom content constructs with text, HTML and XHTML forms. PR #41's follow-up commit `e4ca4a522dd236052142aa31dc518979bfafe891` reads inline Atom content only for the Atom namespace and accepted text/HTML/XHTML types, while preserving URL-backed Media RSS image handling and ignoring external Atom `src` references.
+- Added policy tests for default/text/html/xhtml/MIME forms, external `src`, binary media and Media RSS, plus a nested-XHTML parser-cursor fixture. Tests are added, not run; main's workflow is still push-only.
+- This is a standards-derived false-negative risk, not an observed live-feed count or measured editorial recall result. It adds no network request and does not make the 2 MiB whole-document parser streaming. Relative Atom links, entry ceilings, concurrency and publisher-host validation remain separate issues.
