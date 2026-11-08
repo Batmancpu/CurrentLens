@@ -20,6 +20,7 @@ internal object PublisherHostPolicy {
         val permitted = domains[source.trim().lowercase(Locale.ROOT)] ?: return false
         val uri = runCatching { URI(url) }.getOrNull() ?: return false
         if (!uri.scheme.equals("https", ignoreCase = true) || uri.userInfo != null) return false
+        if (uri.port != -1 && uri.port != 443) return false
         val host = uri.host?.lowercase(Locale.ROOT)?.trimEnd('.') ?: return false
         return permitted.any { domain -> host == domain || host.endsWith(".$domain") }
     }
