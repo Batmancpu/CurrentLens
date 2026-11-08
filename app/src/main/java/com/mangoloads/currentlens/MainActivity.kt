@@ -4525,7 +4525,7 @@ private fun QuizScreen(
     val score = questions.indices.count { selected[it] == questions[it].correctIndex }
     val reduceTransparency = LocalGlassReduceTransparency.current
     val optionShape = remember { ContinuousCornerShape(16.dp) }
-    val successColor = Color(0xFF168653)
+    val successColor = if (dark) Color(0xFF75D9A4) else Color(0xFF168653)
 
     Column(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
         PrismalTransientSurface(
@@ -4682,7 +4682,7 @@ private fun QuizScreen(
                             Text(if (selected[index] == question.correctIndex) "Correct" else
                                 if (selected.containsKey(index)) "Incorrect" else "Not answered",
                                 fontWeight = FontWeight.Bold,
-                                color = if (selected[index] == question.correctIndex) Color(0xFF168653)
+                                color = if (selected[index] == question.correctIndex) successColor
                                 else MaterialTheme.colorScheme.error)
                             Text(question.explanation, style = MaterialTheme.typography.bodyMedium)
                         }
