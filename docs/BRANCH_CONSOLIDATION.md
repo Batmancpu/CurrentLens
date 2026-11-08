@@ -2,7 +2,9 @@
 
 **Repository:** `Batmancpu/CurrentLens`  
 **Default:** `main@73b8a0d1ba33503fede02db2c3c0af082d724a12` (unchanged).  
-**Active code line:** `black-box-bihar-news@21fee7f625a211962bd9e94c0846226d0501196d`, PR #34 open/draft → main; **145 ahead / 0 behind main**, **88 ahead / 0 behind PR #16**. The documentation audit commit is a direct child of this code commit.  
+**Source baseline:** `black-box-bihar-news@d21ff270011b80ff6fd4ad6fcbaf7ce15cb8b494` (**145 ahead / 0 behind main**, **88 ahead / 0 behind PR #16**).  
+**Implementation code commit:** `21fee7f625a211962bd9e94c0846226d0501196d` (**146 ahead / 0 behind main**, **89 ahead / 0 behind PR #16**).  
+**Documentation audit commit:** `f7cc74a4b82c15d23b7a9df9ebcea0a6595e13cb` (**147 ahead / 0 behind main**, **90 ahead / 0 behind PR #16**), a direct child of the implementation commit. PR #34 remains open/draft → main and mergeable; subsequent audit metadata commits do not alter the app code.  
 **Inventory:** 44 remote branches (44 + 0 pagination); 41 PRs (27 open, 14 closed; 0 additional PRs). No source branch was deleted or modified.
 
 ## Baseline decision and branch freshness
@@ -29,7 +31,7 @@
 | Branch | Exact head SHA | Latest commit UTC | Latest commit message | PR relationship / disposition |
 |---|---|---|---|---|
 | `a11y/48dp-icon-targets-2026-11-07` | `25107ce905b70bde1a41282ffd1d606819ebf58d` | 2026-11-07 11:02:12Z | test(a11y): cover minimum icon action target | PR #30 open head; policy represented |
-| `black-box-bihar-news` | `21fee7f625a211962bd9e94c0846226d0501196d` | 2026-11-08 13:07:31Z | perf(saved): reuse cached relevance across filters and cards | PR #34 open/draft; code head for this audit (documentation commit is its direct child) |
+| `black-box-bihar-news` | `21fee7f625a211962bd9e94c0846226d0501196d` | 2026-11-08 13:07:31Z | perf(saved): reuse cached relevance across filters and cards | PR #34 open/draft; implementation code head; audit documentation commits follow without app-code changes |
 | `brrrNEWS` | `e6fcfc25a4c8d5f363ced58f313552120aa7ff96` | 2026-11-07 04:13:30Z | ui: consolidate lightweight supporting glass surfaces | PR #24 open base; divergent/superseded material |
 | `ci/read-only-pr-validation-isolated-release-write-2026-11-06` | `963118f0abe5f7e38f2aa66a49d4b8e74548660c` | 2026-11-06 17:18:53Z | ci: validate pull requests with read-only build permissions | PR #18 open head; compatible workflow intent represented |
 | `ci/stacked-pr-validation-2026-11-07` | `5dc3179361835b77fb3186a99d9b5791301463fd` | 2026-11-06 21:41:27Z | ci: restore Android SDK setup before sdkmanager | PR #20 closed/merged into black-box only |
