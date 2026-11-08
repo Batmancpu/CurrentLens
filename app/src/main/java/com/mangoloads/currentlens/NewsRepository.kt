@@ -148,7 +148,15 @@ object NewsRepository {
         Html.fromHtml(value, Html.FROM_HTML_MODE_LEGACY).toString()
             .replace(Regex("\\s+"), " ").trim()
 
-    internal fun parse(source: FeedSource, xml: String): List<Article> {
+    /**
+     * [sanitizeHtml] keeps the parser independently testable on the local JVM.
+     * Production callers use [clean], retaining Android's HTML entity/tag handling.
+     */
+    internal fun parse(
+        source: FeedSource,
+        xml: String,
+        sanitizeHtml: (String) -> String = ::clean
+    ): List<Article> {
         val result = mutableListOf<Article>()
         val factory = XmlPullParserFactory.newInstance().apply { setNamespaceAware(true) }
         val parser = factory.newPullParser()
@@ -185,9 +193,9 @@ object NewsRepository {
                         image = null
                     } else if (inItem) {
                         when (tag) {
-                            "title" -> title = clean(runCatching { parser.nextText() }.getOrDefault(""))
+                            "title" -> title = sanitizeHtml(runCatching { parser.nextText() }.getOrDefault(""))
                             "description", "summary", "encoded" -> {
-                                val text = clean(runCatching { parser.nextText() }.getOrDefault(""))
+                                val text = sanitizeHtml(runCatching { parser.nextText() }.getOrDefault(""))
                                 if (text.length > description.length) description = text
                             }
                             "link" -> {
