@@ -15,7 +15,7 @@ object LocalStore {
     private const val GLASS_ALPHA = "glass_alpha"
     private const val MAX_CACHED_ARTICLES = 500
     private const val CACHE_DAYS = 30
-    private const val DEFAULT_GLASS_ALPHA = 0.28f
+    private const val DEFAULT_GLASS_ALPHA = AppearancePreferencesPolicy.DEFAULT_GLASS_ALPHA
     private const val READING_SESSIONS = "reading_sessions"
     private const val READER_POSITIONS = "reader_positions"
     private const val QUIZ_ATTEMPTS = "quiz_attempts"
@@ -416,11 +416,12 @@ object LocalStore {
     fun glassAlpha(context: Context): Float =
         runCatching {
             context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-                .getFloat(GLASS_ALPHA, DEFAULT_GLASS_ALPHA).coerceIn(0.12f, 0.55f)
+                .getFloat(GLASS_ALPHA, DEFAULT_GLASS_ALPHA)
+                .let(AppearancePreferencesPolicy::normalizeGlassAlpha)
         }.getOrDefault(DEFAULT_GLASS_ALPHA)
 
     fun saveGlassAlpha(context: Context, value: Float) {
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-            .edit().putFloat(GLASS_ALPHA, value.coerceIn(0.12f, 0.55f)).apply()
+            .edit().putFloat(GLASS_ALPHA, AppearancePreferencesPolicy.normalizeGlassAlpha(value)).apply()
     }
 }
