@@ -116,21 +116,27 @@ object NewsRepository {
                         image = null
                     } else if (inItem) {
                         when (tag) {
-                            "title" -> title = clean(runCatching { parser.nextText() }.getOrDefault(""))
+                            "title" -> title = clean(FeedFieldPolicy.titleSource(runCatching { parser.nextText() }.getOrDefault("")))
                             "description", "summary", "encoded" -> {
-                                val text = clean(runCatching { parser.nextText() }.getOrDefault(""))
+                                val text = clean(FeedFieldPolicy.descriptionSource(runCatching { parser.nextText() }.getOrDefault("")))
                                 if (text.length > description.length) description = text
                             }
                             "link" -> {
                                 val href = parser.getAttributeValue(null, "href")
-                                if (!href.isNullOrBlank()) link = href
-                                else if (link.isBlank()) link = runCatching { parser.nextText().trim() }.getOrDefault("")
+                                if (!href.isNullOrBlank()) link = FeedFieldPolicy.url(href).orEmpty()
+                                else if (link.isBlank()) {
+                                    link = FeedFieldPolicy.url(
+                                        runCatching { parser.nextText() }.getOrDefault("")
+                                    ).orEmpty()
+                                }
                             }
                             "pubdate", "published", "updated", "date" ->
-                                published = runCatching { parser.nextText().trim() }.getOrDefault("")
-                            "enclosure" -> image = parser.getAttributeValue(null, "url")
+                                published = FeedFieldPolicy.date(
+                                    runCatching { parser.nextText() }.getOrDefault("")
+                                ).orEmpty()
+                            "enclosure" -> image = FeedFieldPolicy.url(parser.getAttributeValue(null, "url").orEmpty())
                             "thumbnail", "content" -> {
-                                val candidate = parser.getAttributeValue(null, "url")
+                                val candidate = FeedFieldPolicy.url(parser.getAttributeValue(null, "url").orEmpty())
                                 if (candidate?.startsWith("http") == true) image = candidate
                             }
                         }
