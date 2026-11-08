@@ -374,3 +374,12 @@ Branch: `fix/early-startup-crash-diagnostics-2026-11-06`.
 - **Verification:** prior exact-head PR #16 run #352 passed before this change; it does not validate this commit. A new natural push run is required. No manual dispatch/rerun, main edit, merge or Release.
 
 - **First natural CI / correction:** run #353 (`42492971718`) failed at Compile APK with `MainActivity.kt:326:13 Suspension functions can only be called within coroutine body` and `MainActivity.kt:3513:2 Missing '}'`. Root cause: the closing brace for setContent was omitted when wrapping Activity startup in lifecycleScope, so the post-setContent withContext checkpoint remained inside the composable lambda. Added the missing close before the IO checkpoint in the next commit. This is an authoring/compile failure, not runtime evidence; exact-head follow-up CI is required.
+
+
+## 8 November 2026 — exact-head verification of off-main startup diagnostics
+- Follow-up commit 5e36e52915f1232cdfefc7dc28abd5a5360b388b closed the setContent lambda before the post-composition IO checkpoint after run #353 exposed a missing brace and a suspend call parsed inside Compose content.
+- Natural push run #356 (`42493195355`) passed on that exact SHA: WordNet builder 4/4; 151,456 unique words generated; `:app:testDebugUnitTest` passed; `:app:assembleDebug` passed; artifact upload passed; Release job skipped.
+- Artifact 13621439638 is the Stability debug APK, 39,000,680 bytes, expires 22 November 2026 15:09:30 UTC. It is not a production Release or device-verification result.
+- Integration PR #34 also received natural runs #354 (push) and #355 (pull_request) on `f65d72488497ed59ed492d4d24b6e8a2572f4185`; both passed JVM tests, APK assembly and artifact upload. Their Release jobs were skipped.
+- Actions history re-paginated after completion: 356 total runs (100 + 100 + 100 + 56), 219 success, 68 failure, 69 cancelled, zero queued/running. Main remains 73b8a0d1; latest main push run #116 remains successful; latest Release remains v0.2.0-build-116.
+- No physical-device test, logcat, tombstone or Perfetto trace was available. The reported native launch crash remains unverified; the change removes code-evidenced diagnostic file/binder operations from the normal startup main-thread path only.

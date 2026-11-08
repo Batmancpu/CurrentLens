@@ -1,32 +1,18 @@
-# CurrentLens — Latest project handoff (8 November 2026)
+# CurrentLens — Latest project handoff (8 November 2026, 20:24 IST)
 
 > This live snapshot supersedes older dated snapshots below where they conflict. Full history remains in SESSION_LEDGER.md.
 
 ## Live snapshot — 8 November 2026
 - **Main:** 73b8a0d1ba33503fede02db2c3c0af082d724a12; unchanged.
-- **Active startup work:** draft PR #16, branch fix/early-startup-crash-diagnostics-2026-11-06. The change moves prior-process inspection, diagnostic file reads/writes, ActivityManager exit-history lookup and recovery clearing off the startup/UI thread while retaining immediate uncaught-handler installation.
-- **Latest source head before this correction:** cf885a1f1af02214f520d15a93ccd88000cbe71d. Natural run #353 failed Kotlin compilation because the setContent closing brace was omitted around the new lifecycleScope wrapper. Corrected in this follow-up commit; wait for the next natural run.
-- **Bounded diagnostics:** startup-stage reads <=512 characters; report reads <=30,000 characters; oversized legacy reports are discarded without materialising them. Crash-handler flush remains synchronous on the failing thread.
-- **Native crash:** user-reported native cold-start failure remains unverified. This change addresses code-evidenced main-thread diagnostic I/O only; it does not establish crash causality or claim device stability.
-- **Integration PR #34:** black-box-bihar-news@0e94d82be37a891dd4546a3f856a9cd47b5687d6, draft/open; exact-head run #348 passed JVM tests, APK assembly and artifact upload; release job skipped.
-- **Actions:** 353 runs at this snapshot; 216 success, 68 failure, 69 cancelled; zero queued/running after #353 completed. Main's latest run #116 passed; main remains push-only with workflow-wide contents: write.
-- **Latest Release:** v0.2.0-build-116, published 6 November 2026. No new Release.
-- **Next priorities:** reconcile strict editorial gate PR #27; integrate RSS concurrency/entry limits and relative Atom links; complete publisher image/WebView subresource restrictions; reconcile article-host validation; obtain device-level evidence only if the owner chooses to provide it.
-
-# CurrentLens — Latest project handoff (8 November 2026)
-
-> This live snapshot supersedes older dated snapshots below where they conflict. Full history remains in SESSION_LEDGER.md.
-
-## Live snapshot — 8 November 2026
-- **Main:** 73b8a0d1ba33503fede02db2c3c0af082d724a12; unchanged.
-- **Active startup work:** draft PR #16, branch fix/early-startup-crash-diagnostics-2026-11-06. The current change moves previous-process inspection, diagnostic file reads/writes, ActivityManager exit-history lookup and recovery clearing off the startup/UI thread. It retains immediate local uncaught-handler installation in attachBaseContext.
-- **Bounded diagnostics:** startup-stage reads <=512 characters; report reads <=30,000 characters; oversized legacy reports are discarded without materialising them. Crash-handler flush remains synchronous on the failing thread.
-- **Verification:** exact-head run #352 passed on the parent commit before this change; it does not validate the new commit. Focused JVM tests are added. Wait for the natural push run; do not dispatch/rerun.
-- **Native crash:** user-reported native cold-start failure remains unverified. This change addresses code-evidenced main-thread diagnostic I/O only; it does not establish crash causality or claim device stability.
-- **Integration PR #34:** black-box-bihar-news@0e94d82be37a891dd4546a3f856a9cd47b5687d6, draft/open, 149 commits ahead of main. Its latest natural PR run #348 passed JVM tests, APK assembly and artifact upload; release job skipped.
-- **Repository Actions:** 352 runs fully paginated (100 + 100 + 100 + 52): 216 success, 67 failure, 69 cancelled; zero queued/running at this snapshot. Main's latest run #116 passed; main remains push-only with workflow-wide contents: write.
-- **Latest Release:** v0.2.0-build-116, published 6 November 2026. No new Release.
-- **Next priorities:** reconcile strict editorial gate PR #27; integrate RSS concurrency/entry limits and relative Atom links; complete publisher image/WebView subresource restrictions; reconcile article-host validation; obtain device-level evidence only if the owner chooses to provide it.
+- **PR #16:** draft/open, branch fix/early-startup-crash-diagnostics-2026-11-06; current head 5e36e52915f1232cdfefc7dc28abd5a5360b388b; 63 commits ahead of main, zero behind, GitHub reports mergeable. It installs the local uncaught handler immediately, moves previous-process inspection and diagnostic file/system-service work to Dispatchers.IO, bounds stage/report reads and performs recovery clearing on IO.
+- **PR #16 verification:** exact-head natural run #356 (42493195355) passed WordNet generation, `:app:testDebugUnitTest`, `:app:assembleDebug` and artifact upload. Artifact 13621439638, 39,000,680 bytes, expires 22 November 2026 15:09:30 UTC. Release job skipped. Run #353's compile-only failure was corrected by restoring the setContent lambda boundary; #356 validates the corrected SHA.
+- **Runtime limit:** no new OPPO/device launch, logcat, tombstone, ANR or Perfetto evidence. The native signal-11 report remains unverified; CI does not certify the crash fixed or quantify a cold-start gain.
+- **Integration PR #34:** draft/open, branch black-box-bihar-news at `f65d72488497ed59ed492d4d24b6e8a2572f4185`, 150 commits ahead of main, zero behind, GitHub reports mergeable. Natural runs #354 (push) and #355 (pull_request) both passed JVM tests, APK assembly and artifact upload; Release jobs skipped.
+- **Actions:** all 356 runs paginated (100 + 100 + 100 + 56): 219 success, 68 failure, 69 cancelled, zero queued/running. Main's latest push run #116 passed. Main workflow remains push-only with workflow-wide `contents: write`; PR #18's safer read-only validation proposal remains open/unmerged.
+- **Repository inventory:** 44 branches, 27 open PRs, 14 closed PRs. PR #20 is closed as merged into the integration branch, not main.
+- **Editorial blockers:** PR #6 (10 ahead/13 behind main) and PR #21 (11 ahead/0 behind) overlap in UpscEngine, UpscFeedPolicy and UpscFeedPolicyTest; reconcile before integration. PR #27 strict institutional-action gate is 46 ahead/51 behind the integration branch and unmergeable. Do not create another classifier PR.
+- **Other integration work:** PR #32/#38 RSS concurrency/entry limits; #33 relative Atom links; #25/#26 image and WebView subresource restrictions; #40 article-host validation; #35 bounded diagnostic reads (now overlapping PR #16's bounded-read implementation); #39 stable signing migration (owner secrets and data-migration decision required). Reconcile against current integration, not old-base CI.
+- **Latest Release:** v0.2.0-build-116, published 6 November 2026. No Release was published in this review.
 
 # CurrentLens — Latest project handoff (7 November 2026)
 

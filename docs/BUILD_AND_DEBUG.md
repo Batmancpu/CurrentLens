@@ -167,3 +167,11 @@ CI establishes that the code compiles and JVM tests pass. It cannot establish th
 - Run #353 (`42492971718`) failed at Kotlin compilation on the first off-main diagnostics commit. Exact diagnostics: `MainActivity.kt:326:13 Suspension functions can only be called within coroutine body`; `MainActivity.kt:3513:2 Syntax error: Missing '}'`.
 - Root cause: the closing brace for the `setContent` lambda was omitted while wrapping `MainActivity.onCreate()` in `lifecycleScope.launch`; the post-setContent IO checkpoint was parsed inside the composable lambda. A follow-up commit restores the lambda boundary. This is not runtime/device evidence.
 - No artifact was uploaded and no Release job ran. The next natural push run must validate the correction.
+
+
+## 8 November 2026 — off-main startup diagnostics, exact-head CI
+
+- PR #16 branch commit `5e36e52915f1232cdfefc7dc28abd5a5360b388b` passed natural run #356 (`42493195355`). WordNet builder passed 4/4 and generated 151,456 unique words; `:app:testDebugUnitTest` and `:app:assembleDebug` passed; artifact upload passed; Release skipped.
+- Artifact: `13621439638`, `CurrentLens-v0.2.8-stability-debug-apk`, 39,000,680 bytes, 14-day retention, expires 22 November 2026 15:09:30 UTC.
+- Earlier run #353 failed Kotlin compilation because the first edit omitted the setContent lambda closing brace. Follow-up commit corrected it; run #356 validates the corrected exact SHA.
+- This is JVM/build verification only. No device launch, crash, ANR, frame-time or GPU result is claimed.

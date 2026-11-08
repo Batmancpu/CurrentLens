@@ -174,3 +174,10 @@ Snapshot main: 73b8a0d1ba33503fede02db2c3c0af082d724a12 (6 Nov 2026).
 - This removes diagnostic disk/binder work from the normal startup UI path; it does not prove a measured cold-start improvement or identify/fix the reported native crash. Physical-device verification remains unavailable.
 
 - First natural validation, run #353 (42492971718), failed at Compile APK: MainActivity.kt:326:13 reported a suspend call outside a coroutine body and MainActivity.kt:3513:2 reported a missing closing brace. Root cause was an omitted setContent-lambda closing brace after wrapping Activity startup in lifecycleScope; the post-setContent IO checkpoint was parsed as Compose content. Corrected in the follow-up commit; exact-head natural CI is pending. This is a source-edit compile failure, not device/runtime evidence.
+
+
+#### KL-020 verification update — 8 November 2026
+- Correction commit: 5e36e52915f1232cdfefc7dc28abd5a5360b388b on draft PR #16.
+- Exact-head natural Actions run #356 (42493195355) passed: WordNet builder, :app:testDebugUnitTest, :app:assembleDebug and artifact upload. The run used the existing cached Stability signing key; release job was skipped.
+- Artifact 13621439638: 39,000,680 bytes; expires 22 November 2026 at 15:09:30 UTC. This verifies JVM/build integration only; no device launch, ANR, frame-time or native-crash outcome is established.
+- The preceding run #353 failed only because the first edit omitted the setContent closing brace; the corrected exact head passed in #356.
