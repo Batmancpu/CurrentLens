@@ -51,6 +51,29 @@ class FeedXmlTextReaderTest {
     }
 
     @Test
+    fun insertsWordBoundariesBetweenAdjacentXhtmlBlockElements() {
+        val parser = parser(
+            """
+            <feed xmlns="http://www.w3.org/2005/Atom">
+              <entry>
+                <summary type="xhtml">
+                  <div xmlns="http://www.w3.org/1999/xhtml"><p>GST</p><p>Council<br/>meeting</p></div>
+                </summary>
+              </entry>
+            </feed>
+            """.trimIndent()
+        )
+        moveToStartTag(parser, "summary")
+
+        val text = FeedXmlTextReader.readElementText(
+            parser,
+            FeedFieldPolicy.MAX_DESCRIPTION_SOURCE_CHARS
+        )
+
+        assertEquals("GST Council meeting", text.replace(Regex("\\s+"), " ").trim())
+    }
+
+    @Test
     fun readsPlainTextAndExpandedEntities() {
         val parser = parser("<feed><entry><summary>RBI &amp; monetary policy</summary></entry></feed>")
         moveToStartTag(parser, "summary")
@@ -91,6 +114,7 @@ class FeedXmlTextReaderTest {
         assertEquals(XmlPullParser.START_TAG, parser.nextTag())
         assertEquals("next", parser.name)
     }
+
     @Test
     fun readsAtomXhtmlContentAndLeavesParserAtOuterEndTag() {
         val parser = parser(
@@ -120,5 +144,4 @@ class FeedXmlTextReaderTest {
         assertEquals(XmlPullParser.START_TAG, parser.nextTag())
         assertEquals("updated", parser.name)
     }
-
 }
