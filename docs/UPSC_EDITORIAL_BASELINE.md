@@ -54,7 +54,9 @@ The unit-test fixtures are synthetic examples designed to expose classification 
 | False-positive rejection | “GST Council holds a routine meeting” | Exclude | The institution's name alone does not establish a specific syllabus theme |
 | False-positive rejection | “Technology platform launched for GST Council event” | Exclude | An incidental Council mention must not qualify an unrelated technology feature |
 
-The official GST Council describes its Article 279A composition and its recommendations on GST rates, exemptions and principles of levy ([official Council reference](https://gstcouncil.gov.in/gst-council-0)). CurrentLens therefore distinguishes constitutional composition/voting (GS II) from specific tax-rate or indirect-tax decisions (GS III); a bare Council mention is insufficient.\n\nThe fixtures are regression checks for this deterministic rule set. They do not establish precision/recall, validate a score, or predict examination questions.
+The official GST Council describes its Article 279A composition and its recommendations on GST rates, exemptions and principles of levy ([official Council reference](https://gstcouncil.gov.in/gst-council-0)). CurrentLens therefore distinguishes constitutional composition/voting (GS II) from specific tax-rate or indirect-tax decisions (GS III); a bare Council mention is insufficient.
+
+The fixtures are regression checks for this deterministic rule set. They do not establish precision/recall, validate a score, or predict examination questions.
 
 ## Source-provenance limitation
 
