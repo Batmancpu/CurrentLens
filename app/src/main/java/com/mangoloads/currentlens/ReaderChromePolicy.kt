@@ -23,15 +23,15 @@ internal object ReaderChromePolicy {
     ): Boolean = definitionOpen || selectionActive || imeVisible ||
         accessibilityEnabled || textSizeMenuExpanded
 
+    /** Explicit reveal resets directional accumulation and any stale hide intent. */
+    fun reveal(state: ReaderChromeScrollState): ReaderChromeScrollState =
+        state.copy(visible = true, direction = 0, accumulatedDeltaPx = 0)
+
     /**
      * Downward document movement hides chrome after a larger threshold; upward movement
      * reveals it after a smaller threshold. Direction changes reset accumulated distance.
      * Pinning (selection/definition/IME/accessibility/transient menu) and returning to the top always reveal.
      */
-    /** Explicit reveal resets directional accumulation and any stale hide intent. */
-    fun reveal(state: ReaderChromeScrollState): ReaderChromeScrollState =
-        state.copy(visible = true, direction = 0, accumulatedDeltaPx = 0)
-
     fun onScroll(
         state: ReaderChromeScrollState,
         deltaY: Int,
