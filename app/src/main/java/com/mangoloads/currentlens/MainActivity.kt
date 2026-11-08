@@ -403,6 +403,7 @@ private fun MainActivity.showCrashRecoveryScreen(report: String) {
 private enum class YouPage { DASHBOARD, SAVED, READING_STATS, QUIZ_STATS }
 
 private data class LocalAppSnapshot(
+    val glassAlpha: Float,
     val articles: List<Article>,
     val bookmarks: Set<String>,
     val readHistory: Set<String>,
@@ -437,7 +438,8 @@ private fun BrrrNewsApp() {
     var selectedArticle by remember { mutableStateOf<Article?>(null) }
     var quizMode by remember { mutableStateOf(false) }
     var showSettings by remember { mutableStateOf(false) }
-    var glassAlpha by remember { mutableFloatStateOf(LocalStore.glassAlpha(context)) }
+    // SharedPreferences' first load is restored with the local snapshot on Dispatchers.IO.
+    var glassAlpha by remember { mutableFloatStateOf(AppearancePreferencesPolicy.DEFAULT_GLASS_ALPHA) }
     var searchQuery by remember { mutableStateOf("") }
     var searchExpanded by remember { mutableStateOf(false) }
     var searchCollapseRequested by remember { mutableStateOf(false) }
@@ -509,6 +511,7 @@ private fun BrrrNewsApp() {
     LaunchedEffect(context) {
         val restored = withContext(Dispatchers.IO) {
             LocalAppSnapshot(
+                glassAlpha = LocalStore.glassAlpha(context),
                 articles = LocalStore.cachedArticles(context),
                 bookmarks = LocalStore.bookmarks(context),
                 readHistory = LocalStore.readHistory(context),
@@ -516,6 +519,7 @@ private fun BrrrNewsApp() {
                 quizAttempts = LocalStore.quizAttempts(context)
             )
         }
+        glassAlpha = restored.glassAlpha
         articles = restored.articles
         bookmarks = restored.bookmarks
         readHistory = restored.readHistory
