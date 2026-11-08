@@ -1356,6 +1356,7 @@ private fun WeekendPanel(articles: List<Article>, onOpenArticle: (Article) -> Un
         Card(
             modifier = Modifier.fillMaxWidth(),
             shape = ContinuousCornerShape(FeedCardGeometryPolicy.CARD_CORNER_RADIUS_DP.dp),
+            border = cardBorder,
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
             elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
         ) {
@@ -2471,6 +2472,19 @@ private fun formatDuration(durationMillis: Long): String {
 }
 
 @Composable
+private fun rememberFeedCardBorder(): BorderStroke {
+    val outline = MaterialTheme.colorScheme.outlineVariant
+    val rimAlpha = GlassSurfacePolicy.feedCardRimAlpha(
+        dark = isSystemInDarkTheme(),
+        glassAlpha = LocalGlassIntensity.current,
+        reduceTransparency = LocalGlassReduceTransparency.current
+    )
+    return remember(outline, rimAlpha) {
+        BorderStroke(FeedCardGeometryPolicy.CARD_RIM_WIDTH_DP.dp, outline.copy(alpha = rimAlpha))
+    }
+}
+
+@Composable
 private fun NewsCard(
     article: Article,
     saved: Boolean,
@@ -2479,6 +2493,7 @@ private fun NewsCard(
     relevanceOverride: Relevance? = null
 ) {
     val context = LocalContext.current
+    val cardBorder = rememberFeedCardBorder()
     val relevance = remember(article.id, article.title, article.description, relevanceOverride) {
         relevanceOverride ?: UpscEngine.classify(article)
     }
@@ -2707,6 +2722,7 @@ private fun SkeletonTextLine(
 
 @Composable
 private fun FeedSkeletonCard() {
+    val cardBorder = rememberFeedCardBorder()
     val base = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.82f)
     val line = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.075f)
     Card(
@@ -2714,6 +2730,7 @@ private fun FeedSkeletonCard() {
             .padding(vertical = FeedCardGeometryPolicy.CARD_VERTICAL_INSET_DP.dp)
             .clearAndSetSemantics { },
         shape = ContinuousCornerShape(FeedCardGeometryPolicy.CARD_CORNER_RADIUS_DP.dp),
+        border = cardBorder,
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {

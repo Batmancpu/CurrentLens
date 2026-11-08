@@ -59,6 +59,37 @@ class GlassSurfacePolicyTest {
     }
 
     @Test
+    fun feedCardRimTracksThemeAndClearToFrostedIntensity() {
+        val clear = AppearancePreferencesPolicy.MIN_GLASS_ALPHA
+        val frosted = AppearancePreferencesPolicy.MAX_GLASS_ALPHA
+        val default = AppearancePreferencesPolicy.DEFAULT_GLASS_ALPHA
+
+        assertEquals(0.24f, GlassSurfacePolicy.feedCardRimAlpha(true, clear), 0.0001f)
+        assertEquals(0.32f, GlassSurfacePolicy.feedCardRimAlpha(true, frosted), 0.0001f)
+        assertEquals(0.30f, GlassSurfacePolicy.feedCardRimAlpha(false, clear), 0.0001f)
+        assertEquals(0.38f, GlassSurfacePolicy.feedCardRimAlpha(false, frosted), 0.0001f)
+        assertTrue(GlassSurfacePolicy.feedCardRimAlpha(true, default) in 0.24f..0.32f)
+        assertTrue(GlassSurfacePolicy.feedCardRimAlpha(false, default) in 0.30f..0.38f)
+    }
+
+    @Test
+    fun feedCardRimUsesStaticReducedTransparencyFloorAndNormalizesInvalidIntensity() {
+        val clear = AppearancePreferencesPolicy.MIN_GLASS_ALPHA
+        assertEquals(0.30f, GlassSurfacePolicy.feedCardRimAlpha(true, clear, true), 0.0001f)
+        assertEquals(0.36f, GlassSurfacePolicy.feedCardRimAlpha(false, clear, true), 0.0001f)
+        assertEquals(
+            GlassSurfacePolicy.feedCardRimAlpha(true),
+            GlassSurfacePolicy.feedCardRimAlpha(true, Float.NaN),
+            0.0001f
+        )
+        assertEquals(
+            GlassSurfacePolicy.feedCardRimAlpha(false),
+            GlassSurfacePolicy.feedCardRimAlpha(false, Float.POSITIVE_INFINITY),
+            0.0001f
+        )
+    }
+
+    @Test
     fun transientControlsUseOneBoundedLowCostMaterialTier() {
         assertTrue(GlassSurfacePolicy.TRANSIENT_BLUR_DP in 0f..6f)
         assertTrue(GlassSurfacePolicy.TRANSIENT_REFRACTION_HEIGHT_DP in 0f..3f)

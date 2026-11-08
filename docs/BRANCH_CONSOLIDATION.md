@@ -1,3 +1,29 @@
+# Latest pre-change branch/PR/CI audit — 9 November 2026, 04:23 IST
+
+**Repository:** `Batmancpu/CurrentLens`  
+**Default:** `main@73b8a0d1ba33503fede02db2c3c0af082d724a12`  
+**Owner-selected integration/UI source:** `black-box-bihar-news@4f5bdf3e5c49d856eccc4411d5a2bfc40bebf0ef` — **158 ahead / 0 behind main**; main is the merge base.  
+**PR:** #34 remains open/draft → main, unmerged and unretargeted. The implementation in the companion roadmap is a direct child of this verified source.
+
+## Live graph and dependency treatment
+
+- Complete inventory: **46 remote branches** (page 1 = 46, page 2 = 0), **29 open PRs** and **14 closed PRs**. PR #34 head matched the selected branch immediately before implementation.
+- PR #43 Reader lifecycle head `e5b7b9f8f5d9e33021bd6ccb7b7cb3f827218e3c` is **11 ahead / 158 behind black-box** and **11 ahead / 0 behind main**. Its complete three-file Reader diff was reviewed; safe permanent-disposal/restore-callback/fatal-cleanup work is already ported on black-box. It is not a replacement baseline.
+- PR #37 Search clear compile/RowScope repair, #30 48dp icon target policy, #31 off-main appearance restore, #36 Asia/Kolkata rollover and #13 conservative single 8×8 adaptive-contrast policy are represented in the active tree. The old `brrrNEWS` material branch is **4 ahead / 64 behind**; its fixed-intensity implementation is superseded by the active richer shared policy. The old Liquid Glass performance and v0.3 redesign lines are not selected.
+- PR #16's latest unique work is diagnostic/startup-only and divergent (**7 ahead / 101 behind black-box**); its full relevant patch was inspected, with no old MainActivity copied. PR #18's workflow proposal is **1 ahead / 158 behind**; black-box already contains read-only build/test permissions and a separate main-push-only publish job. PR #20 is ancestral. PR #42 is editorial-only; PR #39 remains owner-gated on signing migration. RSS/parser/privacy branches are unchanged.
+
+## Actions, workflow and Release
+
+- **374** Actions runs fully paginated (100 + 100 + 100 + 74; page 5 empty); queued/in-progress **0**.
+- Parent `4f5bdf3e5c49d856eccc4411d5a2bfc40bebf0ef` passed natural push #373 and PR #374. Both build jobs passed WordNet builder 4/4, 151,456-word offline database generation, `:app:testDebugUnitTest`, `:app:assembleDebug` and artifact upload. Exact PR job #128876195161 reported **BUILD SUCCESSFUL in 1m 13s**. PR artifact #13636187974: 39,128,357 bytes; push artifact #13636357389: 39,128,354 bytes, SHA-256 `6724cb5f1a692a08779371150e18cee2beb1ec0fd23a22561dfa6fb65ec3d5b7`. Publish jobs skipped.
+- `.github/workflows/build-apk.yml` on black-box remains read-only for build/test with a separate main-push-only Release-write job. Latest Release remains `v0.2.0-build-116`; no Release was created.
+
+## Device/performance status
+
+No new OPPO Reno10 screenshots, logcat, tombstone or Perfetto trace exists. Visual contrast, 60/90/120Hz smoothness, startup stability, GPU overdraw, memory/allocation, battery and thermal claims remain **UNVERIFIED**. This audit is the exact pre-change baseline for the next feed-card rim commit; the companion roadmap records the implementation and its pending natural CI.
+
+---
+
 # Latest live branch/PR/CI audit — 9 November 2026, 02:27 IST
 
 **Repository:** `Batmancpu/CurrentLens`  

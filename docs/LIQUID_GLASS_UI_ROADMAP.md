@@ -1,3 +1,43 @@
+# Live implementation batch — restrained feed-card glass rim (9 November 2026, 04:23 IST)
+
+**Source before change:** `black-box-bihar-news@4f5bdf3e5c49d856eccc4411d5a2bfc40bebf0ef`.  
+**Base:** `main@73b8a0d1ba33503fede02db2c3c0af082d724a12` — **158 ahead / 0 behind**, with main as merge base.  
+**PR:** #34 remains open/draft → main, unmerged and unretargeted. This is a direct, non-destructive child on the owner-selected `black-box-bihar-news` line.
+
+## Branch freshness and dependency gate
+
+- Re-enumerated the complete remote inventory: **46 branches** (page 1 = 46, page 2 = 0), **29 open PRs** (page 1 = 29, page 2 = 0) and **14 closed PRs** (page 1 = 14, page 2 = 0). Default branch remains main; PR #34's head matched the selected branch before this change.
+- The latest Reader-specific source remains PR #43, `fix/release-reader-webview-resources-2026-11-09@e5b7b9f8f5d9e33021bd6ccb7b7cb3f827218e3c`: **11 ahead / 158 behind black-box**, **11 ahead / 0 behind main**. Its full three-file Reader teardown diff was reviewed. The permanent-disposal guard, cancellable restore-settle callback and ordinary-vs-fatal cleanup semantics are already selectively present on black-box; PR #43 is divergent and not a safe replacement baseline.
+- PR #37's Search RowScope repair/48dp clear slot, PR #30's icon target policy, PR #31's off-main appearance restore, PR #36's Asia/Kolkata day policy and PR #13's single conservative luminance probe are present in the current code. The old `brrrNEWS` line is **4 ahead / 64 behind** and its fixed-intensity material policy is superseded by the active shared intensity/reduced-transparency/filter/preview policy. `ui/liquid-glass-system-continuation` is ancestral; `ui/liquid-glass-performance` and `redesign/v0.3-search-reader` are stale/divergent.
+- PR #16 has seven unique diagnostic commits relative to its merge base but is **7 ahead / 101 behind** black-box; its complete relevant diff was reviewed and no old MainActivity was copied. PR #18's workflow proposal is one commit ahead / 158 behind; the active branch already has read-only build permissions and a separate main-push-only publish job. PR #20's workflow head is an ancestor of the active line. PR #42 is editorial-only; PR #39's signing migration remains owner-gated. RSS/parser/privacy branches remain separate and were not changed.
+
+## Exact parent CI, Actions, workflow and Release
+
+- All **374 Actions runs** were paginated (100 + 100 + 100 + 74; page 5 empty). Queued and in-progress runs are both **0**.
+- Exact parent SHA `4f5bdf3e5c49d856eccc4411d5a2bfc40bebf0ef` passed natural push run [#373](https://github.com/Batmancpu/CurrentLens/actions/runs/42528134216) and pull-request run [#374](https://github.com/Batmancpu/CurrentLens/actions/runs/42528138280). Both build jobs completed every step successfully: WordNet builder **4/4**, offline database **151,456 unique words / 50,950,144 bytes**, `:app:testDebugUnitTest`, `:app:assembleDebug` and artifact upload. The exact PR job log reports **BUILD SUCCESSFUL in 1m 13s** (44 actionable tasks). PR artifact [#13636187974](https://github.com/Batmancpu/CurrentLens/actions/runs/42528138280/artifacts/13636187974) is **39,128,357 bytes**. Push artifact [#13636357389](https://github.com/Batmancpu/CurrentLens/actions/runs/42528134216/artifacts/13636357389) is **39,128,354 bytes**, SHA-256 `6724cb5f1a692a08779371150e18cee2beb1ec0fd23a22561dfa6fb65ec3d5b7`. Both publish jobs were skipped; no Release was created.
+- `.github/workflows/build-apk.yml` on black-box retains read-only build/test permissions, natural push/PR validation and a separate main-push-only Release-write job. Latest published Release remains `v0.2.0-build-116` (6 November 2026 11:18:59 UTC).
+
+## Implementation — add one static, intensity-aware rim to feed content cards
+
+- `NewsCard` and `FeedSkeletonCard` now share a **0.75dp** outline using the theme's `outlineVariant`. It follows the shared Clear↔Frosted intensity policy and a small Reduce Transparency floor. The same rim on loading and loaded cards avoids an edge flash when the feed changes from skeletons to articles.
+- Feed cards remain opaque/near-opaque editorial surfaces: no live blur, refraction, shader, per-card backdrop sampling or glass container was added. Article title/description hierarchy, click/bookmark behaviour, LazyColumn keys/content types, relevance classification, Coil request, bitmap palette extraction and ambient glow are unchanged. The treatment also carries through Saved because it reuses `NewsCard`.
+
+## Paired material/performance strategy
+
+| Component | Material tier / reason | Effect/capture delta | Reuse / fallback | Tests / evidence |
+|---|---|---|---|---|
+| Today / Explore / Search / Saved feed cards and skeletons | Tier 4 editorial content with a restrained static glass-derived edge; keep the content surface calm and readable | **0** new Prismal passes, live blur/refraction, shaders, backdrop captures/readbacks, graphics layers, image decodes or network work; one 0.75dp outline draw per visible card | One remembered `BorderStroke` per card keyed by theme outline + normalized rim alpha; same policy/geometry on skeleton and loaded card; opaque content fallback remains | JVM tests cover Clear/Frosted endpoints, theme variation, Reduce Transparency floor, non-finite fallback and rim width. Natural CI for this new head is pending; OPPO render cost remains unmeasured |
+| Existing feed image/palette path | No material change | One existing Coil request and one decoded bitmap per article | Existing palette cache and `drawWithCache` ambient glow reused; no duplicate decode or per-card blur | Source audit only; memory/GPU/frame/battery/thermal metrics unverified |
+
+- The only new draw work is a simple static outline on cards already in the visible LazyColumn; no additional render surface or off-screen layer is created. This is a source-level cost bound, not a measured performance improvement.
+- OPPO Reno10 screenshots, launch stability, scroll jank/Perfetto, GPU overdraw, allocation/memory churn, thermal/battery, TalkBack, font scaling and Reduce Motion remain **UNVERIFIED**. Parent #373/#374 do not validate this new child commit; inspect its own natural runs before another implementation pass.
+
+## Next
+
+- Inspect the exact new-head natural push and PR jobs, full logs and artifact. If they pass, complete the whole-app state/contrast audit; do not expand feed cards into live glass or add another backdrop source.
+
+---
+
 # Live implementation batch — Reader disposal callback ownership (9 November 2026, 03:27 IST)
 
 **Source before change:** `black-box-bihar-news@98a5ee09e51c03e8a253305c485a91693ba3c735`  
@@ -668,7 +708,7 @@ Recheck every branch head and dependency before each future implementation commi
 | Search morph field | Interactive control glass | Preserve tab-to-IME geometry/focus; trailing clear affordance only for non-empty expanded query | 48dp clear target and existing onClear/focus path integrated; filter clearing remains independent |
 | Search results hierarchy | Plain status row + static control glass | One result/active-filter label beside the existing Filters action; no redundant inline live-glass slab | One 7dp blur/refraction panel removed; conditional filter sheet and morph field retained; device hierarchy unverified |
 | Explore category rail | Interactive control glass | One shared capsule; selected fill/border and >=48dp targets | 48dp target, selected semantics and Geography filter integrated |
-| Today / Explore / Search article cards | Editorial content | Continuous corners, clear typography, image-derived ambient colour; no live blur per card | Existing standard cards, single Coil request and same-bitmap palette |
+| Today / Explore / Search article cards | Editorial content + static glass-derived rim | Opaque/near-opaque cards, continuous corners, clear typography and image-derived ambient colour; no live blur | Shared 0.75dp theme-aware rim follows Clear↔Frosted and Reduce Transparency; skeletons use the same rim; single Coil request and same-bitmap palette |
 | You dashboard | Supporting glass | Theme-aware translucent tint/rim, continuous 22dp geometry, single-line metric values | Static surface opacity preserves readability; shared Clear↔Frosted intensity now scales cached tint/rim tokens; no live blur; OPPO contrast unverified |
 | Saved | One shared interactive Prismal filter group + editorial cards | Date/GS/subject rails share one 22dp rounded control surface; story cards remain calm, high-contrast content | `GlassFilterGroup` batch authored; one panel, three 48dp horizontal rails; selected filters and existing saved data semantics unchanged |
 | Reading / Quiz Stats | One shared interactive Prismal filter group + supporting glass data cards | Date/GS/subject controls use one small live-glass group; metric/day/attempt values stay high contrast | Supporting cards use the same committed Clear↔Frosted tint/rim intensity; no live blur; summaries memoized |
@@ -695,7 +735,7 @@ Recheck every branch head and dependency before each future implementation commi
 | Home header | One 9dp-blur / low-refraction glass surface | Reuse root background-only source; static profile reduces blur/refraction/chromatic work; no duplicate capture | Theme-derived contrast; Reduce Transparency still removes live optics; device GPU cost unmeasured |
 | Search | One morphing capsule + one static glass Filters pill; no inline live-blur panel | Reuse existing anchor/dock geometry and root backdrop; result/status row is plain text | Preserve IME; clear and Filters controls retain 48dp targets; no extra readback |
 | Explore filters | One shared capsule, not one glass surface per chip | Reuse same backdrop; keep chip fills/borders as simple drawing | >=48dp target and selected semantics still require device/TalkBack checks |
-| Feed cards | No live blur | One Coil request per image; palette sampled from that decoded bitmap; cached per article | Standard content card if palette unavailable; no duplicate decode |
+| Feed cards | No live blur; one 0.75dp static outline per visible card | One remembered BorderStroke uses theme outlineVariant and shared Clear↔Frosted rim policy; skeleton and loaded card share it; one Coil request/palette decode per article | Opaque content card remains; Reduce Transparency uses a static rim floor; no extra capture/readback/shader/layer; device cost unmeasured |
 | Reader toolbar | One 8dp-blur glass toolbar, 60dp minimum height | Reuse root backdrop; one small bounded surface; Aa menu exists only when opened; tap reveal adds no surface/effect | Static material/Reduce Motion fallback; tap is one ACTION_UP policy check; device GPU cost unmeasured |
 | Reader progress | 2dp content indicator | Reuse existing debounced `savedReadingProgress`; no polling, WebView injection or readback | Hidden at zero/completion; visual timing needs device validation |
 | Completion dock | One 7dp-blur surface, only after end detection | Render only when complete, not dismissed and no definition open | No large persistent panel; safe-area and collision checks still need device validation |

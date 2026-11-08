@@ -7,6 +7,7 @@ package com.mangoloads.currentlens
 internal object FeedCardGeometryPolicy {
     const val IMAGE_ASPECT_RATIO = 16f / 9f
     const val CARD_CORNER_RADIUS_DP = 29f
+    const val CARD_RIM_WIDTH_DP = 0.75f
     const val IMAGE_CORNER_RADIUS_DP = 23f
     const val CARD_VERTICAL_INSET_DP = 3f
     const val CONTENT_HORIZONTAL_PADDING_DP = 15f

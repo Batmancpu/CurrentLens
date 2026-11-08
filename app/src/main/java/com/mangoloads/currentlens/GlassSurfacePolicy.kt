@@ -26,6 +26,10 @@ internal object GlassSurfacePolicy {
     private const val SUPPORTING_RIM_DARK_FROSTED = 0.23f
     private const val SUPPORTING_RIM_LIGHT_CLEAR = 0.11f
     private const val SUPPORTING_RIM_LIGHT_FROSTED = 0.16f
+    private const val FEED_CARD_RIM_DARK_CLEAR = 0.24f
+    private const val FEED_CARD_RIM_DARK_FROSTED = 0.32f
+    private const val FEED_CARD_RIM_LIGHT_CLEAR = 0.30f
+    private const val FEED_CARD_RIM_LIGHT_FROSTED = 0.38f
 
     fun supportingSurfaceAlpha(dark: Boolean): Float =
         if (dark) SUPPORTING_SURFACE_ALPHA_DARK else SUPPORTING_SURFACE_ALPHA_LIGHT
@@ -48,6 +52,24 @@ internal object GlassSurfacePolicy {
         val clear = if (dark) SUPPORTING_RIM_DARK_CLEAR else SUPPORTING_RIM_LIGHT_CLEAR
         val frosted = if (dark) SUPPORTING_RIM_DARK_FROSTED else SUPPORTING_RIM_LIGHT_FROSTED
         return clear + (frosted - clear) * progress
+    }
+
+    /**
+     * Feed stories remain opaque editorial content. This static outline borrows the
+     * shared Clear↔Frosted hierarchy without adding a live glass surface per card.
+     */
+    fun feedCardRimAlpha(
+        dark: Boolean,
+        glassAlpha: Float = AppearancePreferencesPolicy.DEFAULT_GLASS_ALPHA,
+        reduceTransparency: Boolean = false
+    ): Float {
+        val progress = intensityProgress(glassAlpha)
+        val clear = if (dark) FEED_CARD_RIM_DARK_CLEAR else FEED_CARD_RIM_LIGHT_CLEAR
+        val frosted = if (dark) FEED_CARD_RIM_DARK_FROSTED else FEED_CARD_RIM_LIGHT_FROSTED
+        val alpha = clear + (frosted - clear) * progress
+        val reducedTransparencyFloor = if (dark) 0.30f else 0.36f
+        return (if (reduceTransparency) maxOf(alpha, reducedTransparencyFloor) else alpha)
+            .coerceIn(0f, 1f)
     }
 
     /**

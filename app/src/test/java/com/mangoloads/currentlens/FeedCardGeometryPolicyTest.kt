@@ -13,6 +13,8 @@ class FeedCardGeometryPolicyTest {
     @Test
     fun loadingAndArticleCardsShareContinuousGeometryAndContentRhythm() {
         assertEquals(29f, FeedCardGeometryPolicy.CARD_CORNER_RADIUS_DP, 0f)
+        assertEquals(0.75f, FeedCardGeometryPolicy.CARD_RIM_WIDTH_DP, 0f)
+        assertTrue(FeedCardGeometryPolicy.CARD_RIM_WIDTH_DP in 0.5f..1f)
         assertEquals(23f, FeedCardGeometryPolicy.IMAGE_CORNER_RADIUS_DP, 0f)
         assertEquals(3f, FeedCardGeometryPolicy.CARD_VERTICAL_INSET_DP, 0f)
         assertEquals(15f, FeedCardGeometryPolicy.CONTENT_HORIZONTAL_PADDING_DP, 0f)
