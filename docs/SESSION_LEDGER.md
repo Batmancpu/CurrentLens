@@ -451,3 +451,8 @@ Branch: `fix/early-startup-crash-diagnostics-2026-11-06`.
 - No private key or password is committed. No runtime dependency, permission, network, analytics or telemetry change.
 - The main secret-backed signing path cannot be exercised from a pull_request run; the PR build can verify the Stability-key path. Owner must configure and securely back up the release key before any main push using this workflow.
 - Verification status at authoring: code and docs staged in one branch commit; local shell syntax check and natural PR CI pending. No physical-device test. No direct-main edit, merge, manual dispatch/rerun or Release publication.
+### PR opening and secret-scope hardening
+
+- Draft PR #39: https://github.com/Batmancpu/CurrentLens/pull/39; base black-box-bihar-news; initial commit 69cf8a8e14f417f025721197f1013e0b53d87051.
+- Follow-up review caught a security boundary issue before CI: the first workflow draft mapped release secrets into a step that also ran on PR refs. The workflow is split into two mutually exclusive steps; release secrets are now injected only into the main-branch push step, while pull_request builds receive only the cached Stability test key. No PR workflow step receives the main release secrets.
+- This is a pre-CI correction. Natural PR validation remains pending; no dispatch/rerun.

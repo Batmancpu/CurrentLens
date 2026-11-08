@@ -63,7 +63,8 @@ jobs:
           yes | sdkmanager --licenses
           sdkmanager "platforms;android-37.0" "build-tools;37.0.0"
 
-      - name: Prepare stable APK signing identity
+      - name: Prepare main release signing identity
+        if: github.ref == 'refs/heads/main'
         shell: bash
         env:
           CURRENTLENS_RELEASE_KEYSTORE_BASE64: ${{ secrets.CURRENTLENS_RELEASE_KEYSTORE_BASE64 }}
@@ -72,31 +73,34 @@ jobs:
           CURRENTLENS_RELEASE_KEY_PASSWORD: ${{ secrets.CURRENTLENS_RELEASE_KEY_PASSWORD }}
         run: |
           set -euo pipefail
-          if [[ "$GITHUB_REF" == "refs/heads/main" ]]; then
-            : "${CURRENTLENS_RELEASE_KEYSTORE_BASE64:?Missing GitHub Actions secret CURRENTLENS_RELEASE_KEYSTORE_BASE64}"
-            : "${CURRENTLENS_RELEASE_STORE_PASSWORD:?Missing GitHub Actions secret CURRENTLENS_RELEASE_STORE_PASSWORD}"
-            : "${CURRENTLENS_RELEASE_KEY_ALIAS:?Missing GitHub Actions secret CURRENTLENS_RELEASE_KEY_ALIAS}"
-            : "${CURRENTLENS_RELEASE_KEY_PASSWORD:?Missing GitHub Actions secret CURRENTLENS_RELEASE_KEY_PASSWORD}"
-            signing_keystore="$RUNNER_TEMP/currentlens-release.p12"
-            printf '%s' "$CURRENTLENS_RELEASE_KEYSTORE_BASE64" | base64 --decode > "$signing_keystore"
-            test -s "$signing_keystore"
-            keytool -list -keystore "$signing_keystore" -storepass "$CURRENTLENS_RELEASE_STORE_PASSWORD" -alias "$CURRENTLENS_RELEASE_KEY_ALIAS" >/dev/null
-            chmod 600 "$signing_keystore"
-            signing_store_password="$CURRENTLENS_RELEASE_STORE_PASSWORD"
-            signing_key_alias="$CURRENTLENS_RELEASE_KEY_ALIAS"
-            signing_key_password="$CURRENTLENS_RELEASE_KEY_PASSWORD"
-          else
-            signing_keystore="$GITHUB_WORKSPACE/.ci/stability-debug.keystore"
-            test -s "$signing_keystore"
-            signing_store_password="currentlens-stability-test-only"
-            signing_key_alias="currentlens-stability"
-            signing_key_password="currentlens-stability-test-only"
-          fi
+          : "${CURRENTLENS_RELEASE_KEYSTORE_BASE64:?Missing GitHub Actions secret CURRENTLENS_RELEASE_KEYSTORE_BASE64}"
+          : "${CURRENTLENS_RELEASE_STORE_PASSWORD:?Missing GitHub Actions secret CURRENTLENS_RELEASE_STORE_PASSWORD}"
+          : "${CURRENTLENS_RELEASE_KEY_ALIAS:?Missing GitHub Actions secret CURRENTLENS_RELEASE_KEY_ALIAS}"
+          : "${CURRENTLENS_RELEASE_KEY_PASSWORD:?Missing GitHub Actions secret CURRENTLENS_RELEASE_KEY_PASSWORD}"
+          signing_keystore="$RUNNER_TEMP/currentlens-release.p12"
+          printf '%s' "$CURRENTLENS_RELEASE_KEYSTORE_BASE64" | base64 --decode > "$signing_keystore"
+          test -s "$signing_keystore"
+          keytool -list -keystore "$signing_keystore" -storepass "$CURRENTLENS_RELEASE_STORE_PASSWORD" -alias "$CURRENTLENS_RELEASE_KEY_ALIAS" >/dev/null
+          chmod 600 "$signing_keystore"
           {
             printf 'CURRENTLENS_SIGNING_KEYSTORE_PATH=%s\n' "$signing_keystore"
-            printf 'CURRENTLENS_SIGNING_STORE_PASSWORD=%s\n' "$signing_store_password"
-            printf 'CURRENTLENS_SIGNING_KEY_ALIAS=%s\n' "$signing_key_alias"
-            printf 'CURRENTLENS_SIGNING_KEY_PASSWORD=%s\n' "$signing_key_password"
+            printf 'CURRENTLENS_SIGNING_STORE_PASSWORD=%s\n' "$CURRENTLENS_RELEASE_STORE_PASSWORD"
+            printf 'CURRENTLENS_SIGNING_KEY_ALIAS=%s\n' "$CURRENTLENS_RELEASE_KEY_ALIAS"
+            printf 'CURRENTLENS_SIGNING_KEY_PASSWORD=%s\n' "$CURRENTLENS_RELEASE_KEY_PASSWORD"
+          } >> "$GITHUB_ENV"
+
+      - name: Prepare Stability test signing identity
+        if: github.ref != 'refs/heads/main'
+        shell: bash
+        run: |
+          set -euo pipefail
+          signing_keystore="$GITHUB_WORKSPACE/.ci/stability-debug.keystore"
+          test -s "$signing_keystore"
+          {
+            printf 'CURRENTLENS_SIGNING_KEYSTORE_PATH=%s\n' "$signing_keystore"
+            printf 'CURRENTLENS_SIGNING_STORE_PASSWORD=currentlens-stability-test-only\n'
+            printf 'CURRENTLENS_SIGNING_KEY_ALIAS=currentlens-stability\n'
+            printf 'CURRENTLENS_SIGNING_KEY_PASSWORD=currentlens-stability-test-only\n'
           } >> "$GITHUB_ENV"
 
       - name: Set up Gradle

@@ -1406,3 +1406,7 @@ Repository/default: `Batmancpu/CurrentLens`, default `main@73b8a0d1ba33503fede02
 - Draft PR will target black-box-bihar-news so the signing fix is reviewed against the same workflow/Gradle baseline as PR #34, without touching main.
 - Motivation is verified APK certificate drift between main runs #112 and #116; details and one-time migration warning are in KL-021 and docs/RELEASE_SIGNING.md.
 - Do not merge/publish before the owner configures the private signing secrets and accepts the unavoidable old-key migration. The old private keys cannot be recovered from the APK certificates.
+### PR #39 opened; follow-up security hardening
+
+- Draft PR #39: https://github.com/Batmancpu/CurrentLens/pull/39, base black-box-bihar-news.
+- Initial commit: 69cf8a8e14f417f025721197f1013e0b53d87051. A follow-up commit splits main-only secret injection from non-main Stability-key setup; verify the final head from live GitHub.

@@ -48,3 +48,4 @@ The private keys for the already-published ephemeral debug signatures cannot be 
 The manifest has android:allowBackup=false; uninstalling erases app-private Saved items, read history, quiz history and other local data. This PR does not invent a data migration path. Do not merge or publish the first stable-key build until the owner has acknowledged this one-time incompatibility and decided how any wanted local data will be preserved.
 
 After the first stable-key APK is installed, all future main-branch APKs must use the same keystore and alias. Loss or regeneration of that private key breaks updates again.
+Release secrets are injected only into the step gated to a push on main. Pull-request builds do not receive the main release secrets; they use only the separate Stability test keystore.
