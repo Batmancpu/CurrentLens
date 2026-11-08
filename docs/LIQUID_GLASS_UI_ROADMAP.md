@@ -1,3 +1,52 @@
+# Live implementation batch — Reader WebView permanent-disposal guard (9 November 2026, 00:31 IST)
+
+**Source:** `black-box-bihar-news@58c2e5d99f87701eb7e6f68a53bfadcf8eb9c8e4`  
+**Base:** `main@73b8a0d1ba33503fede02db2c3c0af082d724a12` — the active integration line is **153 ahead / 0 behind**, with main as merge base.  
+**PR:** #34 remains open/draft → main, unmerged and unretargeted. This pass stays on the owner-selected consolidation branch.
+
+## Branch freshness and dependency gate
+
+- Re-enumerated all **46 remote branches** (page 1 = 46; page 2 = 0), **29 open PRs** and **14 closed PRs**. The selected branch head is `58c2e5d99f87701eb7e6f68a53bfadcf8eb9c8e4`; PR #34 matches it. Main remains `73b8a0d1ba33503fede02db2c3c0af082d724a12`.
+- Newest relevant independent branch is PR #43, `fix/release-reader-webview-resources-2026-11-09@d1ec6fa51bf002cdf9f20cbfe6edbfa327eeb614`: **5 ahead / 0 behind main**, but **5 ahead / 153 behind black-box-bihar-news**. Its complete three-file delta is limited to `MainActivity.kt`, `ReaderWebViewReleaseGuard.kt` and its JVM test. It is not a viable app baseline; its lifecycle fix was reviewed and selectively ported below. PR #43's exact head has **0 check-runs and 0 commit statuses**, so no source-branch CI is claimed.
+- PR #42 is **6 ahead / 2 behind** the selected line and changes only UPSC editorial engine/feed policy/tests/baseline; it was not ported in this UI pass. PR #39 is **6 ahead / 18 behind** and changes signing/workflow/Gradle; its owner-managed secrets, certificate pinning and first-install/local-data migration remain a separate gate. PR #16 is **7 ahead / 96 behind** and carries separate startup/diagnostic changes; no old MainActivity was copied.
+- PR #37's Search RowScope repair is already reflected in the active 48dp in-capsule clear slot; PR #30's TouchTargetPolicy, #31's off-main appearance snapshot and #36's Asia/Kolkata policy are represented. The older `brrrNEWS` material branch is **4 ahead / 59 behind** and its smaller GlassSurfacePolicy is superseded by the active shared tier policy. `ui/liquid-glass-performance`, `ui/liquid-glass-system-continuation` and `redesign/v0.3-search-reader` are not safe baselines.
+- PR #34 is the only branch modified. No other source branch, main, release or PR was changed.
+
+## Exact parent CI, Actions, workflow and Release
+
+- Fully paginated **364 Actions runs** (100 + 100 + 100 + 64): **226 success / 68 failure / 70 cancelled**; queued/in-progress **0**.
+- Exact parent SHA `58c2e5d99f87701eb7e6f68a53bfadcf8eb9c8e4` passed natural push run [#363](https://github.com/Batmancpu/CurrentLens/actions/runs/42508268534) and PR run [#364](https://github.com/Batmancpu/CurrentLens/actions/runs/42508274576). The PR job's full log and every step were inspected: WordNet builder **4/4**, offline dictionary **151,456 unique words / 50,950,144 bytes**, `:app:testDebugUnitTest`, `:app:assembleDebug` and artifact upload all passed; build completed in 56 seconds. Artifact [#13628606698](https://github.com/Batmancpu/CurrentLens/actions/runs/42508274576/artifacts/13628606698) is **39,118,210 bytes**, SHA-256 `a6ab2c44ed3d971d76daa488a49661231c15d781711a00158b7df0e8e1db7d0e`, expires **22 November 2026 18:07:43 UTC**. Push artifact #13627942749 is 39,118,211 bytes. Publish jobs were skipped.
+- The active `.github/workflows/build-apk.yml` uses read-only build/test permissions and a separate main-push-only Release-write job; natural PR and push triggers include `black-box-bihar-news`. Main's workflow remains push-only with workflow-wide `contents: write`. Latest published Release remains `v0.2.0-build-116`; no Release was created.
+- PR #43's head is unvalidated; the new commit below must receive its own natural push/PR run. No dispatch or rerun.
+
+## Implementation — release WebView only on permanent Compose disposal
+
+- Current `ReaderScreen` owns one `AndroidView` WebView. Its existing `onDetachedFromWindow()` flushes reading position and cancels transient work, but detachment is not equivalent to permanent disposal and must not destroy a WebView during a temporary window transition.
+- Added the `AndroidView.onRelease` path. It calls `releaseForDisposal()` only when Compose permanently releases the reader, then clears the remembered holder only if it still points to that exact instance.
+- The one-shot `ReaderWebViewReleaseGuard` flushes the last debounced reading position, stops loading, cancels delayed save/restore/short-page-end/chrome-hide work, disables the selection bridge, clears Compose callbacks/client closures, disables JavaScript and DOM storage for the disposed instance, clears history, removes the WebView from its parent, removes children and finally destroys it.
+- Temporary detach remains non-destructive. Active reader JavaScript policy, publisher fallback permissions, native ActionMode/Copy/Select/share, dictionary selection, reading-session accounting, saved position semantics and quiz submit-only persistence are unchanged.
+- Reviewed PR #43's full patch rather than copying it blindly: its failure-isolation test omitted the recorded `remove-parent` action from the expected call list. The port corrects that assertion and checks idempotence even after one cleanup action throws.
+
+## Paired resource/material strategy and coverage
+
+| Component | Material tier | Effect/capture delta | Reuse and fallback | Evidence |
+|---|---|---|---|---|
+| Reader WebView permanent disposal | No glass; lifecycle-only | No new blur, refraction, Prismal pass, backdrop capture/readback, shader or image decode | Existing single Reader WebView; one-shot teardown; temporary detach remains safe | JVM guard tests added; device memory/jank remains unmeasured |
+
+- This change removes retained native WebView/client/callback work after permanent Reader exit at source level; it is **not** a measured memory, frame-time, battery or thermal improvement. No glass effect was added, so there is no additional render cost to offset.
+
+## Tests, risks and remaining verification
+
+- Added JVM tests for ordered one-shot cleanup and for continuing through later teardown actions after a failure, including parent removal and destroy. Existing ReaderChrome/selection policies are unchanged.
+- Exact new-head natural CI is pending. Parent #363/#364 validate only `58c2e5d99f87701eb7e6f68a53bfadcf8eb9c8e4`, not this commit. Wait for the new head's own build/test logs and artifact before another implementation batch.
+- OPPO Reno10 WebView disposal/re-entry, launch stability, screenshots, native selection, TalkBack, font scaling, Reduce Motion, IME, Perfetto/frame timing, GPU overdraw, allocations/memory, thermal and battery remain **UNVERIFIED**. CI compilation/JVM tests do not prove device lifecycle correctness.
+
+## Next
+
+- Inspect the exact new-head natural push and PR jobs, full logs and artifact. If they pass, continue the remaining whole-app visual consistency audit; preserve the one background-only root capture, expanded-only tab glyph source, the existing low-cadence shared luminance probe and calm high-contrast article/data surfaces.
+
+---
+
 # Live implementation batch — Search hierarchy de-duplication (8 November 2026, 23:27 IST)
 
 **Source:** `black-box-bihar-news@6160d58cd54719c83d8dace2f99ba2104e27efcb`  

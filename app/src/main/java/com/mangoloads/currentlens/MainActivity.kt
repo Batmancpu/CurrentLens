@@ -3436,6 +3436,12 @@ private fun ReaderScreen(
                             }
                         }
                     }
+                },
+                onRelease = { webView ->
+                    webView.releaseForDisposal()
+                    if (readerWebViewHolder.value === webView) {
+                        readerWebViewHolder.value = null
+                    }
                 }
             )
 
@@ -3690,6 +3696,7 @@ private fun readerDocument(article: Article, content: String, fontSize: Int, dar
 }
 
 private class ReaderWebView(context: android.content.Context) : WebView(context) {
+    private val releaseGuard = ReaderWebViewReleaseGuard()
     var loadedKey: String? = null
     var onReachedBottom: () -> Unit = {}
     var onSelectionActionModeChanged: (Boolean) -> Unit = {}
@@ -3918,6 +3925,53 @@ private class ReaderWebView(context: android.content.Context) : WebView(context)
         }
         shortPageEndCheck = check
         postDelayed(check, SHORT_PAGE_END_CHECK_DELAY_MS)
+    }
+
+    /**
+     * Called only when Compose permanently releases this AndroidView. A WebView may
+     * detach temporarily during window changes, so temporary detachment must not destroy it.
+     */
+    fun releaseForDisposal() {
+        releaseGuard.release(
+            listOf(
+                // Flush the last debounced position before callbacks are disconnected.
+                { flushReadingPosition() },
+                { stopLoading() },
+                {
+                    readingPositionSave?.let { removeCallbacks(it) }
+                    readingPositionSave = null
+                    cancelReadingPositionRestore()
+                    cancelShortPageEndCheck(resetStability = true)
+                    cancelPendingReaderChromeHide()
+                },
+                {
+                    selectionBridgeEnabled = false
+                    selectionActionModeActive = false
+                    readerChromePinned = false
+                    readerChromeScrollState = ReaderChromeScrollState()
+                    readingPositionCompleted = true
+                    onReachedBottom = {}
+                    onSelectionActionModeChanged = {}
+                    onDefineWord = { _, _ -> }
+                    onReaderPageFinished = {}
+                    onReaderMainFrameError = {}
+                    allowReaderNavigation = { false }
+                    onOpenPublisherLink = {}
+                    onReadingProgressChanged = {}
+                    onReaderChromeVisibilityChanged = {}
+                },
+                {
+                    settings.javaScriptEnabled = false
+                    settings.domStorageEnabled = false
+                    webViewClient = WebViewClient()
+                    webChromeClient = null
+                },
+                { clearHistory() },
+                { (parent as? android.view.ViewGroup)?.removeView(this) },
+                { removeAllViews() },
+                { destroy() }
+            )
+        )
     }
 
     override fun onDetachedFromWindow() {
