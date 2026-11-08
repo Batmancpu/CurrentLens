@@ -1,3 +1,40 @@
+# Live implementation batch — Saved “Previously Opened” relevance reuse
+**Audit:** 8 November 2026, 19:28 IST  
+**Pre-change source:** `black-box-bihar-news@261c387bb196e1bb74d5a20df9b3d1bc4f9ebc18`  
+**Base:** `main@73b8a0d1ba33503fede02db2c3c0af082d724a12`  
+**PR:** #34 remains the single open/draft consolidation PR targeting main. This commit is created on the existing owner-selected branch; its own SHA is recorded in the next ledger refresh.
+
+## Branch-freshness and dependency gate
+- Re-enumerated the complete remote branch list: **44 branches** (page 1 complete; page 2 empty), and **41 PRs** (**27 open / 14 closed**). Default main is unchanged. Before this batch, `black-box-bihar-news` was **148 ahead / 0 behind main**, **91 ahead / 0 behind PR #16**, and **78 ahead / 0 behind the former PR #19 UI head**. It remains the freshest coherent owner-authorised integration line containing the background-only Prismal root capture, Reader/Search/feed navigation, current material system and reconciled application code.
+- PR #34 is open/draft, based on `main@73b8a0d1ba33503fede02db2c3c0af082d724a12`; no retarget, merge or main write.
+- Rechecked relevant branch proposals and actual diffs: PR #37's Search RowScope repair, #36's Asia/Kolkata rollover, #30's 48dp target policy and #31's off-main Appearance restore are already represented. PR #39 remains a separate signing/workflow migration requiring owner-managed secrets, a pinned certificate and explicit first-install/local-data migration approval. PRs #40/#41 are main-based RSS redirect/parser proposals; #32/#33/#38 overlap parser/network work; #25/#26 require a joint publisher-resource security review; #27 is editorial-only; #35 is diagnostic-only. No source branch was modified. The divergent `brrrNEWS`, old `ui/liquid-glass-performance` and `redesign/v0.3-search-reader` branches are not safe baselines.
+- Main's workflow remains push-only with workflow-wide `contents: write`. The active integration workflow has read-only build/test permissions, natural push/PR validation for the integration line, and a separate main-push-only Release-write job; no workflow change was made.
+
+## Parent exact-head Actions verification
+- Fully paginated **346 Actions runs** (100 + 100 + 100 + 46): **213 success, 67 failure, 66 cancelled**; queued/in-progress: **0**.
+- Natural push run [#345](https://github.com/Batmancpu/CurrentLens/actions/runs/42483678631) and pull-request run [#346](https://github.com/Batmancpu/CurrentLens/actions/runs/42483682905) passed on exact parent SHA `261c387bb196e1bb74d5a20df9b3d1bc4f9ebc18`. Full PR job log: WordNet builder **4/4**, offline dictionary **151,456 unique words / 50,950,144 bytes**, `:app:testDebugUnitTest`, `:app:assembleDebug`, and APK artifact upload all succeeded; build completed in **1m 30s**. Both Release jobs were skipped.
+- PR artifact [#13618970693](https://github.com/Batmancpu/CurrentLens/actions/runs/42483682905/artifacts/13618970693): **39,120,818 bytes**, ZIP SHA-256 `26b04cf919118ba3c0fec84b8efb95affbd4e19763477454e9bfaf9f68b1e32a`, expires **22 November 2026 13:12:57 UTC**. Push artifact #13619005997 is also 39,120,818 bytes. These runs validate the parent only; the new commit awaits its own natural push/PR run.
+
+## Implementation — one eligibility classification for previously opened cards
+- Previously Opened candidates were classified in `UpscFeedPolicy.shouldInclude` to decide eligibility, then classified again by `NewsCard` to build the card's syllabus metadata.
+- `UpscFeedPolicy.eligibleRelevance` now returns the exact `Relevance` used by the existing eligibility decision. `shouldInclude` remains the same boolean API and delegates to this method; the title/description/section noise gate and policy exceptions are unchanged, and the classifier still short-circuits for rejected noise.
+- `SavedFeed` builds one ID-keyed map for previously opened candidates, filters the visible top 15 from that map, and passes the same relevance to each `NewsCard`. Ordering, 15-item cap, bookmark/read URL semantics, GS/subject/date filters and editorial eligibility are unchanged.
+- Added two pure JVM regression tests: the eligible path invokes its classifier exactly once and returns that result; a noise-rejected story exits before invoking the classifier. Existing editorial positive/negative fixtures remain in place.
+
+## Paired cost and coverage
+| Surface | Material / reason | Effect/capture scope | Reuse strategy | Accessibility/fallback | Evidence |
+|---|---|---|---|---|---|
+| You → Saved → Previously Opened | Standard high-contrast NewsCard; no additional glass is warranted on article content | **0** new blur, refraction, Prismal surface, capture/readback, shader or graphics layer | One eligibility result per candidate is reused for both inclusion and card metadata; the existing single Coil request and same-decoded-bitmap palette path remain unchanged | Existing article-card semantics, bookmark action and native Reader selection are untouched | Source diff + focused tests added; exact-head CI pending |
+
+- Render-pass/effect delta: **0**. New backdrop captures/readbacks, blur surfaces, shaders, image decodes, dependencies, timers, network calls and persistence operations: **0**. The expected reduction is one duplicate classifier invocation per eligible Previously Opened card; this is source-level evidence, not a measured frame-time, allocation, memory or battery win.
+- OPPO Reno10 launch, Saved visual layout, TalkBack, font scaling, Reduce Motion, frame timing/jank, GPU overdraw, memory/allocation churn, thermal and battery remain **UNVERIFIED**. CI compilation cannot establish device stability or animation smoothness.
+
+## Next
+- Inspect the exact new-head natural push and PR jobs, complete logs and artifact before the next UI batch. Continue the final whole-app transient-control/shared-header audit without adding another material stack or changing quiz/read-history semantics.
+- No main write, merge, retarget, force update, workflow dispatch/rerun, Release publication, app/package identity change or source-branch deletion.
+
+---
+
 # Live implementation batch — Saved-feed relevance index reuse
 **Audit:** 8 November 2026, 18:38 IST  
 **Source branch / SHA before this batch:** `black-box-bihar-news@d21ff270011b80ff6fd4ad6fcbaf7ce15cb8b494`  

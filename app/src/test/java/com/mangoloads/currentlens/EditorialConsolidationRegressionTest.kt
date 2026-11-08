@@ -2,6 +2,7 @@ package com.mangoloads.currentlens
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -146,4 +147,40 @@ class EditorialConsolidationRegressionTest {
         assertTrue(hint.contains("Geography"))
         assertTrue(hint.contains("Syllabus: Physical geography"))
     }
+    
+    @Test
+    fun eligibleRelevanceReturnsTheClassificationUsedByItsGateExactlyOnce() {
+        val story = article(
+            "Monsoon onset shifts across the river basin",
+            "Rainfall distribution changes across the region"
+        )
+        val expected = UpscEngine.classify(story)
+        var calls = 0
+
+        val actual = UpscFeedPolicy.eligibleRelevance(story) {
+            calls += 1
+            expected
+        }
+
+        assertEquals(1, calls)
+        assertEquals(expected, actual)
+    }
+
+    @Test
+    fun editorialNoiseIsRejectedBeforeTheClassifierRuns() {
+        val story = article(
+            "Celebrity film promotion",
+            "A viral clip mentions climate change"
+        )
+        var calls = 0
+
+        val actual = UpscFeedPolicy.eligibleRelevance(story) {
+            calls += 1
+            UpscEngine.classify(it)
+        }
+
+        assertNull(actual)
+        assertEquals(0, calls)
+    }
+
 }

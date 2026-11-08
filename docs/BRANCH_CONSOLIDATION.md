@@ -1,3 +1,35 @@
+# Latest live branch/PR/CI audit — 8 November 2026, 19:28 IST
+
+**Repository:** `Batmancpu/CurrentLens`  
+**Default:** `main@73b8a0d1ba33503fede02db2c3c0af082d724a12` (unchanged).  
+**Pre-change source:** `black-box-bihar-news@261c387bb196e1bb74d5a20df9b3d1bc4f9ebc18` (**148 ahead / 0 behind main**, **91 ahead / 0 behind PR #16**, **78 ahead / 0 behind the former PR #19 UI head**).  
+**PR:** #34 remains open/draft → main, mergeable, no retarget or merge. The implementation and this audit are committed on the same existing branch; the new commit SHA is recorded by GitHub and will be copied into the next ledger refresh.  
+**Inventory:** 44 remote branches (44 + 0 pagination); 41 PRs (27 open, 14 closed; page 2 empty). No source branch was deleted or modified.
+
+## Baseline and open-branch treatment
+- `black-box-bihar-news` remains the owner-selected, coherent development line with the corrected background-only Prismal capture and all consolidated UI prerequisites. The branch is 91 commits ahead of PR #16's corrected stability baseline; the previous PR #19 UI line is ancestral.
+- PR #37's Search clear RowScope fix, #36's Asia/Kolkata date rollover, #30's 48dp target policy and #31's off-main Appearance preferences are already represented in current source. PR #39 remains separate: stable signing changes touch Gradle/workflow and require owner-managed secrets, a pinned certificate fingerprint and explicit first-install/local-data migration approval. PRs #40/#41 remain separate main-based RSS redirect/parser proposals; #32/#33/#38 overlap parser/network work; #25/#26 need a joint publisher-resource security review; #27 is editorial-only; #35 diagnostic-only.
+- The older `brrrNEWS`, `ui/liquid-glass-performance` and `redesign/v0.3-search-reader` lines remain divergent/stale and are not baselines. No cherry-pick, merge or source-branch mutation was performed.
+
+## Actions, workflow and Release
+- Fully paginated **346 Actions runs**: **213 success / 67 failure / 66 cancelled**; queue and in-progress **0**.
+- Exact parent `261c387bb196e1bb74d5a20df9b3d1bc4f9ebc18` passed natural push [#345](https://github.com/Batmancpu/CurrentLens/actions/runs/42483678631) and PR [#346](https://github.com/Batmancpu/CurrentLens/actions/runs/42483682905). Full PR job log: WordNet 4/4, 151,456 unique words / 50,950,144-byte database, `:app:testDebugUnitTest`, `:app:assembleDebug`, artifact upload; BUILD SUCCESSFUL in 1m30s. Publish jobs skipped. PR artifact #13618970693: 39,120,818 bytes, SHA-256 `26b04cf919118ba3c0fec84b8efb95affbd4e19763477454e9bfaf9f68b1e32a`, expires 22 November 2026 13:12:57 UTC.
+- Active branch workflow retains read-only build/test and a separate main-push-only Release-write job. Main's workflow remains push-only with broader `contents: write`. No workflow edit or manual dispatch/rerun.
+- Latest Release remains `v0.2.0-build-116` (6 November 2026); no Release was published.
+
+## Current implementation — Saved Previously Opened relevance reuse
+- The Saved Previously Opened section previously called `UpscFeedPolicy.shouldInclude` for eligibility and then let each visible `NewsCard` classify the same article again.
+- Added `UpscFeedPolicy.eligibleRelevance` to return the classification used by the existing eligibility gate; `shouldInclude` remains a boolean wrapper, the noise/policy-exception checks are unchanged, and rejected noise still short-circuits before classification.
+- SavedFeed now reuses one ID-keyed relevance result for eligibility and visible-card syllabus metadata. The existing single Coil request/decode/palette extraction is unchanged. Added JVM tests for exactly-once classification and early noise rejection.
+- No added render pass, blur, Prismal surface, capture/readback, shader, graphics layer, image decode, dependency, timer, network or persistence path. This is a source-level CPU-work reduction; no measured frame/memory/battery win is claimed. New exact-head CI is pending.
+
+## Device / product safety
+- Preserve exactly Today / Explore / Search / You; Saved remains within You; no Archive. Offline WordNet, local-first privacy, Asia/Kolkata dates, foreground-only reading-session accounting and submit-only quiz persistence remain unchanged.
+- OPPO Reno10 launch/visuals, TalkBack, font scale, Reduce Motion, IME, frame timing/jank, GPU overdraw, memory, thermal and battery remain **UNVERIFIED**. CI does not prove the historical native cold-start failure is fixed.
+- No main write, PR merge/retarget, force update, Release publication, app/package identity change or source-branch deletion.
+
+---
+
 # Latest live branch/PR/CI audit — 8 November 2026, 18:38 IST
 
 **Repository:** `Batmancpu/CurrentLens`  

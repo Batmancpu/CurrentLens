@@ -1,3 +1,18 @@
+## Live snapshot — 8 November 2026, 19:28 IST
+
+- **Canonical main:** `73b8a0d1ba33503fede02db2c3c0af082d724a12`, unchanged.
+- **Active integration:** `black-box-bihar-news`, owner-selected branch; this pass advances it from pre-change parent `261c387bb196e1bb74d5a20df9b3d1bc4f9ebc18` with one Saved-feed eligibility-reuse implementation/audit commit. PR [#34](https://github.com/Batmancpu/CurrentLens/pull/34) remains open/draft and targets main; no merge or retarget. The exact new head is available from the branch/PR and will be copied into the next handoff refresh.
+- **Branch/PR inventory:** 44 remote branches and 41 PRs (27 open, 14 closed), fully paginated. Before this pass the active line was 148 ahead / 0 behind main, 91 ahead / 0 behind PR #16's corrected Prismal/stability baseline, and 78 ahead / 0 behind the former PR #19 UI line.
+- **Actions:** 346 runs, fully paginated: 213 success, 67 failure, 66 cancelled; queued/in-progress 0. Exact parent natural push [#345](https://github.com/Batmancpu/CurrentLens/actions/runs/42483678631) and PR [#346](https://github.com/Batmancpu/CurrentLens/actions/runs/42483682905) passed. WordNet builder 4/4; 151,456 unique words / 50,950,144-byte database; `:app:testDebugUnitTest`, `:app:assembleDebug` and artifact upload succeeded. PR artifact [#13618970693](https://github.com/Batmancpu/CurrentLens/actions/runs/42483682905/artifacts/13618970693) is 39,120,818 bytes (SHA-256 `26b04cf919118ba3c0fec84b8efb95affbd4e19763477454e9bfaf9f68b1e32a`), expires 22 November 2026 13:12:57 UTC. Release jobs skipped. New implementation head awaits its own natural CI.
+- **Workflow:** active integration workflow retains read-only build/test permissions and a separate main-push-only Release-write job. Main's workflow remains push-only with workflow-wide `contents: write`; no workflow changes.
+- **Latest Release:** [v0.2.0-build-116](https://github.com/Batmancpu/CurrentLens/releases/tag/v0.2.0-build-116), published 6 November 2026 11:18:59 UTC; no Release created.
+- **Current work:** Saved → Previously Opened now reuses one editorial relevance result for eligibility and the visible NewsCard's syllabus metadata. Existing noise rejection, ordering, top-15 limit, bookmarks/read markers and card/image semantics remain unchanged. Two focused JVM regression tests were added; exact-head CI is pending.
+- **Open branch decisions:** PR #37 Search RowScope fix, #36 IST rollover, #30 touch-target policy and #31 Appearance restore are represented. PR #39 stable signing remains owner-gated; #40/#41 and #32/#33/#38 remain separate RSS/parser reviews; #25/#26 need joint publisher-resource security review; #27 editorial-only; #35 diagnostic-only.
+- **Device evidence:** no fresh OPPO Reno10 logcat/tombstone/Perfetto or screenshot. Launch stability, visual/IME/TalkBack/font-scale/Reduce Motion and frame-time/GPU/memory/thermal/battery remain **UNVERIFIED**.
+- **Safety:** no main write, merge, retarget, manual dispatch/rerun, workflow edit, Release publication, package identity change or branch deletion.
+
+---
+
 ## Live snapshot — 8 November 2026, 16:05 IST
 
 - **Canonical main:** `73b8a0d1ba33503fede02db2c3c0af082d724a12`, unchanged.

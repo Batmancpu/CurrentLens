@@ -1770,10 +1770,18 @@ private fun SavedFeed(
             relevanceByArticleId = relevanceById
         )
     }
-    val previouslyOpened = remember(articles, readHistory, bookmarks) {
-        articles.filter {
-            readHistory.contains(it.url) && !bookmarks.contains(it.url) && UpscFeedPolicy.shouldInclude(it)
-        }
+    val previouslyOpenedCandidates = remember(articles, readHistory, bookmarks) {
+        articles.filter { readHistory.contains(it.url) && !bookmarks.contains(it.url) }
+    }
+    // Eligibility returns the same relevance result used by NewsCard. Cache it once so
+    // the Previously Opened filter and visible cards do not classify an article twice.
+    val previouslyOpenedRelevanceById = remember(previouslyOpenedCandidates) {
+        previouslyOpenedCandidates.mapNotNull { article ->
+            UpscFeedPolicy.eligibleRelevance(article)?.let { article.id to it }
+        }.toMap()
+    }
+    val previouslyOpened = remember(previouslyOpenedCandidates, previouslyOpenedRelevanceById) {
+        previouslyOpenedCandidates.filter { previouslyOpenedRelevanceById.containsKey(it.id) }
             .sortedByDescending { it.publishedAtMillis ?: 0L }.take(15)
     }
 
@@ -1818,7 +1826,10 @@ private fun SavedFeed(
                         style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.secondary)
                 }
                 items(previouslyOpened, key = { "opened-" + it.id }) { article ->
-                    NewsCard(article, false, onOpenArticle, onToggleBookmark)
+                    NewsCard(
+                        article, false, onOpenArticle, onToggleBookmark,
+                        relevanceOverride = previouslyOpenedRelevanceById[article.id]
+                    )
                 }
             }
         }

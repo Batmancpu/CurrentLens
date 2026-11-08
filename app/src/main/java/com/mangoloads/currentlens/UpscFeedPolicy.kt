@@ -92,7 +92,19 @@ internal object UpscFeedPolicy {
         "weathering", "desertification", "photovoltaic", "solar cell", "thin film"
     )
 
-    fun shouldInclude(article: Article): Boolean {
+    fun shouldInclude(article: Article): Boolean =
+        eligibleRelevance(article) != null
+
+    /**
+     * Returns the classification used by the eligibility decision so a visible card can
+     * reuse it instead of classifying the same article a second time.
+     *
+     * The classifier is deliberately invoked only after the existing noise/exception gate.
+     */
+    fun eligibleRelevance(
+        article: Article,
+        classify: (Article) -> Relevance = UpscEngine::classify
+    ): Relevance? {
         val title = EditorialTextMatcher.normalize(article.title)
         val text = EditorialTextMatcher.normalize(
             article.title + " " + article.description + " " + article.section
@@ -107,12 +119,14 @@ internal object UpscFeedPolicy {
             EditorialTextMatcher.contains(title, "thin film") &&
                 listOf("photovoltaic", "solar cell").any { EditorialTextMatcher.contains(title, it) }
 
-        if (hasNoise && !hasPolicyException && !hasThinFilmScienceException) return false
+        if (hasNoise && !hasPolicyException && !hasThinFilmScienceException) return null
 
-        val relevance = UpscEngine.classify(article)
-        if (relevance.gsPaper == "Unmapped" || relevance.matchedTerms.isEmpty()) return false
+        val relevance = classify(article)
+        if (relevance.gsPaper == "Unmapped" || relevance.matchedTerms.isEmpty()) return null
 
-        return hasPolicyException ||
+        return if (
+            hasPolicyException ||
             specificSyllabusSignals.any { EditorialTextMatcher.contains(text, it) }
+        ) relevance else null
     }
 }
