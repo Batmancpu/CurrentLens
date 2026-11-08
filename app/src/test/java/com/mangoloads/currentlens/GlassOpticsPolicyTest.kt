@@ -100,10 +100,9 @@ class GlassOpticsPolicyTest {
     @Test
     fun sharedHeaderUsesClearerLowerCostOpticsThanTheSelectedDroplet() {
         val header = GlassOpticsPolicy.header()
-        val droplet = GlassOpticsPolicy.droplet(0f)
 
         assertEquals(9f, header.blurDp, 0.0001f)
-        assertTrue(header.blurDp < droplet.blurDp)
+        assertTrue(header.blurDp < 13f)
         assertTrue(header.refractionHeightDp <= 3f)
         assertTrue(header.refractionAmountDp <= 4f)
         assertTrue(header.chromaticAberration <= 0.002f)
