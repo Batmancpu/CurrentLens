@@ -408,6 +408,21 @@ class UpscFeedPolicyTest {
             "The government announces a documentary about the guidelines, not a new regulatory action.",
             "Entertainment"
         ))
+        assertRejectedDespiteKeywordMatch(article(
+            "Government announces new movie celebrating the Cinematograph Act",
+            "A movie promotion, not a change to film-certification rules.",
+            "Entertainment"
+        ))
+        assertRejectedDespiteKeywordMatch(article(
+            "Ministry announces documentary portraying celebrity endorsement guidelines",
+            "A documentary promotion, not a consumer-protection notification.",
+            "Entertainment"
+        ))
+        assertRejectedDespiteKeywordMatch(article(
+            "Government announces series featuring film certification rules",
+            "A series announcement, not a regulatory change to certification requirements.",
+            "Entertainment"
+        ))
         assertSyllabusMapped(
             article(
                 "Government issues new film certification rules for OTT platforms",

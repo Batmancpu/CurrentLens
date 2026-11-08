@@ -61,6 +61,13 @@ internal object UpscFeedPolicy {
         "meme", "memes", "influencer feud", "influencer drama"
     )
 
+    // Content-about framing is promotional even when a ministry or regulator is named.
+    // Cover equivalent movie/documentary/series/biopic verbs so a broad policy noun
+    // cannot turn an announcement about media content into a regulatory action.
+    private val promotionalMediaFramingPattern = Regex(
+        """\\b(?:film|movie|documentary|series)\\b(?:\\s+\\w+){0,2}\\s+\\b(?:about|on|highlighting|celebrating|depicting|featuring|starring|exploring|showcasing|portraying)\\b|\\bbiopic\\b(?:\\s+\\w+){0,2}\\s+\\b(?:about|on|of|highlighting|celebrating|depicting|featuring|starring|exploring|showcasing|portraying)\\b"""
+    )
+
     private val policyExceptions = listOf(
         "film certification", "cinematograph act", "censor board",
         "central board of film certification", "broadcasting regulation",
@@ -199,6 +206,7 @@ internal object UpscFeedPolicy {
 
         val hasNoise = noiseTerms.any { EditorialTextMatcher.contains(text, it) }
         val hasHardNoise = nonOverrideableNoiseTerms.any { EditorialTextMatcher.contains(title, it) }
+        val hasPromotionalMediaFraming = promotionalMediaFramingPattern.containsMatchIn(title)
         val historicalOriginalActionWithoutCurrentCue =
             historicalOriginalPolicyActionPattern.containsMatchIn(title) &&
                 !explicitCurrentTemporalCuePattern.containsMatchIn(title)
@@ -212,7 +220,7 @@ internal object UpscFeedPolicy {
             EditorialTextMatcher.contains(title, "thin film") &&
                 listOf("photovoltaic", "solar cell").any { EditorialTextMatcher.contains(title, it) }
 
-        if (hasHardNoise || (hasNoise && !hasPolicyException && !hasThinFilmScienceException)) return false
+        if (hasHardNoise || hasPromotionalMediaFraming || (hasNoise && !hasPolicyException && !hasThinFilmScienceException)) return false
 
         val relevance = UpscEngine.classify(article)
         if (relevance.gsPaper == "Unmapped" || relevance.matchedTerms.isEmpty()) return false

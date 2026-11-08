@@ -85,3 +85,8 @@ The current RSS registry is publisher-led (The Hindu, Indian Express, BBC, DW an
 | False-negative recovery | “Gross domestic product growth slows as fiscal deficit widens and monetary policy changes” | Include — GS III, Indian Economy | The selected Economy mapping contains the exact macroeconomic syllabus signals. |
 | False-negative recovery | “ISRO announces a new space mission and quantum computing programme” | Include — GS III, Science & Technology | Space missions and quantum computing are explicit technology themes. |
 | False-negative recovery | “Border security review strengthens management of the frontier” | Include — GS III, Internal Security | Border security is mapped to the selected Internal Security rule. |
+
+
+## Additional promotional-framing regression — 8 November 2026
+
+A linked institution, action verb and policy noun are still insufficient when the headline describes media content about the policy rather than a change to it. Synthetic false-positive fixtures now reject “Government announces new movie celebrating the Cinematograph Act”, “Ministry announces documentary portraying celebrity endorsement guidelines”, and “Government announces series featuring film certification rules”. The positive control for a government actually issuing film-certification rules remains eligible. These fixtures test headline framing only; they do not measure live-feed precision or recall.

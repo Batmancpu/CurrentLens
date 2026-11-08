@@ -418,3 +418,18 @@ Branch: `fix/early-startup-crash-diagnostics-2026-11-06`.
 - **Integration risk:** PR #27 is still diverged from its integration base and GitHub reports it unmergeable. The code change is not active in black-box-bihar-news until reconciled and validated on the current base.
 - **Scope / privacy:** no source feeds, network permissions, dependencies, storage schema, analytics, telemetry, main branch, workflow configuration or Release changed. Rollback is limited to the added hard-noise phrases and two fixtures.
 - **Next:** reconcile PR #27 with the latest integration branch, obtain natural CI on the combined head, and test adjacent promotional verbs against genuine regulatory headlines before calling the editorial gate ready.
+
+
+## 2026-11-08 05:37 IST / 00:07 UTC — Close movie/documentary/series content-framing bypass
+
+- **Repository / branch:** Batmancpu/CurrentLens; `fix/editorial-action-gate-blackbox-2026-11-07`.
+- **PR:** [#27 — Port strict institutional-action gate to black-box integration](https://github.com/Batmancpu/CurrentLens/pull/27), targeting `black-box-bihar-news`. Main remains `73b8a0d1ba33503fede02db2c3c0af082d724a12` and is untouched.
+- **Evidence:** the existing hard-noise list covered several `film` and `documentary` constructions but omitted equivalent `movie celebrating`, `documentary portraying`, and `series featuring` forms. The headline “Government announces new movie celebrating the Cinematograph Act” could therefore satisfy institution → action → policy-subject matching and bypass soft entertainment noise.
+- **Change:** add a headline-only content-framing pattern for film/movie/documentary/series relation verbs and biopic framing. It is checked as non-overridable promotional noise before the policy exception; actual “Government issues new film certification rules” remains a positive control.
+- **Tests:** add three synthetic false-positive fixtures, each requiring a classifier match before asserting editorial rejection. Update the official-baseline note with the examples. These are synthetic regression fixtures, not live-feed measurements or official PYQs.
+- **Verification:** this commit is pushed to the existing draft PR; its natural PR workflow is expected to validate it. No manual dispatch or rerun. Do not claim the new tests pass until the exact new head's job logs complete.
+- **Integration risk:** PR #27 remains diverged from its integration base and was reported unmergeable before this commit. The change is not active in `black-box-bihar-news` until reconciled and validated on the current base.
+- **Scope / privacy:** no feed sources, network destinations, permissions, dependencies, storage schema, telemetry, analytics, workflow configuration, main branch or Release changed. Rollback is limited to the new headline pattern and its fixtures/documentation.
+- **Next:** inspect natural CI for the exact new head, then reconcile PR #27 with the current integration branch and validate the combined gate.
+
+The resulting GitHub commit SHA is recorded in the PR history; this entry intentionally does not attempt to embed its own SHA.
