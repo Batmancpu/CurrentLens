@@ -2274,3 +2274,78 @@ UTC timestamps/messages are the latest commit on each branch head. PR list: 43 t
 ### Selective integration decision
 - Four PR #16 Appearance changes are already superseded by active `LocalAppearancePreferences` and IO snapshot restoration; the three diagnostic changes are ported in this batch.
 - Final crash-report flush remains synchronous on the uncaught-exception thread. This is not a device crash fix; OPPO and performance metrics remain unverified.
+
+
+## 9 November 2026, 05:25 IST — full live branch/PR/Actions refresh
+
+### Repository and branch graph
+- Default branch: `main@73b8a0d1ba33503fede02db2c3c0af082d724a12`.
+- Selected consolidation source at audit start: `black-box-bihar-news@022a28824a5a5d88a66986cd47a8a6cfb18fdf34`; compare `main...black-box-bihar-news` = **159 ahead / 0 behind**, merge base is main. PR #34 is open/draft, unmerged, targeting main.
+- Complete remote enumeration: **47 branches** (page 1 returned 47; page 2 empty). Open PRs: **30**; closed PRs: **14**. The table below records every branch head SHA, latest committer timestamp/message and its PR head/base relationship.
+- Direct dependent repair: `fix/feed-card-rim-wiring-2026-11-09@3bcde08a4ba7ee6e9420864d9bb044b8fe1d4895`, PR #44, one commit ahead / zero behind selected source; its parent is exactly `022a28824a5a5d88a66986cd47a8a6cfb18fdf34`. Full commit diff is only `MainActivity.kt`, moving one existing `border = cardBorder` argument from `WeekendPanel` to `NewsCard`. Natural PR run #377 passed on that exact head. This run ports that tree change into the single selected branch; no merge/retarget/source-branch mutation.
+- PR #43 `fix/release-reader-webview-resources-2026-11-09@e5b7b9f8f5d9e33021bd6ccb7b7cb3f827218e3c` compares as **11 ahead / 159 behind**, merge base main, and changes MainActivity plus release-guard/test files. Current integration already has Compose `AndroidView.onRelease`, restore-settle cancellation through `cancelReadingPositionRestore()`, an Exception-only guard and a fatal LinkageError test; the older branch is not a safe baseline. Its independently granular cleanup steps remain a possible narrowly scoped review, not a wholesale port.
+- PR #42 GST/editorial is 6 ahead / 8 behind; #39 signing is 6 ahead / 24 behind and owner-gated; #38 RSS entry budget 8 ahead / 34 behind; #37 Search compile repair 6 ahead / 40 behind and its RowScope correction is already represented; #36 IST rollover 3 ahead / 41 behind; #35 diagnostics 6 ahead / 49 behind; #31 appearance preferences 5 ahead / 54 behind; #30 touch targets 3 ahead / 55 behind; #41 RSS-field parsing 14 ahead / 159 behind; #40 redirect validation 6 ahead / 159 behind. These divergent branches were inspected and are not substitutes for the selected integration lineage.
+- Stale `ui/liquid-glass-performance` and `redesign/v0.3-search-reader` remain excluded; `brrrNEWS` is an older divergent visual line. All other branches remain untouched.
+
+### Full 47-branch inventory
+| Remote branch | Exact head SHA | Latest commit (UTC) | Latest commit message | PR relationship |
+|---|---|---|---|---|
+| `a11y/48dp-icon-targets-2026-11-07` | `25107ce905b70bde1a41282ffd1d606819ebf58d` | 2026-11-07 11:02:12 UTC | test(a11y): cover minimum icon action target | #30 open/draft → black-box-bihar-news |
+| `black-box-bihar-news` | `022a28824a5a5d88a66986cd47a8a6cfb18fdf34` | 2026-11-08 23:03:02 UTC | ui(feed): add restrained shared card rim | #34 open/draft → main; selected integration head before this pass |
+| `brrrNEWS` | `e6fcfc25a4c8d5f363ced58f313552120aa7ff96` | 2026-11-07 04:13:30 UTC | ui: consolidate lightweight supporting glass surfaces | base of #24 open/draft; older visual line |
+| `ci/read-only-pr-validation-isolated-release-write-2026-11-06` | `963118f0abe5f7e38f2aa66a49d4b8e74548660c` | 2026-11-06 17:18:53 UTC | ci: validate pull requests with read-only build permissions | #18 open/draft → main |
+| `ci/stacked-pr-validation-2026-11-07` | `5dc3179361835b77fb3186a99d9b5791301463fd` | 2026-11-06 21:41:27 UTC | ci: restore Android SDK setup before sdkmanager | #20 closed/merged → black-box-bihar-news |
+| `docs/ai-agent-handoff-2026-11-06` | `73b8a0d1ba33503fede02db2c3c0af082d724a12` | 2026-11-06 11:16:35 UTC | Correct icon artwork accessibility name to brrrNews | #14 closed/unmerged; ref now equals main |
+| `feat/gs1-geography-editorial-coverage` | `ca66fa1c865514a86c655a4b6c7eaf16b4681f81` | 2026-11-06 10:53:35 UTC | fix: refresh article card metadata when feed content changes | #6 open/draft → main; selected editorial changes represented |
+| `fix/atom-alternate-link-selection-2026-11-06` | `cdf4c3846dde1c05894284e48b8f7d69cb7541ad` | 2026-11-06 09:14:27 UTC | fix: select Atom article alternate links deterministically | #12 open/draft → main; selective port represented |
+| `fix/cache-publication-date-integrity-2026-11-06` | `be5151e674c2bd4fa9beb166fc38ddf622781f84` | 2026-11-06 14:26:32 UTC | feat: expose publication date and publisher RSS provenance on cards | #11 open/draft → black-box-bihar-news; selective port |
+| `fix/early-startup-crash-diagnostics-2026-11-06` | `ebea0aac68ce2cf17aad376304f7915fe937e807` | 2026-11-08 15:11:25 UTC | docs: record off-main diagnostics verification [skip ci] | #16 open/draft → main; adapted changes represented |
+| `fix/editorial-action-gate-blackbox-2026-11-07` | `2468ed33326ac7310a2ddd5f993495e4051245b8` | 2026-11-08 03:30:19 UTC | test(editorial): cover reality TV and television promotion | #27 open/draft → black-box-bihar-news |
+| `fix/editorial-heatwave-bill-signals-2026-11-07` | `89464104e300f48da10e3e32e33715cbe2405084` | 2026-11-06 22:05:40 UTC | Verify a specific parliamentary bill remains eligible for the GS II feed | #21 open/draft → main; selected signals represented |
+| `fix/editorial-policy-exception-guard-2026-11-07` | `1f7a3c2a7b74cc02cfee6fe451f4576feb291acf` | 2026-11-07 04:46:47 UTC | fix(editorial): match policy action and target as separate words | #24 open/draft → brrrNEWS |
+| `fix/editorial-signal-count-test` | `4738690d6e7f6c7c02a621742f25d5ebf1d631fb` | 2026-11-06 05:16:32 UTC | test: align economy signal count with repo-rate mapping | #2 closed/merged → main |
+| `fix/editorial-token-boundaries-2026-11-06` | `0045c24637f162f1c13dceb1f8878f42f6eb15fd` | 2026-11-06 02:34:28 UTC | fix: tighten UPSC editorial signal matching | #1 closed/merged → main |
+| `fix/feed-card-rim-wiring-2026-11-09` | `3bcde08a4ba7ee6e9420864d9bb044b8fe1d4895` | 2026-11-08 23:20:44 UTC | fix(ui): wire feed card rim to the correct card scope | #44 open/draft → black-box-bihar-news; 1 ahead / 0 behind; natural run #377 success |
+| `fix/gst-council-syllabus-disambiguation-2026-11-08` | `2629cfbe4ee6ece7a41fd13d35dc987abc1e26b8` | 2026-11-08 16:43:45 UTC | docs(editorial): fix baseline paragraph spacing | #42 open/draft → black-box-bihar-news |
+| `fix/navigation-icon-imports-2026-11-06` | `fa8868940c08ed5b4a9def014a850e8a9dcb3490` | 2026-11-06 06:27:06 UTC | fix: use supported calendar navigation glyph | #5 closed/merged → main |
+| `fix/parliamentary-syllabus-signal-gate-2026-11-07` | `9d754953a29c0355ce55306ce4fd5463193c9dbb` | 2026-11-07 03:49:44 UTC | test: preserve Parliament bill headline variants | #23 closed/merged → black-box-bihar-news |
+| `fix/publisher-redirect-allowlist-2026-11-06` | `83a94ac9c3fdc4e70f1ef35c65e9cf793aa9b306` | 2026-11-06 12:15:39 UTC | Validate RSS redirects against publisher allowlists | #15 closed/unmerged → main; superseded by newer redirect policy |
+| `fix/quiz-option-selected-semantics-compile-2026-11-07` | `6f9b3c1e1a484233721863d0b736734c0d282cd5` | 2026-11-07 08:12:10 UTC | fix(quiz): qualify selected semantics receiver | #28 closed/merged → black-box-bihar-news |
+| `fix/release-reader-webview-resources-2026-11-09` | `e5b7b9f8f5d9e33021bd6ccb7b7cb3f827218e3c` | 2026-11-08 21:25:23 UTC | test(reader): cover independent cleanup after repeated failures | #43 open/draft → main; divergent, not used as baseline |
+| `fix/resolve-relative-atom-links-2026-11-07` | `c97d6b960e2cc6b93ac6444ebf9ceb6eabd320a4` | 2026-11-07 14:59:24 UTC | test(rss): correct relative xml base fixture | #33 open/draft → black-box-bihar-news |
+| `fix/rss-image-host-allowlist-2026-11-07` | `7a51c9c2c40aa89997db55194a6db3d0d65ac95d` | 2026-11-07 06:28:46 UTC | test(reader): cover publisher-only image resources | #25 open/draft → black-box-bihar-news |
+| `fix/rss-tracking-variant-dedup-2026-11-06` | `2093990be43a8a9b8eed43f8e4ec1e49c0b29f1b` | 2026-11-06 16:42:29 UTC | fix: deduplicate RSS tracking URL variants | #17 open/draft → main; selective port represented |
+| `fix/search-clear-row-scope-compile-2026-11-08` | `9dd4ceac08e88e6ee4ea565025a70539a6e9e331` | 2026-11-07 21:55:56 UTC | docs: record verified search clear compile repair | #37 open/draft → black-box-bihar-news; fix represented |
+| `fix/search-glass-theme-capture-2026-11-06` | `c514eff3d5fd266ce6b6ecec51a141055e5fa52e` | 2026-11-06 07:44:03 UTC | fix: capture Search glass tint before draw callback | #10 closed/merged → main |
+| `fix/stable-release-signing-2026-11-08` | `4250de5040a8ca0efbf96a990218ef7d69ef26e8` | 2026-11-08 07:03:31 UTC | docs: record stable signing validation and migration gate | #39 open/draft → black-box-bihar-news; owner-gated |
+| `fix/startup-crash-diagnostics-feed-jank-2026-11-06` | `5da4e789b0f49c0eefda024410ade34c1e0f2a7c` | 2026-11-06 07:39:53 UTC | fix: diagnose launch crashes and move feed indexing off main | #9 closed/merged → main |
+| `fix/startup-stability-performance-2026-11-06` | `654e660347de692ef88531dfa49c610269d69671` | 2026-11-06 07:18:06 UTC | fix: harden cold start and reduce feed rendering workload | #7 closed/merged → main |
+| `fix/today-ist-midnight-rollover-2026-11-08` | `5fbd14e6ef9be33d04a882ba463d4c72473419e2` | 2026-11-07 20:48:43 UTC | test(today): cover Asia/Kolkata midnight rollover | #36 open/draft → black-box-bihar-news |
+| `fix/validate-rss-article-hosts-2026-11-08` | `552b96e7948ac5ade821a711ea8dd225984824a9` | 2026-11-08 10:34:28 UTC | fix(rss): keep redirect result non-null | #40 open/draft → main |
+| `main` | `73b8a0d1ba33503fede02db2c3c0af082d724a12` | 2026-11-06 11:16:35 UTC | Correct icon artwork accessibility name to brrrNews | default branch |
+| `perf/bound-rss-entry-parsing-2026-11-08` | `adade1ed8494c66b7e567de87f61f3dac3da7788` | 2026-11-08 03:31:36 UTC | fix(test): correct RSS budget test identifier | #38 open/draft → black-box-bihar-news |
+| `perf/bound-rss-field-values-2026-11-08` | `39acde8373eb3405f655e052ccd3445f22eedebb` | 2026-11-08 14:39:53 UTC | test(rss): reject non-editorial XHTML script and style text | #41 open/draft → main |
+| `perf/bound-startup-diagnostic-reads-2026-11-07` | `c4a977831846224182f16981b15e5c803761e26d` | 2026-11-07 17:34:16 UTC | Record successful bounded-diagnostic CI | #35 open/draft → black-box-bihar-news; partly superseded |
+| `perf/bounded-read-history-2026-11-07` | `910178af3f595993557533cb65d03e714bcd7760` | 2026-11-06 23:53:04 UTC | Verify legacy markers survive recent-history retention | #22 open/draft → perf/off-main-session-persistence |
+| `perf/bounded-rss-fetch-concurrency-2026-11-07` | `8c56c98c83cc69451f128aa259df86a8ce28f43a` | 2026-11-07 11:29:26 UTC | docs: record bounded RSS fetch review and CI state | #32 open/draft → black-box-bihar-news |
+| `perf/off-main-appearance-preferences-2026-11-07` | `bc48daec98ff076c9db3c2c69084d9b08cd0bbce` | 2026-11-07 11:11:45 UTC | fix(startup): keep appearance snapshot API module-internal | #31 open/draft → black-box-bihar-news; richer snapshot supersedes |
+| `perf/off-main-bookmark-persistence-2026-11-07` | `a64857b5efa62ea053c0c96e5f374fd35924b340` | 2026-11-07 09:05:25 UTC | perf(storage): move bookmark mutations off the UI thread | #29 open/draft → black-box-bihar-news; represented |
+| `perf/off-main-session-persistence-2026-11-06` | `ed91a3bfbcb3f12f6f6050ce72a120b3aafeae4a` | 2026-11-06 10:50:31 UTC | perf: move read-marker persistence off main thread | #8 open/draft → main; reconciled persistence |
+| `privacy/webview-publisher-subresource-gate-2026-11-07` | `b8d2ef9ff2413c378347986d00961c401dfa771d` | 2026-11-07 07:27:22 UTC | privacy: block third-party publisher reader subresources | #26 open/draft → black-box-bihar-news; security review pending |
+| `redesign/v0.3-search-reader` | `654cc89dee4f93fea98bb76df9d8cf88abf2f0d8` | 2026-11-03 15:31:48 UTC | fix: make selection decoding fallback valid JSON | no PR; stale ancestry |
+| `ui/foreground-adaptive-glass-contrast-2026-11-06` | `3dc0f3fb0eb4ca69facdfa44eeb26c00e9b55264` | 2026-11-06 10:56:16 UTC | ui: restore low-cadence foreground adaptive glass contrast | #13 open/draft → main; older probe policy superseded |
+| `ui/liquid-glass-performance-2026-11-06` | `2e9c7f62ca65a899e18d9026e1535392835b3724` | 2026-11-06 06:25:39 UTC | fix: import bottom navigation glyphs | #4 closed/unmerged; #3 merged at older head; stale |
+| `ui/liquid-glass-system-2026-11-07` | `1f7cd2e5ddc5d169d1443035a8334538e44efc40` | 2026-11-06 20:11:36 UTC | docs(reader): record native selection collision guard | #19 closed/merged → black-box-bihar-news |
+| `ui/liquid-glass-system-continuation-2026-11-07` | `f031bf21229f43a992384cc23fa0f4da57e547a1` | 2026-11-07 03:18:34 UTC | fix: finish syllabus metadata and thin-film feed eligibility | no PR; superseded by consolidation |
+
+### Actions, workflow and Releases
+- Actions pages: 100 + 100 + 100 + 77 = **377 total runs**; 237 success, 70 failure, 70 cancelled. Queued: 0; in progress: 0.
+- Latest run #377 is a natural pull_request run on PR #44 exact head `3bcde08a4ba7ee6e9420864d9bb044b8fe1d4895`, success. Build/test job steps all completed: checkout, Java, signing cache, Android SDK/platform, Gradle, WordNet builder/database, `:app:testDebugUnitTest`, `:app:assembleDebug`, APK upload. Main-only Release job skipped.
+- Artifact #13638807703: 39,128,627 bytes; SHA-256 `b5df721e27c65e7309f15fe68170518bfd789b2c9d0aafa630a78ef710f64b8c`; expires 22 November 2026 23:22:35 UTC.
+- Exact selected parent `022a28824a5a5d88a66986cd47a8a6cfb18fdf34` failed runs #375 (push) and #376 (pull_request) at `MainActivity.kt:1359:22 Unresolved reference 'cardBorder'`. Full job log confirms the compiler error. PR #44's one-line move fixes the scope. Run #377 does not validate the new integration commit; its own natural run remains pending after the port.
+- Active integration workflow: read-only build/test permissions; Release write isolated to main push. Main's workflow remains push-only. No manual dispatch/rerun and no workflow edit.
+- Latest published Release by publication time: `v0.2.0-build-116`, 6 November 2026 11:18:59 UTC. No Release published by this work.
+
+### Branch write and safety
+- The repair is applied as a first-parent commit on `black-box-bihar-news` from `022a28824a5a5d88a66986cd47a8a6cfb18fdf34`, using the exact verified PR #44 tree (whose parent is `022a28824a5a5d88a66986cd47a8a6cfb18fdf34`) plus this ledger/roadmap update. No force update, merge commit, cherry-pick into another branch, main write, PR merge, PR retarget, Release publication or source-branch deletion.
+- This inventory is a pre-write snapshot; the new integration head is the child commit created by this run. The PR #34 metadata is updated separately with the resulting exact head and pending natural CI state.

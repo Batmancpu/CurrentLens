@@ -1356,7 +1356,6 @@ private fun WeekendPanel(articles: List<Article>, onOpenArticle: (Article) -> Un
         Card(
             modifier = Modifier.fillMaxWidth(),
             shape = ContinuousCornerShape(FeedCardGeometryPolicy.CARD_CORNER_RADIUS_DP.dp),
-            border = cardBorder,
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
             elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
         ) {
@@ -2555,6 +2554,7 @@ private fun NewsCard(
         Card(
             modifier = Modifier.fillMaxWidth().clickable { onOpenArticle(article) },
             shape = ContinuousCornerShape(FeedCardGeometryPolicy.CARD_CORNER_RADIUS_DP.dp),
+            border = cardBorder,
             colors = CardDefaults.cardColors(
                 containerColor = MaterialTheme.colorScheme.surface.copy(alpha = if (palette != null) 0.94f else 1f)
             ),
