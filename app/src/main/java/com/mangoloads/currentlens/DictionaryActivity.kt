@@ -1,5 +1,6 @@
 package com.mangoloads.currentlens
 
+import android.animation.ValueAnimator
 import android.content.Context
 import android.database.sqlite.SQLiteDatabase
 import android.os.Build
@@ -270,6 +271,16 @@ private fun DictionaryPopup(word: String, onClose: () -> Unit) {
     var loading by remember(word) { mutableStateOf(true) }
     var expanded by remember(word) { mutableStateOf(false) }
     val scrollState = rememberScrollState()
+    // Android's system animator setting is the platform Reduce Motion signal. This popup is
+    // short-lived, so read it once per instance rather than adding a settings observer.
+    val animationsEnabled = remember {
+        DictionaryMotionPolicy.shouldUseAnimatedTransitions(ValueAnimator.areAnimatorsEnabled())
+    }
+    val contentSizeMotion = if (animationsEnabled) {
+        Modifier.animateContentSize(spring(dampingRatio = 0.82f, stiffness = 480f))
+    } else {
+        Modifier
+    }
     LaunchedEffect(word) {
         scrollState.scrollTo(0)
         result = DictionaryRepository.lookup(context, word)
@@ -278,21 +289,25 @@ private fun DictionaryPopup(word: String, onClose: () -> Unit) {
     val definition = result
     AnimatedVisibility(
         visible = true,
-        enter = fadeIn() + scaleIn(
-            initialScale = 0.92f,
-            transformOrigin = TransformOrigin(0.5f, 1f),
-            animationSpec = spring(dampingRatio = 0.78f, stiffness = 520f)
-        ) + slideInVertically(
-            initialOffsetY = { it / 7 },
-            animationSpec = spring(dampingRatio = 0.78f, stiffness = 520f)
-        )
+        enter = if (animationsEnabled) {
+            fadeIn() + scaleIn(
+                initialScale = 0.92f,
+                transformOrigin = TransformOrigin(0.5f, 1f),
+                animationSpec = spring(dampingRatio = 0.78f, stiffness = 520f)
+            ) + slideInVertically(
+                initialOffsetY = { it / 7 },
+                animationSpec = spring(dampingRatio = 0.78f, stiffness = 520f)
+            )
+        } else {
+            androidx.compose.animation.EnterTransition.None
+        }
     ) {
         Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
             Surface(
                 modifier = Modifier.widthIn(max = DictionaryOverlayPolicy.MAX_WIDTH_DP.dp)
                     .fillMaxWidth()
                     .padding(horizontal = 12.dp, vertical = 8.dp)
-                    .animateContentSize(spring(dampingRatio = 0.82f, stiffness = 480f)),
+                    .then(contentSizeMotion),
                 shape = RoundedCornerShape(26.dp),
                 color = MaterialTheme.colorScheme.surface.copy(
                     alpha = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) 0.86f else 0.94f
