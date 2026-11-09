@@ -5,12 +5,16 @@ package com.mangoloads.currentlens
  * without adding live backdrop capture, blur, refraction or a second material pipeline.
  */
 internal object GlassSurfacePolicy {
-    const val SUPPORTING_CORNER_RADIUS_DP = 22f
+    const val TRANSIENT_CORNER_RADIUS_DP = 22f
+    const val SUPPORTING_CORNER_RADIUS_DP = TRANSIENT_CORNER_RADIUS_DP
     const val SUPPORTING_VALUE_SIZE_SP = 20f
     const val TRANSIENT_BLUR_DP = 5f
     const val TRANSIENT_REFRACTION_HEIGHT_DP = 2.5f
     const val TRANSIENT_REFRACTION_AMOUNT_DP = 3.5f
+    const val TRANSIENT_CHROMATIC_ABERRATION = 0.001f
     const val TRANSIENT_TINT_SCALE = 0.42f
+    const val TRANSIENT_MIN_TINT_ALPHA = 0.05f
+    const val TRANSIENT_MAX_TINT_ALPHA = 0.22f
     const val CONTROL_CORNER_RADIUS_DP = 16f
     const val FILTER_PILL_CORNER_RADIUS_DP = CONTROL_CORNER_RADIUS_DP
     const val FILTER_SHEET_CORNER_RADIUS_DP = 28f
@@ -45,6 +49,28 @@ internal object GlassSurfacePolicy {
         reduceTransparency -> SUPPORTING_SURFACE_ALPHA_LIGHT_REDUCED
         dark -> SUPPORTING_SURFACE_ALPHA_DARK
         else -> SUPPORTING_SURFACE_ALPHA_LIGHT
+    }
+
+    /**
+     * Resolve transient tint from the shared material scale. A caller may raise the
+     * minimum for a context such as selected-word definitions where legibility is vital.
+     * Non-finite preference values fall back to the app's default glass intensity.
+     */
+    fun transientTintAlpha(
+        glassAlpha: Float,
+        minimumAlpha: Float = TRANSIENT_MIN_TINT_ALPHA
+    ): Float {
+        val safeAlpha = if (glassAlpha.isFinite()) {
+            glassAlpha.coerceIn(0f, 1f)
+        } else {
+            AppearancePreferencesPolicy.DEFAULT_GLASS_ALPHA
+        }
+        val safeMinimum = if (minimumAlpha.isFinite()) {
+            minimumAlpha.coerceIn(0f, TRANSIENT_MAX_TINT_ALPHA)
+        } else {
+            TRANSIENT_MIN_TINT_ALPHA
+        }
+        return (safeAlpha * TRANSIENT_TINT_SCALE).coerceIn(safeMinimum, TRANSIENT_MAX_TINT_ALPHA)
     }
 
     fun supportingTintAlpha(

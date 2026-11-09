@@ -294,4 +294,58 @@ class GlassSurfacePolicyTest {
         )
     }
 
+    @Test
+    fun definitionPopupUsesTheSharedTransientOpticalTier() {
+        assertEquals(22f, GlassSurfacePolicy.TRANSIENT_CORNER_RADIUS_DP, 0f)
+        assertEquals(5f, GlassSurfacePolicy.TRANSIENT_BLUR_DP, 0f)
+        assertEquals(2.5f, GlassSurfacePolicy.TRANSIENT_REFRACTION_HEIGHT_DP, 0f)
+        assertEquals(3.5f, GlassSurfacePolicy.TRANSIENT_REFRACTION_AMOUNT_DP, 0f)
+        assertEquals(0.001f, GlassSurfacePolicy.TRANSIENT_CHROMATIC_ABERRATION, 0f)
+        assertEquals(0.42f, GlassSurfacePolicy.TRANSIENT_TINT_SCALE, 0f)
+    }
+
+    @Test
+    fun transientTintUsesSharedScaleAndDefinitionLegibilityFloor() {
+        assertEquals(
+            0.1344f,
+            GlassSurfacePolicy.transientTintAlpha(0.32f, minimumAlpha = 0.08f),
+            0.0001f
+        )
+        assertEquals(
+            0.08f,
+            GlassSurfacePolicy.transientTintAlpha(0f, minimumAlpha = 0.08f),
+            0.0001f
+        )
+        assertEquals(
+            0.22f,
+            GlassSurfacePolicy.transientTintAlpha(1f, minimumAlpha = 0.08f),
+            0.0001f
+        )
+        assertEquals(
+            0.1344f,
+            GlassSurfacePolicy.transientTintAlpha(0.32f),
+            0.0001f
+        )
+    }
+
+    @Test
+    fun transientTintFallsBackForNonFinitePreferenceAndMinimum() {
+        val expected = GlassSurfacePolicy.transientTintAlpha(0.32f, minimumAlpha = 0.08f)
+        assertEquals(
+            expected,
+            GlassSurfacePolicy.transientTintAlpha(Float.NaN, minimumAlpha = 0.08f),
+            0.0001f
+        )
+        assertEquals(
+            expected,
+            GlassSurfacePolicy.transientTintAlpha(Float.POSITIVE_INFINITY, minimumAlpha = 0.08f),
+            0.0001f
+        )
+        assertEquals(
+            0.05f,
+            GlassSurfacePolicy.transientTintAlpha(0f, minimumAlpha = Float.NaN),
+            0.0001f
+        )
+    }
+
 }

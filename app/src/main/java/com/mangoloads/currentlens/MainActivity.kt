@@ -2208,10 +2208,12 @@ private fun PrismalTransientSurface(
             GlassSurfacePolicy.TRANSIENT_REFRACTION_AMOUNT_DP, reduceTransparency
         ),
         depthEffect = GlassRenderingPolicy.depthEnabled(true, reduceTransparency),
-        chromaticAberration = GlassRenderingPolicy.chromaticAberration(0.001f, reduceTransparency),
+        chromaticAberration = GlassRenderingPolicy.chromaticAberration(
+            GlassSurfacePolicy.TRANSIENT_CHROMATIC_ABERRATION, reduceTransparency
+        ),
         tint = if (dark) Color(0xFF26364B) else Color(0xFFEAF0FA),
         tintAlpha = GlassRenderingPolicy.tintAlpha(
-            (glassAlpha * GlassSurfacePolicy.TRANSIENT_TINT_SCALE).coerceIn(0.05f, 0.22f),
+            GlassSurfacePolicy.transientTintAlpha(glassAlpha),
             reduceTransparency
         )
     ) {
@@ -4452,14 +4454,25 @@ private fun DefinitionGlassOverlay(
                 backdrop = backdrop,
                 modifier = Modifier.fillMaxWidth()
                     .animateContentSize(if (reduceMotion) snap() else spring(dampingRatio = 0.82f, stiffness = 480f)),
-                shape = { PrismalRoundedRectangle(25.dp) },
-                blurRadius = GlassRenderingPolicy.blurDp(12f, reduceTransparency).dp,
-                refractionHeightPx = GlassRenderingPolicy.refractionPx(22f, reduceTransparency),
-                refractionAmountPx = GlassRenderingPolicy.refractionPx(24f, reduceTransparency),
+                shape = { PrismalRoundedRectangle(GlassSurfacePolicy.TRANSIENT_CORNER_RADIUS_DP.dp) },
+                blurRadius = GlassRenderingPolicy.blurDp(
+                    GlassSurfacePolicy.TRANSIENT_BLUR_DP, reduceTransparency
+                ).dp,
+                refractionHeightPx = GlassRenderingPolicy.refractionPx(
+                    GlassSurfacePolicy.TRANSIENT_REFRACTION_HEIGHT_DP, reduceTransparency
+                ),
+                refractionAmountPx = GlassRenderingPolicy.refractionPx(
+                    GlassSurfacePolicy.TRANSIENT_REFRACTION_AMOUNT_DP, reduceTransparency
+                ),
                 depthEffect = GlassRenderingPolicy.depthEnabled(true, reduceTransparency),
-                chromaticAberration = GlassRenderingPolicy.chromaticAberration(0.015f, reduceTransparency),
+                chromaticAberration = GlassRenderingPolicy.chromaticAberration(
+                    GlassSurfacePolicy.TRANSIENT_CHROMATIC_ABERRATION, reduceTransparency
+                ),
                 tint = if (isSystemInDarkTheme()) Color(0xFF263247) else Color(0xFFEAF0FA),
-                tintAlpha = GlassRenderingPolicy.tintAlpha((glassAlpha * 0.62f).coerceIn(0.08f, 0.34f), reduceTransparency)
+                tintAlpha = GlassRenderingPolicy.tintAlpha(
+                    GlassSurfacePolicy.transientTintAlpha(glassAlpha, minimumAlpha = 0.08f),
+                    reduceTransparency
+                )
             ) {
                 DefinitionPopoverContent(
                     word = word,
