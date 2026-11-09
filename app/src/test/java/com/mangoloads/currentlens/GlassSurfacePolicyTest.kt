@@ -330,7 +330,11 @@ class GlassSurfacePolicyTest {
 
     @Test
     fun transientTintFallsBackForNonFinitePreferenceAndMinimum() {
-        val expected = GlassSurfacePolicy.transientTintAlpha(0.32f, minimumAlpha = 0.08f)
+        val expected = GlassSurfacePolicy.transientTintAlpha(
+            AppearancePreferencesPolicy.DEFAULT_GLASS_ALPHA,
+            minimumAlpha = 0.08f
+        )
+        assertEquals(0.1176f, expected, 0.0001f)
         assertEquals(
             expected,
             GlassSurfacePolicy.transientTintAlpha(Float.NaN, minimumAlpha = 0.08f),
