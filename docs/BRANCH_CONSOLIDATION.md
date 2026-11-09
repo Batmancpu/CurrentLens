@@ -1,4 +1,32 @@
-# Latest live branch/PR/CI audit — 9 November 2026, 06:22 IST
+# Latest post-change verification — 9 November 2026, 06:37 IST
+
+**Repository:** `Batmancpu/CurrentLens`
+**Default:** `main@73b8a0d1ba33503fede02db2c3c0af082d724a12`
+**Current owner-selected branch/head:** `black-box-bihar-news@4a7389f728af0ad06a2013a795774cf60aad7b40` — **161 ahead / 0 behind main**; main is the merge base.
+**Parent/source:** `black-box-bihar-news@18828f70e87a62fe3483dcc99fc29b82a6b7053b`.
+**PR #34:** open/draft → main, unmerged and unretargeted.
+
+## Live graph and dependency check
+
+- Complete inventory remains **47 remote branches** (page 1 = 47, page 2 = 0), **29 open PRs**, **15 closed PRs**. The 47-row table in the pre-change audit below is refreshed with the current black-box head; all other source branches remain untouched.
+- PR #43 Reader lifecycle remains **11 ahead / 160 behind** and divergent; its safe disposal/restore-settle/fatal-cleanup code is already present. PR #37 Search repair, #30 48dp targets, #31 off-main appearance restore, #36 IST rollover and #13 conservative 8×8 contrast are represented; their branches remain divergent. PR #44 is closed/unmerged and its one-line rim repair is in the parent.
+- PR #42 is editorial-only (**6/9**), PR #39 signing is owner-gated (**6/25**), PR #18 workflow-only is superseded (**1/160**), PR #16 remains divergent (**7/103**). `brrrNEWS` is **4/66**; old Liquid Glass performance is **3/178** and v0.3 redesign **0/254**. No alternate branch is a safer coherent baseline.
+
+## Exact-head natural CI
+
+- Actions history: **381** runs fully paginated (100 + 100 + 100 + 81): **241 success / 70 failure / 70 cancelled**; queued/in-progress **0**.
+- Exact app implementation head `4a7389f728af0ad06a2013a795774cf60aad7b40` passed natural push [#380](https://github.com/Batmancpu/CurrentLens/actions/runs/42543142326) and pull-request [#381](https://github.com/Batmancpu/CurrentLens/actions/runs/42543146098). Both completed checkout, Java, signing cache, Android SDK/platform, Gradle, WordNet builder 4/4, 151,456-word database generation, `:app:testDebugUnitTest`, `:app:assembleDebug` and artifact upload. Full logs report BUILD SUCCESSFUL in 1m19s (push) and 1m16s (PR). Main-only Release jobs skipped.
+- Push artifact #13642282050: **39,128,982 bytes**, SHA-256 `b201b9aa61f01c0dfd232db653a54ef2f1d904bbdd637409d427139df75e0bb2`, expires 23 November 2026 01:01:39 UTC. PR artifact #13642128139: **39,128,981 bytes**, SHA-256 `2f3458e5ce289bda03b9f63d1f0e2589773a711fab07f0db8086dd311cb16390`, expires 23 November 2026 01:01:43 UTC.
+- The app-code head is CI-validated. This follow-up changes only roadmap/branch-ledger documentation; its own natural CI is pending after the documentation commit.
+
+## Workflow, Release and device limits
+
+- Black-box workflow remains read-only for build/test with a separate main-push-only Release-write job; main's own workflow remains push-only with workflow-wide `contents: write`. No workflow changes were made.
+- Latest published Release remains `v0.2.0-build-116` (6 November 2026 11:18:59 UTC); no Release was published by #380/#381.
+- OPPO Reno10 launch/runtime, screenshots, TalkBack, font scaling, Reduce Motion, keyboard/IME, Reader re-entry, Perfetto/frame timing, GPU overdraw, allocation/memory, thermal and battery remain **UNVERIFIED**. CI is not device/performance certification.
+
+---
+# Pre-change branch/PR/CI audit — 9 November 2026, 06:22 IST
 
 **Repository:** `Batmancpu/CurrentLens`
 **Default:** `main@73b8a0d1ba33503fede02db2c3c0af082d724a12`
@@ -2320,7 +2348,7 @@ UTC timestamps/messages are the latest commit on each branch head. PR list: 43 t
 | Remote branch | Exact head SHA | Latest commit (UTC) | Latest commit message | PR relationship |
 |---|---|---|---|---|
 | `a11y/48dp-icon-targets-2026-11-07` | `25107ce905b70bde1a41282ffd1d606819ebf58d` | 2026-11-07 11:02:12 UTC | test(a11y): cover minimum icon action target | #30 open/draft → black-box-bihar-news |
-| `black-box-bihar-news` | `18828f70e87a62fe3483dcc99fc29b82a6b7053b` | 2026-11-09 00:00:14 UTC | fix(ui): restore feed card rim and refresh integration ledger | #34 open/draft → main; current owner-selected integration head |
+| `black-box-bihar-news` | `4a7389f728af0ad06a2013a795774cf60aad7b40` | 2026-11-09 00:59:39 UTC | ui(glass): apply reduced-transparency fallback to supporting surfaces | #34 open/draft → main; current owner-selected integration head |
 | `brrrNEWS` | `e6fcfc25a4c8d5f363ced58f313552120aa7ff96` | 2026-11-07 04:13:30 UTC | ui: consolidate lightweight supporting glass surfaces | base of #24 open/draft; older visual line |
 | `ci/read-only-pr-validation-isolated-release-write-2026-11-06` | `963118f0abe5f7e38f2aa66a49d4b8e74548660c` | 2026-11-06 17:18:53 UTC | ci: validate pull requests with read-only build permissions | #18 open/draft → main |
 | `ci/stacked-pr-validation-2026-11-07` | `5dc3179361835b77fb3186a99d9b5791301463fd` | 2026-11-06 21:41:27 UTC | ci: restore Android SDK setup before sdkmanager | #20 closed/merged → black-box-bihar-news |

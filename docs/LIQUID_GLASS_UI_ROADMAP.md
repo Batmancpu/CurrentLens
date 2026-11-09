@@ -1,6 +1,7 @@
 # Live implementation batch — Reduce Transparency parity for supporting surfaces (9 November 2026, 06:22 IST)
 
-**Verified source:** `black-box-bihar-news@18828f70e87a62fe3483dcc99fc29b82a6b7053b` — **160 ahead / 0 behind** `main@73b8a0d1ba33503fede02db2c3c0af082d724a12`; main is the merge base.
+**Verified parent/source:** `black-box-bihar-news@18828f70e87a62fe3483dcc99fc29b82a6b7053b` — **160 ahead / 0 behind** `main@73b8a0d1ba33503fede02db2c3c0af082d724a12`; main is the merge base.
+**Implementation head:** `black-box-bihar-news@4a7389f728af0ad06a2013a795774cf60aad7b40` — **161 ahead / 0 behind** main; PR #34 remains open/draft.
 **Target:** the existing open/draft PR #34 → `main`; unmerged and unretargeted. This is a direct child of the verified owner-selected integration head.
 
 ## Branch freshness and dependency gate
@@ -13,11 +14,11 @@
 
 ## Exact parent CI, Actions, workflow and Release
 
-- All **379 Actions runs** were paginated (100 + 100 + 100 + 79): **239 success / 70 failure / 70 cancelled**. Queued and in-progress runs are both **0**.
-- Exact source head `18828f70e87a62fe3483dcc99fc29b82a6b7053b` passed natural push run [#378](https://github.com/Batmancpu/CurrentLens/actions/runs/42537849730) and pull-request run [#379](https://github.com/Batmancpu/CurrentLens/actions/runs/42537853903). Both build jobs passed WordNet builder **4/4**, offline dictionary generation (**151,456 unique words; 50,950,144 bytes**), `:app:testDebugUnitTest`, `:app:assembleDebug` and APK upload. The PR job log reports **BUILD SUCCESSFUL in 1m 31s**; the push job reports **BUILD SUCCESSFUL in 1m 5s**. Both main-only publish jobs were skipped.
-- PR artifact [#13640107491](https://github.com/Batmancpu/CurrentLens/actions/runs/42537853903/artifacts/13640107491): **39,128,629 bytes**, SHA-256 `46a70d172f84b29ae1526d71821244a43d758bb08008bb6c7d4a34ecf87481dc`, expires 23 November 2026 00:02:26 UTC. Push artifact #13640011669: **39,128,627 bytes**, SHA-256 `ae3c3aaa61fd17669d0248abc3703db561f0eea8c7599c27c741771ff4af6d7d`, expires 23 November 2026 00:01:59 UTC.
+- All **381 Actions runs** were paginated (100 + 100 + 100 + 81): **241 success / 70 failure / 70 cancelled**. Queued and in-progress runs are both **0**.
+- Parent head `18828f70e87a62fe3483dcc99fc29b82a6b7053b` passed #378/#379; the new implementation head `4a7389f728af0ad06a2013a795774cf60aad7b40` then passed natural push [#380](https://github.com/Batmancpu/CurrentLens/actions/runs/42543142326) and PR [#381](https://github.com/Batmancpu/CurrentLens/actions/runs/42543146098). Both #380/#381 build jobs passed WordNet builder **4/4**, offline dictionary generation (**151,456 unique words; 50,950,144 bytes**), `:app:testDebugUnitTest`, `:app:assembleDebug` and APK upload. Exact logs report **BUILD SUCCESSFUL in 1m 19s** (push) and **1m 16s** (PR); both main-only publish jobs were skipped.
+- Current PR artifact [#13642128139](https://github.com/Batmancpu/CurrentLens/actions/runs/42543146098/artifacts/13642128139): **39,128,981 bytes**, SHA-256 `2f3458e5ce289bda03b9f63d1f0e2589773a711fab07f0db8086dd311cb16390`, expires 23 November 2026 01:01:43 UTC. Push artifact [#13642282050](https://github.com/Batmancpu/CurrentLens/actions/runs/42543142326/artifacts/13642282050): **39,128,982 bytes**, SHA-256 `b201b9aa61f01c0dfd232db653a54ef2f1d904bbdd637409d427139df75e0bb2`, expires 23 November 2026 01:01:39 UTC. Parent artifacts #13640107491/#13640011669 belong to #378/#379, not the current implementation head.
 - `.github/workflows/build-apk.yml` on black-box has read-only build/test permissions, natural push/PR validation for main, PR #16 and black-box, and a separate Release-write job restricted to main pushes. Main's own workflow remains push-only with workflow-wide `contents: write`; PR #16's workflow is also push-only and retains workflow-wide write permission. The natural #379 run validates PR #34's exact head, not main's workflow configuration.
-- Latest published Release remains `v0.2.0-build-116` (6 November 2026 11:18:59 UTC). No Release was created by #378/#379.
+- Latest published Release remains `v0.2.0-build-116` (6 November 2026 11:18:59 UTC). No Release was created by #380/#381.
 
 ## Implementation — supporting surfaces now honour Reduce Transparency
 
@@ -29,16 +30,16 @@
 
 | Component | Material tier / reason | Effect/capture delta | Reuse / fallback | Tests / evidence |
 |---|---|---|---|---|
-| You / Saved / Reading Stats / Quiz Stats / Appearance supporting cards | Tier 3 quiet supporting tint/rim; keep metrics and data high contrast | **0** new Prismal passes, live blur/refraction, shader, capture/readback, graphics layer or image decode | Existing remembered shape/brushes; preference changes invalidate only derived static alpha/brush values; normal mode unchanged; reduced mode raises opacity/tint/rim | New JVM policy test covers dark/light, Clear/Frosted and fallback endpoints; exact-head natural CI pending; device cost unmeasured |
+| You / Saved / Reading Stats / Quiz Stats / Appearance supporting cards | Tier 3 quiet supporting tint/rim; keep metrics and data high contrast | **0** new Prismal passes, live blur/refraction, shader, capture/readback, graphics layer or image decode | Existing remembered shape/brushes; one Reduce Transparency preference update changes only existing material consumers; normal mode unchanged; reduced mode raises opacity/tint/rim | New JVM policy test covers dark/light, Clear/Frosted and fallback endpoints; exact-head runs #380/#381 passed; device cost unmeasured |
 | Feed cards and skeletons | Tier 4 editorial content with a static glass-derived edge | **0** live blur/capture/readback; existing 0.75dp rim | Existing shared alpha policy and one Coil decode/palette path | Previous exact-head CI #378/#379 validates the parent rim batch only |
 
 - Render-pass delta: **0**. Added backdrop captures/readbacks, blur/refraction surfaces, shaders, graphics layers, image requests/decodes, dependencies, network calls, timers and persistence changes: **0**. Supporting cards remain near-opaque content surfaces; no per-card live glass was introduced.
 - This is a source-level fallback/consistency correction, not a measured performance improvement. OPPO Reno10 contrast, memory/allocation churn, frame timing/jank, GPU overdraw, thermal and battery remain **UNVERIFIED**.
-- Focused JVM coverage was added in `GlassSurfacePolicyTest`; the new commit must receive its own natural CI run. Parent #378/#379 do not validate this new head.
+- Focused JVM coverage was added in `GlassSurfacePolicyTest`; exact-head runs #380/#381 passed. This validates policy logic, compilation and APK assembly, not visual quality or runtime cost on OPPO.
 
 ## Next
 
-- Inspect this commit's exact natural push and PR runs, full logs and artifact before another UI batch. Then audit remaining dialogs/sheets/menus and close any whole-app material inconsistency without adding blur to dense article/quiz content or duplicating the shared backdrop.
+- The supporting-surface code head is validated by #380/#381. This documentation-only sync is a direct child of that tested head and must receive its own natural CI before the next app-code batch. Next implementation candidate: make the exported `DictionaryActivity` PROCESS_TEXT popup snap/fade when system animations are disabled, retaining its native window blur-behind and leaving Android's native text-selection/action-mode UI untouched.
 - OPPO Reno10 screenshots/runtime, launch stability, TalkBack, font scaling, Reduce Motion, keyboard/IME, Perfetto/frame timing, GPU overdraw, memory, thermal and battery remain **UNVERIFIED**. No device-performance or native-launch-fix claim is made.
 
 ---
@@ -768,7 +769,7 @@ Recheck every branch head and dependency before each future implementation commi
 | Appearance settings | Standard settings surface + one interactive control-glass preview | Clear↔Frosted slider/presets, four-destination preview, readable article sample and low-effects switch | One 5dp Prismal control preview plus a static SupportingGlassCard sample reflect intensity and the reduced-transparency fallback; slider state is child-scoped and commits app-wide only on release; device validation pending |
 | Search filter sheet | Interactive transient glass | One rounded Prismal surface behind the active topic/GS/subject controls; filter state and reset semantics remain unchanged | Shared 5dp transient material; existing root backdrop only; device safe-area and drag behaviour unverified |
 | Reader Aa menu | Interactive transient glass | Compact anchored text-size menu; preserve the existing 16–28sp actions and clamping | Same shared transient material, mounted only while expanded; font-size behaviour unchanged |
-| Other dialogs, menus and sheets | Contextual controls | Use glass only when transient context benefits; preserve native OS selection/share UI | Review individually; no global glass overlay |
+| Other dialogs, menus and sheets | Contextual controls | Search filter sheet and Reader Aa menu each reuse one small PrismalTransientSurface; preserve native OS selection/share UI | Exported `DictionaryActivity` is an ACTION_PROCESS_TEXT target using Android `FLAG_BLUR_BEHIND` on API 31+ and a static high-contrast Surface fallback on older Android; do not add a second Prismal capture. Its spring enter/content-size motion still needs Reduce Motion gating | Source audit; window blur cost and motion unverified |
 
 ## Paired performance matrix
 
