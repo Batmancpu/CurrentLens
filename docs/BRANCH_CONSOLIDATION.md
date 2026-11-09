@@ -3,14 +3,14 @@
 **Default branch:** main at 73b8a0d1ba33503fede02db2c3c0af082d724a12.  
 **Selected integration branch:** black-box-bihar-news. Its last app-code commit at this snapshot is 45609a3d5d32ee02ba33c54501a497d6a00d25b7; it is 168 ahead / 0 behind main, with main as merge base. PR #34 remains the single open/draft, unmerged consolidation PR targeting main. This inventory records the exact branch refs before the documentation-only update that appends this snapshot; no other branch is a development target.
 
-The complete live branch list was paginated: 49 branches on page 1, page 2 empty. Pull requests: 46 total (31 open, 15 closed), page 2 empty. Every branch head SHA, last commit timestamp/message and PR relationship is recorded below. Closed PRs are explicitly distinguished as merged or closed/unmerged; source branches are retained.
+The complete live branch list was paginated: 49 branches on page 1, page 2 empty. Pull requests: 46 total (31 open, 15 closed), page 2 empty. Every branch head SHA, last commit timestamp/message and PR relationship is recorded below. Closed PRs are explicitly distinguished as merged or closed/unmerged; source branches are retained. At the pre-refresh snapshot, black-box-bihar-news had documentation head 42d4130cf1fe19d47ce3a450b5c530ea25d4c33e and last app-code head 45609a3d5d32ee02ba33c54501a497d6a00d25b7.
 
 | Remote branch | Head SHA | Latest commit UTC | Subject | PR / relationship |
 |---|---|---|---|---|
 | a11y/dictionary-popup-reduce-motion-2026-11-09 | fbadd56e0e119cf70b865af8a58843190cce249d | 2026-11-09 01:33:20 | test: cover dictionary popup Reduce Motion policy | #45 open/draft → main; motion policy already represented in integration |
 | a11y/dictionary-popup-reduce-transparency-2026-11-09 | 55afb9ab662d2926675f0a57737d3f817b1fc2cb | 2026-11-09 02:58:11 | Honor Reduce Transparency in dictionary popup | #46 closed/unmerged → black-box; selective port present |
 | a11y/48dp-icon-targets-2026-11-07 | 25107ce905b70bde1a41282ffd1d606819ebf58d | 2026-11-07 11:02:12 | test(a11y): cover minimum icon action target | #30 open/draft → black-box; TouchTargetPolicy represented |
-| black-box-bihar-news | 45609a3d5d32ee02ba33c54501a497d6a00d25b7 | 2026-11-09 07:00:00 UTC | fix(reader): isolate WebView disposal cleanup steps | #34 open/draft → main; active single integration branch |
+| black-box-bihar-news | 45609a3d5d32ee02ba33c54501a497d6a00d25b7 | 2026-11-09 07:07:03 UTC | fix(reader): isolate WebView disposal cleanup steps | #34 open/draft → main; active app-code head (docs-only head 42d4130cf1fe19d47ce3a450b5c530ea25d4c33e) |
 | brrrNEWS | e6fcfc25a4c8d5f363ced58f313552120aa7ff96 | 2026-11-07 04:13:30 | ui: consolidate lightweight supporting glass surfaces | Base of #24; older material line, not the active baseline |
 | ci/read-only-pr-validation-isolated-release-write-2026-11-06 | 963118f0abe5f7e38f2aa66a49d4b8e74548660c | 2026-11-06 17:18:53 | ci: validate pull requests with read-only build permissions | #18 open/draft → main; compatible workflow design integrated into black-box |
 | ci/stacked-pr-validation-2026-11-07 | 5dc3179361835b77fb3186a99d9b5791301463fd | 2026-11-06 21:41:27 | ci: restore Android SDK setup before sdkmanager | #20 closed/merged → black-box |
@@ -59,9 +59,9 @@ The complete live branch list was paginated: 49 branches on page 1, page 2 empty
 
 ## Current graph and workflow
 
-- PR #34: open/draft, unmerged, head black-box-bihar-news, base main, 168 commits ahead of main; 91 changed files, 13,399 additions / 901 deletions before this batch. Keep draft; do not merge.
+- PR #34: open/draft, unmerged, head black-box-bihar-news, base main, 169 commits ahead of main; 91 changed files, 13,545 additions / 901 deletions at the pre-refresh snapshot. Keep draft; do not merge.
 - The exact integration workflow is .github/workflows/build-apk.yml. Build/test permissions are read-only; Release write is isolated to a main-push-only job. No workflow file is changed in this batch.
-- Actions history is fully paginated: 394 runs (254 success / 70 failure / 70 cancelled), queued 0, in-progress 0. Latest exact-parent PR run #394 and push run #393 both passed on 23acb979ccc903aaab53f2fdaa67e9610ba2c2f0. The new Reader disposal commit 45609a3d5d32ee02ba33c54501a497d6a00d25b7 requires its own natural validation.
+- Actions history is fully paginated: 398 runs (258 success / 70 failure / 70 cancelled), queued 0, in-progress 0. Runs #395/#396 passed on exact app-code head 45609a3d5d32ee02ba33c54501a497d6a00d25b7; runs #397/#398 passed on documentation head 42d4130cf1fe19d47ce3a450b5c530ea25d4c33e. This next documentation-only refresh requires its own natural validation.
 - Latest published Release remains v0.2.0-build-116, published 6 November 2026 11:18:59 UTC. No Release was created or published.
 - No main write, merge, retarget, force update, manual workflow dispatch/rerun, package/app identity change, source-branch deletion or unrelated branch modification occurred.
 
