@@ -15,6 +15,10 @@ internal object FeedNavigationPolicy {
     const val HIDE_THRESHOLD_DP = 44
     const val SHOW_THRESHOLD_DP = 16
 
+    /** The selected droplet exists only in expanded navigation and respects Reduce Motion. */
+    fun shouldAnimateDroplet(compact: Boolean, reduceMotion: Boolean): Boolean =
+        !compact && !reduceMotion
+
     fun update(
         state: FeedNavigationScrollState,
         deltaPx: Int,

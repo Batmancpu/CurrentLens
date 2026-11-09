@@ -7,6 +7,14 @@ import org.junit.Test
 
 class FeedNavigationPolicyTest {
     @Test
+    fun dropletAnimationIsDisabledWhenCompactOrReduceMotionIsEnabled() {
+        assertTrue(FeedNavigationPolicy.shouldAnimateDroplet(compact = false, reduceMotion = false))
+        assertFalse(FeedNavigationPolicy.shouldAnimateDroplet(compact = true, reduceMotion = false))
+        assertFalse(FeedNavigationPolicy.shouldAnimateDroplet(compact = false, reduceMotion = true))
+        assertFalse(FeedNavigationPolicy.shouldAnimateDroplet(compact = true, reduceMotion = true))
+    }
+
+    @Test
     fun downwardFeedScrollCompactsOnlyAfterHysteresisThreshold() {
         var state = FeedNavigationScrollState()
         state = FeedNavigationPolicy.update(state, 20, 44, 16, eligible = true, atTop = false)

@@ -2894,8 +2894,13 @@ private fun GlassTabBar(
         }
         LaunchedEffect(selectedTab, reduceMotion, compact) {
             dragHighlightIndex = null
-            if (reduceMotion) motion.snapToValue(selectedTab.toFloat())
-            else motion.animateToValue(selectedTab.toFloat())
+            if (FeedNavigationPolicy.shouldAnimateDroplet(compact, reduceMotion)) {
+                motion.animateToValue(selectedTab.toFloat())
+            } else {
+                // The selected droplet is not composed in compact mode. Snap its
+                // retained position so no invisible spring continues behind the pill.
+                motion.snapToValue(selectedTab.toFloat())
+            }
         }
 
         val highlightedIndex = dragHighlightIndex ?: selectedTab
@@ -2913,15 +2918,21 @@ private fun GlassTabBar(
             reduceTransparency
         )
 
-        val tabRipple = remember(animationScope, tabWidthPx, contentStartPx) {
-            PrismalPressRipple(animationScope) { size, _ ->
-                val center = GlassTabGeometryPolicy.tabCenterPx(contentStartPx, motion.value, tabWidthPx)
-                Offset(center, size.height / 2f)
+        val rippleEnabled = GlassOpticsPolicy.rippleEnabled(Build.VERSION.SDK_INT, reduceMotion)
+        val tabRipple = remember(
+            animationScope, tabWidthPx, contentStartPx, motion, compact, rippleEnabled
+        ) {
+            if (rippleEnabled && !compact) {
+                PrismalPressRipple(animationScope) { size, _ ->
+                    val center = GlassTabGeometryPolicy.tabCenterPx(contentStartPx, motion.value, tabWidthPx)
+                    Offset(center, size.height / 2f)
+                }
+            } else {
+                null
             }
         }
-        val rippleEnabled = GlassOpticsPolicy.rippleEnabled(Build.VERSION.SDK_INT, reduceMotion)
-        val rippleDrawModifier = if (rippleEnabled && !compact) tabRipple.modifier else Modifier
-        val rippleGestureModifier = if (rippleEnabled && !compact) tabRipple.gestureModifier else Modifier
+        val rippleDrawModifier = tabRipple?.modifier ?: Modifier
+        val rippleGestureModifier = tabRipple?.gestureModifier ?: Modifier
         val barAlpha = SearchMorphGeometryPolicy.tabBarAlpha(morphProgress)
 
         // One shared Prismal surface changes bounds with the existing bar. No duplicate

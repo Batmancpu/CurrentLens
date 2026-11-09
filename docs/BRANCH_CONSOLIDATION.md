@@ -1,3 +1,30 @@
+# Live branch/CI snapshot — 9 November 2026, 08:22 IST
+
+**Default:** `main@73b8a0d1ba33503fede02db2c3c0af082d724a12`.
+**Owner-selected integration:** `black-box-bihar-news@21317fd4f3dc625c4e49ec598e59736e0a4b6237`, **163 ahead / 0 behind main**, merge base main. PR #34 is open/draft, unmerged, base main.
+**Complete inventory:** 48 remote branches (page 1 = 48, page 2 = 0), 30 open PRs, 15 closed PRs (PR page 2 empty). No source branch is deleted or modified by this pass.
+
+## Relevant branch treatment
+
+- PR #45 `a11y/dictionary-popup-reduce-motion-2026-11-09@fbadd56e0e119cf70b865af8a58843190cce249d`: 3 ahead / 163 behind active, main merge base. Its Dictionary popup system-motion policy is already in active commit `21317fd4f3dc625c4e49ec598e59736e0a4b6237`; source PR/branch untouched.
+- PR #43 Reader WebView lifecycle: 11 ahead / 163 behind active, main merge base. Release callback, settle cancellation and Exception-only guard are present; active tests additionally cover idempotency/no-retry and fatal LinkageError propagation. No old MainActivity copied.
+- PR #39 stable signing: 6 ahead / 28 behind active, base is an older black-box commit. Its workflow/Gradle change remains owner-gated on four private signing secrets, public certificate fingerprint and explicit uninstall/local-data migration approval. Not integrated into this UI pass.
+- PR #30 touch-target policy, #31 off-main Appearance preferences, #36 Asia/Kolkata rollover and #37 Search RowScope repair are represented in the active code. Older `brrrNEWS`, `ui/liquid-glass-performance` and `redesign/v0.3-search-reader` remain stale/divergent. RSS/parser/editorial/security branches remain separate.
+- Active workflow: read-only build/test, natural push/PR validation on main, PR #16 and black-box, Release write isolated to main push. Main's own workflow remains push-only with workflow-wide contents:write.
+
+## Exact parent validation
+
+- Actions history: **385 runs**, 245 success / 70 failure / 70 cancelled; queued/in-progress 0.
+- Exact parent `21317fd4f3dc625c4e49ec598e59736e0a4b6237`: natural push [#384](https://github.com/Batmancpu/CurrentLens/actions/runs/42548594972) and PR [#385](https://github.com/Batmancpu/CurrentLens/actions/runs/42548598591) both passed. WordNet builder 4/4; 151,456 unique words; `:app:testDebugUnitTest`, `:app:assembleDebug`, APK upload all passed; main-only Release jobs skipped.
+- PR artifact #13644482167: 39,129,205 bytes; SHA-256 `55357f9ff060bd1881c42cba2465660c365ce5331bbe2e53882726c6158b0c62`; expires 23 November 2026 02:03:24 UTC. Push artifact #13644262080: 39,129,203 bytes; SHA-256 `84c7cfd962295ca61c3b5e01c3c6fed689810e75c1c8144223a225dfd9964c2e`; expires 23 November 2026 02:03:29 UTC.
+- Latest published Release: `v0.2.0-build-116`, 6 November 2026 11:18:59 UTC. No Release published by this task.
+
+## Write boundary
+
+The next compact-navigation optimization is a first-parent child of the exact source above on `black-box-bihar-news` only. PR #34 remains the single draft consolidation target. No main write, merge, retarget, force update, workflow edit, manual dispatch/rerun, Release publication, package identity change or source-branch deletion.
+
+---
+
 # Live branch-graph delta — 9 November 2026, 07:26 IST
 
 **Default:** `main@73b8a0d1ba33503fede02db2c3c0af082d724a12`.

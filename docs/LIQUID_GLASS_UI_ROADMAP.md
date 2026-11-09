@@ -1,3 +1,54 @@
+# Live implementation batch — Quiesce hidden navigation motion in compact mode (9 November 2026, 08:22 IST)
+
+**Verified source:** `black-box-bihar-news@21317fd4f3dc625c4e49ec598e59736e0a4b6237` — **163 ahead / 0 behind** `main@73b8a0d1ba33503fede02db2c3c0af082d724a12`; main is the merge base. PR #34 remains the single open/draft, unmerged consolidation PR to main. This change is a direct first-parent child of the verified source; no new branch or PR is created.
+
+## Branch freshness and dependency gate
+
+- Complete inventory rechecked: **48 remote branches** (page 1 = 48, page 2 = 0), **30 open PRs**, **15 closed PRs** (PR page 2 empty). Default branch is still main at `73b8a0d1ba33503fede02db2c3c0af082d724a12`; PR #34 head exactly matched the source before this write.
+- The latest independent UI/accessibility candidate, PR #45 `a11y/dictionary-popup-reduce-motion-2026-11-09@fbadd56e0e119cf70b865af8a58843190cce249d`, is **3 ahead / 163 behind** the active branch with main as merge base. Its three-file motion-policy change is already present in `21317fd`; no duplicate port.
+- PR #43 Reader teardown is **11 ahead / 163 behind** from main. Its `AndroidView.onRelease`, settle-callback cancellation and exception-only cleanup are present in active code; the active tests additionally cover idempotent no-retry and fatal `LinkageError`. No divergent `MainActivity.kt` was copied.
+- PR #39 stable signing is **6 ahead / 28 behind** the active line and changes the workflow/Gradle signing path. It remains owner-gated on private Actions secrets, public certificate pin and an explicit uninstall/local-data migration decision; it is not part of this UI baseline. PR #30 touch targets, #31 off-main Appearance restore, #36 IST rollover and #37 Search compile repair remain represented. Older `brrrNEWS`, `ui/liquid-glass-performance` and `redesign/v0.3-search-reader` are not replacement baselines.
+- No source branch, main, workflow, package identity or repository setting is changed.
+
+## Exact parent CI, Actions, workflow and Release
+
+- The exact parent `21317fd4f3dc625c4e49ec598e59736e0a4b6237` passed natural push [#384](https://github.com/Batmancpu/CurrentLens/actions/runs/42548594972) and pull-request [#385](https://github.com/Batmancpu/CurrentLens/actions/runs/42548598591). Both build jobs passed checkout, Java, signing-key restore, Android SDK/platform, Gradle, WordNet builder/database, `:app:testDebugUnitTest`, `:app:assembleDebug` and artifact upload. Full logs: **BUILD SUCCESSFUL** in 1m 31s (push) and 1m 32s (PR); WordNet builder 4/4 and **151,456 unique words / 50,950,144 bytes**. Both main-only Release jobs were skipped.
+- PR artifact [#13644482167](https://github.com/Batmancpu/CurrentLens/actions/runs/42548598591/artifacts/13644482167): **39,129,205 bytes**, SHA-256 `55357f9ff060bd1881c42cba2465660c365ce5331bbe2e53882726c6158b0c62`, expires 23 November 2026 02:03:24 UTC. Push artifact [#13644262080](https://github.com/Batmancpu/CurrentLens/actions/runs/42548594972/artifacts/13644262080): **39,129,203 bytes**, SHA-256 `84c7cfd962295ca61c3b5e01c3c6fed689810e75c1c8144223a225dfd9964c2e`, expires 23 November 2026 02:03:29 UTC.
+- Actions history fully paginated: **385 runs** (**245 success / 70 failure / 70 cancelled**), queued/in-progress **0**. The integration workflow remains read-only for build/test with Release write isolated to main pushes; main's own workflow remains push-only with workflow-wide `contents: write`.
+- Latest published Release remains `v0.2.0-build-116` (6 November 2026 11:18:59 UTC). No Release was published.
+
+## App-wide material audit before this pass
+
+- You, Saved empty states, Reading Stats, Quiz Stats and Appearance already share the quiet Tier 3 `SupportingGlassCard` tint/rim and common geometry. Saved/Stats filters remain grouped in one functional glass capsule; the Appearance preview uses one live Prismal surface with static child controls. No extra dashboard sheet or per-card blur is justified.
+- Quiz header/footer already use the shared Tier 2 Prismal surface; question, option, explanation and result surfaces remain high-contrast content cards. Reader toolbar/Aa menu/completion/definition and Search/Explore controls already use the shared transient/control system.
+- This pass therefore changes no material tokens or visible layout: it removes work that continued after the expanded navigation was no longer on screen.
+
+## Implementation — compact navigation becomes idle
+
+- `FeedNavigationPolicy.shouldAnimateDroplet(compact, reduceMotion)` is the single pure decision for whether the selected droplet may animate.
+- When the bar compacts, the retained droplet position now snaps to the selected tab rather than running an invisible spring behind the compact pill. When expanded, normal motion remains; Reduce Motion still snaps.
+- The `PrismalPressRipple` helper is now remembered only while expanded and ripple is enabled, and its keys include the actual motion object so a recreated spring cannot leave the ripple closure holding stale state.
+- The existing one-bar morph, compact pill's accessible destination label, 48dp touch target, expanded-only hidden glyph capture/merged source, one root background-only backdrop, search anchor and feed-only eligibility are unchanged.
+
+## Paired optimization and tests
+
+| Component | Visual/material delta | Cost-control change | Evidence |
+|---|---|---|---|
+| Compact feed navigation | No visual change; one existing capsule | Cancels hidden droplet spring by snapping; does not instantiate an unused ripple helper; no second bar or source | Pure policy test covers expanded/compact × normal/Reduce Motion; exact-head CI pending |
+| Expanded navigation | Existing droplet/ripple unchanged | Existing glyph source/merged backdrop remains expanded-only | Source audit; OPPO frame timing remains unverified |
+| You/Saved/Stats/Appearance/Quiz | No material change | Reuses existing Tier 3/2 surfaces; no new capture, blur, decode or recomposition path | Full composable audit; no new render pass |
+
+- Render-pass/capture/readback delta: **0**. No blur, refraction, shader, graphics layer, sampler, bitmap readback, image decode, dependency, timer, persistence or network change.
+- The removed spring/ripple-helper work is a source-level optimization only. No measured frame-time, allocation, GPU, memory, battery or thermal improvement is claimed.
+- `FeedNavigationPolicyTest` adds the four-state motion gate. Existing scroll threshold/hysteresis, top reset, ineligible-screen and tracker tests remain unchanged.
+- The exact new head requires its own natural push/PR run. No manual dispatch/rerun. OPPO Reno10 visual/motion, TalkBack, font scale, gesture-inset, frame timing, memory, GPU, thermal and battery checks remain **UNVERIFIED**.
+
+## Next
+
+Inspect the exact new-head natural CI jobs, complete logs and artifact before another app-code change. Then continue the whole-app transient-control audit; keep the Reader selection/IME/accessibility pins, one shared backdrop and the calm high-contrast article/data surfaces intact.
+
+---
+
 # Live implementation batch — Dictionary popup system-motion compliance (9 November 2026, 07:26 IST)
 
 **Verified source:** `black-box-bihar-news@0b32cb5c61b0d99c5456d578a78138e943663281` — **162 ahead / 0 behind** `main@73b8a0d1ba33503fede02db2c3c0af082d724a12`; main is the merge base. PR #34 remains the single open/draft, unmerged consolidation PR to main. This batch is a direct first-parent child of that exact source; no new branch or PR is created.
