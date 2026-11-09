@@ -1,3 +1,28 @@
+# Live branch-graph delta — 9 November 2026, 07:26 IST
+
+**Default:** `main@73b8a0d1ba33503fede02db2c3c0af082d724a12`.
+**Owner-selected integration:** `black-box-bihar-news@0b32cb5c61b0d99c5456d578a78138e943663281`, **162 ahead / 0 behind main**, merge base main; PR #34 open/draft, unmerged, base main.
+**Complete live inventory:** **48 remote branches** (page 1 = 48, page 2 = 0), **30 open PRs**, **15 closed PRs**. The previous 47-row branch ledger remains below; the new branch entry is:
+
+| Branch | Head SHA | Commit timestamp (UTC) | Latest commit | PR relationship |
+|---|---|---|---|---|
+| `a11y/dictionary-popup-reduce-motion-2026-11-09` | `fbadd56e0e119cf70b865af8a58843190cce249d` | 2026-11-09 01:33:20 | test: cover dictionary popup Reduce Motion policy | PR #45 open/draft → main; 3 ahead / 0 behind main; selectively ported to black-box, source branch untouched |
+
+## Relevant branch comparison and port decision
+
+- PR #45's exact three-file diff (`DictionaryActivity.kt`, new `DictionaryMotionPolicy.kt`, new `DictionaryMotionPolicyTest.kt`) was reviewed in full. Relative to the selected integration head it is **3 ahead / 162 behind**, with main as merge base. The active dictionary activity was byte-identical to main before the port, so the isolated changes apply without replacing later app logic.
+- PR #43 Reader teardown is **11 ahead / 162 behind** this integration head, merge base main. Its release callback, settle-callback ownership and release guard already exist in the active code; the active test has stronger idempotency/no-retry and fatal-linkage assertions. No duplicate port.
+- The active workflow remains read-only for build/test with an isolated main-push Release-write job. Main's workflow remains push-only with workflow-wide write permission. No workflow modification.
+- Actions history is fully paginated: **383 runs**, **243 success / 70 failure / 70 cancelled**, no queued/in-progress runs. Exact active parent #382 (push) and #383 (pull_request) passed on `0b32cb5c61b0d99c5456d578a78138e943663281`; artifacts #13642327645 and #13642193205 are documented in the Liquid Glass roadmap. They do not validate the new motion-policy commit.
+- Latest published Release remains `v0.2.0-build-116` (2026-11-06 11:18:59 UTC); no Release publication or main write occurred.
+
+## Write boundary
+
+The Reduce Motion change is applied only as a direct child of the verified `black-box-bihar-news` head and will update the existing PR #34. PR #45, PR #43, all other source branches, main, and repository settings remain untouched. No force update, merge, retarget, manual dispatch/rerun, source-branch deletion or Release publication.
+
+
+---
+
 # Latest post-change verification — 9 November 2026, 06:37 IST
 
 **Repository:** `Batmancpu/CurrentLens`

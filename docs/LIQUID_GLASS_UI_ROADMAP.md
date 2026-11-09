@@ -1,3 +1,45 @@
+# Live implementation batch — Dictionary popup system-motion compliance (9 November 2026, 07:26 IST)
+
+**Verified source:** `black-box-bihar-news@0b32cb5c61b0d99c5456d578a78138e943663281` — **162 ahead / 0 behind** `main@73b8a0d1ba33503fede02db2c3c0af082d724a12`; main is the merge base. PR #34 remains the single open/draft, unmerged consolidation PR to main. This batch is a direct first-parent child of that exact source; no new branch or PR is created.
+
+## Branch freshness and dependency gate
+
+- Re-enumerated the complete graph: **48 remote branches** (page 1 = 48, page 2 = 0), **30 open PRs**, **15 closed PRs**. Default branch remains main at `73b8a0d1ba33503fede02db2c3c0af082d724a12`.
+- Newest relevant independent UI/accessibility candidate: PR #45, `a11y/dictionary-popup-reduce-motion-2026-11-09@fbadd56e0e119cf70b865af8a58843190cce249d`, open/draft, based on main. Compare against the selected source is **3 ahead / 162 behind**, merge base main; its complete diff is exactly `DictionaryActivity.kt`, `DictionaryMotionPolicy.kt` and `DictionaryMotionPolicyTest.kt`. Before this port, active `DictionaryActivity.kt` was byte-for-byte identical to main (15,009 bytes), so no intervening integration behaviour was overwritten. Only this isolated motion policy, popup change and tests are ported; PR #45 and its source branch remain untouched.
+- PR #43 Reader disposal remains divergent (**11 ahead / 162 behind**, merge base main). Its `AndroidView.onRelease`, tracked restore-settle cancellation and Exception-only release guard are already present in the active Reader. The active `ReaderWebViewReleaseGuardTest` additionally covers idempotent no-retry behaviour, independent cleanup after ordinary failures and fatal `LinkageError` propagation; no stale Reader/MainActivity patch was copied.
+- PR #44 remains closed/unmerged with its one-line feed-card rim correction already represented. PR #37 Search clear compile repair, #30 48dp targets, #31 off-main Appearance preferences, #36 Asia/Kolkata rollover and #13 conservative shared adaptive-contrast policy remain represented. PR #39 signing is still owner-gated; RSS/parser/privacy/editorial branches remain independent. The older `brrrNEWS`, `ui/liquid-glass-performance` and `redesign/v0.3-search-reader` lines are not valid replacement baselines.
+
+## Exact parent CI, Actions, workflow and Release
+
+- Parent exact head `0b32cb5c61b0d99c5456d578a78138e943663281` passed natural push [#382](https://github.com/Batmancpu/CurrentLens/actions/runs/42543492504) and pull-request [#383](https://github.com/Batmancpu/CurrentLens/actions/runs/42543497477). The PR build job completed checkout, Java, signing-key cache, Android SDK/platform, Gradle, WordNet builder/database, `:app:testDebugUnitTest`, `:app:assembleDebug` and APK upload. Full log: **BUILD SUCCESSFUL in 1m 9s**; WordNet builder tests 4/4 and database 151,456 unique words. Both main-only Release jobs were skipped.
+- PR artifact [#13642193205](https://github.com/Batmancpu/CurrentLens/actions/runs/42543497477/artifacts/13642193205): **39,128,981 bytes**, SHA-256 `ee845f2d6ba86f8200d9375e4eb56a4dff179f20b313760e50c14ef355144dc4`, expires 23 November 2026 01:05:23 UTC. Push artifact [#13642327645](https://github.com/Batmancpu/CurrentLens/actions/runs/42543492504/artifacts/13642327645): **39,128,982 bytes**, SHA-256 `927a5bd37a0710233a94c4e9fddc82a9ddb51b56a325c85b561ffe2ef52a1c5e`, expires 23 November 2026 01:05:26 UTC. These artifacts validate the parent head, not this new app-code commit.
+- Actions history is fully paginated: **383 runs** (**243 success / 70 failure / 70 cancelled**), queued/in-progress **0**. The active integration workflow remains read-only for build/test with Release write isolated to main pushes. Main's own workflow remains push-only with workflow-wide `contents: write`. The next natural run on the new branch head is required; no dispatch or rerun is used.
+- Latest published Release remains `v0.2.0-build-116` (6 November 2026, 11:18:59 UTC). No Release is published by this task.
+
+## Implementation — transient dictionary popup honours system motion
+
+- `DictionaryPopup` now samples `ValueAnimator.areAnimatorsEnabled()` once per popup composition through `DictionaryMotionPolicy`. The app minimum SDK is 26, so the platform API is available without a compatibility dependency.
+- When system animations are enabled, the existing spring fade/scale/slide entrance and content-size animation are preserved. When disabled, the popup uses `EnterTransition.None` and omits `animateContentSize`; no observer, timer, polling or settings persistence is added. A setting change while the popup is already open applies on its next opening.
+- Added two pure JVM tests for enabled and disabled policy states. The existing word lookup `LaunchedEffect`, scroll/expand state, Copy path, offline WordNet repository, native Android text-selection/action-mode menu, window blur-behind, popup dimensions/shape, haptic feedback and high-contrast fallback are unchanged.
+
+## Paired visual/performance and accessibility strategy
+
+| Surface | Material / motion tier | Effect/capture scope | Reuse / fallback | Tests / measured status |
+|---|---|---|---|---|
+| PROCESS_TEXT dictionary popup | Tier 2 transient contextual surface; existing Android window blur-behind only | No new Prismal pass, blur, shader, capture/readback, graphics layer, decode or render surface; disabled mode removes the entrance/content-size animations | Existing 26dp rounded surface, API 31+ `FLAG_BLUR_BEHIND`, static high-contrast fallback on older Android | Two pure policy tests added; exact-head CI pending; OPPO visual/runtime unverified |
+
+- Render/capture delta: **0**. The disabled-motion path removes two animation behaviours; this is a source-level work reduction, not a measured frame-time, battery or memory improvement.
+- Native Copy/Select/share ActionMode remains platform-owned and untouched. No new target or semantics change; existing popup controls and content remain unchanged.
+- OPPO Reno10 popup appearance, system Reduce Motion mapping, TalkBack, font scaling, native selection/share interaction, frame timing/jank, memory/allocation churn, GPU overdraw, thermal and battery remain **UNVERIFIED**. CI success will validate compilation/JVM policy only, not device animation behaviour.
+
+## Next
+
+- Inspect the natural push and PR runs on the exact resulting commit, full job logs, APK artifact and PR diff before another app-code change. Then continue the whole-app material consistency pass across You/Saved/stats, Appearance and transient controls without adding per-card blur or another backdrop source.
+- No main write, merge, retarget, force update, manual dispatch/rerun, Release publication, package/app identity change, or source-branch deletion.
+
+
+---
+
 # Live implementation batch — Reduce Transparency parity for supporting surfaces (9 November 2026, 06:22 IST)
 
 **Verified parent/source:** `black-box-bihar-news@18828f70e87a62fe3483dcc99fc29b82a6b7053b` — **160 ahead / 0 behind** `main@73b8a0d1ba33503fede02db2c3c0af082d724a12`; main is the merge base.
