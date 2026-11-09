@@ -1,7 +1,7 @@
-# Live repository inventory — 9 November 2026, 14:33 IST
+# Live repository inventory — 9 November 2026, 14:39 IST
 
 **Default branch:** main at 73b8a0d1ba33503fede02db2c3c0af082d724a12.  
-**Selected integration branch:** black-box-bihar-news. The current app-code head is `fb2e75c3f82f18896bfa5dff623a9ba9da263d15` (2026-11-09 09:03:35 UTC), a direct child of the verified pre-change source `2b1878e58744f901eb66aca7fa792ce06488c08c`; it is 172 ahead / 0 behind main, with main as merge base. PR #34 remains the single open/draft, unmerged consolidation PR targeting main. This inventory is the documentation snapshot for that app-code head; its own docs-only commit follows.
+**Selected integration branch:** black-box-bihar-news. The Liquid Glass app-code commit is `fb2e75c3f82f18896bfa5dff623a9ba9da263d15`; the evidence-backed test correction is `59c54cedadd1ad97a96c00d63cb3d020343ee2cd` (2026-11-09 09:06:59 UTC), a direct child of docs head `b8d87f7448e47be6869ce8a107b1d67dd8b4639d`. The test-fix head is **174 ahead / 0 behind** main, with main as merge base. PR #34 remains the single open/draft, unmerged consolidation PR targeting main. This inventory is the docs snapshot for that verified test-fix head; its own docs-only commit follows.
 
 The complete live branch list was paginated: **51 branches** on page 1, page 2 empty. Pull requests: **47 total (32 open, 15 closed)**, page 2 empty. Every branch head SHA, latest commit timestamp/message and PR relationship is recorded below; closed PRs are distinguished as merged or closed/unmerged. All source branches are retained.
 
@@ -10,7 +10,7 @@ The complete live branch list was paginated: **51 branches** on page 1, page 2 e
 | a11y/dictionary-popup-reduce-motion-2026-11-09 | fbadd56e0e119cf70b865af8a58843190cce249d | 2026-11-09 01:33:20 | test: cover dictionary popup Reduce Motion policy | #45 open/draft → main; motion policy already represented in integration |
 | a11y/dictionary-popup-reduce-transparency-2026-11-09 | 55afb9ab662d2926675f0a57737d3f817b1fc2cb | 2026-11-09 02:58:11 | Honor Reduce Transparency in dictionary popup | #46 closed/unmerged → black-box; selective port present |
 | a11y/48dp-icon-targets-2026-11-07 | 25107ce905b70bde1a41282ffd1d606819ebf58d | 2026-11-07 11:02:12 | test(a11y): cover minimum icon action target | #30 open/draft → black-box; TouchTargetPolicy represented |
-| black-box-bihar-news | fb2e75c3f82f18896bfa5dff623a9ba9da263d15 | 2026-11-09 09:03:35 UTC | ui(glass): align definition popup with transient material tier | #34 open/draft → main; current app-code head; docs refresh follows |
+| black-box-bihar-news | 59c54cedadd1ad97a96c00d63cb3d020343ee2cd | 2026-11-09 09:06:59 UTC | test(glass): align non-finite tint expectation with default | #34 open/draft → main; test-fix head; app-code commit fb2e75c3f82f18896bfa5dff623a9ba9da263d15 |
 | brrrNEWS | e6fcfc25a4c8d5f363ced58f313552120aa7ff96 | 2026-11-07 04:13:30 | ui: consolidate lightweight supporting glass surfaces | Base of #24; older material line, not the active baseline |
 | ci/read-only-pr-validation-isolated-release-write-2026-11-06 | 963118f0abe5f7e38f2aa66a49d4b8e74548660c | 2026-11-06 17:18:53 | ci: validate pull requests with read-only build permissions | #18 open/draft → main; compatible workflow design integrated into black-box |
 | ci/stacked-pr-validation-2026-11-07 | 5dc3179361835b77fb3186a99d9b5791301463fd | 2026-11-06 21:41:27 | ci: restore Android SDK setup before sdkmanager | #20 closed/merged → black-box |
@@ -59,9 +59,9 @@ The complete live branch list was paginated: **51 branches** on page 1, page 2 e
 
 ## Current graph and workflow
 
-- PR #34: open/draft, unmerged, head black-box-bihar-news, base main. App-code head `fb2e75c3f82f18896bfa5dff623a9ba9da263d15` is 172 commits ahead / 0 behind main; main is the merge base. Keep draft; do not merge.
+- PR #34: open/draft, unmerged, head black-box-bihar-news, base main. Test-fix head `59c54cedadd1ad97a96c00d63cb3d020343ee2cd` is 174 commits ahead / 0 behind main; main is the merge base. Keep draft; do not merge.
 - The exact integration workflow is .github/workflows/build-apk.yml. Build/test permissions are read-only; Release write is isolated to a main-push-only job. No workflow file is changed in this batch.
-- At the start of this app-code pass, Actions history was fully paginated: 402 runs (262 success / 70 failure / 70 cancelled), queued/in-progress 0. Parent runs #401/#402 passed on exact head `2b1878e58744f901eb66aca7fa792ce06488c08c`; new exact app-code runs #403/#404 started on `fb2e75c3f82f18896bfa5dff623a9ba9da263d15` and were in progress at the snapshot. No result is attributed to the parent runs for the new code.
+- Actions history is fully paginated through run #408: 408 total (263 success / 73 failure / 71 cancelled); run #407 remained in progress. Runs #403/#404 failed on the app-code commit because one new test expectation used 0.32 instead of the non-finite fallback default 0.28; #405 reproduced the same failure on docs head b8d87f; #406 was cancelled after the test-only correction. PR run #408 passed on exact test-fix head `59c54cedadd1ad97a96c00d63cb3d020343ee2cd`, including WordNet generation, JVM tests, APK assembly and artifact upload. Artifact #13661132492: 39,139,519 bytes; SHA-256 `3a80e7430940d9289dd48de2c36c011f056f2606b252abea287490f62889bd5c`. Push run #407 was still in progress at this snapshot.
 - Latest published Release remains v0.2.0-build-116, published 6 November 2026 11:18:59 UTC. No Release was created or published.
 - No main write, merge, retarget, force update, manual workflow dispatch/rerun, package/app identity change, source-branch deletion or unrelated branch modification occurred.
 
@@ -2637,3 +2637,11 @@ UTC timestamps/messages are the latest commit on each branch head. PR list: 43 t
 - **Tests:** three pure JVM policy tests added in GlassSurfacePolicyTest; no Compose screenshot test because anchor/placement/content behaviour is unchanged. Exact app-code CI #403/#404 was in progress at the audit snapshot; the docs refresh requires its own natural run. No manual dispatch/rerun.
 - **Release / safety:** latest Release remains `v0.2.0-build-116`; no Release, main write, merge, retarget, force update, package identity change, source-branch deletion or workflow change.
 - **Device boundary:** OPPO Reno10 visuals/runtime, native selection, TalkBack, font scaling, Reduce Motion/Transparency, Perfetto/frame timing, GPU, memory, thermal and battery remain UNVERIFIED.
+
+## 9 November 2026, 14:39 IST — CI assertion correction and exact-head recovery
+
+- Failure evidence: natural runs #403 (push) and #404 (PR) failed on fb2e75c3f82f18896bfa5dff623a9ba9da263d15; the same test-only failure repeated on #405 at docs head b8d87f7448e47be6869ce8a107b1d67dd8b4639d. All setup and WordNet steps succeeded; Gradle reported GlassSurfacePolicyTest > transientTintFallsBackForNonFinitePreferenceAndMinimum FAILED, GlassSurfacePolicyTest.kt:334, 334 tests completed / 1 failed. APK assembly and artifact upload were skipped. PR run #406 was cancelled when the test correction was pushed.
+- Root cause: the test derived its expected value from a finite intensity of 0.32, but the production policy deliberately substitutes AppearancePreferencesPolicy.DEFAULT_GLASS_ALPHA (0.28) for non-finite inputs; with the shared 0.42 scale the correct fallback is 0.1176. The implementation was correct; the test expectation was wrong.
+- Correction: test-only commit 59c54cedadd1ad97a96c00d63cb3d020343ee2cd now derives the expected value from DEFAULT_GLASS_ALPHA and explicitly asserts 0.1176. No production code, visual effect or policy threshold changed.
+- Exact natural verification: PR run #408 passed on that exact commit. WordNet builder 4/4, 151,456 unique words / 50,950,144 bytes, :app:testDebugUnitTest, :app:assembleDebug and artifact upload all passed. Artifact #13661132492: 39,139,519 bytes, SHA-256 3a80e7430940d9289dd48de2c36c011f056f2606b252abea287490f62889bd5c. Push run #407 was still in progress; no push result is claimed.
+- Next gate: no further app-code change until the final docs head receives its own natural PR validation and run #407 is inspected. No manual dispatch/rerun or Release publication.
