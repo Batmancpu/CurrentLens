@@ -1,3 +1,47 @@
+# Implementation batch — Dictionary popup Reduce Transparency parity (9 November 2026, 10:31 IST)
+
+**Verified source before write:** `black-box-bihar-news@52604e5046abc20dfa490c54587e79909d8f4458`; `main@73b8a0d1ba33503fede02db2c3c0af082d724a12` is the merge base, **165 ahead / 0 behind**. PR #34 remains open/draft, unmerged, targeting main. The source branch is not retargeted and no new branch/PR is created.
+
+## Branch freshness and dependency gate
+
+- Complete live inventory: **49 remote branches** (page 1 = 49, page 2 = 0), **31 open PRs** (page 2 = 0), **15 closed PRs** (page 2 = 0). All 49 names/head SHAs were refreshed; the complete commit timestamp/message and PR relationship table is maintained in `docs/BRANCH_CONSOLIDATION.md`. Default branch remains main at `73b8a0d1ba33503fede02db2c3c0af082d724a12`.
+- PR #46 source `a11y/dictionary-popup-reduce-transparency-2026-11-09@55afb9ab662d2926675f0a57737d3f817b1fc2cb` and active branch share merge base `21317fd4f3dc625c4e49ec598e59736e0a4b6237`. Active is **2 ahead / 0 behind** that base; PR #46 is **3 ahead / 0 behind**. The active two-commit delta changes only `FeedNavigationPolicy.kt`, `MainActivity.kt`, `FeedNavigationPolicyTest.kt` and documentation; PR #46 changes only `DictionaryActivity.kt`, new `DictionarySurfacePolicy.kt` and its JVM test. No code-file overlap exists, so the three-file change is ported directly onto the current active head without merging or modifying PR #46 or its source branch.
+- PR #45's Reduce Motion policy remains represented in the active DictionaryActivity. PR #43's Reader disposal work remains separately reviewed; no MainActivity or Reader lifecycle code is copied in this batch. Stale `brrrNEWS`, `ui/liquid-glass-performance` and `redesign/v0.3-search-reader` are not replacement baselines.
+
+## Implementation
+
+- The standalone Android `ACTION_PROCESS_TEXT` dictionary popup now restores the saved `LocalStore.reduceTransparency()` preference on `Dispatchers.IO`; no SharedPreferences load is added to the main thread.
+- While the preference is being restored, the popup starts with a near-opaque unblurred surface. Reduced Transparency clears/avoids `FLAG_BLUR_BEHIND` on Android 12+ and uses alpha **0.985**. Normal mode preserves the existing Android 12+ blur-behind radius (24dp) and alpha **0.86**; pre-Android 12 keeps the existing no-blur alpha **0.94**.
+- Added pure `DictionarySurfacePolicy` plus four JVM tests for reduced/normal treatment on modern and legacy Android. Existing `DictionaryMotionPolicy`, native Android Copy/Select/share ActionMode, WordNet lookup/cache/database session, popup geometry, dim amount, navigation and data model are unchanged.
+- The preference is sampled once per popup opening. Changing Appearance while the popup is already open takes effect on its next opening; no observer, timer or polling loop is introduced.
+
+## Paired material/performance strategy
+
+| Surface | Material tier / purpose | Effect scope and cost control | Fallback / accessibility | Evidence |
+|---|---|---|---|---|
+| Dictionary ACTION_PROCESS_TEXT popup | Tier 2 transient contextual glass surface; platform blur-behind supplies context only when allowed | Existing single popup window only; one saved preference read on IO; no Prismal pass, sampler, readback, image decode, shader or per-frame work added | Near-opaque unblurred alpha 0.985 when Reduce Transparency is on or before restore; normal legacy alpha 0.94 without blur | Four pure JVM policy tests; exact new-head CI pending; OPPO rendering/TalkBack unverified |
+
+- In reduced mode this change removes the existing whole-window blur-behind cost rather than adding an effect. Normal mode preserves the current visual treatment. This is a source-level scope reduction, not a measured GPU, memory, battery or frame-time improvement.
+- The shared root background-only Prismal source, expanded-only tab glyph capture, app-wide material tokens and existing low-cadence adaptive luminance probe are untouched.
+
+## Exact parent validation — passed; new port validation pending
+
+- Natural PR run [#390](https://github.com/Batmancpu/CurrentLens/actions/runs/42559718685) and push run [#389](https://github.com/Batmancpu/CurrentLens/actions/runs/42559714812) both tested the exact parent head `52604e5046abc20dfa490c54587e79909d8f4458`. Both build jobs passed checkout, Java/signing cache, Android SDK/platform setup, Gradle, WordNet builder **4/4**, generation of **151,456 unique words / 50,950,144 bytes**, `:app:testDebugUnitTest`, `:app:assembleDebug` and artifact upload. PR build: **BUILD SUCCESSFUL in 1m 39s**; release jobs skipped.
+- PR artifact [#13649007271](https://github.com/Batmancpu/CurrentLens/actions/runs/42559718685/artifacts/13649007271): **39,129,208 bytes**, SHA-256 `e7b08e03be5b86008092cff27a96a7876b0395bba36b95203b0d32d5e94c4acf`, expires 23 November 2026 04:06:27 UTC. Push artifact [#13649280497](https://github.com/Batmancpu/CurrentLens/actions/runs/42559714812/artifacts/13649280497): **39,129,203 bytes**, SHA-256 `cd74e0c3eba0afe0495aee6bbde49f1c8aeccdeb690aa299c6023be34994cbeb`, expires 23 November 2026 04:06:14 UTC.
+- PR #46's own natural run [#386](https://github.com/Batmancpu/CurrentLens/actions/runs/42553804992) passed on its source head and produced artifact #13646383188. It validates that source branch, **not** this combined port.
+- The new active commit must receive its own natural push and PR validation before another UI batch. No manual dispatch/rerun is permitted. Actions history is fully paginated: **390 runs** (**250 success / 70 failure / 70 cancelled**), queued/in-progress **0**. The active workflow keeps build/test permissions read-only and isolates Release write to main pushes. Latest published Release remains `v0.2.0-build-116`; no Release was published.
+
+## Device and regression checks
+
+- OPPO Reno10 popup appearance, saved preference restoration, native selection/share menu collision, TalkBack, font scaling, animation behaviour, frame timing, memory/allocation, GPU, thermal and battery remain **UNVERIFIED**. CI/JVM success is not device verification.
+- Recheck normal/reduced appearance on Android 12+ and older Android, popup cold-open before preference restoration, selection Copy/Select/share, and repeated popup open/close. Do not claim the app's startup crash or overall glass performance is fixed from this batch.
+
+## Next
+
+Wait for the exact new `black-box-bihar-news` head's natural push and PR runs, inspect their complete logs/artifacts and PR diff, then continue the next app-wide consistency batch only after they pass.
+
+---
+
 # Live CI verification — compact navigation idle (9 November 2026, 09:27 IST)
 
 **Verified active source:** `black-box-bihar-news@11b709aa9f357437fa7315035d4a383b79d7d4af`; `main@73b8a0d1ba33503fede02db2c3c0af082d724a12` is the merge base, **164 ahead / 0 behind**. PR #34 remains open/draft, unmerged, targeting main. No UI source change is made in this verification pass.

@@ -221,17 +221,41 @@ class DictionaryActivity : ComponentActivity() {
         window?.setBackgroundDrawableResource(android.R.color.transparent)
         window?.addFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND)
         window?.attributes = window?.attributes?.apply { dimAmount = 0.08f }
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            // Blur-behind samples the whole app window, unlike a blur confined to this popup.
-            window?.addFlags(WindowManager.LayoutParams.FLAG_BLUR_BEHIND)
-            window?.attributes = window?.attributes?.apply {
-                blurBehindRadius = (resources.displayMetrics.density * 24f).toInt()
-            }
-        }
         window?.setLayout(WindowManager.LayoutParams.MATCH_PARENT, WindowManager.LayoutParams.WRAP_CONTENT)
         window?.decorView?.performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK)
         window?.setGravity(Gravity.BOTTOM)
         setContent {
+            // Fail closed to an opaque, unblurred surface until the saved preference is
+            // restored. SharedPreferences is read on IO because it shares a file with
+            // the app's article and study data.
+            var reduceTransparency by remember { mutableStateOf(true) }
+            LaunchedEffect(Unit) {
+                val restored = withContext(Dispatchers.IO) {
+                    LocalStore.reduceTransparency(applicationContext)
+                }
+                reduceTransparency = restored
+                val appearance = DictionarySurfacePolicy.resolve(
+                    reduceTransparency = restored,
+                    supportsBlurBehind = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
+                )
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                    if (appearance.blurBehindEnabled) {
+                        // Blur-behind samples the whole app window, unlike a blur confined to this popup.
+                        window?.addFlags(WindowManager.LayoutParams.FLAG_BLUR_BEHIND)
+                        window?.attributes = window?.attributes?.apply {
+                            blurBehindRadius = (resources.displayMetrics.density * 24f).toInt()
+                        }
+                    } else {
+                        window?.clearFlags(WindowManager.LayoutParams.FLAG_BLUR_BEHIND)
+                    }
+                }
+            }
+            val surfaceAppearance = remember(reduceTransparency) {
+                DictionarySurfacePolicy.resolve(
+                    reduceTransparency = reduceTransparency,
+                    supportsBlurBehind = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
+                )
+            }
             val dark = androidx.compose.foundation.isSystemInDarkTheme()
             MaterialTheme(
                 colorScheme = if (dark) {
@@ -258,14 +282,17 @@ class DictionaryActivity : ComponentActivity() {
                     )
                 }
             ) {
-                DictionaryPopup(word.ifBlank { "Select one word" }) { finish() }
+                DictionaryPopup(
+                    word = word.ifBlank { "Select one word" },
+                    surfaceAlpha = surfaceAppearance.surfaceAlpha
+                ) { finish() }
             }
         }
     }
 }
 
 @Composable
-private fun DictionaryPopup(word: String, onClose: () -> Unit) {
+private fun DictionaryPopup(word: String, surfaceAlpha: Float, onClose: () -> Unit) {
     val context = LocalContext.current
     var result by remember(word) { mutableStateOf<Definition?>(null) }
     var loading by remember(word) { mutableStateOf(true) }
@@ -309,7 +336,7 @@ private fun DictionaryPopup(word: String, onClose: () -> Unit) {
                     .then(contentSizeMotion),
                 shape = RoundedCornerShape(26.dp),
                 color = MaterialTheme.colorScheme.surface.copy(
-                    alpha = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) 0.86f else 0.94f
+                    alpha = surfaceAlpha
                 ),
                 contentColor = MaterialTheme.colorScheme.onSurface,
                 tonalElevation = 0.dp,
