@@ -1937,11 +1937,12 @@ private fun SupportingGlassCard(
     val colors = MaterialTheme.colorScheme
     val dark = isSystemInDarkTheme()
     val glassAlpha = LocalGlassIntensity.current
+    val reduceTransparency = LocalGlassReduceTransparency.current
     val shape = remember {
         PrismalRoundedRectangle(GlassSurfacePolicy.SUPPORTING_CORNER_RADIUS_DP.dp)
     }
-    val tintAlpha = GlassSurfacePolicy.supportingTintAlpha(dark, glassAlpha)
-    val rimAlpha = GlassSurfacePolicy.supportingRimAlpha(dark, glassAlpha)
+    val tintAlpha = GlassSurfacePolicy.supportingTintAlpha(dark, glassAlpha, reduceTransparency)
+    val rimAlpha = GlassSurfacePolicy.supportingRimAlpha(dark, glassAlpha, reduceTransparency)
     val rimBrush = remember(colors.primary, colors.outline, dark, rimAlpha) {
         Brush.linearGradient(
             colors = listOf(
@@ -1964,7 +1965,7 @@ private fun SupportingGlassCard(
         shape = shape,
         colors = CardDefaults.cardColors(
             containerColor = colors.surface.copy(
-                alpha = GlassSurfacePolicy.supportingSurfaceAlpha(dark)
+                alpha = GlassSurfacePolicy.supportingSurfaceAlpha(dark, reduceTransparency)
             )
         ),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)

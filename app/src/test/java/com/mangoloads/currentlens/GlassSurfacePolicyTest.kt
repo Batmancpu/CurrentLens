@@ -12,6 +12,33 @@ class GlassSurfacePolicyTest {
     }
 
     @Test
+    fun supportingCardsUseMoreOpaqueStaticFallbackWhenTransparencyIsReduced() {
+        val clear = AppearancePreferencesPolicy.MIN_GLASS_ALPHA
+        val frosted = AppearancePreferencesPolicy.MAX_GLASS_ALPHA
+
+        assertEquals(0.93f, GlassSurfacePolicy.supportingSurfaceAlpha(dark = true), 0.0001f)
+        assertEquals(0.965f, GlassSurfacePolicy.supportingSurfaceAlpha(dark = false), 0.0001f)
+        assertEquals(0.975f, GlassSurfacePolicy.supportingSurfaceAlpha(dark = true, reduceTransparency = true), 0.0001f)
+        assertEquals(0.985f, GlassSurfacePolicy.supportingSurfaceAlpha(dark = false, reduceTransparency = true), 0.0001f)
+
+        assertEquals(0.11f, GlassSurfacePolicy.supportingTintAlpha(true, clear, true), 0.0001f)
+        assertEquals(0.07f, GlassSurfacePolicy.supportingTintAlpha(false, clear, true), 0.0001f)
+        assertEquals(0.145f, GlassSurfacePolicy.supportingTintAlpha(true, frosted, true), 0.0001f)
+        assertEquals(0.23f, GlassSurfacePolicy.supportingRimAlpha(true, clear, true), 0.0001f)
+        assertEquals(0.16f, GlassSurfacePolicy.supportingRimAlpha(false, clear, true), 0.0001f)
+        assertEquals(0.16f, GlassSurfacePolicy.supportingRimAlpha(false, frosted, true), 0.0001f)
+
+        assertTrue(
+            GlassSurfacePolicy.supportingSurfaceAlpha(true, true) >
+                GlassSurfacePolicy.supportingSurfaceAlpha(true)
+        )
+        assertTrue(
+            GlassSurfacePolicy.supportingRimAlpha(false, clear, true) >=
+                GlassSurfacePolicy.supportingRimAlpha(false, clear)
+        )
+    }
+
+    @Test
     fun opticalTintAndRimStaySubtleAndBoundedAtDefaultIntensity() {
         assertTrue(GlassSurfacePolicy.supportingTintAlpha(dark = true) in 0.10f..0.12f)
         assertTrue(GlassSurfacePolicy.supportingTintAlpha(dark = false) in 0.06f..0.08f)

@@ -1,4 +1,48 @@
-# Live implementation batch — restrained feed-card glass rim (9 November 2026, 04:23 IST)
+# Live implementation batch — Reduce Transparency parity for supporting surfaces (9 November 2026, 06:22 IST)
+
+**Verified source:** `black-box-bihar-news@18828f70e87a62fe3483dcc99fc29b82a6b7053b` — **160 ahead / 0 behind** `main@73b8a0d1ba33503fede02db2c3c0af082d724a12`; main is the merge base.
+**Target:** the existing open/draft PR #34 → `main`; unmerged and unretargeted. This is a direct child of the verified owner-selected integration head.
+
+## Branch freshness and dependency gate
+
+- Re-enumerated the complete remote inventory: **47 branches** (page 1 = 47, page 2 = 0), **29 open PRs**, **15 closed PRs**. Default branch remains main; PR #34's head was exactly `18828f70e87a62fe3483dcc99fc29b82a6b7053b` before implementation.
+- PR #43 Reader lifecycle (`fix/release-reader-webview-resources-2026-11-09@e5b7b9f8f5d9e33021bd6ccb7b7cb3f827218e3c`) is **11 ahead / 160 behind** black-box, with main as merge base. Its full three-file patch was inspected: `onRelease`, tracked restore-settle cancellation, independent cleanup and fatal-error propagation are already present in the active Reader; no divergent `MainActivity.kt` was copied.
+- PR #37 Search RowScope repair/48dp clear slot, PR #30 `TouchTargetPolicy`, PR #31 off-main appearance restore, PR #36 Asia/Kolkata day policy and PR #13's conservative single 8×8 adaptive probe are represented. Fresh comparisons remain divergent: #37 **6/41**, #30 **3/56**, #31 **5/55**, #36 **3/42**, #13 **1/173** (ahead/behind relative to black-box). PR #13's older 1.5s/2.5s cadence is not adopted; current sampling remains 4s/6s and paused outside eligible foreground home states.
+- PR #44 is now **closed/unmerged**; its one-line feed-rim scope repair is already present in active commit `18828f70e87a62fe3483dcc99fc29b82a6b7053b`. Its source branch remains untouched. PR #42 is editorial-only (**6/9**); PR #39's signing migration remains owner-gated (**6/25**). PR #18's one-file workflow proposal is **1/160** and is superseded by the active read-only build + isolated main-push publish workflow. PR #16 remains a divergent stability/diagnostics line (**7/103**); no old MainActivity was copied.
+- `brrrNEWS` is an older divergent visual line (**4/66**); its fixed-intensity material policy is superseded. `ui/liquid-glass-performance` (**3/178**) and `redesign/v0.3-search-reader` (**0/254**) are stale and excluded. RSS/parser/editorial/security branches remain separate unless a specific non-conflicting change is reviewed.
+
+## Exact parent CI, Actions, workflow and Release
+
+- All **379 Actions runs** were paginated (100 + 100 + 100 + 79): **239 success / 70 failure / 70 cancelled**. Queued and in-progress runs are both **0**.
+- Exact source head `18828f70e87a62fe3483dcc99fc29b82a6b7053b` passed natural push run [#378](https://github.com/Batmancpu/CurrentLens/actions/runs/42537849730) and pull-request run [#379](https://github.com/Batmancpu/CurrentLens/actions/runs/42537853903). Both build jobs passed WordNet builder **4/4**, offline dictionary generation (**151,456 unique words; 50,950,144 bytes**), `:app:testDebugUnitTest`, `:app:assembleDebug` and APK upload. The PR job log reports **BUILD SUCCESSFUL in 1m 31s**; the push job reports **BUILD SUCCESSFUL in 1m 5s**. Both main-only publish jobs were skipped.
+- PR artifact [#13640107491](https://github.com/Batmancpu/CurrentLens/actions/runs/42537853903/artifacts/13640107491): **39,128,629 bytes**, SHA-256 `46a70d172f84b29ae1526d71821244a43d758bb08008bb6c7d4a34ecf87481dc`, expires 23 November 2026 00:02:26 UTC. Push artifact #13640011669: **39,128,627 bytes**, SHA-256 `ae3c3aaa61fd17669d0248abc3703db561f0eea8c7599c27c741771ff4af6d7d`, expires 23 November 2026 00:01:59 UTC.
+- `.github/workflows/build-apk.yml` on black-box has read-only build/test permissions, natural push/PR validation for main, PR #16 and black-box, and a separate Release-write job restricted to main pushes. Main's own workflow remains push-only with workflow-wide `contents: write`; PR #16's workflow is also push-only and retains workflow-wide write permission. The natural #379 run validates PR #34's exact head, not main's workflow configuration.
+- Latest published Release remains `v0.2.0-build-116` (6 November 2026 11:18:59 UTC). No Release was created by #378/#379.
+
+## Implementation — supporting surfaces now honour Reduce Transparency
+
+- `SupportingGlassCard` now reads the existing `LocalGlassReduceTransparency` preference and passes it into the shared `GlassSurfacePolicy` for its static surface opacity, tint and rim. You metrics/destinations/empty states, Saved empty states, Reading Stats, Quiz Stats and the Appearance preview all inherit the same fallback because they already reuse this component.
+- Normal mode is unchanged. With Reduce Transparency enabled, supporting cards use a **0.975 dark / 0.985 light** surface-alpha fallback, with static tint floors of **0.11 dark / 0.07 light** and rim floors of **0.23 dark / 0.16 light**. These are bounded supporting-surface treatments, not a live blur or a new glass panel.
+- The Appearance slider remains child-scoped and commits the app-wide intensity only on release/preset selection. This change does not add per-tick root-state updates, persistence work, a timer or a new material source.
+
+## Paired material/performance strategy
+
+| Component | Material tier / reason | Effect/capture delta | Reuse / fallback | Tests / evidence |
+|---|---|---|---|---|
+| You / Saved / Reading Stats / Quiz Stats / Appearance supporting cards | Tier 3 quiet supporting tint/rim; keep metrics and data high contrast | **0** new Prismal passes, live blur/refraction, shader, capture/readback, graphics layer or image decode | Existing remembered shape/brushes; preference changes invalidate only derived static alpha/brush values; normal mode unchanged; reduced mode raises opacity/tint/rim | New JVM policy test covers dark/light, Clear/Frosted and fallback endpoints; exact-head natural CI pending; device cost unmeasured |
+| Feed cards and skeletons | Tier 4 editorial content with a static glass-derived edge | **0** live blur/capture/readback; existing 0.75dp rim | Existing shared alpha policy and one Coil decode/palette path | Previous exact-head CI #378/#379 validates the parent rim batch only |
+
+- Render-pass delta: **0**. Added backdrop captures/readbacks, blur/refraction surfaces, shaders, graphics layers, image requests/decodes, dependencies, network calls, timers and persistence changes: **0**. Supporting cards remain near-opaque content surfaces; no per-card live glass was introduced.
+- This is a source-level fallback/consistency correction, not a measured performance improvement. OPPO Reno10 contrast, memory/allocation churn, frame timing/jank, GPU overdraw, thermal and battery remain **UNVERIFIED**.
+- Focused JVM coverage was added in `GlassSurfacePolicyTest`; the new commit must receive its own natural CI run. Parent #378/#379 do not validate this new head.
+
+## Next
+
+- Inspect this commit's exact natural push and PR runs, full logs and artifact before another UI batch. Then audit remaining dialogs/sheets/menus and close any whole-app material inconsistency without adding blur to dense article/quiz content or duplicating the shared backdrop.
+- OPPO Reno10 screenshots/runtime, launch stability, TalkBack, font scaling, Reduce Motion, keyboard/IME, Perfetto/frame timing, GPU overdraw, memory, thermal and battery remain **UNVERIFIED**. No device-performance or native-launch-fix claim is made.
+
+---
+# Previous implementation batch — restrained feed-card glass rim (9 November 2026, 04:23 IST)
 
 **Source before change:** `black-box-bihar-news@4f5bdf3e5c49d856eccc4411d5a2bfc40bebf0ef`.  
 **Base:** `main@73b8a0d1ba33503fede02db2c3c0af082d724a12` — **158 ahead / 0 behind**, with main as merge base.  
@@ -666,7 +710,7 @@
 | Component | Material/effect scope | Reuse and invalidation | Fallback/accessibility | Evidence |
 |---|---|---|---|---|
 | Shared shell, Search, filters and Reader chrome | Existing single background-only Prismal source; small transient surfaces only | One root capture; one hidden glyph source only while expanded; stable policy state | Reduce Transparency disables blur/refraction; Reduce Motion snaps; TalkBack and 48dp controls retained | Source audit; device cost UNVERIFIED |
-| You, Saved, stats and quiz question cards | Static supporting tint/rim or opaque content surfaces | Theme/material brushes remembered; no per-card live blur | Near-opaque high-contrast surfaces; font scaling | Source audit; frame/GPU/memory UNVERIFIED |
+| You, Saved, stats and quiz question cards | Static supporting tint/rim or opaque content surfaces | Theme/material brushes remembered; no per-card live blur | Near-opaque high-contrast surfaces; Reduce Transparency raises opacity and static tint/rim floors; font scaling | Source audit; frame/GPU/memory UNVERIFIED |
 | Quiz answer controls | Static button tint/border; no live glass effect | Pure state/alpha policy; stable LazyColumn keys/content type | 52dp target; selected + stateDescription; reduced-transparency raises tint/rim | Four JVM policy tests added in Quiz batch; natural CI pending |
 | Quiz footer | One existing Prismal surface plus a 3dp determinate indicator | Progress derived from local selected-count; no timer/polling | Text count remains visible; buttons retain 48dp targets | Source audit; device smoothness UNVERIFIED |
 
@@ -709,9 +753,9 @@ Recheck every branch head and dependency before each future implementation commi
 | Search results hierarchy | Plain status row + static control glass | One result/active-filter label beside the existing Filters action; no redundant inline live-glass slab | One 7dp blur/refraction panel removed; conditional filter sheet and morph field retained; device hierarchy unverified |
 | Explore category rail | Interactive control glass | One shared capsule; selected fill/border and >=48dp targets | 48dp target, selected semantics and Geography filter integrated |
 | Today / Explore / Search article cards | Editorial content + static glass-derived rim | Opaque/near-opaque cards, continuous corners, clear typography and image-derived ambient colour; no live blur | Shared 0.75dp theme-aware rim follows Clear↔Frosted and Reduce Transparency; skeletons use the same rim; single Coil request and same-bitmap palette |
-| You dashboard | Supporting glass | Theme-aware translucent tint/rim, continuous 22dp geometry, single-line metric values | Static surface opacity preserves readability; shared Clear↔Frosted intensity now scales cached tint/rim tokens; no live blur; OPPO contrast unverified |
-| Saved | One shared interactive Prismal filter group + editorial cards | Date/GS/subject rails share one 22dp rounded control surface; story cards remain calm, high-contrast content | `GlassFilterGroup` batch authored; one panel, three 48dp horizontal rails; selected filters and existing saved data semantics unchanged |
-| Reading / Quiz Stats | One shared interactive Prismal filter group + supporting glass data cards | Date/GS/subject controls use one small live-glass group; metric/day/attempt values stay high contrast | Supporting cards use the same committed Clear↔Frosted tint/rim intensity; no live blur; summaries memoized |
+| You dashboard | Supporting glass | Theme-aware translucent tint/rim, continuous 22dp geometry, single-line metric values | Static surface opacity preserves readability; shared Clear↔Frosted intensity scales cached tint/rim tokens; Reduce Transparency raises opacity and enforces static tint/rim floors; no live blur; OPPO contrast unverified |
+| Saved | One shared interactive Prismal filter group + editorial cards | Date/GS/subject rails share one 22dp rounded control surface; story cards remain calm, high-contrast content | `GlassFilterGroup` uses one panel and three 48dp horizontal rails; supporting empty states share the reduced-transparency fallback; selected filters and saved data semantics unchanged |
+| Reading / Quiz Stats | One shared interactive Prismal filter group + supporting glass data cards | Date/GS/subject controls use one small live-glass group; metric/day/attempt values stay high contrast | Supporting cards use the same Clear↔Frosted intensity plus the higher-opacity Reduce Transparency fallback; no per-card live blur; summaries memoized |
 | Reader toolbar | Primary floating glass | Back, source/date/status and compact Aa; direction-aware auto-hide plus short content-tap reveal while hidden | Implemented; tap preserves native links/selection; pinned during selection, definition, IME and accessibility states; device motion unverified |
 | Reader progress | Minimal indicator | Reuse existing saved progress; no polling or animated readback | Implemented in this batch |
 | Reader article canvas | Editorial content | Clear, high-contrast text; responsive max width and paragraph rhythm | Existing responsive CSS; keep non-glass |
@@ -721,7 +765,7 @@ Recheck every branch head and dependency before each future implementation commi
 | Quiz answer controls | Interactive control glass (static tint/rim) | Distinguish idle/selected/correct/incorrect states with accessible feedback and 52dp targets | Static button fill/border only; no backdrop capture or per-option blur; policy tests cover states and reduced-transparency alpha |
 | Quiz action dock | Primary transient glass | Keep progress and submit/done actions reachable without obscuring questions | Reuses the existing single Prismal footer; one small progress track reads selected-count state; no polling or extra surface |
 | Quiz action controls | Interactive control glass | One compact glass identity/header and one safe-area-aware submission dock; keep Done/Submit discoverable | Implemented in the Quiz action-chrome batch; two small surfaces reuse the root backdrop |
-| Appearance settings | Standard settings surface + one interactive control-glass preview | Clear↔Frosted slider/presets, four-destination preview, readable article sample and low-effects switch | One 5dp Prismal control preview plus a static SupportingGlassCard sample both reflect the preview intensity; slider state is child-scoped and commits app-wide only on release; device validation pending |
+| Appearance settings | Standard settings surface + one interactive control-glass preview | Clear↔Frosted slider/presets, four-destination preview, readable article sample and low-effects switch | One 5dp Prismal control preview plus a static SupportingGlassCard sample reflect intensity and the reduced-transparency fallback; slider state is child-scoped and commits app-wide only on release; device validation pending |
 | Search filter sheet | Interactive transient glass | One rounded Prismal surface behind the active topic/GS/subject controls; filter state and reset semantics remain unchanged | Shared 5dp transient material; existing root backdrop only; device safe-area and drag behaviour unverified |
 | Reader Aa menu | Interactive transient glass | Compact anchored text-size menu; preserve the existing 16–28sp actions and clamping | Same shared transient material, mounted only while expanded; font-size behaviour unchanged |
 | Other dialogs, menus and sheets | Contextual controls | Use glass only when transient context benefits; preserve native OS selection/share UI | Review individually; no global glass overlay |

@@ -1,4 +1,33 @@
-# Latest pre-change branch/PR/CI audit — 9 November 2026, 04:23 IST
+# Latest live branch/PR/CI audit — 9 November 2026, 06:22 IST
+
+**Repository:** `Batmancpu/CurrentLens`
+**Default:** `main@73b8a0d1ba33503fede02db2c3c0af082d724a12`
+**Owner-selected consolidation/UI branch:** `black-box-bihar-news@18828f70e87a62fe3483dcc99fc29b82a6b7053b` — **160 ahead / 0 behind main**; main is the merge base.
+**PR:** #34 remains open/draft → main, unmerged and unretargeted. The next implementation commit is a direct child of this exact source.
+
+## Complete graph and dependency treatment
+
+- Complete remote enumeration: **47 branches** (page 1 = 47, page 2 = 0), **29 open PRs**, **15 closed PRs**. The full 47-row branch-head/timestamp/message table follows in the historical audit below; the active `black-box-bihar-news` and closed PR #44 relationships are refreshed there.
+- PR #43 Reader teardown (`e5b7b9f8f5d9e33021bd6ccb7b7cb3f827218e3c`) is **11 ahead / 160 behind** black-box, merge base main. Its full 3-file patch was reviewed; current integration already has `AndroidView.onRelease`, cancellable restore-settle ownership, independent Exception-only cleanup and fatal `LinkageError` propagation. It is divergent and not a replacement baseline.
+- PR #37 Search compile repair (**6/41**), #30 48dp targets (**3/56**), #31 off-main appearance restore (**5/55**), #36 IST rollover (**3/42**) and #13 adaptive contrast (**1/173**) are divergent but their safe functional changes are already represented. PR #13's older 1.5s/2.5s sampler is superseded by the single 8×8 4s/6s probe paused outside eligible foreground-home states.
+- PR #44 is **closed/unmerged**; its one-line `cardBorder` scope repair is present in active commit `18828f70e87a62fe3483dcc99fc29b82a6b7053b`; its source branch is untouched. PR #42 is editorial-only (**6/9**). PR #39's signing migration remains owner-gated (**6/25**). PR #18's workflow-only branch is **1/160** and is superseded by the active read-only build/test + isolated main-push Release-write workflow. PR #16 is divergent (**7/103**); no old MainActivity was copied.
+- `brrrNEWS` is an older visual sibling (**4/66**); its fixed-intensity supporting material is superseded. `ui/liquid-glass-performance` (**3/178**) and `redesign/v0.3-search-reader` (**0/254**) are stale. RSS/parser/privacy/editorial proposals remain separate unless a specific change is reviewed and safely reconciled. No source branch is deleted, force-updated, merged or modified.
+
+## Actions, workflow and Release
+
+- **379** Actions runs were fully paginated (100 + 100 + 100 + 79): **239 success / 70 failure / 70 cancelled**; queued/in-progress **0**.
+- Exact source `18828f70e87a62fe3483dcc99fc29b82a6b7053b` passed natural push #378 and pull-request #379. WordNet builder 4/4, 151,456-word offline DB generation, `:app:testDebugUnitTest`, `:app:assembleDebug` and APK upload all passed. Full logs show BUILD SUCCESSFUL in 1m05s (push) and 1m31s (PR); Release jobs skipped.
+- PR artifact #13640107491: 39,128,629 bytes, SHA-256 `46a70d172f84b29ae1526d71821244a43d758bb08008bb6c7d4a34ecf87481dc`; push artifact #13640011669: 39,128,627 bytes, SHA-256 `ae3c3aaa61fd17669d0248abc3703db561f0eea8c7599c27c741771ff4af6d7d`. Both expire 23 November 2026.
+- Black-box workflow is read-only for build/test and isolates Release write to main pushes; it triggers natural validation for main, PR #16 and black-box. Main's own workflow remains push-only with workflow-wide `contents: write`; PR #16's workflow remains push-only/write-enabled. Run #379 validates PR #34's exact head, not a change to main's workflow.
+- Latest published Release remains `v0.2.0-build-116` (6 November 2026 11:18:59 UTC). No Release was published.
+
+## Device and safety status
+
+- OPPO Reno10 launch/runtime, screenshots, visual contrast, TalkBack, font scaling, Reduce Motion, keyboard/IME, Reader re-entry, Perfetto/frame timing, GPU overdraw, allocation/memory churn, thermal and battery remain **UNVERIFIED**.
+- No main write, PR merge/retarget, manual workflow dispatch/rerun, Release publication, package/app identity change, repository-setting change or source-branch deletion.
+
+---
+# Historical pre-change branch/PR/CI audit — 9 November 2026, 04:23 IST
 
 **Repository:** `Batmancpu/CurrentLens`  
 **Default:** `main@73b8a0d1ba33503fede02db2c3c0af082d724a12`  
@@ -2291,7 +2320,7 @@ UTC timestamps/messages are the latest commit on each branch head. PR list: 43 t
 | Remote branch | Exact head SHA | Latest commit (UTC) | Latest commit message | PR relationship |
 |---|---|---|---|---|
 | `a11y/48dp-icon-targets-2026-11-07` | `25107ce905b70bde1a41282ffd1d606819ebf58d` | 2026-11-07 11:02:12 UTC | test(a11y): cover minimum icon action target | #30 open/draft → black-box-bihar-news |
-| `black-box-bihar-news` | `022a28824a5a5d88a66986cd47a8a6cfb18fdf34` | 2026-11-08 23:03:02 UTC | ui(feed): add restrained shared card rim | #34 open/draft → main; selected integration head before this pass |
+| `black-box-bihar-news` | `18828f70e87a62fe3483dcc99fc29b82a6b7053b` | 2026-11-09 00:00:14 UTC | fix(ui): restore feed card rim and refresh integration ledger | #34 open/draft → main; current owner-selected integration head |
 | `brrrNEWS` | `e6fcfc25a4c8d5f363ced58f313552120aa7ff96` | 2026-11-07 04:13:30 UTC | ui: consolidate lightweight supporting glass surfaces | base of #24 open/draft; older visual line |
 | `ci/read-only-pr-validation-isolated-release-write-2026-11-06` | `963118f0abe5f7e38f2aa66a49d4b8e74548660c` | 2026-11-06 17:18:53 UTC | ci: validate pull requests with read-only build permissions | #18 open/draft → main |
 | `ci/stacked-pr-validation-2026-11-07` | `5dc3179361835b77fb3186a99d9b5791301463fd` | 2026-11-06 21:41:27 UTC | ci: restore Android SDK setup before sdkmanager | #20 closed/merged → black-box-bihar-news |
@@ -2305,7 +2334,7 @@ UTC timestamps/messages are the latest commit on each branch head. PR list: 43 t
 | `fix/editorial-policy-exception-guard-2026-11-07` | `1f7a3c2a7b74cc02cfee6fe451f4576feb291acf` | 2026-11-07 04:46:47 UTC | fix(editorial): match policy action and target as separate words | #24 open/draft → brrrNEWS |
 | `fix/editorial-signal-count-test` | `4738690d6e7f6c7c02a621742f25d5ebf1d631fb` | 2026-11-06 05:16:32 UTC | test: align economy signal count with repo-rate mapping | #2 closed/merged → main |
 | `fix/editorial-token-boundaries-2026-11-06` | `0045c24637f162f1c13dceb1f8878f42f6eb15fd` | 2026-11-06 02:34:28 UTC | fix: tighten UPSC editorial signal matching | #1 closed/merged → main |
-| `fix/feed-card-rim-wiring-2026-11-09` | `3bcde08a4ba7ee6e9420864d9bb044b8fe1d4895` | 2026-11-08 23:20:44 UTC | fix(ui): wire feed card rim to the correct card scope | #44 open/draft → black-box-bihar-news; 1 ahead / 0 behind; natural run #377 success |
+| `fix/feed-card-rim-wiring-2026-11-09` | `3bcde08a4ba7ee6e9420864d9bb044b8fe1d4895` | 2026-11-08 23:20:44 UTC | fix(ui): wire feed card rim to the correct card scope | #44 closed/unmerged; one-line fix is present on black-box at `18828f70e87a62fe3483dcc99fc29b82a6b7053b`; source branch untouched |
 | `fix/gst-council-syllabus-disambiguation-2026-11-08` | `2629cfbe4ee6ece7a41fd13d35dc987abc1e26b8` | 2026-11-08 16:43:45 UTC | docs(editorial): fix baseline paragraph spacing | #42 open/draft → black-box-bihar-news |
 | `fix/navigation-icon-imports-2026-11-06` | `fa8868940c08ed5b4a9def014a850e8a9dcb3490` | 2026-11-06 06:27:06 UTC | fix: use supported calendar navigation glyph | #5 closed/merged → main |
 | `fix/parliamentary-syllabus-signal-gate-2026-11-07` | `9d754953a29c0355ce55306ce4fd5463193c9dbb` | 2026-11-07 03:49:44 UTC | test: preserve Parliament bill headline variants | #23 closed/merged → black-box-bihar-news |
