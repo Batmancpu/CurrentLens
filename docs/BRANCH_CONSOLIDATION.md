@@ -1,16 +1,16 @@
-# Live repository inventory — 9 November 2026, 12:30 IST
+# Live repository inventory — 9 November 2026, 12:45 IST
 
 **Default branch:** main at 73b8a0d1ba33503fede02db2c3c0af082d724a12.  
-**Selected integration branch:** black-box-bihar-news. Its last app-code commit at this snapshot is 45609a3d5d32ee02ba33c54501a497d6a00d25b7; it is 168 ahead / 0 behind main, with main as merge base. PR #34 remains the single open/draft, unmerged consolidation PR targeting main. This inventory records the exact branch refs before the documentation-only update that appends this snapshot; no other branch is a development target.
+**Selected integration branch:** black-box-bihar-news. Its last app-code commit at this snapshot is 45609a3d5d32ee02ba33c54501a497d6a00d25b7; the current documentation head is 80d072b39dc4075d5777f23053b7da08daa32297. It is 170 ahead / 0 behind main, with main as merge base. PR #34 remains the single open/draft, unmerged consolidation PR targeting main. This inventory records the exact branch refs before the documentation-only update that appends this snapshot; no other branch is a development target.
 
-The complete live branch list was paginated: 49 branches on page 1, page 2 empty. Pull requests: 46 total (31 open, 15 closed), page 2 empty. Every branch head SHA, last commit timestamp/message and PR relationship is recorded below. Closed PRs are explicitly distinguished as merged or closed/unmerged; source branches are retained. At the pre-refresh snapshot, black-box-bihar-news had documentation head 42d4130cf1fe19d47ce3a450b5c530ea25d4c33e and last app-code head 45609a3d5d32ee02ba33c54501a497d6a00d25b7.
+The complete live branch list was paginated: 49 branches on page 1, page 2 empty. Pull requests: 46 total (30 open, 16 closed), page 2 empty. Every branch head SHA, last commit timestamp/message and PR relationship is recorded below. Closed PRs are explicitly distinguished as merged or closed/unmerged; source branches are retained. At the pre-refresh snapshot, black-box-bihar-news had documentation head 42d4130cf1fe19d47ce3a450b5c530ea25d4c33e and last app-code head 45609a3d5d32ee02ba33c54501a497d6a00d25b7.
 
 | Remote branch | Head SHA | Latest commit UTC | Subject | PR / relationship |
 |---|---|---|---|---|
 | a11y/dictionary-popup-reduce-motion-2026-11-09 | fbadd56e0e119cf70b865af8a58843190cce249d | 2026-11-09 01:33:20 | test: cover dictionary popup Reduce Motion policy | #45 open/draft → main; motion policy already represented in integration |
 | a11y/dictionary-popup-reduce-transparency-2026-11-09 | 55afb9ab662d2926675f0a57737d3f817b1fc2cb | 2026-11-09 02:58:11 | Honor Reduce Transparency in dictionary popup | #46 closed/unmerged → black-box; selective port present |
 | a11y/48dp-icon-targets-2026-11-07 | 25107ce905b70bde1a41282ffd1d606819ebf58d | 2026-11-07 11:02:12 | test(a11y): cover minimum icon action target | #30 open/draft → black-box; TouchTargetPolicy represented |
-| black-box-bihar-news | 45609a3d5d32ee02ba33c54501a497d6a00d25b7 | 2026-11-09 07:07:03 UTC | fix(reader): isolate WebView disposal cleanup steps | #34 open/draft → main; active app-code head (docs-only head 42d4130cf1fe19d47ce3a450b5c530ea25d4c33e) |
+| black-box-bihar-news | 80d072b39dc4075d5777f23053b7da08daa32297 | 2026-11-09 07:13:51 UTC | docs: record Reader disposal CI verification | #34 open/draft → main; current docs head; app-code head 45609a3d5d32ee02ba33c54501a497d6a00d25b7 |
 | brrrNEWS | e6fcfc25a4c8d5f363ced58f313552120aa7ff96 | 2026-11-07 04:13:30 | ui: consolidate lightweight supporting glass surfaces | Base of #24; older material line, not the active baseline |
 | ci/read-only-pr-validation-isolated-release-write-2026-11-06 | 963118f0abe5f7e38f2aa66a49d4b8e74548660c | 2026-11-06 17:18:53 | ci: validate pull requests with read-only build permissions | #18 open/draft → main; compatible workflow design integrated into black-box |
 | ci/stacked-pr-validation-2026-11-07 | 5dc3179361835b77fb3186a99d9b5791301463fd | 2026-11-06 21:41:27 | ci: restore Android SDK setup before sdkmanager | #20 closed/merged → black-box |
@@ -23,7 +23,7 @@ The complete live branch list was paginated: 49 branches on page 1, page 2 empty
 | fix/editorial-heatwave-bill-signals-2026-11-07 | 89464104e300f48da10e3e32e33715cbe2405084 | 2026-11-06 22:05:40 | Verify a specific parliamentary bill remains eligible for the GS II feed | #21 open/draft → main; combined editorial work represented |
 | fix/editorial-policy-exception-guard-2026-11-07 | 1f7a3c2a7b74cc02cfee6fe451f4576feb291acf | 2026-11-07 04:46:47 | fix(editorial): match policy action and target as separate words | #24 open/draft → brrrNEWS; older divergent material line |
 | fix/editorial-signal-count-test | 4738690d6e7f6c7c02a621742f25d5ebf1d631fb | 2026-11-06 05:16:32 | test: align economy signal count with repo-rate mapping | #2 closed/merged → main |
-| fix/editorial-token-boundaries-2026-11-06 | 0045c24637f162f1c13dceb1f8878f42f6eb15fd | 2026-11-06 02:34:28 | fix: tighten UPSC editorial signal matching | #1 closed/unmerged → main |
+| fix/editorial-token-boundaries-2026-11-06 | 0045c24637f162f1c13dceb1f8878f42f6eb15fd | 2026-11-06 02:34:28 | fix: tighten UPSC editorial signal matching | #1 closed/merged → main |
 | fix/feed-card-rim-wiring-2026-11-09 | 3bcde08a4ba7ee6e9420864d9bb044b8fe1d4895 | 2026-11-08 23:20:44 | fix(ui): wire feed card rim to the correct card scope | #44 closed/unmerged; one-line fix present in black-box |
 | fix/gst-council-syllabus-disambiguation-2026-11-08 | 2629cfbe4ee6ece7a41fd13d35dc987abc1e26b8 | 2026-11-08 16:43:45 | docs(editorial): fix baseline paragraph spacing | #42 open/draft → black-box; editorial-only |
 | fix/navigation-icon-imports-2026-11-06 | fa8868940c08ed5b4a9def014a850e8a9dcb3490 | 2026-11-06 06:27:06 | fix: use supported calendar navigation glyph | #5 closed/merged → main |
@@ -37,7 +37,7 @@ The complete live branch list was paginated: 49 branches on page 1, page 2 empty
 | fix/search-clear-row-scope-compile-2026-11-08 | 9dd4ceac08e88e6ee4ea565025a70539a6e9e331 | 2026-11-07 21:55:56 | docs: record verified search clear compile repair | #37 open/draft → black-box; RowScope compile repair represented |
 | fix/search-glass-theme-capture-2026-11-06 | c514eff3d5fd266ce6b6ecec51a141055e5fa52e | 2026-11-06 07:44:03 | fix: capture Search glass tint before draw callback | #10 closed/merged → main |
 | fix/stable-release-signing-2026-11-08 | 4250de5040a8ca0efbf96a990218ef7d69ef26e8 | 2026-11-08 07:03:31 | docs: record stable signing validation and migration gate | #39 open/draft → black-box; owner-gated on secrets/certificate/migration |
-| fix/startup-crash-diagnostics-feed-jank-2026-11-06 | 5da4e789b0f49c0eefda024410ade34c1e0f2a7c | 2026-11-06 07:39:53 | fix: diagnose launch crashes and move feed indexing off main | #9 closed/unmerged; superseded by later stability branch |
+| fix/startup-crash-diagnostics-feed-jank-2026-11-06 | 5da4e789b0f49c0eefda024410ade34c1e0f2a7c | 2026-11-06 07:39:53 | fix: diagnose launch crashes and move feed indexing off main | #9 closed/merged → main; older diagnostics line |
 | fix/startup-stability-performance-2026-11-06 | 654e660347de692ef88531dfa49c610269d69671 | 2026-11-06 07:18:06 | fix: harden cold start and reduce feed rendering workload | #7 closed/merged → main |
 | fix/today-ist-midnight-rollover-2026-11-08 | 5fbd14e6ef9be33d04a882ba463d4c72473419e2 | 2026-11-07 20:48:43 | test(today): cover Asia/Kolkata midnight rollover | #36 open/draft → black-box |
 | fix/validate-rss-article-hosts-2026-11-08 | 552b96e7948ac5ade821a711ea8dd225984824a9 | 2026-11-08 10:34:28 | fix(rss): keep redirect result non-null | #40 open/draft → main; network guard |
@@ -59,9 +59,9 @@ The complete live branch list was paginated: 49 branches on page 1, page 2 empty
 
 ## Current graph and workflow
 
-- PR #34: open/draft, unmerged, head black-box-bihar-news, base main, 169 commits ahead of main; 91 changed files, 13,545 additions / 901 deletions at the pre-refresh snapshot. Keep draft; do not merge.
+- PR #34: open/draft, unmerged, head black-box-bihar-news, base main, 170 commits ahead of main; 91 changed files, 13,547 additions / 901 deletions at the pre-refresh snapshot. Keep draft; do not merge.
 - The exact integration workflow is .github/workflows/build-apk.yml. Build/test permissions are read-only; Release write is isolated to a main-push-only job. No workflow file is changed in this batch.
-- Actions history is fully paginated: 398 runs (258 success / 70 failure / 70 cancelled), queued 0, in-progress 0. Runs #395/#396 passed on exact app-code head 45609a3d5d32ee02ba33c54501a497d6a00d25b7; runs #397/#398 passed on documentation head 42d4130cf1fe19d47ce3a450b5c530ea25d4c33e. This next documentation-only refresh requires its own natural validation.
+- Actions history is fully paginated: 400 runs (260 success / 70 failure / 70 cancelled), queued 0, in-progress 0. Runs #395/#396 passed on exact app-code head 45609a3d5d32ee02ba33c54501a497d6a00d25b7; #397/#398 passed on documentation head 42d4130cf1fe19d47ce3a450b5c530ea25d4c33e; #399/#400 passed on documentation head 80d072b39dc4075d5777f23053b7da08daa32297. This next documentation-only refresh requires its own natural validation.
 - Latest published Release remains v0.2.0-build-116, published 6 November 2026 11:18:59 UTC. No Release was created or published.
 - No main write, merge, retarget, force update, manual workflow dispatch/rerun, package/app identity change, source-branch deletion or unrelated branch modification occurred.
 
