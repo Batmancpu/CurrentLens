@@ -34,6 +34,18 @@ class GlassSurfacePolicyTest {
         )
         assertEquals(0.975f, GlassSurfacePolicy.supportingSurfaceAlpha(true, true, clear), 0.0001f)
         assertEquals(0.985f, GlassSurfacePolicy.supportingSurfaceAlpha(false, true, frosted), 0.0001f)
+
+        // Preserve the existing supporting-tint/rim Reduce Transparency floors.
+        assertEquals(0.11f, GlassSurfacePolicy.supportingTintAlpha(true, clear, true), 0.0001f)
+        assertEquals(0.07f, GlassSurfacePolicy.supportingTintAlpha(false, clear, true), 0.0001f)
+        assertEquals(0.145f, GlassSurfacePolicy.supportingTintAlpha(true, frosted, true), 0.0001f)
+        assertEquals(0.23f, GlassSurfacePolicy.supportingRimAlpha(true, clear, true), 0.0001f)
+        assertEquals(0.16f, GlassSurfacePolicy.supportingRimAlpha(false, clear, true), 0.0001f)
+        assertEquals(0.16f, GlassSurfacePolicy.supportingRimAlpha(false, frosted, true), 0.0001f)
+        assertTrue(
+            GlassSurfacePolicy.supportingRimAlpha(false, clear, true) >=
+                GlassSurfacePolicy.supportingRimAlpha(false, clear)
+        )
         assertTrue(
             GlassSurfacePolicy.supportingSurfaceAlpha(true, true, clear) >
                 GlassSurfacePolicy.supportingSurfaceAlpha(true, glassAlpha = frosted)

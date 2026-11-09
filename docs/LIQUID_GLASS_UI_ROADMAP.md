@@ -13,7 +13,7 @@
 ### Paired performance and accessibility
 - Added **zero** live blur surfaces, refraction, shaders, graphics layers, backdrop captures/readbacks, image decodes, dependencies, timers, polling, network work or storage work. Existing Card, cached shape, tint gradient and rim brush are reused; the only added work is one bounded intensity interpolation for an existing fill alpha.
 - Appearance slider preview remains local to its child composition while dragging; the app-wide preference is still committed on release. Reduce Transparency keeps the stronger static fill and does not add a blur fallback.
-- Focused JVM tests cover Clear/Balanced/Frosted endpoints, default/non-finite fallback, and reduced-transparency opacity. No screenshot test is added because component geometry/content and interaction are unchanged.
+- Focused JVM tests cover Clear/Balanced/Frosted endpoints, default/non-finite fallback, and reduced-transparency opacity. A follow-up restores the pre-existing supporting tint/rim Reduce Transparency floor assertions that were omitted when the old test was refactored; no production code changes in that follow-up. No screenshot test is added because component geometry/content and interaction are unchanged.
 
 ### Per-screen coverage / optimization matrix
 | Surface | Material tier / reason | Effect scope and reuse | Fallback / accessibility | Verification |
@@ -23,7 +23,7 @@
 | Appearance live preview | Tier 3 supporting card inside one existing Tier 2 Prismal preview | Reuses preview-local intensity; one existing live transient surface, no nested blur | 48dp slider/switch controls and local preview updates; reduced effects remain static | Policy tests; device preview unverified |
 
 ### CI, release and device boundary
-- Parent exact-head natural push #409 and PR #410 passed on `aee50ffcd4ccc9f958a9e09d4debec364ac0debe`; they do **not** validate this new commit. Natural exact-head CI for this batch is pending; no dispatch/rerun.
+- Exact implementation head `26878fcd62b86d54075ccf6e93898d63f20aedac` passed natural push [#411](https://github.com/Batmancpu/CurrentLens/actions/runs/42598067067) and PR [#412](https://github.com/Batmancpu/CurrentLens/actions/runs/42598073328). Both build jobs completed all setup steps, WordNet builder 4/4, 151,456 unique words / 50,950,144 bytes, `:app:testDebugUnitTest`, `:app:assembleDebug` and APK artifact upload; logs report `BUILD SUCCESSFUL` (57s push / 1m30s PR). Push artifact [#13664516865](https://github.com/Batmancpu/CurrentLens/actions/runs/42598067067/artifacts/13664516865): 39,139,552 bytes, SHA-256 `23f8bfd50772e4bbe537d2e2ceea26b991ede713f01f59de1a2c028b11d97be0`. PR artifact [#13664114019](https://github.com/Batmancpu/CurrentLens/actions/runs/42598073328/artifacts/13664114019): 39,139,556 bytes, SHA-256 `4f8b684c86ac40d7070d1ae7c908f8b1413af32ad3c83a4bb9793e2152b01646`. Both expire 23 November 2026; main-only Release jobs skipped. This follow-up changes only policy-test coverage and documentation, so it requires its own natural exact-head CI. No dispatch/rerun.
 - OPPO Reno10 appearance, contrast over live backdrops, TalkBack, font scaling, frame timing/jank, GPU overdraw, allocation/memory, thermal and battery remain **UNVERIFIED**. This opacity tuning is a design-token change, not a measured performance improvement.
 - No main write, merge, PR retarget, Release publication, package identity change, source-branch mutation/deletion or workflow change.
 
