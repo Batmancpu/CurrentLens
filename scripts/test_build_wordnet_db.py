@@ -1,9 +1,10 @@
+import hashlib
 import sqlite3
 import tempfile
 import unittest
 import zipfile
 from pathlib import Path
-from build_wordnet_db import build_database, parse_data_line
+from build_wordnet_db import build_database, parse_data_line, verify_archive_sha256
 
 
 class WordNetParserTests(unittest.TestCase):
@@ -27,6 +28,37 @@ class WordNetParserTests(unittest.TestCase):
     def test_skips_malformed_and_header_lines(self):
         self.assertIsNone(parse_data_line("  index.vrb 2 0\n", "verb"))
         self.assertIsNone(parse_data_line("broken line | gloss\n", "noun"))
+
+    def test_accepts_exact_archive_sha256(self):
+        with tempfile.TemporaryDirectory() as directory:
+            archive_path = Path(directory) / "wordnet.zip"
+            archive_path.write_bytes(b"pinned-wordnet-fixture")
+            expected = hashlib.sha256(archive_path.read_bytes()).hexdigest().upper()
+            self.assertEqual(verify_archive_sha256(archive_path, expected), expected.lower())
+
+    def test_rejects_mismatched_archive_sha256_before_creating_output(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            archive_path = root / "wordnet.zip"
+            output_path = root / "assets" / "wordnet.db"
+            archive_path.write_bytes(b"untrusted-wordnet-fixture")
+            with self.assertRaisesRegex(ValueError, "SHA-256 mismatch"):
+                build_database(
+                    archive_path,
+                    output_path,
+                    expected_sha256="0" * 64,
+                    min_unique_words=1,
+                    min_archive_bytes=0,
+                )
+            self.assertFalse(output_path.exists())
+            self.assertFalse(output_path.parent.exists())
+
+    def test_rejects_malformed_expected_sha256(self):
+        with tempfile.TemporaryDirectory() as directory:
+            archive_path = Path(directory) / "wordnet.zip"
+            archive_path.write_bytes(b"wordnet")
+            with self.assertRaisesRegex(ValueError, "64 hexadecimal"):
+                verify_archive_sha256(archive_path, "not-a-sha256")
 
     def test_builds_wordnet_only_database_and_morphology_exceptions(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -55,10 +87,12 @@ class WordNetParserTests(unittest.TestCase):
                 archive.writestr("dict/verb.exc", "ran run\n")
                 archive.writestr("dict/adj.exc", "better good\n")
                 archive.writestr("dict/adv.exc", "")
+            expected_sha256 = hashlib.sha256(archive_path.read_bytes()).hexdigest()
             self.assertEqual(
                 build_database(
                     archive_path,
                     output_path,
+                    expected_sha256=expected_sha256,
                     min_unique_words=4,
                     min_archive_bytes=0,
                 ),
