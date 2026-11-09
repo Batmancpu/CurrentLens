@@ -4033,35 +4033,59 @@ private class ReaderWebView(context: android.content.Context) : WebView(context)
                 // Flush the last debounced position before callbacks are disconnected.
                 { flushReadingPosition() },
                 { stopLoading() },
-                {
-                    readingPositionSave?.let { removeCallbacks(it) }
-                    readingPositionSave = null
-                    cancelReadingPositionRestore()
-                    cancelShortPageEndCheck(resetStability = true)
-                    cancelPendingReaderChromeHide()
-                },
-                {
-                    selectionBridgeEnabled = false
-                    selectionActionModeActive = false
-                    readerChromePinned = false
-                    readerChromeScrollState = ReaderChromeScrollState()
-                    readingPositionCompleted = true
-                    onReachedBottom = {}
-                    onSelectionActionModeChanged = {}
-                    onDefineWord = { _, _ -> }
-                    onReaderPageFinished = {}
-                    onReaderMainFrameError = {}
-                    allowReaderNavigation = { false }
-                    onOpenPublisherLink = {}
-                    onReadingProgressChanged = {}
-                    onReaderChromeVisibilityChanged = {}
-                },
-                {
-                    settings.javaScriptEnabled = false
-                    settings.domStorageEnabled = false
-                    webViewClient = WebViewClient()
-                    webChromeClient = null
-                },
+
+                // Keep callback removal and reference clearing independent. A failed
+                // removeCallbacks() must not retain the Runnable or skip later cleanup.
+                { readingPositionSave?.let { removeCallbacks(it) } },
+                { readingPositionSave = null },
+                { readingPositionRestore?.let { removeCallbacks(it) } },
+                { readingPositionRestore = null },
+                { readingPositionRestoreSettle?.let { removeCallbacks(it) } },
+                { readingPositionRestoreSettle = null },
+                { restoringReadingPosition = false },
+                { pendingReadingPositionRestore = null },
+                { stableRestoreSamples = 0 },
+                { lastRestoreContentHeight = -1 },
+                { shortPageEndCheck?.let { removeCallbacks(it) } },
+                { shortPageEndCheck = null },
+                { shortPageStabilityGate.reset() },
+                { pendingReaderChromeHide?.let { removeCallbacks(it) } },
+                { pendingReaderChromeHide = null },
+
+                // Invalidate any in-flight evaluateJavascript selection result and
+                // independently release the delayed auto-definition Runnable.
+                { selectionModeGeneration += 1 },
+                { pendingAutoDefine?.let { removeCallbacks(it) } },
+                { pendingAutoDefine = null },
+                { autoDefineEvaluationPending = false },
+                { selectionBridgeEnabled = false },
+
+                { selectionActionModeActive = false },
+                { readerChromePinned = false },
+                { readerChromeVisible = false },
+                { readerChromeScrollState = ReaderChromeScrollState() },
+                { readingPositionCompleted = true },
+                { touchDownX = null },
+                { touchDownY = null },
+                { touchDownAtMillis = null },
+                { tapCandidate = false },
+                { upwardSwipeDetected = false },
+
+                // Drop every Compose/WebView closure before destroying the view.
+                { onReachedBottom = {} },
+                { onSelectionActionModeChanged = {} },
+                { onDefineWord = { _, _ -> } },
+                { onReaderPageFinished = {} },
+                { onReaderMainFrameError = {} },
+                { allowReaderNavigation = { false } },
+                { onOpenPublisherLink = {} },
+                { onReadingProgressChanged = {} },
+                { onReaderChromeVisibilityChanged = {} },
+
+                { settings.javaScriptEnabled = false },
+                { settings.domStorageEnabled = false },
+                { webViewClient = WebViewClient() },
+                { webChromeClient = null },
                 { clearHistory() },
                 { (parent as? android.view.ViewGroup)?.removeView(this) },
                 { removeAllViews() },
@@ -4069,7 +4093,6 @@ private class ReaderWebView(context: android.content.Context) : WebView(context)
             )
         )
     }
-
     override fun onDetachedFromWindow() {
         flushReadingPosition()
         readingPositionSave?.let { removeCallbacks(it) }
