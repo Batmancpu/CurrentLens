@@ -1,16 +1,16 @@
-# Live repository inventory — 9 November 2026, 14:39 IST
+# Live repository inventory — 9 November 2026, 15:26 IST
 
 **Default branch:** main at 73b8a0d1ba33503fede02db2c3c0af082d724a12.  
-**Selected integration branch:** black-box-bihar-news. The Liquid Glass app-code commit is `fb2e75c3f82f18896bfa5dff623a9ba9da263d15`; the evidence-backed test correction is `59c54cedadd1ad97a96c00d63cb3d020343ee2cd` (2026-11-09 09:06:59 UTC), a direct child of docs head `b8d87f7448e47be6869ce8a107b1d67dd8b4639d`. The test-fix head is **174 ahead / 0 behind** main, with main as merge base. PR #34 remains the single open/draft, unmerged consolidation PR targeting main. This inventory is the docs snapshot for that verified test-fix head; its own docs-only commit follows.
+**Selected integration branch:** `black-box-bihar-news@aee50ffcd4ccc9f958a9e09d4debec364ac0debe` (2026-11-09 09:11:53 UTC), a direct first-parent child of `59c54cedadd1ad97a96c00d63cb3d020343ee2cd`. It is **175 ahead / 0 behind** `main@73b8a0d1ba33503fede02db2c3c0af082d724a12`, with main as merge base. PR #34 remains the single open/draft, unmerged consolidation PR targeting main. The next supporting-surface opacity batch is a direct continuation of this verified source.
 
-The complete live branch list was paginated: **51 branches** on page 1, page 2 empty. Pull requests: **47 total (32 open, 15 closed)**, page 2 empty. Every branch head SHA, latest commit timestamp/message and PR relationship is recorded below; closed PRs are distinguished as merged or closed/unmerged. All source branches are retained.
+The complete live branch list was paginated: **51 branches** (30 on page 1, 21 on page 2). Pull requests: **48 total (32 open, 16 closed)**; 11 merged and 5 closed/unmerged. All pages were exhausted. Every branch head SHA, latest commit timestamp/message and PR relationship is recorded below; all source branches are retained.
 
 | Remote branch | Head SHA | Latest commit UTC | Subject | PR / relationship |
 |---|---|---|---|---|
 | a11y/dictionary-popup-reduce-motion-2026-11-09 | fbadd56e0e119cf70b865af8a58843190cce249d | 2026-11-09 01:33:20 | test: cover dictionary popup Reduce Motion policy | #45 open/draft → main; motion policy already represented in integration |
 | a11y/dictionary-popup-reduce-transparency-2026-11-09 | 55afb9ab662d2926675f0a57737d3f817b1fc2cb | 2026-11-09 02:58:11 | Honor Reduce Transparency in dictionary popup | #46 closed/unmerged → black-box; selective port present |
 | a11y/48dp-icon-targets-2026-11-07 | 25107ce905b70bde1a41282ffd1d606819ebf58d | 2026-11-07 11:02:12 | test(a11y): cover minimum icon action target | #30 open/draft → black-box; TouchTargetPolicy represented |
-| black-box-bihar-news | 59c54cedadd1ad97a96c00d63cb3d020343ee2cd | 2026-11-09 09:06:59 UTC | test(glass): align non-finite tint expectation with default | #34 open/draft → main; test-fix head; app-code commit fb2e75c3f82f18896bfa5dff623a9ba9da263d15 |
+| black-box-bihar-news | aee50ffcd4ccc9f958a9e09d4debec364ac0debe | 2026-11-09 09:11:53 UTC | docs: record transient tint CI correction and recovery | #34 open/draft → main; verified parent for the 15:26 supporting-surface batch |
 | brrrNEWS | e6fcfc25a4c8d5f363ced58f313552120aa7ff96 | 2026-11-07 04:13:30 | ui: consolidate lightweight supporting glass surfaces | Base of #24; older material line, not the active baseline |
 | ci/read-only-pr-validation-isolated-release-write-2026-11-06 | 963118f0abe5f7e38f2aa66a49d4b8e74548660c | 2026-11-06 17:18:53 | ci: validate pull requests with read-only build permissions | #18 open/draft → main; compatible workflow design integrated into black-box |
 | ci/stacked-pr-validation-2026-11-07 | 5dc3179361835b77fb3186a99d9b5791301463fd | 2026-11-06 21:41:27 | ci: restore Android SDK setup before sdkmanager | #20 closed/merged → black-box |
@@ -59,9 +59,9 @@ The complete live branch list was paginated: **51 branches** on page 1, page 2 e
 
 ## Current graph and workflow
 
-- PR #34: open/draft, unmerged, head black-box-bihar-news, base main. Test-fix head `59c54cedadd1ad97a96c00d63cb3d020343ee2cd` is 174 commits ahead / 0 behind main; main is the merge base. Keep draft; do not merge.
+- PR #34: open/draft, unmerged, head black-box-bihar-news, base main. Verified source head `aee50ffcd4ccc9f958a9e09d4debec364ac0debe` is 175 commits ahead / 0 behind main; main is the merge base. Keep draft; do not merge.
 - The exact integration workflow is .github/workflows/build-apk.yml. Build/test permissions are read-only; Release write is isolated to a main-push-only job. No workflow file is changed in this batch.
-- Actions history is fully paginated through run #408: 408 total (263 success / 73 failure / 71 cancelled); run #407 remained in progress. Runs #403/#404 failed on the app-code commit because one new test expectation used 0.32 instead of the non-finite fallback default 0.28; #405 reproduced the same failure on docs head b8d87f; #406 was cancelled after the test-only correction. PR run #408 passed on exact test-fix head `59c54cedadd1ad97a96c00d63cb3d020343ee2cd`, including WordNet generation, JVM tests, APK assembly and artifact upload. Artifact #13661132492: 39,139,519 bytes; SHA-256 `3a80e7430940d9289dd48de2c36c011f056f2606b252abea287490f62889bd5c`. Push run #407 was still in progress at this snapshot.
+- Actions history is fully paginated through run #410: **410 total** (266 success / 73 failure / 71 cancelled); queued/in-progress **0**. Natural push #409 and PR #410 both passed on exact source head `aee50ffcd4ccc9f958a9e09d4debec364ac0debe`. Both build jobs completed checkout, Java/signing cache, Android SDK/platform, Gradle, WordNet builder 4/4, generation of 151,456 words / 50,950,144 bytes, `:app:testDebugUnitTest`, `:app:assembleDebug` and APK artifact upload; `BUILD SUCCESSFUL` in 1m30s / 1m31s. Push artifact #13661258665: 39,139,521 bytes, SHA-256 `6586d22e59ba2f59f9614fe05f84ada204c9113ac5d66be2bdb4c3aaf46e09f8`. PR artifact #13661691483: 39,139,519 bytes, SHA-256 `12ed8bd14a0abaa103d9db5bf23df1bb04b27b01e3e90f0d527eb4f664eafe06`, expires 23 November 2026 09:14 UTC. Main-only Release jobs skipped. These runs validate the source parent, not the next supporting-surface commit.
 - Latest published Release remains v0.2.0-build-116, published 6 November 2026 11:18:59 UTC. No Release was created or published.
 - No main write, merge, retarget, force update, manual workflow dispatch/rerun, package/app identity change, source-branch deletion or unrelated branch modification occurred.
 
@@ -2645,3 +2645,10 @@ UTC timestamps/messages are the latest commit on each branch head. PR list: 43 t
 - Correction: test-only commit 59c54cedadd1ad97a96c00d63cb3d020343ee2cd now derives the expected value from DEFAULT_GLASS_ALPHA and explicitly asserts 0.1176. No production code, visual effect or policy threshold changed.
 - Exact natural verification: PR run #408 passed on that exact commit. WordNet builder 4/4, 151,456 unique words / 50,950,144 bytes, :app:testDebugUnitTest, :app:assembleDebug and artifact upload all passed. Artifact #13661132492: 39,139,519 bytes, SHA-256 3a80e7430940d9289dd48de2c36c011f056f2606b252abea287490f62889bd5c. Push run #407 was still in progress; no push result is claimed.
 - Next gate: no further app-code change until the final docs head receives its own natural PR validation and run #407 is inspected. No manual dispatch/rerun or Release publication.
+## 9 November 2026, 15:26 IST — Supporting-card opacity and branch freshness
+
+- Source parent: `black-box-bihar-news@aee50ffcd4ccc9f958a9e09d4debec364ac0debe`; compare `main...black-box-bihar-news` = **175 ahead / 0 behind**, merge base main. PR #34 is the only consolidation PR to main.
+- Complete inventory: 51 branches, 48 PRs (32 open / 16 closed; 11 merged / 5 closed-unmerged). The exact branch ledger above includes all branch heads and their latest commit timestamps/messages.
+- PR #47 is 3 commits ahead / 175 behind the integration branch from common base main; its 5dp transient definition optics are already represented through the shared `GlassSurfacePolicy`, so no duplicate policy was ported. PR #45's standalone dictionary Reduce Motion is present. PR #43's WebView settle callback, Exception-only cleanup guard and tests are present. PR #48 is a separate 3-commit WordNet builder/workflow integrity proposal from main; no workflow or builder change was made in this UI batch.
+- Natural Actions #409 (push) and #410 (PR) passed on the exact source parent. The new code/documentation commit requires its own natural CI; no manual dispatch/rerun, Release publication or main write.
+- Current Release: `v0.2.0-build-116`, published 6 November 2026 11:18:59 UTC. No newer Release exists.

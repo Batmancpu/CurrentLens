@@ -1986,7 +1986,7 @@ private fun SupportingGlassCard(
         shape = shape,
         colors = CardDefaults.cardColors(
             containerColor = colors.surface.copy(
-                alpha = GlassSurfacePolicy.supportingSurfaceAlpha(dark, reduceTransparency)
+                alpha = GlassSurfacePolicy.supportingSurfaceAlpha(dark, reduceTransparency, glassAlpha)
             )
         ),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)

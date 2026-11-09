@@ -7,34 +7,41 @@ import org.junit.Test
 class GlassSurfacePolicyTest {
     @Test
     fun supportingContentRemainsNearlyOpaqueForReadability() {
-        assertTrue(GlassSurfacePolicy.supportingSurfaceAlpha(dark = true) in 0.92f..0.95f)
-        assertTrue(GlassSurfacePolicy.supportingSurfaceAlpha(dark = false) in 0.95f..0.98f)
+        assertTrue(GlassSurfacePolicy.supportingSurfaceAlpha(dark = true) in 0.91f..0.93f)
+        assertTrue(GlassSurfacePolicy.supportingSurfaceAlpha(dark = false) in 0.95f..0.97f)
     }
 
     @Test
-    fun supportingCardsUseMoreOpaqueStaticFallbackWhenTransparencyIsReduced() {
+    fun supportingCardFillTracksClearToFrostedAndRespectsReducedTransparency() {
         val clear = AppearancePreferencesPolicy.MIN_GLASS_ALPHA
+        val balanced = AppearancePreferencesPolicy.DEFAULT_GLASS_ALPHA
         val frosted = AppearancePreferencesPolicy.MAX_GLASS_ALPHA
 
-        assertEquals(0.93f, GlassSurfacePolicy.supportingSurfaceAlpha(dark = true), 0.0001f)
-        assertEquals(0.965f, GlassSurfacePolicy.supportingSurfaceAlpha(dark = false), 0.0001f)
-        assertEquals(0.975f, GlassSurfacePolicy.supportingSurfaceAlpha(dark = true, reduceTransparency = true), 0.0001f)
-        assertEquals(0.985f, GlassSurfacePolicy.supportingSurfaceAlpha(dark = false, reduceTransparency = true), 0.0001f)
-
-        assertEquals(0.11f, GlassSurfacePolicy.supportingTintAlpha(true, clear, true), 0.0001f)
-        assertEquals(0.07f, GlassSurfacePolicy.supportingTintAlpha(false, clear, true), 0.0001f)
-        assertEquals(0.145f, GlassSurfacePolicy.supportingTintAlpha(true, frosted, true), 0.0001f)
-        assertEquals(0.23f, GlassSurfacePolicy.supportingRimAlpha(true, clear, true), 0.0001f)
-        assertEquals(0.16f, GlassSurfacePolicy.supportingRimAlpha(false, clear, true), 0.0001f)
-        assertEquals(0.16f, GlassSurfacePolicy.supportingRimAlpha(false, frosted, true), 0.0001f)
+        assertEquals(0.90f, GlassSurfacePolicy.supportingSurfaceAlpha(true, glassAlpha = clear), 0.0001f)
+        assertEquals(0.95f, GlassSurfacePolicy.supportingSurfaceAlpha(true, glassAlpha = frosted), 0.0001f)
+        assertEquals(0.945f, GlassSurfacePolicy.supportingSurfaceAlpha(false, glassAlpha = clear), 0.0001f)
+        assertEquals(0.98f, GlassSurfacePolicy.supportingSurfaceAlpha(false, glassAlpha = frosted), 0.0001f)
+        assertEquals(0.9186f, GlassSurfacePolicy.supportingSurfaceAlpha(true, glassAlpha = balanced), 0.0001f)
+        assertEquals(0.9580f, GlassSurfacePolicy.supportingSurfaceAlpha(false, glassAlpha = balanced), 0.0001f)
 
         assertTrue(
-            GlassSurfacePolicy.supportingSurfaceAlpha(true, true) >
-                GlassSurfacePolicy.supportingSurfaceAlpha(true)
+            GlassSurfacePolicy.supportingSurfaceAlpha(true, glassAlpha = clear) <
+                GlassSurfacePolicy.supportingSurfaceAlpha(true, glassAlpha = balanced)
         )
         assertTrue(
-            GlassSurfacePolicy.supportingRimAlpha(false, clear, true) >=
-                GlassSurfacePolicy.supportingRimAlpha(false, clear)
+            GlassSurfacePolicy.supportingSurfaceAlpha(true, glassAlpha = balanced) <
+                GlassSurfacePolicy.supportingSurfaceAlpha(true, glassAlpha = frosted)
+        )
+        assertEquals(0.975f, GlassSurfacePolicy.supportingSurfaceAlpha(true, true, clear), 0.0001f)
+        assertEquals(0.985f, GlassSurfacePolicy.supportingSurfaceAlpha(false, true, frosted), 0.0001f)
+        assertTrue(
+            GlassSurfacePolicy.supportingSurfaceAlpha(true, true, clear) >
+                GlassSurfacePolicy.supportingSurfaceAlpha(true, glassAlpha = frosted)
+        )
+        assertEquals(
+            GlassSurfacePolicy.supportingSurfaceAlpha(true, glassAlpha = balanced),
+            GlassSurfacePolicy.supportingSurfaceAlpha(true, glassAlpha = Float.NaN),
+            0.0001f
         )
     }
 

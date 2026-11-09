@@ -1,3 +1,37 @@
+## 9 November 2026, 15:26 IST — Supporting dashboard and stats glass follows Clear↔Frosted
+
+### Freshness and branch decision
+- Verified source: `black-box-bihar-news@aee50ffcd4ccc9f958a9e09d4debec364ac0debe`, **175 ahead / 0 behind** `main@73b8a0d1ba33503fede02db2c3c0af082d724a12`; main is the merge base. PR #34 is the single open/draft consolidation PR targeting main. This batch is a direct first-parent continuation of that source; no new branch or PR.
+- Complete live inventory: **51 remote branches** (30 + 21 across both pages), **48 PRs** (32 open, 16 closed; 11 merged, 5 closed/unmerged). All branch and PR pages were exhausted. PR #47's three-file proposal is already represented through the existing shared `GlassSurfacePolicy`; PR #45 Reduce Motion, PR #43 Reader disposal and PR #30 touch targets are represented. PR #48 remains a separate main-based WordNet build supply-chain/workflow review and is not mixed into this UI pass. The stale `ui/liquid-glass-performance` and `redesign/v0.3-search-reader` branches remain excluded.
+- The current integration workflow is `.github/workflows/build-apk.yml`: read-only build/test permissions, isolated main-push Release-write job. No workflow change.
+
+### Implementation
+- `GlassSurfacePolicy.supportingSurfaceAlpha` now interpolates the static supporting-card fill between Clear and Frosted: dark **0.90→0.95**, light **0.945→0.98**. The balanced default resolves to approximately **0.9186 dark / 0.9580 light**; non-finite values use the existing safe default. Reduce Transparency remains fixed at **0.975 / 0.985**.
+- `SupportingGlassCard` now passes the same local Clear↔Frosted intensity already used by its tint and rim into the fill policy. This brings You dashboard metrics/destinations, Saved and Stats supporting/empty surfaces, and the Appearance preview into one consistent supporting-glass response. Article body, feed-card content, quiz questions and data copy remain high-contrast content surfaces.
+- No card layout, data derivation, filters, navigation, persistence or quiz submit-only semantics changed.
+
+### Paired performance and accessibility
+- Added **zero** live blur surfaces, refraction, shaders, graphics layers, backdrop captures/readbacks, image decodes, dependencies, timers, polling, network work or storage work. Existing Card, cached shape, tint gradient and rim brush are reused; the only added work is one bounded intensity interpolation for an existing fill alpha.
+- Appearance slider preview remains local to its child composition while dragging; the app-wide preference is still committed on release. Reduce Transparency keeps the stronger static fill and does not add a blur fallback.
+- Focused JVM tests cover Clear/Balanced/Frosted endpoints, default/non-finite fallback, and reduced-transparency opacity. No screenshot test is added because component geometry/content and interaction are unchanged.
+
+### Per-screen coverage / optimization matrix
+| Surface | Material tier / reason | Effect scope and reuse | Fallback / accessibility | Verification |
+|---|---|---|---|---|
+| You dashboard metrics, destinations and practice-empty panel | Tier 3 supporting static glass; quiet depth for personal activity/library | Existing Card + one tint gradient + one rim brush + shared continuous shape; no live capture | High-opacity fill, readable typography and existing button semantics | New policy JVM tests; exact-head CI pending |
+| Saved empty states; Reading Stats and Quiz Stats metric/list cards | Tier 3 supporting static glass; consistent secondary-surface hierarchy | Same shared SupportingGlassCard; stable LazyColumn keys and existing data calculations | Reduced Transparency uses 0.975/0.985 fill; quiz data remains submit-only | New policy JVM tests; exact-head CI pending |
+| Appearance live preview | Tier 3 supporting card inside one existing Tier 2 Prismal preview | Reuses preview-local intensity; one existing live transient surface, no nested blur | 48dp slider/switch controls and local preview updates; reduced effects remain static | Policy tests; device preview unverified |
+
+### CI, release and device boundary
+- Parent exact-head natural push #409 and PR #410 passed on `aee50ffcd4ccc9f958a9e09d4debec364ac0debe`; they do **not** validate this new commit. Natural exact-head CI for this batch is pending; no dispatch/rerun.
+- OPPO Reno10 appearance, contrast over live backdrops, TalkBack, font scaling, frame timing/jank, GPU overdraw, allocation/memory, thermal and battery remain **UNVERIFIED**. This opacity tuning is a design-token change, not a measured performance improvement.
+- No main write, merge, PR retarget, Release publication, package identity change, source-branch mutation/deletion or workflow change.
+
+### Next
+- Inspect this exact head's natural push and PR runs, full job logs and artifacts. If they pass, continue the next whole-app consistency batch; keep device visual/performance validation explicitly separate from CI.
+
+---
+
 ## 9 November 2026, 14:33 IST — Definition popover adopts the shared transient material
 
 ### Verified source and branch freshness
