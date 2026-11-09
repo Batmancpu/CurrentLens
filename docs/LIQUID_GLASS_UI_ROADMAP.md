@@ -1,3 +1,47 @@
+# Live implementation batch — isolate Reader WebView disposal actions (9 November 2026, 12:30 IST)
+
+**App-code commit:** 45609a3d5d32ee02ba33c54501a497d6a00d25b7, a direct first-parent child of black-box-bihar-news@23acb979ccc903aaab53f2fdaa67e9610ba2c2f0. The parent was 167 ahead / 0 behind main@73b8a0d1ba33503fede02db2c3c0af082d724a12; the implementation head is 168 ahead / 0 behind, with main as merge base. PR #34 remains open/draft, unmerged and based on main. No new branch or PR was created.
+
+## Freshness and branch-dependency gate
+
+- Complete live inventory: 49 remote branches (page 2 empty), 31 open PRs and 15 closed PRs (PR page 2 empty). All branch names, full head SHAs, latest commit timestamps/messages and PR head/base/state relationships were re-read; the exact 49-row table and graph rationale are at the top of docs/BRANCH_CONSOLIDATION.md.
+- Current active branch before the implementation was exactly black-box-bihar-news@23acb979ccc903aaab53f2fdaa67e9610ba2c2f0. PR #34 head matched it and still targeted main. No newer coherent source branch superseded this integration lineage.
+- PR #43 fix/release-reader-webview-resources-2026-11-09@e5b7b9f8f5d9e33021bd6ccb7b7cb3f827218e3c was compared against the active source: 11 ahead / 167 behind, merge base main. Its full diff was inspected. The active code already had AndroidView.onRelease, settle-callback tracking, cancelReadingPositionRestore(), an Exception-only ReaderWebViewReleaseGuard and fatal LinkageError coverage. The remaining safe delta was narrower: several teardown operations were grouped inside single lambdas, so one ordinary removeCallbacks failure could skip later reference clearing; permanent release also relied on detachment to cancel pending auto-definition work.
+- PR #45 dictionary Reduce Motion, PR #46 dictionary Reduce Transparency, PR #44 feed-card rim wiring, PR #37 Search RowScope repair and PR #30 48dp target policy are already represented in the active integration. PR #13's conservative single 8×8 adaptive probe remains 4s/6s and paused on scroll/non-home/background/reduced-transparency states. PR #39 signing remains owner-gated. Stale brrrNEWS, ui/liquid-glass-performance and redesign/v0.3-search-reader were not used as baselines. No source branch was modified.
+
+## Implementation
+
+- ReaderWebView.releaseForDisposal() now submits each teardown operation as an independent action to the existing ReaderWebViewReleaseGuard. Removal and reference clearing are separate for the pending reading-save, restore, restore-settle, short-page completion and Reader chrome-hide Runnables; a failed callback removal no longer skips clearing its reference or later cleanup.
+- Permanent disposal now invalidates the selection generation, independently cancels/clears the pending auto-definition Runnable and evaluation flag, disables the selection bridge, resets native-selection/touch/chrome state and marks reading-position persistence complete.
+- Every Compose/WebView callback closure is cleared independently before JavaScript and DOM storage are disabled, WebView clients are detached, history is cleared, the view is removed from its parent, child views are removed and destroy() runs.
+- The existing release guard still catches ordinary Exception per action, continues best-effort cleanup, is idempotent, and deliberately lets fatal VM/linkage errors propagate. The AndroidView onRelease ownership boundary is unchanged; onDetachedFromWindow remains a temporary-detach path and does not destroy the WebView.
+- No Reader content, toolbar, completion-dock, definition-overlay, native Copy/Select/share ActionMode, dictionary bridge, publisher fallback permission or quiz persistence semantics changed.
+
+## Paired material/performance and coverage update
+
+| Screen/component | Material tier / reason | Effect and resource scope | Cache/reuse and fallback | Accessibility/tests/status |
+|---|---|---|---|---|
+| Reader article canvas | Clear, high-contrast reading surface; translucency would reduce comprehension | No new render pass, blur, refraction, shader, capture or readback | Existing WebView content and persisted reading position unchanged | Native text selection and ActionMode unchanged; OPPO visual/runtime unverified |
+| Reader toolbar, Aa menu, definition and completion actions | Existing Tier 2 transient Prismal controls, shown only by Reader state | Existing shared root background-only Prismal source; no new capture or live glass surface | Existing material tokens and reduced-transparency fallback reused | Existing 48dp controls, selection/definition/IME/accessibility pinning and Reduce Motion policy retained |
+| ReaderWebView permanent disposal | Lifecycle/resource ownership, not a new visual material | Removes pending callbacks and retained closures on permanent release; no polling/timer or new effect | Existing idempotent ReaderWebViewReleaseGuard isolates each ordinary cleanup failure; fatal errors propagate | Existing ReaderWebViewReleaseGuardTest covers idempotence, multiple ordinary failures and fatal LinkageError; exact new-head CI pending |
+
+- Paired optimization: this change adds zero glass surfaces, blur/refraction passes, shaders, backdrop captures/readbacks, image requests/decodes, dependencies, network calls or scheduled timers. It makes already-existing teardown more granular and releases callback references even when an earlier cleanup action fails. This is a source-level lifecycle/resource-safety improvement only; no measured memory, frame-time, GPU, battery or thermal gain is claimed.
+- Shared background-only Prismal ownership, expanded-only tab glyph source, feed-only compact navigation and the single low-cadence adaptive luminance probe are untouched.
+
+## Exact parent CI — passed; implementation head pending
+
+- Natural push run [#393](https://github.com/Batmancpu/CurrentLens/actions/runs/42571188002) and PR run [#394](https://github.com/Batmancpu/CurrentLens/actions/runs/42571192933) both tested the exact parent head 23acb979ccc903aaab53f2fdaa67e9610ba2c2f0. Both build jobs passed the Android SDK/Gradle setup, WordNet builder tests 4/4, generation of 151,456 unique words / 50,950,144 bytes, :app:testDebugUnitTest, :app:assembleDebug and APK artifact upload. The PR log reports BUILD SUCCESSFUL in 56s; main-only Release jobs were skipped.
+- PR artifact [#13652897760](https://github.com/Batmancpu/CurrentLens/actions/runs/42571192933/artifacts/13652897760): 39,133,249 bytes; SHA-256 2ead71c20fba90eb74b0e2c2b85fd432310e405c7b57f7ccc22969d504bb4027; expires 23 November 2026 06:09:18 UTC. The push run also passed on the same exact parent SHA.
+- These runs validate the parent only, not implementation commit 45609a3d5d32ee02ba33c54501a497d6a00d25b7. The new implementation requires its own natural push and PR validation. No workflow dispatch/rerun was used.
+- Actions history fully paginated: 394 runs (254 success / 70 failure / 70 cancelled), queued 0, in-progress 0. Active workflow build/test permissions remain read-only; main-only Release write remains isolated. Latest published Release is v0.2.0-build-116 (6 November 2026 11:18:59 UTC); no Release was published.
+
+## Device and regression status
+
+- OPPO Reno10 WebView release/re-entry, native selection/ActionMode, definition bridge, article completion, screenshots, frame timing/jank, allocation/memory, GPU overdraw, thermal and battery remain **UNVERIFIED**. No device-backed launch-stability or performance claim is made.
+- The next natural exact-head CI result must be inspected with full job steps/logs/artifact before another implementation batch. After it passes, resume the next evidence-backed app-wide visual consistency batch (You/Saved/stats and Appearance) without adding live blur to dense data/content surfaces.
+
+---
+
 # Implementation batch — Dictionary popup Reduce Transparency parity (9 November 2026, 10:31 IST)
 
 **Verified source before write:** `black-box-bihar-news@52604e5046abc20dfa490c54587e79909d8f4458`; `main@73b8a0d1ba33503fede02db2c3c0af082d724a12` is the merge base, **165 ahead / 0 behind**. PR #34 remains open/draft, unmerged, targeting main. The source branch is not retargeted and no new branch/PR is created.
