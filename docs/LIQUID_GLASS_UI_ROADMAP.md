@@ -1,3 +1,32 @@
+# Live CI verification — compact navigation idle (9 November 2026, 09:27 IST)
+
+**Verified active source:** `black-box-bihar-news@11b709aa9f357437fa7315035d4a383b79d7d4af`; `main@73b8a0d1ba33503fede02db2c3c0af082d724a12` is the merge base, **164 ahead / 0 behind**. PR #34 remains open/draft, unmerged, targeting main. No UI source change is made in this verification pass.
+
+## Exact natural CI — passed
+
+- Push run [#387](https://github.com/Batmancpu/CurrentLens/actions/runs/42553818311) and PR run [#388](https://github.com/Batmancpu/CurrentLens/actions/runs/42553822996) both tested the exact head `11b709aa9f357437fa7315035d4a383b79d7d4af`; both build jobs passed all steps.
+- Both ran the WordNet builder tests **4/4**, generated **151,456 unique words / 50,950,144 bytes**, completed `:app:testDebugUnitTest` and `:app:assembleDebug`, and reported **BUILD SUCCESSFUL** (push 1m 29s; PR 1m 32s). APK artifact upload succeeded.
+- Push artifact [#13646871125](https://github.com/Batmancpu/CurrentLens/actions/runs/42553818311/artifacts/13646871125): **39,129,203 bytes**, SHA-256 `330577218285c23dd822290ba4237a08fd2bdc2d024ec216726a6fcb41be49c6`, expires 23 November 2026 03:00:50 UTC. PR artifact [#13647065278](https://github.com/Batmancpu/CurrentLens/actions/runs/42553822996/artifacts/13647065278): **39,129,208 bytes**, SHA-256 `9b9e40f7cbdef31ab692de96cb5c32eefb3d504c30148e6b272758d4d04a96fe`, expires 23 November 2026 03:01:02 UTC.
+- Both main-only Release jobs were skipped. No manual dispatch/rerun, Release publication, merge, retarget, or main write occurred.
+
+## Freshness and candidate review
+
+- Complete live inventory: **49 remote branches**, **31 open PRs**, **15 closed PRs**. The complete branch/head/commit/PR relationship table is recorded in `docs/BRANCH_CONSOLIDATION.md` below this entry.
+- PR #46 `a11y/dictionary-popup-reduce-transparency-2026-11-09@55afb9ab662d2926675f0a57737d3f817b1fc2cb` is **3 ahead / 1 behind** this active head, merge base `21317fd4f3dc625c4e49ec598e59736e0a4b6237`. Its complete diff is limited to `DictionaryActivity.kt`, new `DictionarySurfacePolicy.kt`, and `DictionarySurfacePolicyTest.kt`; it does not overlap the intervening compact-navigation commit. Exact PR run [#386](https://github.com/Batmancpu/CurrentLens/actions/runs/42553804992) passed `:app:testDebugUnitTest` and `:app:assembleDebug`, generated the same WordNet database, and uploaded artifact #13646383188 (39,131,459 bytes). The current DictionaryActivity was reviewed in full: it already contains the separately integrated `DictionaryMotionPolicy`; the proposed change restores Reduce Transparency on IO, fails closed to an opaque popup, and only enables API 31+ blur after the saved preference is known. This is the next isolated port candidate; its source branch and PR remain untouched.
+- PR #45's dictionary system-motion policy is already present in the active DictionaryActivity; no duplicate port. PR #43 remains a separate Reader WebView lifecycle delta with MainActivity overlap and requires a dedicated full-file reconciliation before any port. PR #39 signing changes remain owner-gated. Old `brrrNEWS`, `ui/liquid-glass-performance` and `redesign/v0.3-search-reader` are not newer baselines.
+- Active workflow `.github/workflows/build-apk.yml` uses read-only build/test permissions and isolates Release write to main pushes; main's own workflow remains push-only with workflow-wide `contents: write`. No workflow file changed.
+- Actions history fully paginated: **388 runs** (**248 success / 70 failure / 70 cancelled**), queued/in-progress **0**. Latest published Release remains `v0.2.0-build-116` (6 November 2026 11:18:59 UTC).
+
+## Performance and device status
+
+- The verified compact-navigation change adds/removes **zero** render passes, blur/refraction effects, samplers, readbacks, image decodes, dependencies or timers; it quiesces the hidden droplet spring and avoids constructing an unused ripple helper while compact. CI validates compile/JVM behaviour only; no measured frame-time or resource improvement is claimed.
+- OPPO Reno10 runtime, screenshots, animation smoothness, TalkBack, font scaling, IME/gesture insets, Perfetto/frame timing, GPU overdraw, allocation/memory, thermal and battery remain **UNVERIFIED**.
+
+## Next
+
+After this exact-head verification, port only the isolated PR #46 Reduce Transparency policy into `black-box-bihar-news`, preserving the existing Reduce Motion path, offline WordNet, native Android selection/action mode, and the single shared backdrop. Recheck the branch head and PR diff immediately before the write; require the new exact-head natural CI before another UI batch.
+
+---
 # Live implementation batch — Quiesce hidden navigation motion in compact mode (9 November 2026, 08:22 IST)
 
 **Verified source:** `black-box-bihar-news@21317fd4f3dc625c4e49ec598e59736e0a4b6237` — **163 ahead / 0 behind** `main@73b8a0d1ba33503fede02db2c3c0af082d724a12`; main is the merge base. PR #34 remains the single open/draft, unmerged consolidation PR to main. This change is a direct first-parent child of the verified source; no new branch or PR is created.
