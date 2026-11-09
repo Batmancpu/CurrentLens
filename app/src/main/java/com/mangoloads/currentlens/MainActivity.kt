@@ -3035,14 +3035,14 @@ private fun DefinitionGlassOverlay(
                 backdrop = backdrop,
                 modifier = Modifier.fillMaxWidth()
                     .animateContentSize(spring(dampingRatio = 0.82f, stiffness = 480f)),
-                shape = { PrismalRoundedRectangle(25.dp) },
-                blurRadius = 12.dp,
-                refractionHeightPx = 22f,
-                refractionAmountPx = 24f,
+                shape = { PrismalRoundedRectangle(DefinitionGlassSurfacePolicy.CORNER_RADIUS_DP.dp) },
+                blurRadius = DefinitionGlassSurfacePolicy.BLUR_RADIUS_DP.dp,
+                refractionHeightPx = DefinitionGlassSurfacePolicy.REFRACTION_HEIGHT_PX,
+                refractionAmountPx = DefinitionGlassSurfacePolicy.REFRACTION_AMOUNT_PX,
                 depthEffect = true,
-                chromaticAberration = 0.015f,
+                chromaticAberration = DefinitionGlassSurfacePolicy.CHROMATIC_ABERRATION,
                 tint = if (isSystemInDarkTheme()) Color(0xFF263247) else Color(0xFFEAF0FA),
-                tintAlpha = (glassAlpha * 0.62f).coerceIn(0.08f, 0.34f)
+                tintAlpha = DefinitionGlassSurfacePolicy.tintAlpha(glassAlpha)
             ) {
                 DefinitionPopoverContent(
                     word = word,
