@@ -47,15 +47,17 @@ jobs:
           set -euo pipefail
           python3 -m unittest discover -s scripts -p 'test_*.py' -v
           archive="$RUNNER_TEMP/english-wordnet-2025-plus.zip"
+          archive_sha256="cf4afe7ad4cca3f56091d791e665614c564ac84e3782de4e789cf5b745556e2e"
           curl --fail --location --retry 3 --retry-all-errors --retry-delay 2 \
             --connect-timeout 15 --max-time 240 \
-            "https://en-word.net/static/english-wordnet-2025-plus.zip" \
+            "https://github.com/globalwordnet/english-wordnet/releases/download/2025-edition/english-wordnet-2025-plus.zip" \
             --output "$archive"
           archive_bytes="$(stat -c%s "$archive")"
           test "$archive_bytes" -ge 5000000
           test "$archive_bytes" -le 25000000
           python3 scripts/build_wordnet_db.py "$archive" app/src/main/assets/wordnet.db \
-            --min-unique-words 100000
+            --min-unique-words 100000 \
+            --expected-sha256 "$archive_sha256"
           test -s app/src/main/assets/wordnet.db
 
       - name: Compile APK
