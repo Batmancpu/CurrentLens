@@ -1,3 +1,52 @@
+## 9 November 2026, 14:33 IST — Definition popover adopts the shared transient material
+
+### Verified source and branch freshness
+
+- Default remains `main@73b8a0d1ba33503fede02db2c3c0af082d724a12`.
+- The selected integration source before implementation was `black-box-bihar-news@2b1878e58744f901eb66aca7fa792ce06488c08c`, **171 ahead / 0 behind** main, with main as merge base. App-code commit `fb2e75c3f82f18896bfa5dff623a9ba9da263d15` is its direct first-parent child and is **172 ahead / 0 behind** main. PR #34 remains the single open/draft, unmerged consolidation PR to main; no new branch or PR was created.
+- The complete remote inventory was re-enumerated: **51 branches** (page 1 = 51, page 2 empty), **47 PRs** (**32 open, 15 closed**; second pages empty). Main and every active branch head were checked before writing.
+- PR #47 `ui/definition-popup-transient-optics-2026-11-09@d848a142fd5c61388286379fec34d985771de50d` is open/draft against main, **3 ahead / 0 behind main** and **3 ahead / 172 behind** the active branch (merge base main). Its complete three-file diff was reviewed: it changes only `DefinitionGlassOverlay` optical inputs and adds a duplicate `DefinitionGlassSurfacePolicy` plus tests. The optical values are selectively integrated here through the existing `GlassSurfacePolicy`; no second definition-only material policy was added. PR #47 and its source branch remain untouched; its main-based proposal is now represented in the consolidation branch.
+- PR #48 `security/pin-wordnet-archive-sha256-2026-11-09@e99e6d5b4e36b308e4435dd4d03ec6da549e06d3` is a separate main-based workflow/builder supply-chain proposal (**3 ahead / 0 behind main; 3 ahead / 172 behind active**). It changes `.github/workflows/build-apk.yml`, the WordNet builder and tests. This UI pass does not modify that shared workflow or blindly port the security proposal; reconcile it as a separate workflow review.
+- PR #45 Reduce Motion, PR #46 Reduce Transparency, PR #43 Reader disposal guards, PR #44 feed-card rim wiring, PR #30 touch targets and PR #37 Search compile repair are already represented in the active code. The old `brrrNEWS`, `ui/liquid-glass-performance`, `redesign/v0.3-search-reader` and `ui/liquid-glass-system-continuation` lines remain superseded/divergent, not replacement baselines.
+
+### Implementation
+
+- `DefinitionGlassOverlay` now uses the same restrained transient optical tier as the app's other transient controls, while retaining its one existing `PrismalGlassSurface` and the same shared root backdrop:
+  - corner geometry: **25dp → 22dp**;
+  - configured blur radius: **12dp → 5dp**;
+  - refraction inputs: **22/24px → 2.5/3.5px**;
+  - chromatic aberration: **0.015 → 0.001**;
+  - tint multiplier: **0.62 → 0.42**, bounded to **0.08–0.22** before the existing Reduce Transparency floor.
+- The existing anchor/placement calculation, safe bounds, full selected-word title, Copy/Done actions, expansion, scroll state, native Android Copy/Select/share ActionMode and dictionary bridge are unchanged. Reduce Motion still snaps the size/scale transition; Reduce Transparency still zeros blur/refraction/chromatic effects through `GlassRenderingPolicy`.
+- `PrismalTransientSurface` now reads the same named chromatic/tint tokens. `GlassSurfacePolicy.transientTintAlpha` preserves the previous valid 0.05–0.22 range for ordinary transient controls, provides the definition's 0.08 minimum, and safely falls back for non-finite preference inputs. No duplicate material system was introduced.
+
+### Per-screen material and optimization matrix update
+
+| Component | Material tier / reason | Effect and capture scope | Reuse / fallback | Tests and evidence |
+|---|---|---|---|---|
+| DefinitionGlassOverlay | Tier 2 contextual glass; anchors the selected word and its short definition | One existing Prismal surface on the existing root backdrop; configured blur 12→5dp, refraction 22/24→2.5/3.5px, chromatic 0.015→0.001; no new capture/readback | Shared `GlassSurfacePolicy` tokens; Reduce Transparency zeros live optics; same high-contrast definition content and platform selection actions | Three pure JVM policy tests added; exact new-head CI pending; OPPO visual/performance unverified |
+| Other transient controls | Tier 2 search/filter/reader menus and actions | Same existing PrismalTransientSurface; no additional surface or sampler | Shared tint helper keeps valid previous alpha values; invalid values use the safe default | Existing policy tests plus three new shared-tier tests; no device measurement |
+
+- **Paired cost assessment:** this reduces the configured optical inputs on the selected-word popup and aligns it with the already-shared transient tier. Render-pass count, backdrop capture/readback count, image decode count and dependency count change by **zero**. The blur/refraction reductions are code-level settings only; no GPU/frame-time, allocation, battery or memory improvement is claimed without profiling.
+- **Tests added:** `definitionPopupUsesTheSharedTransientOpticalTier`, `transientTintUsesSharedScaleAndDefinitionLegibilityFloor`, and `transientTintFallsBackForNonFinitePreferenceAndMinimum` in `GlassSurfacePolicyTest`. No Compose screenshot test was added because the geometry/anchor/content path is unchanged.
+
+### Natural CI and release state
+
+- Parent exact head `2b1878e58744f901eb66aca7fa792ce06488c08c` passed natural push [#401](https://github.com/Batmancpu/CurrentLens/actions/runs/42578407942) and PR [#402](https://github.com/Batmancpu/CurrentLens/actions/runs/42578414580). The PR build job passed checkout, Java/signing cache, Android SDK/platform, Gradle, WordNet builder tests **4/4**, generation of **151,456 unique words / 50,950,144 bytes**, `:app:testDebugUnitTest`, `:app:assembleDebug` and APK artifact upload; the main-only Release job was skipped. PR artifact [#13656181730](https://github.com/Batmancpu/CurrentLens/actions/runs/42578414580/artifacts/13656181730): **39,138,281 bytes**, SHA-256 `cb0baae48de6e8ffc88844400871b331ce6ff7baf7bb0184773fe274463f08eb`, expires 23 November 2026 07:19 UTC. These runs validate the parent, not the new app-code commit.
+- Natural push [#403](https://github.com/Batmancpu/CurrentLens/actions/runs/42590469918) and PR [#404](https://github.com/Batmancpu/CurrentLens/actions/runs/42590476350) started on exact app-code head `fb2e75c3f82f18896bfa5dff623a9ba9da263d15`; both were **in progress** when this snapshot was written. No result or artifact is claimed for the new code. The following documentation commit also requires its own natural exact-head validation; no dispatch/rerun.
+- Actions history before this app-code commit was fully paginated: **402 runs** (**262 success / 70 failure / 70 cancelled**), with no queued/in-progress runs. The latest published Release remains `v0.2.0-build-116` (6 November 2026 11:18:59 UTC). No Release was created or published.
+
+### Device and regression boundary
+
+- OPPO Reno10 screenshots/runtime, popup contrast over varied backdrops, anchor/safe-area fit, expansion/scroll, native selection/share, TalkBack, font scaling, Reduce Motion/Transparency, frame timing/jank, GPU overdraw, memory/allocation churn, thermal and battery remain **UNVERIFIED**. CI/JVM success does not prove launch stability or visual smoothness.
+- No package/app identity, networking, WebView permission, WordNet runtime, persistence, quiz submit-only semantics, primary destination, workflow or Release behaviour changed.
+
+### Next
+
+Inspect the exact final-head natural push/PR jobs, full logs and artifacts before another app-code batch. Then continue the whole-app transient/material consistency audit; preserve the existing single root backdrop, expanded-only tab glyph source, feed-only compact navigation and reader overlay/selection pins.
+
+---
+
 # Live implementation batch — isolate Reader WebView disposal actions (9 November 2026, 12:30 IST)
 
 **App-code commit:** 45609a3d5d32ee02ba33c54501a497d6a00d25b7, a direct first-parent child of black-box-bihar-news@23acb979ccc903aaab53f2fdaa67e9610ba2c2f0. The parent was 167 ahead / 0 behind main@73b8a0d1ba33503fede02db2c3c0af082d724a12; the implementation head is 168 ahead / 0 behind, with main as merge base. The accompanying documentation head at this verification snapshot is 80d072b39dc4075d5777f23053b7da08daa32297, 170 ahead / 0 behind. PR #34 remains open/draft, unmerged and based on main. No new branch or PR was created.

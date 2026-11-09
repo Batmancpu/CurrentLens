@@ -1,16 +1,16 @@
-# Live repository inventory — 9 November 2026, 12:45 IST
+# Live repository inventory — 9 November 2026, 14:33 IST
 
 **Default branch:** main at 73b8a0d1ba33503fede02db2c3c0af082d724a12.  
-**Selected integration branch:** black-box-bihar-news. Its last app-code commit at this snapshot is 45609a3d5d32ee02ba33c54501a497d6a00d25b7; the current documentation head is 80d072b39dc4075d5777f23053b7da08daa32297. It is 170 ahead / 0 behind main, with main as merge base. PR #34 remains the single open/draft, unmerged consolidation PR targeting main. This inventory records the exact branch refs before the documentation-only update that appends this snapshot; no other branch is a development target.
+**Selected integration branch:** black-box-bihar-news. The current app-code head is `fb2e75c3f82f18896bfa5dff623a9ba9da263d15` (2026-11-09 09:03:35 UTC), a direct child of the verified pre-change source `2b1878e58744f901eb66aca7fa792ce06488c08c`; it is 172 ahead / 0 behind main, with main as merge base. PR #34 remains the single open/draft, unmerged consolidation PR targeting main. This inventory is the documentation snapshot for that app-code head; its own docs-only commit follows.
 
-The complete live branch list was paginated: 49 branches on page 1, page 2 empty. Pull requests: 46 total (30 open, 16 closed), page 2 empty. Every branch head SHA, last commit timestamp/message and PR relationship is recorded below. Closed PRs are explicitly distinguished as merged or closed/unmerged; source branches are retained. At the pre-refresh snapshot, black-box-bihar-news had documentation head 42d4130cf1fe19d47ce3a450b5c530ea25d4c33e and last app-code head 45609a3d5d32ee02ba33c54501a497d6a00d25b7.
+The complete live branch list was paginated: **51 branches** on page 1, page 2 empty. Pull requests: **47 total (32 open, 15 closed)**, page 2 empty. Every branch head SHA, latest commit timestamp/message and PR relationship is recorded below; closed PRs are distinguished as merged or closed/unmerged. All source branches are retained.
 
 | Remote branch | Head SHA | Latest commit UTC | Subject | PR / relationship |
 |---|---|---|---|---|
 | a11y/dictionary-popup-reduce-motion-2026-11-09 | fbadd56e0e119cf70b865af8a58843190cce249d | 2026-11-09 01:33:20 | test: cover dictionary popup Reduce Motion policy | #45 open/draft → main; motion policy already represented in integration |
 | a11y/dictionary-popup-reduce-transparency-2026-11-09 | 55afb9ab662d2926675f0a57737d3f817b1fc2cb | 2026-11-09 02:58:11 | Honor Reduce Transparency in dictionary popup | #46 closed/unmerged → black-box; selective port present |
 | a11y/48dp-icon-targets-2026-11-07 | 25107ce905b70bde1a41282ffd1d606819ebf58d | 2026-11-07 11:02:12 | test(a11y): cover minimum icon action target | #30 open/draft → black-box; TouchTargetPolicy represented |
-| black-box-bihar-news | 80d072b39dc4075d5777f23053b7da08daa32297 | 2026-11-09 07:13:51 UTC | docs: record Reader disposal CI verification | #34 open/draft → main; current docs head; app-code head 45609a3d5d32ee02ba33c54501a497d6a00d25b7 |
+| black-box-bihar-news | fb2e75c3f82f18896bfa5dff623a9ba9da263d15 | 2026-11-09 09:03:35 UTC | ui(glass): align definition popup with transient material tier | #34 open/draft → main; current app-code head; docs refresh follows |
 | brrrNEWS | e6fcfc25a4c8d5f363ced58f313552120aa7ff96 | 2026-11-07 04:13:30 | ui: consolidate lightweight supporting glass surfaces | Base of #24; older material line, not the active baseline |
 | ci/read-only-pr-validation-isolated-release-write-2026-11-06 | 963118f0abe5f7e38f2aa66a49d4b8e74548660c | 2026-11-06 17:18:53 | ci: validate pull requests with read-only build permissions | #18 open/draft → main; compatible workflow design integrated into black-box |
 | ci/stacked-pr-validation-2026-11-07 | 5dc3179361835b77fb3186a99d9b5791301463fd | 2026-11-06 21:41:27 | ci: restore Android SDK setup before sdkmanager | #20 closed/merged → black-box |
@@ -51,17 +51,17 @@ The complete live branch list was paginated: 49 branches on page 1, page 2 empty
 | perf/off-main-bookmark-persistence-2026-11-07 | a64857b5efa62ea053c0c96e5f374fd35924b340 | 2026-11-07 09:05:25 | perf(storage): move bookmark mutations off the UI thread | #29 open/draft → black-box; represented |
 | perf/off-main-session-persistence-2026-11-06 | ed91a3bfbcb3f12f6f6050ce72a120b3aafeae4a | 2026-11-06 10:50:31 | perf: move read-marker persistence off main thread | #8 open/draft → main; persistence base for #22 |
 | privacy/webview-publisher-subresource-gate-2026-11-07 | b8d2ef9ff2413c378347986d00961c401dfa771d | 2026-11-07 07:27:22 | privacy: block third-party publisher reader subresources | #26 open/draft → black-box; security review pending |
-| redesign/v0.3-search-reader | 654cc89dee4f93fea98bb76df9d8cf88abf2f0d8 | 2026-11-03 15:31:48 | fix: make selection decoding fallback valid JSON | No PR; stale, not a baseline |
-| ui/foreground-adaptive-glass-contrast-2026-11-06 | 3dc0f3fb0eb4ca69facdfa44eeb26c00e9b55264 | 2026-11-06 10:56:16 | ui: restore low-cadence foreground adaptive glass contrast | #13 open/draft → main; conservative shared probe represented |
+| redesign/v0.3-search-reader | 654cc89dee4f93fea98bb76df9d8cf88abf2f0d8 | 2026-11-03 15:31:48 | fix: make selection decoding fallback valid JSON | No PR; stale, not a baseline |\n| security/pin-wordnet-archive-sha256-2026-11-09 | e99e6d5b4e36b308e4435dd4d03ec6da549e06d3 | 2026-11-09 08:26:07 | ci: pin and verify Open English WordNet release asset | #48 open/draft → main; separate workflow/builder supply-chain proposal |
+| ui/foreground-adaptive-glass-contrast-2026-11-06 | 3dc0f3fb0eb4ca69facdfa44eeb26c00e9b55264 | 2026-11-06 10:56:16 | ui: restore low-cadence foreground adaptive glass contrast | #13 open/draft → main; conservative shared probe represented |\n| ui/definition-popup-transient-optics-2026-11-09 | d848a142fd5c61388286379fec34d985771de50d | 2026-11-09 07:27:11 | Test definition popup transient optics | #47 open/draft → main; exact values ported into shared GlassSurfacePolicy; source untouched |
 | ui/liquid-glass-performance-2026-11-06 | 2e9c7f62ca65a899e18d9026e1535392835b3724 | 2026-11-06 06:25:39 | fix: import bottom navigation glyphs | #3 merged; #4 closed/unmerged; stale divergent UI line |
 | ui/liquid-glass-system-2026-11-07 | 1f7cd2e5ddc5d169d1443035a8334538e44efc40 | 2026-11-06 20:11:36 | docs(reader): record native selection collision guard | #19 closed/merged → black-box |
 | ui/liquid-glass-system-continuation-2026-11-07 | f031bf21229f43a992384cc23fa0f4da57e547a1 | 2026-11-07 03:18:34 | fix: finish syllabus metadata and thin-film feed eligibility | No PR; older continuation, not a baseline |
 
 ## Current graph and workflow
 
-- PR #34: open/draft, unmerged, head black-box-bihar-news, base main, 170 commits ahead of main; 91 changed files, 13,547 additions / 901 deletions at the pre-refresh snapshot. Keep draft; do not merge.
+- PR #34: open/draft, unmerged, head black-box-bihar-news, base main. App-code head `fb2e75c3f82f18896bfa5dff623a9ba9da263d15` is 172 commits ahead / 0 behind main; main is the merge base. Keep draft; do not merge.
 - The exact integration workflow is .github/workflows/build-apk.yml. Build/test permissions are read-only; Release write is isolated to a main-push-only job. No workflow file is changed in this batch.
-- Actions history is fully paginated: 400 runs (260 success / 70 failure / 70 cancelled), queued 0, in-progress 0. Runs #395/#396 passed on exact app-code head 45609a3d5d32ee02ba33c54501a497d6a00d25b7; #397/#398 passed on documentation head 42d4130cf1fe19d47ce3a450b5c530ea25d4c33e; #399/#400 passed on documentation head 80d072b39dc4075d5777f23053b7da08daa32297. This next documentation-only refresh requires its own natural validation.
+- At the start of this app-code pass, Actions history was fully paginated: 402 runs (262 success / 70 failure / 70 cancelled), queued/in-progress 0. Parent runs #401/#402 passed on exact head `2b1878e58744f901eb66aca7fa792ce06488c08c`; new exact app-code runs #403/#404 started on `fb2e75c3f82f18896bfa5dff623a9ba9da263d15` and were in progress at the snapshot. No result is attributed to the parent runs for the new code.
 - Latest published Release remains v0.2.0-build-116, published 6 November 2026 11:18:59 UTC. No Release was created or published.
 - No main write, merge, retarget, force update, manual workflow dispatch/rerun, package/app identity change, source-branch deletion or unrelated branch modification occurred.
 
@@ -2627,3 +2627,13 @@ UTC timestamps/messages are the latest commit on each branch head. PR list: 43 t
 - New FeedLoadingPolicyTest covers fast load, sustained loading, immediate completion and delay bounds. Existing skeleton/article geometry and one-Coil-decode path are unchanged.
 - Exact prior natural CI run #392 passed on the pre-change source head 8c59dcc48dccc2bbfcba5d47337a8884f51a4356; artifact #13651565871 (39,131,198 bytes, SHA-256 c403575be0e956f3501691083c24c739e867b48db4f8b60e9400eeb7c0e0c888). It does **not** validate the new commit. New-head CI is pending natural workflow execution; no dispatch/rerun.
 - No Release published (latest remains v0.2.0-build-116), no main write/merge/retarget/force update, no package or privacy change. OPPO visual/runtime/performance/battery and accessibility evidence remain **UNVERIFIED**.
+
+
+## 9 November 2026, 14:33 IST — Definition transient optics and 51-branch freshness refresh
+
+- **Current integration:** `black-box-bihar-news`; app-code commit `fb2e75c3f82f18896bfa5dff623a9ba9da263d15`, direct first-parent child of `2b1878e58744f901eb66aca7fa792ce06488c08c`; **172 ahead / 0 behind** `main@73b8a0d1ba33503fede02db2c3c0af082d724a12`, main merge base. PR #34 remains the sole draft/open consolidation PR to main.
+- **Inventory:** 51 remote branches, 32 open PRs, 15 closed PRs; all second pages empty. The current table above adds the two new heads: PR #47 definition transient optics and PR #48 WordNet archive pinning. PR #47's exact 3-file diff was ported through shared `GlassSurfacePolicy`, not a duplicate policy. PR #48's workflow/builder change remains separate because it shares `.github/workflows/build-apk.yml` with the consolidation branch; no workflow file was changed.
+- **Implementation:** one existing DefinitionGlassOverlay Prismal surface now uses 22dp geometry, 5dp blur, 2.5/3.5px refraction, 0.001 chromatic aberration and 0.42 tint scale with a 0.08–0.22 definition tint bound. Shared transient controls use the same named policy helper. No extra capture, sampler, readback, render pass, decode, dependency, timer, network or persistence operation.
+- **Tests:** three pure JVM policy tests added in GlassSurfacePolicyTest; no Compose screenshot test because anchor/placement/content behaviour is unchanged. Exact app-code CI #403/#404 was in progress at the audit snapshot; the docs refresh requires its own natural run. No manual dispatch/rerun.
+- **Release / safety:** latest Release remains `v0.2.0-build-116`; no Release, main write, merge, retarget, force update, package identity change, source-branch deletion or workflow change.
+- **Device boundary:** OPPO Reno10 visuals/runtime, native selection, TalkBack, font scaling, Reduce Motion/Transparency, Perfetto/frame timing, GPU, memory, thermal and battery remain UNVERIFIED.
