@@ -1054,6 +1054,19 @@ private fun HomeScreen(
 ) {
     val today = LocalDate.now(ZoneId.of(INDIA_ZONE))
     val reduceMotion = LocalGlassReduceMotion.current
+    val primaryFeedSelected = selectedTab in 0..2
+    var skeletonDelayElapsed by remember { mutableStateOf(false) }
+    LaunchedEffect(loading, primaryFeedSelected) {
+        skeletonDelayElapsed = false
+        if (primaryFeedSelected && loading) {
+            delay(FeedLoadingPolicy.SKELETON_DELAY_MS)
+            skeletonDelayElapsed = true
+        }
+    }
+    val showSkeletons = FeedLoadingPolicy.shouldShowSkeletons(
+        isLoading = primaryFeedSelected && loading,
+        delayElapsed = skeletonDelayElapsed
+    )
     val dateLabel = remember(today) { today.format(DateTimeFormatter.ofPattern("EEEE, d MMMM", Locale.ENGLISH)) }
     var exploreCategory by remember { mutableStateOf("All") }
 
@@ -1105,17 +1118,17 @@ private fun HomeScreen(
             val (tab, page) = target
             when (tab) {
                 0 -> TodayFeed(
-                    todaysArticles, eligibleArticles, loading, loadError, refreshing,
+                    todaysArticles, eligibleArticles, loading, showSkeletons, loadError, refreshing,
                     bookmarks, onOpenArticle, onToggleBookmark
                 )
                 1 -> ExploreFeed(
                     exploreArticles, exploreCategory,
                     { exploreCategory = it }, bookmarks, onOpenArticle, onToggleBookmark,
-                    loading, loadError, backdrop, glassAlpha, isSystemInDarkTheme()
+                    loading, showSkeletons, loadError, backdrop, glassAlpha, isSystemInDarkTheme()
                 )
                 2 -> SearchFeed(
                     eligibleArticles, searchQuery, searchExpanded,
-                    bookmarks, onOpenArticle, onToggleBookmark, loading, loadError,
+                    bookmarks, onOpenArticle, onToggleBookmark, loading, showSkeletons, loadError,
                     backdrop, glassAlpha, isSystemInDarkTheme()
                 )
                 else -> when (page) {
@@ -1293,6 +1306,7 @@ private fun TodayFeed(
     articles: List<Article>,
     weekendArticles: List<Article>,
     loading: Boolean,
+    showSkeletons: Boolean,
     loadError: Boolean,
     refreshing: Boolean,
     bookmarks: Set<String>,
@@ -1330,11 +1344,12 @@ private fun TodayFeed(
             }
         }
         when {
-            loading -> items(
+            articles.isEmpty() && loading && showSkeletons -> items(
                 count = 3,
                 key = { index -> "feed-skeleton-$index" },
                 contentType = { "feed-skeleton" }
             ) { FeedSkeletonCard() }
+            articles.isEmpty() && loading -> Unit
             loadError && articles.isEmpty() -> item { EmptyPanel("News is temporarily unavailable", "Check your connection and refresh.") }
             articles.isEmpty() -> item { EmptyPanel("No UPSC-relevant stories today", "Broad entertainment and general-interest updates are filtered out. Refresh later for syllabus-linked developments.") }
             else -> items(articles.take(45), key = { it.id }, contentType = { "article" }) { article ->
@@ -1382,6 +1397,7 @@ private fun ExploreFeed(
     onOpenArticle: (Article) -> Unit,
     onToggleBookmark: (Article) -> Unit,
     loading: Boolean,
+    showSkeletons: Boolean,
     loadError: Boolean,
     backdrop: PrismalBackdrop,
     glassAlpha: Float,
@@ -1405,12 +1421,14 @@ private fun ExploreFeed(
             contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 110.dp),
             verticalArrangement = Arrangement.spacedBy(13.dp)
         ) {
-            if (filtered.isEmpty() && loading) {
+            if (filtered.isEmpty() && loading && showSkeletons) {
                 items(
                 count = 3,
                 key = { index -> "feed-skeleton-$index" },
                 contentType = { "feed-skeleton" }
             ) { FeedSkeletonCard() }
+            } else if (filtered.isEmpty() && loading) {
+                // Avoid flashing an empty-state message before the skeleton reveal delay.
             } else if (filtered.isEmpty() && loadError) {
                 item { EmptyPanel("News is temporarily unavailable", "Check your connection and refresh.") }
             } else if (filtered.isEmpty()) item {
@@ -1432,6 +1450,7 @@ private fun SearchFeed(
     onOpenArticle: (Article) -> Unit,
     onToggleBookmark: (Article) -> Unit,
     loading: Boolean,
+    showSkeletons: Boolean,
     loadError: Boolean,
     backdrop: PrismalBackdrop,
     glassAlpha: Float,
@@ -1515,12 +1534,14 @@ private fun SearchFeed(
             ),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            if (filtered.isEmpty() && loading) {
+            if (filtered.isEmpty() && loading && showSkeletons) {
                 items(
                 count = 3,
                 key = { index -> "feed-skeleton-$index" },
                 contentType = { "feed-skeleton" }
             ) { FeedSkeletonCard() }
+            } else if (filtered.isEmpty() && loading) {
+                // Avoid flashing an empty-state message before the skeleton reveal delay.
             } else if (filtered.isEmpty() && loadError) {
                 item { EmptyPanel("News is temporarily unavailable", "Check your connection and refresh.") }
             } else if (filtered.isEmpty()) item {

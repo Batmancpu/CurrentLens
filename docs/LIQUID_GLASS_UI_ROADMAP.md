@@ -1598,3 +1598,28 @@ Next: after natural CI validates this exact head, perform the Appearance preview
 
 ### Next
 - Inspect the new integration commit's own natural push/PR run, complete job logs and artifact before another visual batch. Then review the remaining Reader cleanup-granularity delta without importing PR #43's divergent `MainActivity.kt`; continue app-wide You/Saved/stats and Appearance material consistency only after the exact-head gate. No main write, merge, Release publication, manual dispatch/rerun, or source-branch mutation.
+
+## 9 November 2026, 11:27 IST — cold-feed skeleton flash suppression
+
+### Freshness and source gate
+- Re-enumerated the complete remote branch list: **49 branches** (page 2 empty), **31 open PRs** (page 2 empty), **15 closed PRs** (page 2 empty). Default main is 73b8a0d1ba33503fede02db2c3c0af082d724a12.
+- Implementation source was black-box-bihar-news at 8c59dcc48dccc2bbfcba5d47337a8884f51a4356 (latest commit 2026-11-09 05:05:19 UTC), **166 ahead / 0 behind** main, with main as merge base. PR #34 is the one open/draft consolidation PR targeting main; no other branch was used as a baseline.
+- PR #45 Reduce Motion is already represented by DictionaryMotionPolicy and the system animation check. PR #46 Reduce Transparency is selectively ported in the active branch; its source branch and open PR remain untouched. PR #43 AndroidView.onRelease, independent WebView cleanup and fatal-error guard are already present in the active code. PR #30's 48dp icon targets are represented by TouchTargetPolicy; closed/unmerged PR #44's one-line feed rim scope correction is already ported. No blind cherry-pick or source-branch mutation.
+- Stale ui/liquid-glass-performance and redesign/v0.3-search-reader remain excluded. No main write, merge, retarget, force update, branch deletion, workflow dispatch/rerun or Release publication.
+
+### Implementation
+- Added a single **180ms skeleton reveal gate** inside HomeScreen, scoped to Today / Explore / Search. A single LaunchedEffect runs only when loading state or destination eligibility changes; it does not poll or update per row.
+- The three feed destinations now render placeholders only if the initial loading state persists beyond the delay. During the short grace period they avoid briefly displaying a false empty-state message; cached/available article content remains renderable even if a loading flag is also active.
+- Existing FeedSkeletonCard and NewsCard geometry, stable item keys/content types, bookmark semantics, one Coil request/decode, palette sampling and static card rim are unchanged. No shimmer or whole-feed crossfade was introduced.
+
+### Tests and CI
+- Added FeedLoadingPolicyTest for fast-load suppression, sustained-load reveal, immediate hide after completion and a bounded delay.
+- The previous exact-head natural PR run [#392](https://github.com/Batmancpu/CurrentLens/actions/runs/42565283567) passed on source head 8c59dcc48dccc2bbfcba5d47337a8884f51a4356: WordNet builder/database, :app:testDebugUnitTest, :app:assembleDebug and artifact upload. Artifact [#13651565871](https://github.com/Batmancpu/CurrentLens/actions/runs/42565283567/artifacts/13651565871), 39,131,198 bytes, SHA-256 c403575be0e956f3501691083c24c739e867b48db4f8b60e9400eeb7c0e0c888, expires 23 November 2026 05:07:26 UTC. This run validates the source head only, **not this new commit**; the new head requires its own natural CI.
+
+### Paired performance and accessibility
+- Render delta: **zero new glass surfaces, blur passes, shaders, backdrop captures/readbacks, image requests, bitmap decodes or per-card effects**. The only runtime addition is one cancellable 180ms coroutine delay per loading-state transition on the home surface.
+- Skeletons remain hidden from TalkBack via their existing empty semantics; no motion is added, so Reduce Motion behaviour is unchanged. Article, quiz, bookmark, selection and persistence semantics are untouched.
+- No performance improvement is claimed from code inspection alone. OPPO Reno10 screenshots, startup timing, frame jank, allocation/memory, GPU overdraw, battery/thermal and accessibility validation remain **UNVERIFIED**.
+
+### Next
+- Inspect the exact new head's naturally triggered push and PR workflows, complete job steps/logs and artifact before another visual batch. Continue only from the live black-box-bihar-news head; keep the one PR #34 consolidation path and all source branches intact.
