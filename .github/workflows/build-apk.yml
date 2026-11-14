@@ -59,7 +59,7 @@ jobs:
           test -s app/src/main/assets/wordnet.db
 
       - name: Run JVM tests and build the release APK
-        run: gradle --no-daemon --stacktrace :app:testReleaseUnitTest :app:assembleRelease
+        run: gradle --no-daemon --stacktrace :app:testDebugUnitTest :app:assembleRelease
 
       - name: Transfer unsigned APK to the signing job
         if: github.event_name == 'workflow_dispatch' && inputs.publish
