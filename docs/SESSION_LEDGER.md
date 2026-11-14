@@ -579,3 +579,13 @@ Branch: `fix/early-startup-crash-diagnostics-2026-11-06`.
 - Resume here: share the verified APK link and the GitHub branch cleanup page following successful publication.
 
 - [Run #423](https://github.com/Batmancpu/CurrentLens/actions/runs/43586381655) passed JVM tests, assembly, package/version and signer verification, and publication. [CurrentLens 0.3.1](https://github.com/Batmancpu/CurrentLens/releases/tag/android-12) is Latest with one APK asset, digest `sha256:be2a147014c34c01656c419657c5551cd48c0dd7347598622eccefeea127e31f`. The APK signer SHA-256 is `af046601fe3a36851e645908e759abbf2caedfe748e2be02817991444884c580`, matching build 11. After fetching the merge, `git for-each-ref --no-merged origin/main refs/remotes/origin` returned zero refs, and `git diff --check origin/main^1 origin/main` passed. The owner still needs to confirm installation and launch on the phone.
+
+## 2026-11-14 IST — prepare the 0.3.2 in-place update test
+
+- Owner request (verbatim): “I have installed version 0.3.1. Let, give me another updated version so that I can check the auto update”
+- Goal and acceptance: publish 0.3.2 (versionCode 13) as Latest, keep the package ID, signing certificate and APK asset name from 0.3.1, then have the owner check update detection and installation on the phone.
+- Starting point: main `1b2f18f4a9a71934c1429d9bb9d3f172f90ff877`, latest release `android-12`, no active or queued workflows.
+- Changes and attempts: bump app version in `app/build.gradle.kts` and update the resume point in `docs/PROJECT_HANDOFF.md`. Run the existing serial publication workflow with `[publish apk]`. App behavior is unchanged so the test isolates the update path.
+- Results: wait for exact-head CI and verify the Latest release, APK package, version and signing certificate. Device detection, install-over and retained data remain owner checks.
+- Failures and recovery: none at preparation. Preserve the installed APK and data if the update is rejected.
+- Resume here: refresh CurrentLens in Obtainium, install over 0.3.1, then confirm 0.3.2 and that existing local data remains available.
