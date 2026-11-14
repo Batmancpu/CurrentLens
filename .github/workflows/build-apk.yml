@@ -1,133 +1,163 @@
-name: Build Android APK
+name: CurrentLens Android
 
 on:
   push:
-    branches:
-      - main
-      - fix/early-startup-crash-diagnostics-2026-11-06
-      - black-box-bihar-news
-  pull_request:
-    branches:
-      - main
-      - fix/early-startup-crash-diagnostics-2026-11-06
-      - black-box-bihar-news
-    types: [ opened, synchronize, reopened, ready_for_review ]
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      publish:
+        description: Publish the signed APK from main
+        type: boolean
+        default: false
 
-# Build and test jobs are read-only. Release write access is isolated below.
 permissions:
   contents: read
 
 concurrency:
-  group: currentlens-android-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+  group: currentlens-android-main
+  cancel-in-progress: false
 
 jobs:
   build:
-    name: Build and test debug APK
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: 40
-    permissions:
-      contents: read
     steps:
-      - name: Checkout source
-        uses: actions/checkout@v5
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
 
-      - name: Set up Java
-        uses: actions/setup-java@v5
+      - uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: '17'
 
-      - name: Restore stable Stability test signing key
-        id: stability-signing-cache
-        uses: actions/cache@v4
-        with:
-          path: .ci/stability-debug.keystore
-          key: currentlens-stability-debug-keystore-v1
-
-      - name: Generate Stability test signing key on cache miss
-        if: steps.stability-signing-cache.outputs.cache-hit != 'true'
-        run: |
-          set -euo pipefail
-          mkdir -p .ci
-          keytool -genkeypair -noprompt -v -keystore .ci/stability-debug.keystore -storetype JKS -storepass currentlens-stability-test-only -keypass currentlens-stability-test-only -alias currentlens-stability -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=CurrentLens Stability Debug,O=CurrentLens,C=IN"
-
-      - name: Set up Android SDK
-        uses: android-actions/setup-android@v3
+      - uses: android-actions/setup-android@v3
         with:
           packages: platform-tools
 
-      - name: Install Android platform
-        run: |
-          yes | sdkmanager --licenses
-          sdkmanager "platforms;android-37.0" "build-tools;37.0.0"
+      - name: Install Android platform and build tools
+        run: sdkmanager "platforms;android-37.0" "build-tools;37.0.0"
 
-      - name: Set up Gradle
-        uses: gradle/actions/setup-gradle@v4
+      - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '9.5.0'
 
-      - name: Verify dictionary builder and create offline WordNet database
-        shell: bash
+      - name: Verify dictionary builder and bundle offline WordNet
         run: |
           set -euo pipefail
           python3 -m unittest discover -s scripts -p 'test_*.py' -v
           archive="$RUNNER_TEMP/english-wordnet-2025-plus.zip"
           curl --fail --location --retry 3 --retry-all-errors --retry-delay 2 \
             --connect-timeout 15 --max-time 240 \
-            "https://en-word.net/static/english-wordnet-2025-plus.zip" \
+            "https://github.com/globalwordnet/english-wordnet/releases/download/2025-edition/english-wordnet-2025-plus.zip" \
             --output "$archive"
-          archive_bytes="$(stat -c%s "$archive")"
-          test "$archive_bytes" -ge 5000000
-          test "$archive_bytes" -le 25000000
+          test "$(stat -c%s "$archive")" -le 25000000
           python3 scripts/build_wordnet_db.py "$archive" app/src/main/assets/wordnet.db \
-            --min-unique-words 100000
+            --min-unique-words 100000 \
+            --expected-sha256 cf4afe7ad4cca3f56091d791e665614c564ac84e3782de4e789cf5b745556e2e
           test -s app/src/main/assets/wordnet.db
 
-      - name: Compile APK and run JVM tests
-        shell: bash
-        run: |
-          set -euo pipefail
-          if [[ "$GITHUB_REF" == "refs/heads/main" ]]; then
-            gradle --no-daemon --stacktrace :app:testDebugUnitTest :app:assembleDebug
-          else
-            gradle --no-daemon --stacktrace -PstabilityTest=true :app:testDebugUnitTest :app:assembleDebug
-          fi
+      - name: Run JVM tests and build the release APK
+        run: gradle --no-daemon --stacktrace :app:testReleaseUnitTest :app:assembleRelease
 
-      - name: Upload installable APK artifact
+      - name: Transfer unsigned APK to the signing job
+        if: github.event_name == 'workflow_dispatch' && inputs.publish
         uses: actions/upload-artifact@v4
         with:
-          name: CurrentLens-v0.2.8-stability-debug-apk
-          path: app/build/outputs/apk/debug/app-debug.apk
+          name: unsigned-release-input
+          path: app/build/outputs/apk/release/app-release-unsigned.apk
           if-no-files-found: error
-          retention-days: 14
+          retention-days: 1
 
   publish:
-    name: Publish main-branch testing release
-    if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+    if: github.ref == 'refs/heads/main' && github.event_name == 'workflow_dispatch' && inputs.publish
     needs: build
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 20
     permissions:
       contents: write
     steps:
-      - name: Download APK built and tested by this workflow run
-        uses: actions/download-artifact@v4
+      - uses: actions/checkout@v5
         with:
-          name: CurrentLens-v0.2.8-stability-debug-apk
-          path: release-assets
+          fetch-depth: 0
+          persist-credentials: false
 
-      - name: Publish direct APK download in GitHub Releases
-        uses: softprops/action-gh-release@v2
+      - uses: actions/setup-java@v5
         with:
-          tag_name: v0.2.8-build-${{ github.run_number }}
-          name: CurrentLens v0.2.8 (Build ${{ github.run_number }})
-          body: |
-            CurrentLens v0.2.8 testing build.
-            Package: com.mangoloads.currentlens
-            Includes the four-tab editorial redesign, Prismal AGSL glass controls, a 30-day local article metadata cache,
-            Express Sunday Eye RSS, best-effort public-page extraction with in-app publisher fallback, offline WordNet definitions.
-            Debug-signed APK for testing; not a production or Play Store release.
-          files: release-assets/app-debug.apk
-          prerelease: true
-          make_latest: false
+          distribution: temurin
+          java-version: '17'
+
+      - uses: android-actions/setup-android@v3
+        with:
+          packages: platform-tools
+
+      - run: sdkmanager "build-tools;37.0.0"
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: unsigned-release-input
+          path: release-input
+
+      - name: Check package and incrementing version
+        id: release
+        run: |
+          set -euo pipefail
+          build_tools="$ANDROID_HOME/build-tools/37.0.0"
+          package_line="$("$build_tools/aapt" dump badging release-input/app-release-unsigned.apk | sed -n '/^package:/p')"
+          package="$(sed -n "s/^package: name='\([^']*\)'.*/\1/p" <<< "$package_line")"
+          code="$(sed -n "s/.* versionCode='\([0-9]*\)'.*/\1/p" <<< "$package_line")"
+          version="$(sed -n "s/.* versionName='\([^']*\)'.*/\1/p" <<< "$package_line")"
+          test "$package" = com.mangoloads.currentlens
+          [[ "$code" =~ ^[1-9][0-9]*$ && "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]
+          previous_code="$(git tag --list 'android-*' | sed -n 's/^android-\([0-9][0-9]*\)$/\1/p' | sort -n | tail -1)"
+          if (( code <= ${previous_code:-10} )); then
+            echo "::error::Increase versionCode above ${previous_code:-10} before publishing"
+            exit 1
+          fi
+          printf 'version=%s\ncode=%s\n' "$version" "$code" >> "$GITHUB_OUTPUT"
+
+      - name: Sign and verify CurrentLens.apk
+        env:
+          RELEASE_KEYSTORE_BASE64: ${{ secrets.CURRENTLENS_RELEASE_KEYSTORE_BASE64 }}
+          CURRENTLENS_SIGNING_STORE_PASSWORD: ${{ secrets.CURRENTLENS_RELEASE_STORE_PASSWORD }}
+          CURRENTLENS_SIGNING_KEY_ALIAS: ${{ secrets.CURRENTLENS_RELEASE_KEY_ALIAS }}
+          CURRENTLENS_SIGNING_KEY_PASSWORD: ${{ secrets.CURRENTLENS_RELEASE_KEY_PASSWORD }}
+          CURRENTLENS_SIGNING_EXPECTED_SHA256: ${{ vars.CURRENTLENS_RELEASE_CERT_SHA256 }}
+        run: |
+          set -euo pipefail
+          if [[ ! "$CURRENTLENS_SIGNING_EXPECTED_SHA256" =~ ^[0-9a-fA-F]{64}$ ||
+                -z "$RELEASE_KEYSTORE_BASE64" || -z "$CURRENTLENS_SIGNING_STORE_PASSWORD" ||
+                -z "$CURRENTLENS_SIGNING_KEY_ALIAS" || -z "$CURRENTLENS_SIGNING_KEY_PASSWORD" ]]; then
+            echo "::error::Configure repository signing secrets and the certificate fingerprint per docs/RELEASE_SIGNING.md"
+            exit 1
+          fi
+          umask 077
+          export CURRENTLENS_SIGNING_KEYSTORE_PATH="$(mktemp "$RUNNER_TEMP/currentlens-keystore.XXXXXX")"
+          trap 'rm -f "$CURRENTLENS_SIGNING_KEYSTORE_PATH"' EXIT
+          printf '%s' "$RELEASE_KEYSTORE_BASE64" | base64 --decode > "$CURRENTLENS_SIGNING_KEYSTORE_PATH"
+          unset RELEASE_KEYSTORE_BASE64
+          build_tools="$ANDROID_HOME/build-tools/37.0.0"
+          "$build_tools/zipalign" -P 16 -f 4 release-input/app-release-unsigned.apk release-input/aligned.apk
+          "$build_tools/apksigner" sign \
+            --ks "$CURRENTLENS_SIGNING_KEYSTORE_PATH" --ks-type PKCS12 \
+            --ks-key-alias "$CURRENTLENS_SIGNING_KEY_ALIAS" \
+            --ks-pass env:CURRENTLENS_SIGNING_STORE_PASSWORD \
+            --key-pass env:CURRENTLENS_SIGNING_KEY_PASSWORD \
+            --v4-signing-enabled false --out CurrentLens.apk release-input/aligned.apk
+          bash scripts/verify_apk_signing.sh CurrentLens.apk
+          sha256sum CurrentLens.apk >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Publish one signed APK
+        env:
+          GH_TOKEN: ${{ github.token }}
+          APK_VERSION: ${{ steps.release.outputs.version }}
+          APK_CODE: ${{ steps.release.outputs.code }}
+          CERT_SHA256: ${{ vars.CURRENTLENS_RELEASE_CERT_SHA256 }}
+        run: |
+          set -euo pipefail
+          checksum="$(sha256sum CurrentLens.apk | cut -d' ' -f1)"
+          printf 'Version code: %s\n\nAPK SHA-256: `%s`\n\nSigning certificate SHA-256: `%s`\n' \
+            "$APK_CODE" "$checksum" "$CERT_SHA256" > release-notes.md
+          gh release create "android-$APK_CODE" CurrentLens.apk --target "$GITHUB_SHA" \
+            --title "CurrentLens $APK_VERSION" --notes-file release-notes.md --prerelease

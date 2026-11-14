@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
+import hmac
 import io
 import os
 import sqlite3
@@ -69,14 +71,34 @@ def iter_text_lines(archive: zipfile.ZipFile, member: str) -> Iterable[str]:
             yield from reader
 
 
+def verify_archive_sha256(archive_path: Path, expected_sha256: str) -> str:
+    """Verify the exact upstream WordNet archive before parsing or writing output."""
+    expected = expected_sha256.strip().lower()
+    if len(expected) != 64 or any(char not in "0123456789abcdef" for char in expected):
+        raise ValueError("Expected WordNet SHA-256 must contain exactly 64 hexadecimal characters")
+
+    digest = hashlib.sha256()
+    with archive_path.open("rb") as stream:
+        for chunk in iter(lambda: stream.read(1024 * 1024), b""):
+            digest.update(chunk)
+    actual = digest.hexdigest()
+    if not hmac.compare_digest(actual, expected):
+        raise ValueError(
+            f"WordNet archive SHA-256 mismatch: expected {expected}, received {actual}"
+        )
+    return actual
+
+
 def build_database(
     archive_path: Path,
     output_path: Path,
+    expected_sha256: str,
     min_unique_words: int = 100_000,
     min_archive_bytes: int = 5_000_000,
 ) -> int:
     if not archive_path.is_file() or archive_path.stat().st_size < min_archive_bytes:
         raise ValueError("The Open English WordNet archive is missing or unexpectedly small")
+    verify_archive_sha256(archive_path, expected_sha256)
     output_path.parent.mkdir(parents=True, exist_ok=True)
     fd, temporary_name = tempfile.mkstemp(prefix="wordnet-", suffix=".sqlite", dir=output_path.parent)
     os.close(fd)
@@ -175,11 +197,13 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("archive", type=Path)
     parser.add_argument("output", type=Path)
+    parser.add_argument("--expected-sha256", required=True)
     parser.add_argument("--min-unique-words", type=int, default=100_000)
     args = parser.parse_args()
     count = build_database(
         args.archive,
         args.output,
+        expected_sha256=args.expected_sha256,
         min_unique_words=args.min_unique_words,
     )
     print(

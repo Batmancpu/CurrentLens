@@ -1,10 +1,7 @@
 package com.mangoloads.currentlens
 
 import android.text.Html
-import java.io.IOException
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.async
-import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.withContext
 import org.xmlpull.v1.XmlPullParser
 import org.xmlpull.v1.XmlPullParserFactory
@@ -36,9 +33,13 @@ data class FeedSource(
     val weekendRead: Boolean = false
 )
 
+private const val MEDIA_RSS_NAMESPACE = "http://search.yahoo.com/mrss/"
+private const val XML_NAMESPACE = "http://www.w3.org/XML/1998/namespace"
 private val FEED_REDIRECT_STATUS_CODES = setOf(301, 302, 303, 307, 308)
 
 object NewsRepository {
+    internal const val MAX_ENTRIES_PER_FEED = 100
+
     private val feeds = listOf(
         // Section feeds precede broad feeds so duplicate URLs keep useful labels.
         FeedSource("The Hindu", "Economy", "https://www.thehindu.com/business/Economy/feeder/default.rss"),
@@ -58,8 +59,7 @@ object NewsRepository {
     )
 
     suspend fun fetchAll(): List<Article> = withContext(Dispatchers.IO) {
-        val fetched = feeds.map { source -> async { fetchOne(source) } }
-            .awaitAll()
+        val fetched = FeedFetchConcurrencyPolicy.map(feeds, ::fetchOne)
             .flatten()
         ArticleUrlIdentityPolicy.deduplicate(fetched, bookmarkedUrls = emptySet()).take(250)
     }
@@ -72,7 +72,11 @@ object NewsRepository {
                     emptyList()
                 } else {
                     connection.inputStream.use { input ->
-                        parse(source, NetworkLimits.readUtf8Limited(input, NetworkLimits.MAX_RSS_BYTES))
+                        parse(
+                            source,
+                            NetworkLimits.readUtf8Limited(input, NetworkLimits.MAX_RSS_BYTES),
+                            connection.url.toExternalForm()
+                        )
                     }
                 }
             } finally {
@@ -144,14 +148,21 @@ object NewsRepository {
         Html.fromHtml(value, Html.FROM_HTML_MODE_LEGACY).toString()
             .replace(Regex("\\s+"), " ").trim()
 
-    private fun parse(source: FeedSource, xml: String): List<Article> {
+    internal fun parse(
+        source: FeedSource,
+        xml: String,
+        documentUrl: String,
+        sanitizeText: (String) -> String = ::clean
+    ): List<Article> {
         val result = mutableListOf<Article>()
         val factory = XmlPullParserFactory.newInstance().apply { setNamespaceAware(true) }
         val parser = factory.newPullParser()
         runCatching { parser.setFeature(XmlPullParser.FEATURE_PROCESS_DOCDECL, false) }
         parser.setInput(xml.reader())
         var event = parser.eventType
-        var inItem = false
+        val baseByDepth = mutableMapOf<Int, String>()
+        var itemDepth: Int? = null
+        var entriesSeen = 0
         var title = ""
         var description = ""
         val links = mutableListOf<FeedLinkCandidate>()
@@ -159,59 +170,98 @@ object NewsRepository {
         var atomPublished = ""
         var atomUpdated = ""
         var genericDate = ""
-        var image: String? = null
+        val images = mutableListOf<FeedImageCandidate>()
         while (event != XmlPullParser.END_DOCUMENT) {
             when (event) {
                 XmlPullParser.START_TAG -> {
-                    val tag = parser.name?.substringAfter(':')?.lowercase(Locale.ROOT).orEmpty()
-                    if (tag == "item" || tag == "entry") {
-                        inItem = true
+                    val depth = parser.depth
+                    val parentBase = baseByDepth[depth - 1] ?: documentUrl
+                    val declaredBase = FeedFieldPolicy.url(
+                        parser.getAttributeValue(XML_NAMESPACE, "base").orEmpty()
+                    )
+                    val effectiveBase = declaredBase?.let {
+                        FeedLinkPolicy.resolveHttpReference(it, parentBase)
+                    } ?: parentBase
+                    baseByDepth[depth] = effectiveBase
+
+                    val tag = parser.name?.lowercase(Locale.ROOT).orEmpty()
+                    val isMediaImage = itemDepth != null && depth > itemDepth &&
+                        parser.namespace == MEDIA_RSS_NAMESPACE && (tag == "thumbnail" || tag == "content")
+                    if (itemDepth == null && (tag == "item" || tag == "entry")) {
+                        entriesSeen = FeedEntryBudgetPolicy.consume(entriesSeen, MAX_ENTRIES_PER_FEED)
+                            ?: break
+                        itemDepth = depth
                         title = ""
                         description = ""
                         links.clear()
+                        images.clear()
                         rssPubDate = ""
                         atomPublished = ""
                         atomUpdated = ""
                         genericDate = ""
-                        image = null
-                    } else if (inItem) {
+                    } else if (itemDepth == depth - 1 || isMediaImage) {
                         when (tag) {
-                            "title" -> title = clean(runCatching { parser.nextText() }.getOrDefault(""))
+                            "title" -> title = sanitizeText(
+                                FeedXmlTextReader.readElementText(parser, FeedFieldPolicy.MAX_TITLE_SOURCE_CHARS)
+                            )
                             "description", "summary", "encoded" -> {
-                                val text = clean(runCatching { parser.nextText() }.getOrDefault(""))
+                                val text = sanitizeText(
+                                    FeedXmlTextReader.readElementText(parser, FeedFieldPolicy.MAX_DESCRIPTION_SOURCE_CHARS)
+                                )
                                 if (text.length > description.length) description = text
                             }
                             "link" -> {
+                                val rel = parser.getAttributeValue(null, "rel").orEmpty()
+                                val type = parser.getAttributeValue(null, "type").orEmpty()
                                 val href = parser.getAttributeValue(null, "href")
-                                if (!href.isNullOrBlank()) {
-                                    links.add(
-                                        FeedLinkCandidate(
-                                            href = href.trim(),
-                                            rel = parser.getAttributeValue(null, "rel").orEmpty(),
-                                            type = parser.getAttributeValue(null, "type").orEmpty()
-                                        )
-                                    )
-                                } else {
-                                    val textLink = runCatching { parser.nextText().trim() }.getOrDefault("")
-                                    if (textLink.isNotBlank()) links.add(FeedLinkCandidate(href = textLink))
+                                    ?: FeedXmlTextReader.readElementText(parser, FeedFieldPolicy.MAX_URL_CHARS + 1)
+                                FeedFieldPolicy.url(href)?.let {
+                                    links.add(FeedLinkCandidate(it, rel, type, effectiveBase))
                                 }
                             }
-                            "pubdate" -> rssPubDate = runCatching { parser.nextText().trim() }.getOrDefault("")
-                            "published" -> atomPublished = runCatching { parser.nextText().trim() }.getOrDefault("")
-                            "updated" -> atomUpdated = runCatching { parser.nextText().trim() }.getOrDefault("")
-                            "date" -> genericDate = runCatching { parser.nextText().trim() }.getOrDefault("")
-                            "enclosure" -> image = parser.getAttributeValue(null, "url")
-                            "thumbnail", "content" -> {
-                                val candidate = parser.getAttributeValue(null, "url")
-                                if (candidate?.startsWith("http") == true) image = candidate
+                            "pubdate" -> rssPubDate = readDate(parser)
+                            "published" -> atomPublished = readDate(parser)
+                            "updated" -> atomUpdated = readDate(parser)
+                            "date" -> genericDate = readDate(parser)
+                            "enclosure", "thumbnail", "content" -> {
+                                val rawUrl = parser.getAttributeValue(null, "url")
+                                val type = parser.getAttributeValue(null, "type")
+                                if (tag == "content" && FeedFieldPolicy.isInlineAtomTextContent(
+                                        parser.namespace, type, parser.getAttributeValue(null, "src"), rawUrl
+                                    )
+                                ) {
+                                    val text = sanitizeText(
+                                        FeedXmlTextReader.readElementText(parser, FeedFieldPolicy.MAX_DESCRIPTION_SOURCE_CHARS)
+                                    )
+                                    if (text.length > description.length) description = text
+                                } else {
+                                    val element = when (tag) {
+                                        "enclosure" -> FeedImageElement.ENCLOSURE
+                                        "thumbnail" -> FeedImageElement.THUMBNAIL
+                                        else -> FeedImageElement.CONTENT
+                                    }
+                                    FeedFieldPolicy.url(rawUrl.orEmpty())?.let { url ->
+                                        images.add(
+                                            FeedImageCandidate(
+                                                url, element, type.orEmpty(),
+                                                parser.getAttributeValue(null, "medium").orEmpty()
+                                            )
+                                        )
+                                    }
+                                }
                             }
                         }
                     }
+                    if (parser.eventType == XmlPullParser.END_TAG) baseByDepth.remove(depth)
                 }
                 XmlPullParser.END_TAG -> {
-                    val tag = parser.name?.lowercase(Locale.ROOT).orEmpty()
-                    if (tag == "item" || tag == "entry") {
-                        val articleUrl = FeedLinkPolicy.select(links)
+                    if (parser.depth == itemDepth) {
+                        val safeLinks = links.mapNotNull { candidate ->
+                            val resolved = FeedLinkPolicy.resolveHttpReference(candidate.href, candidate.baseUrl)
+                            val url = FeedArticleUrlPolicy.select(source.name, resolved) ?: return@mapNotNull null
+                            candidate.copy(href = url)
+                        }
+                        val articleUrl = FeedLinkPolicy.select(safeLinks)
                         if (title.isNotBlank() && articleUrl != null) {
                             result.add(
                                 Article(
@@ -227,18 +277,23 @@ object NewsRepository {
                                         atomUpdated = atomUpdated,
                                         genericDate = genericDate
                                     ),
-                                    imageUrl = image,
+                                    imageUrl = FeedImagePolicy.select(source.name, images),
                                     weekendRead = source.weekendRead,
                                     feedUrl = source.url
                                 )
                             )
                         }
-                        inItem = false
+                        itemDepth = null
                     }
+                    baseByDepth.remove(parser.depth)
                 }
             }
             event = parser.next()
         }
         return result
     }
+
+    private fun readDate(parser: XmlPullParser): String = FeedFieldPolicy.date(
+        FeedXmlTextReader.readElementText(parser, FeedFieldPolicy.MAX_DATE_CHARS + 1)
+    ).orEmpty()
 }

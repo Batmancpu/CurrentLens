@@ -4,10 +4,11 @@ This repository documents an ongoing product built by one user working with Chat
 
 ## Resume CurrentLens from GitHub
 
-- Repository: [Batmancpu/CurrentLens](https://github.com/Batmancpu/CurrentLens). The active integration branch is `black-box-bihar-news`, tracked by draft [PR #34](https://github.com/Batmancpu/CurrentLens/pull/34). Open this branch explicitly when the default branch does not expose these files.
-- Read [docs/PROJECT_AUDIT.md](docs/PROJECT_AUDIT.md) first for the 14 November takeover, feature status and ordered work. Check the live branch, PR, Actions and release before reusing a dated snapshot.
-- The immediate owner decision concerns the APK already installed on the phone. Identify its package, versionCode and certificate before choosing a release key. Preserve the existing install and local data while resolving signing in draft [PR #39](https://github.com/Batmancpu/CurrentLens/pull/39).
-- Keep this entry short. Record new evidence in the linked audit/handoff, session ledger and specialised registers. The source code, Git history and CI records establish implementation state. Device behavior remains a separate verification step.
+- Open [Batmancpu/CurrentLens on main](https://github.com/Batmancpu/CurrentLens/tree/main). The owner chose main as the sole development branch and a fresh APK install on 14 November 2026. This decision supersedes older branch and signing instructions in historical records.
+- Read [the roadmap](docs/ROADMAP.md), [the current handoff](docs/PROJECT_HANDOFF.md), [the branch disposition register](docs/CONSOLIDATION.md) and [the signing runbook](docs/RELEASE_SIGNING.md) before a change.
+- Read live main, its exact Actions run and the previous release. Work on one manageable scope in a local checkout. Verify and record the expected base SHA, then advance only main with a fast-forward. Create zero development branches. Leave existing branch deletion to the owner after their acceptance.
+- Keep a single Actions workflow active. Wait for the current run to finish before pushing or manually dispatching the next. Main pushes validate. Explicit publication uses the same workflow and one signed APK. Never advance the release identity because a test key or cache changed.
+- For every change, including small fixes, append the purpose, touched files, verification, and next action to the session ledger. Update this file for stable operating rules. App constants live alongside their owning policy and package/version stay in Gradle.
 
 ## Mandatory reading at the start of every new CurrentLens chat
 
@@ -68,15 +69,12 @@ For conversation-only decisions that do not produce a commit, append a dated ses
 - Preserve PrismalAGSL v1.0.6 and its MIT notice; do not downgrade or remove Liquid Glass effects without a measured, reproducible reason and explicit product decision.
 - Do not add continuous blur to every scrolling cell, duplicate image decoding or high-frequency GPU readbacks without measured evidence.
 
-## Repository safety
+## Main-only development and release
 
-- Never edit, commit or push directly to main.
-- Never merge a PR, change workflow configuration, dispatch/rerun builds or publish releases during an ordinary review task.
-- Inspect live main, all open PRs/branches, complete Actions history/queue, workflow, latest steps/logs, artifacts and Releases before proposing repository actions.
-- Check for equivalent existing PRs before opening another. Update an equivalent PR rather than duplicating it.
-- Use one isolated branch and one focused draft PR for material improvements. Keep work batched and evidence-backed.
-- The single workflow has `contents:write`; `main` pushes publish a debug APK prerelease, while the temporary active crash-stabilisation branch builds an Actions artifact only. Merging any branch into `main` can trigger a Release; flag this before any merge discussion. Remove temporary branch triggers when the stabilisation work is completed.
-- If no material change is justified, do not send a no-change alert or a generic UPSC news digest.
+- Keep the release app ID and private signing key fixed. Increase versionCode for every published APK. Confirm the published certificate is the pinned certificate and record the release asset hash and exact source SHA.
+- Sequence one verification run at a time. A failure stops the batch. Inspect the first failing step, fix the smallest cause, and rerun through the next main commit or explicit release dispatch after the prior run ends.
+- Before a risky refactor, document rollback, test coverage and affected persisted data. Revert via a new main commit. A shipped rollback uses a higher versionCode with the same signing identity.
+- Keep untouched old branches until their implementation and unique deltas are accounted for and the owner approves cleanup.
 
 ## Verification rules
 
@@ -138,13 +136,8 @@ The app has a recurring, user-observed native cold-start failure. Treat this as 
 
 ## Branch hygiene
 
-- Branch count does not affect an installed APK or cause runtime crashes; only the checked-out/build commit determines the code in a build. Branch clutter does increase review, CI and continuity risk.
-- Use one active integration branch and one focused draft PR for a continuing issue. Make multiple related commits on that branch rather than creating a new branch per file, session or AI agent.
-- Reuse/update the existing open PR when work is related. Do not create duplicate draft PRs for the same issue.
-- Preserve independent open feature branches until their unique commits are reviewed, integrated or explicitly abandoned. Never delete a branch with unmerged unique work merely to reduce the branch count.
-- After merge/closure, delete truly stale refs when safe; do not force-move a branch to simulate deletion. If branch deletion is not available to the acting tool, say so and give the owner the GitHub Branches page rather than claiming deletion.
-- Enable repository-side automatic deletion of merged branches only after the owner approves the setting. Never merge PRs, close active feature PRs or delete unique work without an explicit user decision.
-
+- Main is the sole development and release branch. Review old branch tips against main at their recorded SHAs. A commit SHA difference alone does not establish distinct behavior.
+- Use the branch disposition register before removal. Mark superseded implementations or explicitly deferred work. The owner performs branch deletion after the new APK is accepted.
 
 ### Stability 0.2.5 device result and the next isolation protocol
 

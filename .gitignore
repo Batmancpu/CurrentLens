@@ -1,0 +1,11 @@
+.gradle/
+.ci/
+local.properties
+app/build/
+app/src/main/assets/wordnet.db
+*.jks
+*.keystore
+*.p12
+*.pfx
+*.apk
+__pycache__/

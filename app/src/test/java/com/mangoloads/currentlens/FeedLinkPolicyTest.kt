@@ -61,4 +61,81 @@ class FeedLinkPolicyTest {
         )
         assertEquals("https://example.test/story", FeedLinkPolicy.select(listOf(alternate)))
     }
+
+    @Test
+    fun relativeAlternateResolvesAgainstFinalFeedDocumentUrl() {
+        val relative = FeedLinkCandidate(
+            href = "stories/42",
+            rel = "alternate",
+            type = "text/html"
+        )
+        assertEquals(
+            "https://example.test/feeds/stories/42",
+            FeedLinkPolicy.select(listOf(relative), "https://example.test/feeds/world.xml")
+        )
+    }
+
+    @Test
+    fun rootRelativeAlternateResolvesAgainstFeedOrigin() {
+        val relative = FeedLinkCandidate(
+            href = "/world/story/42",
+            rel = "alternate",
+            type = "text/html"
+        )
+        assertEquals(
+            "https://example.test/world/story/42",
+            FeedLinkPolicy.select(listOf(relative), "https://example.test/feeds/world.xml")
+        )
+    }
+
+    @Test
+    fun linkLevelXmlBaseOverridesDocumentBase() {
+        val relative = FeedLinkCandidate(
+            href = "story/42",
+            rel = "alternate",
+            type = "text/html",
+            baseUrl = "https://example.test/world/"
+        )
+        assertEquals(
+            "https://example.test/world/story/42",
+            FeedLinkPolicy.select(listOf(relative), "https://example.test/feeds/world.xml")
+        )
+    }
+
+    @Test
+    fun xmlBaseCanItselfBeRelativeToItsParentBase() {
+        assertEquals(
+            "https://example.test/world/",
+            FeedLinkPolicy.resolveHttpReference(
+                "../../world/",
+                "https://example.test/feeds/archive/feed.xml"
+            )
+        )
+    }
+
+    @Test
+    fun relativeAlternateWithoutBaseAndFragmentOnlyReferenceAreRejected() {
+        assertNull(
+            FeedLinkPolicy.select(
+                listOf(FeedLinkCandidate("story/42", rel = "alternate", type = "text/html"))
+            )
+        )
+        assertNull(
+            FeedLinkPolicy.select(
+                listOf(FeedLinkCandidate("#story", rel = "alternate", type = "text/html")),
+                "https://example.test/feed.xml"
+            )
+        )
+    }
+
+    @Test
+    fun nonHttpXmlBaseCannotMakeUnsafeLinkSelectable() {
+        val unsafeBase = FeedLinkCandidate(
+            href = "story/42",
+            rel = "alternate",
+            type = "text/html",
+            baseUrl = "javascript:alert(1)"
+        )
+        assertNull(FeedLinkPolicy.select(listOf(unsafeBase)))
+    }
 }

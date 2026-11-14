@@ -86,6 +86,53 @@ class UpscFeedPolicyTest {
         )))
     }
 
+
+    @Test
+    fun gstCouncilRateDecisionIsEligibleAsGsThreeEconomy() {
+        val story = article(
+            "GST Council cuts GST rates on insurance premiums",
+            "The recommendation changes the indirect-tax treatment of insurance."
+        )
+        val relevance = UpscEngine.classify(story)
+
+        assertTrue(relevance.gsPaper == "GS III")
+        assertTrue(relevance.subject == "Indian Economy")
+        assertTrue(relevance.matchedTerms.contains("gst rate"))
+        assertTrue(UpscFeedPolicy.shouldInclude(story))
+    }
+
+    @Test
+    fun gstCouncilConstitutionalCompositionIsEligibleAsGsTwo() {
+        val story = article(
+            "GST Council composition and voting structure under Article 279A",
+            "The constitutional body reflects Centre-State representation."
+        )
+        val relevance = UpscEngine.classify(story)
+
+        assertTrue(relevance.gsPaper == "GS II")
+        assertTrue(relevance.subject == "Constitution")
+        assertTrue(UpscFeedPolicy.shouldInclude(story))
+    }
+
+    @Test
+    fun genericGstCouncilNameAloneDoesNotQualifyRoutineMeeting() {
+        assertFalse(UpscFeedPolicy.shouldInclude(article(
+            "GST Council holds a routine meeting",
+            "Officials discuss routine administrative arrangements."
+        )))
+    }
+
+    @Test
+    fun unrelatedTechnologyStoryCannotBorrowGstCouncilSignal() {
+        val story = article(
+            "Technology platform launched for GST Council event",
+            "A software vendor demonstrates an event-logistics dashboard."
+        )
+
+        assertTrue(UpscEngine.classify(story).subject == "Science & Technology")
+        assertFalse(UpscFeedPolicy.shouldInclude(story))
+    }
+
     @Test
     fun unrelatedWordArbitraryCannotBecomeAnRbiSyllabusSignal() {
         assertFalse(UpscFeedPolicy.shouldInclude(article(
@@ -108,4 +155,337 @@ class UpscFeedPolicyTest {
             "Entertainment"
         )))
     }
+
+    @Test
+    fun boxOfficeAndHistoricalFilmHeadlinesCannotBorrowPolicyNouns() {
+        assertRejectedDespiteKeywordMatch(article(
+            "Box-office collection update: GST on movie tickets raises costs",
+            "A box-office report discusses ticket pricing and collections.",
+            "Entertainment"
+        ))
+        assertRejectedDespiteKeywordMatch(article(
+            "A new film about the Cinematograph Act enacted in 1952",
+            "A promotional film feature describes a historical law.",
+            "Entertainment"
+        ))
+        assertRejectedDespiteKeywordMatch(article(
+            "Cricket star's film on national sports policy releases Friday",
+            "The story promotes a sports drama and its release date.",
+            "Entertainment"
+        ))
+        assertRejectedDespiteKeywordMatch(article(
+            "Actor explains film certification rules in a podcast",
+            "A promotional interview accompanies a film release.",
+            "Entertainment"
+        ))
+    }
+
+    @Test
+    fun policyExceptionsRequireAnOrderedInstitutionalActionOrCurrentPassiveChange() {
+        assertSyllabusMapped(article(
+            "Parliament reviews film certification rules under the Cinematograph Act",
+            "The report concerns statutory powers, constitutional safeguards and media governance.",
+            "Entertainment"
+        ), "GS II", "Governance")
+
+        assertSyllabusMapped(article(
+            "Parliament amends the Cinematograph Act 1952 in 2026",
+            "A current amendment changes the operation of the existing statutory framework.",
+            "Entertainment"
+        ), "GS II", "Governance")
+        assertSyllabusMapped(article(
+            "Government issues new broadcasting regulations for OTT platforms",
+            "The ministry notifies a regulatory change for digital broadcasting.",
+            "India"
+        ), "GS II", "Governance")
+        assertSyllabusMapped(article(
+            "New film certification rules notified by the Ministry",
+            "The notification changes the statutory certification framework.",
+            "Entertainment"
+        ), "GS II", "Governance")
+        assertSyllabusMapped(article(
+            "New draft film certification rules notified by the Ministry",
+            "The draft notification changes the statutory certification framework.",
+            "Entertainment"
+        ), "GS II", "Governance")
+        assertSyllabusMapped(article(
+            "Film certification rules notified by the Ministry today",
+            "The named ministry notification is a current statutory certification change.",
+            "Entertainment"
+        ), "GS II", "Governance")
+        assertRejectedDespiteKeywordMatch(article(
+            "Film certification rules notified by the Ministry",
+            "The headline has no currentness cue and could describe a historical notification.",
+            "Entertainment"
+        ))
+        assertRejectedDespiteKeywordMatch(article(
+            "Cinematograph Act enacted by Parliament in 1952",
+            "A historical account of the original enactment, not a current regulatory change.",
+            "Entertainment"
+        ))
+
+        assertRejectedDespiteKeywordMatch(article(
+            "Parliament enacted the Cinematograph Act in 1952",
+            "An active-voice headline still describes the original historical enactment, not a current change.",
+            "Entertainment"
+        ))
+        assertSyllabusMapped(article(
+            "Sports Ministry issues new anti-doping rules",
+            "The policy changes sports governance and anti-doping compliance.",
+            "Sports"
+        ), "GS II", "Governance")
+        assertSyllabusMapped(article(
+            "CBFC issues new film certification guidelines for actors",
+            "The statutory board announces a current certification-rule change.",
+            "Entertainment"
+        ), "GS II", "Governance")
+    }
+
+    @Test
+    fun consumerProtectionAndMediaRegulationAreNotSuppressedByEntertainmentWords() {
+        assertSyllabusMapped(article(
+            "Central Consumer Protection Authority issues new guidelines on celebrity endorsements",
+            "The notification implements the Consumer Protection Act, 2019 and sets due-diligence requirements for endorsers.",
+            "India"
+        ), "GS II", "Governance")
+        assertSyllabusMapped(article(
+            "Ministry issues new broadcasting regulations for film trailers",
+            "The rules govern public broadcasting and media regulation rather than promoting a film.",
+            "India"
+        ), "GS II", "Governance")
+    }
+
+    @Test
+    fun explicitPromotionPhrasesRemainRejectedAfterNarrowingHardNoiseTerms() {
+        assertRejectedDespiteKeywordMatch(article(
+            "Official trailer released for a film about celebrity endorsements",
+            "The story promotes a film and its release rather than reporting a regulator's action.",
+            "Entertainment"
+        ))
+        assertRejectedDespiteKeywordMatch(article(
+            "Celebrity gossip column previews a reality show contestant feud",
+            "The feature discusses consumer protection rules and celebrity endorsements only in passing.",
+            "Entertainment"
+        ))
+    }
+
+    @Test
+    fun heatWaveActionPlanRemainsARecoverableGsThreeDisasterManagementTheme() {
+        assertSyllabusMapped(article(
+            "Heat wave action plan adopted by NDMA",
+            "The action plan addresses heat-related disaster preparedness and public safety.",
+            "India"
+        ), "GS III", "Disaster Management")
+    }
+
+    @Test
+    fun currentGstPolicyActionMapsToGsThreeEconomyButBoxOfficeFramingIsRejected() {
+        assertSyllabusMapped(article(
+            "Government raises GST on movie tickets",
+            "The tax change affects the indirect-tax treatment of cinema tickets.",
+            "Economy"
+        ), "GS III", "Indian Economy")
+
+        // A genuine institutional tax clarification may mention a noisy sector.
+        // Generic box-office reporting remains soft noise and still fails the gate.
+        assertSyllabusMapped(article(
+            "Finance Ministry clarifies GST on box-office collections",
+            "The clarification concerns the indirect-tax treatment of entertainment receipts.",
+            "Entertainment"
+        ), "GS III", "Indian Economy")
+    }
+
+    @Test
+    fun specificSyllabusSignalsAreRecognizedByTheirSelectedGsMappings() {
+        assertSyllabusMapped(article(
+            "Parliament debates a constitutional amendment",
+            "The proposed amendment concerns constitutional provisions."
+        ), "GS II", "Constitution")
+        assertSyllabusMapped(article(
+            "National Education Policy review focuses on school education",
+            "The review examines education delivery and learning outcomes."
+        ), "GS II", "Education & Human Resources")
+        assertSyllabusMapped(article(
+            "Government expands e-governance and public service delivery",
+            "The programme strengthens transparent digital service delivery."
+        ), "GS II", "Governance")
+        assertSyllabusMapped(article(
+            "Gross domestic product growth slows as fiscal deficit widens and monetary policy changes",
+            "The official estimate reviews macroeconomic conditions."
+        ), "GS III", "Indian Economy")
+        assertSyllabusMapped(article(
+            "ISRO announces a new space mission and quantum computing programme",
+            "The announcement covers scientific and technological applications."
+        ), "GS III", "Science & Technology")
+        assertSyllabusMapped(article(
+            "Border security review strengthens management of the frontier",
+            "The review concerns border management and internal security."
+        ), "GS III", "Internal Security")
+    }
+
+    @Test
+    fun institutionNameAloneCannotQualifyRoutineInstitutionNews() {
+        assertRejectedDespiteKeywordMatch(article(
+            "RBI celebrates foundation day with staff cultural programme",
+            "The event reports an internal celebration, not a monetary or financial-policy development."
+        ))
+        assertRejectedDespiteKeywordMatch(article(
+            "Supreme Court registry hosts annual cultural festival",
+            "The story concerns an internal staff event, not a constitutional or judicial issue."
+        ))
+        assertRejectedDespiteKeywordMatch(article(
+            "ISRO marks foundation day with employee event",
+            "The report covers an internal celebration without a science or space development."
+        ))
+        assertRejectedDespiteKeywordMatch(article(
+            "Election Commission celebrates foundation day",
+            "The item is an institutional anniversary without an electoral-process development."
+        ))
+    }
+
+    @Test
+    fun institutionalMentionsRemainEligibleWhenHeadlineNamesTheSyllabusIssue() {
+        assertSyllabusMapped(article(
+            "RBI holds repo rate as inflation remains a concern",
+            "The Reserve Bank reviews monetary policy and liquidity conditions."
+        ), "GS III", "Indian Economy")
+        assertSyllabusMapped(article(
+            "Supreme Court reviews a constitutional amendment affecting federalism",
+            "The case concerns constitutional structure and distribution of powers."
+        ), "GS II", "Constitution")
+        assertSyllabusMapped(article(
+            "ISRO announces a new space mission and quantum computing programme",
+            "The announcement covers scientific and technological applications."
+        ), "GS III", "Science & Technology")
+        assertSyllabusMapped(article(
+            "Election Commission enforces the Representation of the People Act during polls",
+            "The development concerns election law and the constitutional electoral framework."
+        ), "GS II", "Constitution")
+    }
+
+    @Test
+    fun unrelatedSpecificSignalFromAnotherTopicCannotRescueBroadGovernanceMatch() {
+        val item = article(
+            "Government launches a new welfare scheme for public service reform",
+            "A separate unrelated quote briefly mentions climate change.",
+            "India"
+        )
+        val relevance = UpscEngine.classify(item)
+
+        assertTrue("Fixture should select the broad GS II Governance mapping", relevance.gsPaper == "GS II")
+        assertTrue("Fixture should select Governance", relevance.subject == "Governance")
+        assertTrue("The selected mapping should only contain broad scheme signals",
+            relevance.matchedTerms.contains("scheme") && relevance.matchedTerms.contains("welfare") &&
+                relevance.matchedTerms.contains("public service"))
+        assertFalse("Climate change belongs to another mapping",
+            relevance.matchedTerms.contains("climate change"))
+        assertFalse("An unrelated environmental phrase must not qualify this welfare headline",
+            UpscFeedPolicy.shouldInclude(item))
+    }
+
+    @Test
+    fun selectedGovernanceMappingStillAcceptsItsOwnSpecificSyllabusSignals() {
+        assertSyllabusMapped(article(
+            "Government publishes a social audit of a direct benefit transfer scheme",
+            "The report examines accountability and public-service delivery."
+        ), "GS II", "Governance")
+    }
+
+    @Test
+    fun unrelatedInstitutionalActionCannotRescueAnEntertainmentSubject() {
+        assertRejectedDespiteKeywordMatch(article(
+            "A new film about the Cinematograph Act while Ministry issues new agricultural rules",
+            "A promotional feature concerns a historical film; the unrelated ministry action is about agriculture.",
+            "Entertainment"
+        ))
+    }
+
+    @Test
+    fun ambiguousPassivePolicyHeadlineWithoutCurrentCueOrInstitutionIsHeldBack() {
+        assertRejectedDespiteKeywordMatch(article(
+            "Film certification rules notified",
+            "The headline omits the responsible institution and when the change occurred.",
+            "Entertainment"
+        ))
+    }
+
+
+    @Test
+    fun institutionalAnnouncementsCannotTurnPromotionalContentIntoPolicyActions() {
+        assertRejectedDespiteKeywordMatch(article(
+            "Government announces new film about the Cinematograph Act",
+            "The ministry promotes a feature film; no certification rule is changed.",
+            "Entertainment"
+        ))
+        assertRejectedDespiteKeywordMatch(article(
+            "Ministry announces documentary on celebrity endorsement guidelines",
+            "A documentary promotion, not a regulatory notification or consumer-protection action.",
+            "Entertainment"
+        ))
+        assertRejectedDespiteKeywordMatch(article(
+            "Ministry announces new film highlighting the Cinematograph Act",
+            "The ministry announces a promotional film; it does not change certification rules.",
+            "Entertainment"
+        ))
+        assertRejectedDespiteKeywordMatch(article(
+            "Government announces documentary highlighting celebrity endorsement guidelines",
+            "The government announces a documentary about the guidelines, not a new regulatory action.",
+            "Entertainment"
+        ))
+        assertRejectedDespiteKeywordMatch(article(
+            "Government announces new movie celebrating the Cinematograph Act",
+            "A movie promotion, not a change to film-certification rules.",
+            "Entertainment"
+        ))
+        assertRejectedDespiteKeywordMatch(article(
+            "Ministry announces documentary portraying celebrity endorsement guidelines",
+            "A documentary promotion, not a consumer-protection notification.",
+            "Entertainment"
+        ))
+        assertRejectedDespiteKeywordMatch(article(
+            "Government announces series featuring film certification rules",
+            "A series announcement, not a regulatory change to certification requirements.",
+            "Entertainment"
+        ))
+        assertSyllabusMapped(
+            article(
+                "Government issues new film certification rules for OTT platforms",
+                "The notification changes statutory certification requirements.",
+                "Entertainment"
+            ),
+            "GS II",
+            "Governance"
+        )
+    }
+    @Test
+    fun realityShowContentAboutPolicyCannotUseInstitutionalActionException() {
+        assertRejectedDespiteKeywordMatch(article(
+            "Government announces a new reality show on national sports policy",
+            "The headline promotes a reality programme; it does not announce a sports-governance policy change.",
+            "Entertainment"
+        ))
+        assertRejectedDespiteKeywordMatch(article(
+            "Ministry announces a reality show exploring anti-doping rules",
+            "The ministry promotes a reality programme rather than issuing or amending anti-doping rules.",
+            "Entertainment"
+        ))
+        assertRejectedDespiteKeywordMatch(article(
+            "Government announces a new reality TV series about anti-doping rules",
+            "The headline promotes a reality programme rather than changing anti-doping regulation.",
+            "Entertainment"
+        ))
+        assertRejectedDespiteKeywordMatch(article(
+            "Ministry announces reality television programme exploring national sports policy",
+            "The ministry promotes entertainment content rather than issuing a sports-governance policy.",
+            "Entertainment"
+        ))
+        // The same sports-governance subject remains eligible when the institution
+        // actually changes the rules rather than announcing entertainment content.
+        assertSyllabusMapped(article(
+            "Sports Ministry issues new anti-doping rules",
+            "The ministry announces a current regulatory change to sports-governance compliance.",
+            "Sports"
+        ), "GS II", "Governance")
+    }
+
 }

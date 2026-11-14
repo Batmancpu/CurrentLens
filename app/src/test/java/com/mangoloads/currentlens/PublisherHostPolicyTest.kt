@@ -12,6 +12,7 @@ class PublisherHostPolicyTest {
         assertTrue(PublisherHostPolicy.allows("The Hindu", "https://www.thehindu.com/news/national/story"))
         assertTrue(PublisherHostPolicy.allows("Indian Express", "https://indianexpress.com/article/india/story"))
         assertTrue(PublisherHostPolicy.allows("BBC", "https://www.bbc.co.uk/news/world"))
+        assertTrue(PublisherHostPolicy.allows("BBC", "https://feeds.bbci.co.uk/news/world/rss.xml"))
         assertTrue(PublisherHostPolicy.allows("DW", "https://www.dw.com/en/story"))
         assertTrue(PublisherHostPolicy.allows("Al Jazeera", "https://www.aljazeera.com/news/story"))
     }
