@@ -62,7 +62,7 @@ jobs:
         run: gradle --no-daemon --stacktrace :app:testDebugUnitTest :app:assembleRelease
 
       - name: Transfer unsigned APK to the signing job
-        if: github.event_name == 'workflow_dispatch' && inputs.publish
+        if: ((github.event_name == 'workflow_dispatch' && inputs.publish) || (github.event_name == 'push' && contains(github.event.head_commit.message, '[publish apk]')))
         uses: actions/upload-artifact@v4
         with:
           name: unsigned-release-input
@@ -71,7 +71,7 @@ jobs:
           retention-days: 1
 
   publish:
-    if: github.ref == 'refs/heads/main' && github.event_name == 'workflow_dispatch' && inputs.publish
+    if: github.ref == 'refs/heads/main' && ((github.event_name == 'workflow_dispatch' && inputs.publish) || (github.event_name == 'push' && contains(github.event.head_commit.message, '[publish apk]')))
     needs: build
     runs-on: ubuntu-latest
     timeout-minutes: 20

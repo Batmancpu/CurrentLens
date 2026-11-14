@@ -554,3 +554,12 @@ Branch: `fix/early-startup-crash-diagnostics-2026-11-06`.
 - Results: `keytool -list -v` confirmed the private-key entry, DER certificate export produced SHA-256 `af046601fe3a36851e645908e759abbf2caedfe748e2be02817991444884c580`, and strict Base64 round trip matched the original PKCS#12. GitHub setup, APK signing and handset installation are pending.
 - Failures and recovery: no key generation or local verification failure. The supplied keystore and its password are needed to recover the same signing identity. Retain an encrypted backup.
 - Resume here: after the owner confirms setup, verify the public pin and the Actions queue, then publish from main and verify the hash, certificate, app ID, version code and single APK asset. The owner applies the next version over the first APK for handset verification.
+
+## 2026-11-14 IST — first signed CurrentLens release
+
+- Owner request (verbatim): “All right, I have done all that. Please check and let's proceed”
+- Goal and acceptance: build and publish the first stable APK, verify package, version, pin and a single APK asset.
+- Starting point: main `c125cd75cdecc5271f960635cf2224ea1353cf49`; checked the Actions queue and release tag. Last build #420 passed and there was no `android-11` release. The connected GitHub API cannot read Actions settings or dispatch the workflow directly.
+- Changes and attempts: added explicit `[publish apk]` main-push opt-in to the existing publish gates and used it on this authorized main commit. Normal main pushes still validate only, and the existing manual dispatch still works. No branch or second workflow was created.
+- Results and recovery: signing verifies the configured pin and fails before publication if credentials or APK identity are incorrect. Inspect the exact-head workflow and release before claiming success.
+- Resume here: after the first release passes, send the verified APK link and wait for the owner to install it before preparing an update test.
