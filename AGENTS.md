@@ -36,26 +36,38 @@ Do not treat README as the engineering memory or full product specification. It 
 - Preserve screenshots/recordings as evidence metadata: exact filename or asset path, capture/build/device if known, screen/state, user's observation, desired outcome and acceptance conditions. Do not invent details not visible in the image or supplied with it.
 - Do not place private device screenshots or personal content into this public repository without explicit user approval. Prefer a precise written description and a local/private evidence reference. If the user explicitly approves a public asset, redact unrelated personal data first.
 
-## Mandatory logging for every material change
+## Mandatory handoff record for every change
 
-Before finishing a material engineering session, update docs/SESSION_LEDGER.md and the relevant specialised register. For each code change/commit, record:
-- Session date/time (IST and UTC when known), PR, branch, commit SHA and parent/base SHA.
-- Exact files changed and the purpose of each file.
-- User request or defect that motivated the work.
-- Previous behaviour, new behaviour and why the change is correct.
-- Other approaches considered or rejected, and why.
-- Tests added/changed, exact command/task, result, and whether it actually ran.
-- CI run number and failing/passing step/log evidence, if any.
-- Device/runtime/screenshot/Perfetto evidence, separately from CI.
-- Known risks, compatibility/data-migration implications and rollback path.
-- What must not be repeated; whether an earlier failed approach is permanently ruled out or merely unverified.
-- Remaining follow-up work and its priority.
+Every AI agent must keep the project context in Git. Use `docs/SESSION_LEDGER.md` as the append-only record. One dated entry may cover a manageable batch, with a line for each change or attempt, including small fixes, docs, configuration, tests, plan changes and requests that only change the next action.
 
-A commit cannot contain its own final SHA before Git creates it. Record the change in the same PR/session entry, then add the resulting SHA in the next ledger refresh. GitHub's commit/PR history is the source of truth for the commit that updates the ledger itself.
+1. **Before work:** Record the user's exact relevant words from the current conversation, including corrections or revised priorities. Record the goal, scope, acceptance criteria and starting commit. Keep direct quotes distinct from the agent's interpretation and assumptions. Capture a newly approved decision even if it produces no code.
+2. **While working:** Log what was attempted and what was actually changed. For each touched file or setting, record its path, what changed, why, the previous behavior and the expected result. Preserve relevant commands and decisions, including rejected alternatives and why.
+3. **When checking results:** Record exact test commands, expected versus actual results, and pass, fail or unverified status. Include CI run links, steps and artifacts where applicable. Record phone, screenshot and performance evidence separately.
+4. **When something goes wrong:** Record the first failing step, command, exact publishable error, expected and observed behavior, impact, and recovery or rollback. Mark any suspected cause as a hypothesis until confirmed. Record what was tried, the correction, retest result, any risk still open and what a later agent should avoid repeating.
+5. **Before ending or handing off:** Record the branch and base SHA, the commit SHA or durable link when known, remaining work, blockers, and the exact next command or owner action. Update `docs/PROJECT_HANDOFF.md` when the resume point changes. A commit cannot contain its own SHA. Record its base and subject in the entry and link its resulting SHA when available.
 
-For failed attempts, log the exact compiler/test/runtime message when available, the first failing step, confirmed root cause, corrective commit/PR, and final verification. If the log does not establish the root cause, write “root cause not established”; do not guess from the next commit message.
+Use this format for each entry:
 
-For conversation-only decisions that do not produce a commit, append a dated session entry when they materially change scope, priorities, visual intent or acceptance criteria.
+```markdown
+## YYYY-MM-DD HH:MM IST — <batch title>
+- Owner request (verbatim): “<exact relevant words>”
+- Goal and acceptance: <intended behavior, expected result and verification>
+- Starting point: <main SHA and any incident, run or release link>
+- Changes and attempts: <each path or setting, what changed and why, commands>
+- Results: <check, expected result, actual result, evidence and status>
+- Failures and recovery: <first failure, exact safe error, cause status, fix/rollback, retest>
+- Resume here: <commit/run, pending work, blocker and next command or owner action>
+```
+
+Before committing the batch, run:
+
+```bash
+git status --short
+git diff --name-status <base-sha>
+git diff --check <base-sha>
+```
+
+Use the status and diff to reconcile the ledger against changed, staged and untracked paths. Inspect the staged diff before advancing main. Record only actual evidence. For an irrelevant field, write “not applicable” with a short reason where helpful. Never invent missing historical quotes or results. This repository is public. For credentials, private logs, personal data and raw device details, retain a safe excerpt or private evidence reference and mark any redaction explicitly.
 
 ## CurrentLens non-negotiables
 
@@ -87,7 +99,7 @@ For conversation-only decisions that do not produce a commit, append a dated ses
 
 ## End-of-session continuity update
 
-At the end of each material session:
+At the end of each session that changes project state or decisions:
 1. Refresh docs/PROJECT_HANDOFF.md with current main SHA, open PRs, builds, priorities and evidence.
 2. Append the detailed event to docs/SESSION_LEDGER.md.
 3. Update docs/KNOWN_ISSUES.md and/or docs/DESIGN_EVIDENCE.md when status or evidence changes.
