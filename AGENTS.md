@@ -2,6 +2,13 @@
 
 This repository documents an ongoing product built by one user working with ChatGPT across multiple conversations. It is not an external developer handover. Its purpose is to preserve context when a ChatGPT conversation reaches its context limit and the user opens another chat.
 
+## Resume CurrentLens from GitHub
+
+- Repository: [Batmancpu/CurrentLens](https://github.com/Batmancpu/CurrentLens). The active integration branch is `black-box-bihar-news`, tracked by draft [PR #34](https://github.com/Batmancpu/CurrentLens/pull/34). Open this branch explicitly when the default branch does not expose these files.
+- Read [docs/PROJECT_AUDIT.md](docs/PROJECT_AUDIT.md) first for the 14 November takeover, feature status and ordered work. Check the live branch, PR, Actions and release before reusing a dated snapshot.
+- The immediate owner decision concerns the APK already installed on the phone. Identify its package, versionCode and certificate before choosing a release key. Preserve the existing install and local data while resolving signing in draft [PR #39](https://github.com/Batmancpu/CurrentLens/pull/39).
+- Keep this entry short. Record new evidence in the linked audit/handoff, session ledger and specialised registers. The source code, Git history and CI records establish implementation state. Device behavior remains a separate verification step.
+
 ## Mandatory reading at the start of every new CurrentLens chat
 
 Read these files in this order before proposing or making changes:

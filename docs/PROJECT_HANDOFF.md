@@ -1,3 +1,9 @@
+## Current starting point — 14 November 2026 (IST)
+
+See [PROJECT_AUDIT.md](PROJECT_AUDIT.md) for the live-baseline review, implementation matrix, signing and data preservation plan, and next steps. The source audited was `black-box-bihar-news@8daadee450ee59a8cffb3227b8460c2bbf6de794` (draft PR #34), with successful exact-head PR run #414. Main was `73b8a0d1ba33503fede02db2c3c0af082d724a12` with release tag `v0.2.0-build-116`. The immediate dependency is the package/build/signer currently installed on the owner's phone. Keep earlier snapshots below as historical evidence.
+
+---
+
 ## Live snapshot — 9 November 2026, 01:27 IST
 
 - **Main:** `73b8a0d1ba33503fede02db2c3c0af082d724a12`, unchanged.
