@@ -591,3 +591,12 @@ Branch: `fix/early-startup-crash-diagnostics-2026-11-06`.
 - Resume here: refresh CurrentLens in Obtainium, install over 0.3.1, then confirm 0.3.2 and that existing local data remains available.
 
 - [Run #424](https://github.com/Batmancpu/CurrentLens/actions/runs/43587553146) passed build and publication on `91f5ea9730edb0783f98cda3404a89dd1701e3c1`. Verified package by the workflow gate, version 0.3.2/code 13, and signer `af046601fe3a36851e645908e759abbf2caedfe748e2be02817991444884c580`, matching build 12. GitHub Latest lists `android-13` with one APK asset, digest `sha256:770d83d2af8f1a2e68f34e68961111a64452bc772f0c6b797b2b040699021ba4`. Phone detection and installation are pending.
+
+## 2026-11-14 IST — owner confirms automatic update
+
+- Owner report (verbatim): “So this auto update has worked.”
+- Starting point: main `2b57e400ea1265658d48114c85505d734c100123`. The previous confirmed install was 0.3.1. The update test targeted 0.3.2 (versionCode 13), signed with the same certificate and published in run #424.
+- Changes: `docs/PROJECT_HANDOFF.md` and this ledger record the owner-reported phone result and move the resume point to runtime reliability.
+- Results: automatic update succeeded according to the owner. Specific Saved, reading or quiz data retention and independent device startup checks remain unverified. No application code changed.
+- Failures and recovery: no update failure reported. The prior native crash remains open pending ordinary cold-launch checks.
+- Resume here: confirm cold launch, Reader re-entry, Search/keyboard and local data on 0.3.2. Fix any reproduced issue one batch at a time on main.
