@@ -5,6 +5,29 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class UpscFeedPolicyTest {
+    private fun assertSyllabusMapped(article: Article, expectedPaper: String, expectedSubject: String) {
+        val relevance = UpscEngine.classify(article)
+        assertTrue("Unexpected GS paper for " + article.title, relevance.gsPaper == expectedPaper)
+        assertTrue("Unexpected syllabus theme for " + article.title, relevance.subject == expectedSubject)
+        assertTrue("Missing matched syllabus signal for " + article.title, relevance.matchedTerms.isNotEmpty())
+        assertTrue("Missing relevance explanation for " + article.title, relevance.syllabusLink.isNotBlank())
+        assertTrue(
+            "Missing explainable card metadata for " + article.title,
+            ArticleCardMetaPolicy.syllabusHint(
+                relevance.gsPaper,
+                relevance.subject,
+                relevance.matchedTerms,
+                relevance.syllabusLink
+            ) != null
+        )
+        assertTrue("Editorial gate rejected mapped article " + article.title, UpscFeedPolicy.shouldInclude(article))
+    }
+
+    private fun assertRejectedDespiteKeywordMatch(article: Article) {
+        assertTrue("Fixture must exercise a classifier match: " + article.title, UpscEngine.classify(article).matchedTerms.isNotEmpty())
+        assertFalse(UpscFeedPolicy.shouldInclude(article))
+    }
+
     private fun article(title: String, description: String, section: String = "India") = Article(
         id = title,
         title = title,
