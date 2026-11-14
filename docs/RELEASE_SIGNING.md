@@ -10,7 +10,7 @@ Run on a computer with Java and an authenticated GitHub CLI account that can wri
 bash scripts/provision_release_signing.sh /absolute/private/path/currentlens-release.p12
 ```
 
-The command generates or reuses the key locally and provisions four encrypted repository Actions secrets plus the public `CURRENTLENS_RELEASE_CERT_SHA256` variable. It reads the password silently and refuses a different key once a certificate is pinned. If interrupted after the certificate is pinned, rerun using the same keystore and password. Keep the keystore, password and Base64 representation out of chat, Git history, Actions caches and release artifacts. [Android signing guidance](https://developer.android.com/studio/publish/app-signing) · [GitHub Actions secrets](https://docs.github.com/en/actions/concepts/security/secrets).
+The command generates or reuses the key locally and provisions four encrypted repository Actions secrets plus the public `CURRENTLENS_RELEASE_CERT_SHA256` variable. The key-password secret is optional when both passwords match, as they do for the generated PKCS#12. The workflow then uses the store password for both. It reads the password silently and refuses a different key once a certificate is pinned. If interrupted after the certificate is pinned, rerun using the same keystore and password. Keep the keystore, password and Base64 representation out of chat, Git history, Actions caches and release artifacts. [Android signing guidance](https://developer.android.com/studio/publish/app-signing) · [GitHub Actions secrets](https://docs.github.com/en/actions/concepts/security/secrets).
 
 ## Build and publish
 
