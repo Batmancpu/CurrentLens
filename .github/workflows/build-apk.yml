@@ -161,5 +161,6 @@ jobs:
           checksum="$(sha256sum CurrentLens.apk | cut -d' ' -f1)"
           printf 'Version code: %s\n\nAPK SHA-256: `%s`\n\nSigning certificate SHA-256: `%s`\n' \
             "$APK_CODE" "$checksum" "$CERT_SHA256" > release-notes.md
+          printf '\nThis release uses the same signing certificate as build 11. Older test installs can update only if their signing certificate matches.\n' >> release-notes.md
           gh release create "android-$APK_CODE" CurrentLens.apk --target "$GITHUB_SHA" \
-            --title "CurrentLens $APK_VERSION" --notes-file release-notes.md --prerelease
+            --title "CurrentLens $APK_VERSION" --notes-file release-notes.md --latest
