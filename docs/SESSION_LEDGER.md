@@ -610,3 +610,5 @@ Branch: `fix/early-startup-crash-diagnostics-2026-11-06`.
 - Verification: `python3 -m unittest discover -s scripts -p 'test_*.py' -q` passed 7 tests. `git diff --check` passed. Run Android/JVM verification through the serial release workflow. Device behavior is pending.
 - Recovery: revert the relevant source change on main and increase the version code for any corrective publication. Keep the existing signing identity.
 - Resume here: test a failed refresh with cached stories, Reader HTTP failure and text resizing, Search Back with the keyboard open, and representative GS mappings. Clarify any separate Reader product or visual reference before expanding the redesign.
+
+- [Run #425](https://github.com/Batmancpu/CurrentLens/actions/runs/43612424384) passed JVM tests, release assembly, signer verification and publication for `1c1f980cf816fd1e4dd173a5b4d220bd937d0b25`. [0.3.3 (android-14)](https://github.com/Batmancpu/CurrentLens/releases/tag/android-14) was verified as Latest with one APK asset. Device verification is pending.
