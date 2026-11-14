@@ -110,12 +110,18 @@ object UpscEngine {
 
     fun classify(article: Article): Relevance {
         // This is a transparent keyword signal over RSS metadata, not a validated relevance score.
+        val headline = EditorialTextMatcher.normalize(article.title)
         val text = EditorialTextMatcher.normalize(article.title + " " + article.description)
         val matches = rules.map { rule ->
             Pair(rule, rule.keywords.filter { EditorialTextMatcher.contains(text, it) })
         }
             .filter { it.second.isNotEmpty() }
-            .sortedByDescending { it.second.size }
+            .sortedWith(
+                compareByDescending<Pair<Rule, List<String>>> { it.second.size }
+                    .thenByDescending { (_, terms) ->
+                        terms.count { EditorialTextMatcher.contains(headline, it) }
+                    }
+            )
         val best = matches.firstOrNull()
             ?: return Relevance(
                 gsPaper = "Unmapped",

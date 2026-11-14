@@ -1,6 +1,7 @@
 package com.mangoloads.currentlens
 
 import android.text.Html
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.xmlpull.v1.XmlPullParser
@@ -58,18 +59,26 @@ object NewsRepository {
         FeedSource("Al Jazeera", "World", "https://www.aljazeera.com/xml/rss/all.xml")
     )
 
-    suspend fun fetchAll(): List<Article> = withContext(Dispatchers.IO) {
-        val fetched = FeedFetchConcurrencyPolicy.map(feeds, ::fetchOne)
-            .flatten()
-        ArticleUrlIdentityPolicy.deduplicate(fetched, bookmarkedUrls = emptySet()).take(250)
+    internal data class RefreshResult(val articles: List<Article>, val failedFeeds: Int, val totalFeeds: Int) {
+        val allFeedsFailed: Boolean get() = failedFeeds == totalFeeds
     }
 
-    private fun fetchOne(source: FeedSource): List<Article> {
+    internal suspend fun fetchAll(): RefreshResult = withContext(Dispatchers.IO) {
+        val results = FeedFetchConcurrencyPolicy.map(feeds, ::fetchOne)
+        val fetched = results.filterNotNull().flatten()
+        RefreshResult(
+            ArticleUrlIdentityPolicy.deduplicate(fetched, bookmarkedUrls = emptySet()).take(250),
+            failedFeeds = results.count { it == null },
+            totalFeeds = results.size
+        )
+    }
+
+    private fun fetchOne(source: FeedSource): List<Article>? {
         return try {
-            val connection = openAllowedFeedConnection(source) ?: return emptyList()
+            val connection = openAllowedFeedConnection(source) ?: return null
             try {
                 if (connection.contentLengthLong > NetworkLimits.MAX_RSS_BYTES) {
-                    emptyList()
+                    null
                 } else {
                     connection.inputStream.use { input ->
                         parse(
@@ -82,8 +91,10 @@ object NewsRepository {
             } finally {
                 connection.disconnect()
             }
+        } catch (cancelled: CancellationException) {
+            throw cancelled
         } catch (_: Exception) {
-            emptyList()
+            null
         }
     }
 
@@ -159,6 +170,10 @@ object NewsRepository {
         val parser = factory.newPullParser()
         runCatching { parser.setFeature(XmlPullParser.FEATURE_PROCESS_DOCDECL, false) }
         parser.setInput(xml.reader())
+        require(parser.nextTag() == XmlPullParser.START_TAG)
+        require(parser.name.lowercase(Locale.ROOT) in setOf("rss", "feed", "rdf")) {
+            "Expected an RSS or Atom feed"
+        }
         var event = parser.eventType
         val baseByDepth = mutableMapOf<Int, String>()
         var itemDepth: Int? = null

@@ -227,6 +227,7 @@ import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeoutOrNull
 
 private val LocalGlassReduceTransparency = staticCompositionLocalOf { false }
 private val LocalGlassReduceMotion = staticCompositionLocalOf { false }
@@ -499,7 +500,7 @@ private fun BrrrNewsApp() {
     var localStateLoaded by remember { mutableStateOf(false) }
     var loading by remember { mutableStateOf(true) }
     var refreshing by remember { mutableStateOf(false) }
-    var loadError by remember { mutableStateOf(false) }
+    var refreshResult by remember { mutableStateOf<NewsRepository.RefreshResult?>(null) }
     var refreshKey by remember { mutableIntStateOf(0) }
     var selectedTab by remember { mutableIntStateOf(0) }
     var youPage by remember { mutableStateOf(YouPage.DASHBOARD) }
@@ -653,7 +654,9 @@ private fun BrrrNewsApp() {
 
     LaunchedEffect(searchCollapseRequested) {
         if (searchCollapseRequested) {
-            snapshotFlow { imeInsets.getBottom(density) }.first { it == 0 }
+            withTimeoutOrNull(750L) {
+                snapshotFlow { imeInsets.getBottom(density) }.first { it == 0 }
+            }
             searchExpanded = false
             searchCollapseRequested = false
         }
@@ -695,15 +698,18 @@ private fun BrrrNewsApp() {
         if (!localStateLoaded) return@LaunchedEffect
         loading = articles.isEmpty()
         refreshing = articles.isNotEmpty()
-        loadError = false
-        val fetched = NewsRepository.fetchAll()
-        if (fetched.isNotEmpty()) {
-            val merged = withContext(Dispatchers.IO) { LocalStore.mergeAndSaveArticles(context, fetched) }
-            articles = merged
+        try {
+            val result = NewsRepository.fetchAll()
+            if (result.articles.isNotEmpty()) {
+                articles = withContext(Dispatchers.IO) {
+                    LocalStore.mergeAndSaveArticles(context, result.articles)
+                }
+            }
+            refreshResult = result
+        } finally {
+            loading = false
+            refreshing = false
         }
-        else if (articles.isEmpty()) loadError = true
-        loading = false
-        refreshing = false
     }
 
     BackHandler(enabled = searchExpanded || selectedArticle != null || showSettings || selectedTab != 0) {
@@ -887,7 +893,7 @@ private fun BrrrNewsApp() {
                     onRefresh = { if (!refreshing) refreshKey++ },
                     refreshing = refreshing,
                     loading = loading || !feedIndexReady,
-                    loadError = loadError,
+                    refreshResult = refreshResult,
                     todaysArticles = feedIndex.todayArticles,
                     eligibleArticles = feedIndex.eligibleArticles,
                     exploreArticles = feedIndex.exploreArticles,
@@ -1035,7 +1041,7 @@ private fun HomeScreen(
     onRefresh: () -> Unit,
     refreshing: Boolean,
     loading: Boolean,
-    loadError: Boolean,
+    refreshResult: NewsRepository.RefreshResult?,
     todaysArticles: List<Article>,
     eligibleArticles: List<Article>,
     exploreArticles: List<Article>,
@@ -1055,6 +1061,7 @@ private fun HomeScreen(
     val today = LocalDate.now(ZoneId.of(INDIA_ZONE))
     val reduceMotion = LocalGlassReduceMotion.current
     val primaryFeedSelected = selectedTab in 0..2
+    val loadError = refreshResult?.allFeedsFailed == true
     var skeletonDelayElapsed by remember { mutableStateOf(false) }
     LaunchedEffect(loading, primaryFeedSelected) {
         skeletonDelayElapsed = false
@@ -1106,6 +1113,19 @@ private fun HomeScreen(
             showBack = selectedTab == 3 && youPage != YouPage.DASHBOARD,
             onBack = { onYouPageChange(YouPage.DASHBOARD) }
         )
+
+        if (primaryFeedSelected && !loading && !refreshing && refreshResult != null &&
+            refreshResult.failedFeeds > 0 && (!loadError || allCachedArticles.isNotEmpty())
+        ) {
+            Text(
+                if (loadError) "Refresh failed. Showing saved feed data where available."
+                else "${refreshResult.failedFeeds} of ${refreshResult.totalFeeds} feeds unavailable. Showing available stories.",
+                modifier = Modifier.padding(horizontal = 20.dp, vertical = 6.dp)
+                    .semantics { liveRegion = LiveRegionMode.Polite },
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
 
         AnimatedContent(
             targetState = selectedTab to youPage,
@@ -3274,6 +3294,7 @@ private fun ReaderScreen(
     var fallbackToPublisher by remember(article.url) { mutableStateOf(false) }
     var pageLoaded by remember(article.url) { mutableStateOf(false) }
     var publisherLoadFailed by remember(article.url) { mutableStateOf(false) }
+    var publisherRetry by remember(article.url) { mutableIntStateOf(0) }
     var reachedBottom by remember(article.url) { mutableStateOf(false) }
     var activeWord by remember(article.url) { mutableStateOf<String?>(null) }
     var activeWordAnchor by remember(article.url) { mutableStateOf<DefinitionSelectionAnchor?>(null) }
@@ -3407,6 +3428,7 @@ private fun ReaderScreen(
                                 (view as? ReaderWebView)?.cancelShortPageEndCheck(resetStability = true)
                             }
                             override fun onPageFinished(view: WebView?, url: String?) {
+                                if (publisherLoadFailed) return
                                 onReaderPageFinished()
                                 (view as? ReaderWebView)?.schedulePendingReadingPositionRestore()
                                 // A page that fits entirely in the viewport never scrolls, so
@@ -3416,6 +3438,12 @@ private fun ReaderScreen(
                             override fun onReceivedError(view: WebView?, request: WebResourceRequest?, error: android.webkit.WebResourceError?) {
                                 if (request?.isForMainFrame == true) onReaderMainFrameError()
                             }
+                            override fun onReceivedHttpError(
+                                view: WebView?, request: WebResourceRequest?, errorResponse: android.webkit.WebResourceResponse?
+                            ) {
+                                if (request?.isForMainFrame == true) onReaderMainFrameError()
+                            }
+
                             override fun shouldInterceptRequest(
                                 view: WebView?,
                                 request: WebResourceRequest
@@ -3441,7 +3469,10 @@ private fun ReaderScreen(
                             override fun shouldOverrideUrlLoading(view: WebView?, request: WebResourceRequest): Boolean {
                                 if (!request.isForMainFrame) return false
                                 val target = request.url.toString()
-                                if (!allowReaderNavigation(target)) return true
+                                if (!allowReaderNavigation(target)) {
+                                    if (!request.hasGesture()) onReaderMainFrameError()
+                                    return true
+                                }
                                 // Preserve server redirects during initial loading, but send
                                 // user-initiated publisher links to the system browser.
                                 if (!request.hasGesture()) return false
@@ -3545,13 +3576,14 @@ private fun ReaderScreen(
                                 webView.loadDataWithBaseURL(article.url, readerDocument(article, cleanHtml, fontSize, dark), "text/html", "UTF-8", null)
                             }
                         } else if (fallbackToPublisher) {
-                            val key = "publisher:" + article.url + ":" + fontSize
+                            val key = "publisher:" + article.url + ":" + publisherRetry
                             if (webView.loadedKey != key) {
                                 if (!articleChanged) webView.flushReadingPosition()
                                 webView.queueReadingPositionRestore(savedReadingProgress)
                                 webView.loadedKey = key
                                 pageLoaded = false
                                 contentLoaded = false
+                                publisherLoadFailed = false
                                 webView.loadUrl(article.url)
                             }
                         }
@@ -3565,30 +3597,27 @@ private fun ReaderScreen(
                 }
             )
 
-            if (!extracting && extractedHtml == null && !fallbackToPublisher) {
+            if (!extracting && extractedHtml == null && (!fallbackToPublisher || publisherLoadFailed)) {
                 Column(
-                    Modifier.align(Alignment.Center).padding(28.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                    Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)
+                        .verticalScroll(rememberScrollState()).padding(24.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    Text("A readable public article is unavailable", style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.SemiBold, textAlign = TextAlign.Center)
-                    Text("brrrNews could not verify a publisher page for this link. The RSS headline and excerpt remain available in the feed; no paywall or access restriction is bypassed.",
-                        style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.secondary,
-                        textAlign = TextAlign.Center)
-                }
-            }
-            if (!extracting && fallbackToPublisher && publisherLoadFailed) {
-                Column(
-                    Modifier.align(Alignment.Center).padding(28.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(10.dp)
-                ) {
-                    Text("Publisher page could not be loaded", style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.SemiBold, textAlign = TextAlign.Center)
-                    Text("Check your connection or return to the feed. Subscription restrictions remain unchanged.",
-                        style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.secondary,
-                        textAlign = TextAlign.Center)
+                    Text("From the publisher’s feed", style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.primary)
+                    Text(article.title, style = MaterialTheme.typography.headlineSmall)
+                    if (article.description.isNotBlank()) {
+                        Text(article.description, style = MaterialTheme.typography.bodyLarge)
+                    }
+                    Text("The full article is unavailable in Reader.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    if (fallbackToPublisher) {
+                        TextButton(onClick = { publisherRetry++ }) { Text("Retry publisher page") }
+                        TextButton(onClick = { openPublisherPage(context, article.source, article.url) }) {
+                            Text("Open in browser")
+                        }
+                    }
                 }
             }
 

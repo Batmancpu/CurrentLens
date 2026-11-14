@@ -600,3 +600,13 @@ Branch: `fix/early-startup-crash-diagnostics-2026-11-06`.
 - Results: automatic update succeeded according to the owner. Specific Saved, reading or quiz data retention and independent device startup checks remain unverified. No application code changed.
 - Failures and recovery: no update failure reported. The prior native crash remains open pending ordinary cold-launch checks.
 - Resume here: confirm cold launch, Reader re-entry, Search/keyboard and local data on 0.3.2. Fix any reproduced issue one batch at a time on main.
+
+## 2026-11-14 IST — feed, Reader, editorial and UI reliability pass
+
+- Owner request (verbatim): “Okay, so the the app now opens on the phone, no issues. Articles also load. We have to fix feed, make a new app like Reader and improve UPSC relevance of course. And fix the UI glitches in the in the apps app. So fix them”
+- Starting point: main `c6527fdb5e684bda57f7b5ee8d21df4b40b5f871`. Owner reports normal opening and article loading. Existing run #424 passed.
+- Goal and acceptance: distinguish empty feeds from failed refreshes, make an unavailable article useful and recoverable, break editorial keyword ties using the headline, and prevent Search waiting indefinitely for keyboard dismissal. “Reader” is interpreted for this batch as the in-app reading experience.
+- Changes: NewsRepository distinguishes successful empty feeds from failed requests and rejects non-feed XML responses. MainActivity preserves cached stories during failures and reports partial failures. The Reader shows the feed excerpt when full content is unavailable, retries eligible publisher pages, handles HTTP errors and adjusts fallback text size without reloading. Search has a bounded keyboard dismissal wait. UpscEngine prefers headline evidence when rules have equal counts. Added feed and editorial regression fixtures and bumped the version to 0.3.3 (14).
+- Verification: `python3 -m unittest discover -s scripts -p 'test_*.py' -q` passed 7 tests. `git diff --check` passed. Run Android/JVM verification through the serial release workflow. Device behavior is pending.
+- Recovery: revert the relevant source change on main and increase the version code for any corrective publication. Keep the existing signing identity.
+- Resume here: test a failed refresh with cached stories, Reader HTTP failure and text resizing, Search Back with the keyboard open, and representative GS mappings. Clarify any separate Reader product or visual reference before expanding the redesign.

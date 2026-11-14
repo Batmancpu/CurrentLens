@@ -60,4 +60,13 @@ class NewsRepositoryTest {
         assertEquals("One two", article.description)
         assertEquals(source.url, article.feedUrl)
     }
+
+    @Test
+    fun validEmptyFeedIsDistinctFromNonFeedResponse() {
+        val source = FeedSource("BBC", "World", "https://feeds.bbci.co.uk/rss")
+        assertTrue(NewsRepository.parse(source, "<rss><channel/></rss>", source.url) { it }.isEmpty())
+        org.junit.Assert.assertThrows(IllegalArgumentException::class.java) {
+            NewsRepository.parse(source, "<html><body>Unavailable</body></html>", source.url) { it }
+        }
+    }
 }

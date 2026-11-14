@@ -166,4 +166,19 @@ class UpscEngineTest {
         assertTrue(questions[3].provenance.contains("Original practice question"))
         assertTrue(questions[4].provenance.contains("PYQ-style practice"))
     }
+
+    @Test
+    fun headlineBreaksTieWithUnrelatedExcerpt() {
+        val article = Article(
+            id = "environment",
+            title = "Biodiversity",
+            description = "Context: inflation.",
+            url = "https://example.test/environment",
+            source = "Test",
+            section = "India",
+            published = "2026-11-14T10:00:00Z"
+        )
+
+        assertEquals("environment", UpscEngine.classify(article).topicKey)
+    }
 }
