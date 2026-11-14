@@ -544,3 +544,13 @@ Branch: `fix/early-startup-crash-diagnostics-2026-11-06`.
 - Results: documentation review and Git diff checks. No Android build needed for this documentation-only change. Signing still requires the owner to run the provisioning script.
 - Failures and recovery: no failure during the documentation edit. If setup stops after pinning, rerun with the same keystore and password per the signing runbook.
 - Resume here: owner provisions the key using `scripts/provision_release_signing.sh` on their computer and reports the public certificate SHA-256 or successful setup. Then verify the serial publication run and its signed APK.
+
+## 2026-11-14 15:44 IST — prepare release key for manual GitHub entry
+
+- Owner request (verbatim): “Hey, you can do all this and I can simply do the copy pasting in the secrets tab, okay? So do it all”
+- Goal and acceptance: prepare a PKCS#12 release key and clipboard-ready setup values. The owner's setup step is saving four repository Actions secrets and the public certificate variable in GitHub. Publication is pending that step.
+- Starting point: main `8a945458961e9fa5a2e9800dce984fdf0442e3f2`. Checked the workflow's secret and variable names, the queued/running workflow inventory, and the first release tag. No active workflow or `android-11` release was found during preparation.
+- Changes and attempts: used `keytool -genkeypair` to create the encrypted keystore with a 3072-bit RSA key. Keystore and paste values were provided privately. Updated `docs/PROJECT_HANDOFF.md` and this ledger to record the GitHub copy-paste route.
+- Results: `keytool -list -v` confirmed the private-key entry, DER certificate export produced SHA-256 `af046601fe3a36851e645908e759abbf2caedfe748e2be02817991444884c580`, and strict Base64 round trip matched the original PKCS#12. GitHub setup, APK signing and handset installation are pending.
+- Failures and recovery: no key generation or local verification failure. The supplied keystore and its password are needed to recover the same signing identity. Retain an encrypted backup.
+- Resume here: after the owner confirms setup, verify the public pin and the Actions queue, then publish from main and verify the hash, certificate, app ID, version code and single APK asset. The owner applies the next version over the first APK for handset verification.

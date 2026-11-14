@@ -1,6 +1,6 @@
 ## Current starting point — fresh signing line and main-only development
 
-The owner chose a fresh install and asked for all active work on main, one workflow at a time, one installable APK, and a durable record of every batch. Begin with [AGENTS.md](../AGENTS.md), the [roadmap](ROADMAP.md), [branch disposition](CONSOLIDATION.md) and [release signing](RELEASE_SIGNING.md). Main source `76816f7` passed [run #420](https://github.com/Batmancpu/CurrentLens/actions/runs/43582542056) with JVM tests and release assembly. The signed APK remains dependent on first-time owner-controlled signing setup and publication. Use the live main run and the session ledger for new results. Earlier snapshots below retain historical decisions and evidence.
+The owner chose a fresh install and asked for all active work on main, one workflow at a time, one installable APK, and a durable record of every batch. Begin with [AGENTS.md](../AGENTS.md), the [roadmap](ROADMAP.md), [branch disposition](CONSOLIDATION.md) and [release signing](RELEASE_SIGNING.md). Main source `76816f7` passed [run #420](https://github.com/Batmancpu/CurrentLens/actions/runs/43582542056) with JVM tests and release assembly. The release keystore is prepared. The owner chose to paste four repository Actions secrets and one public fingerprint variable in GitHub. The next step is owner confirmation that those entries are in place, followed by the serialized signed publication run. Use the live main run and the session ledger for new results. Earlier snapshots below retain historical decisions and evidence.
 
 ---
 
