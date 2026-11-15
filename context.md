@@ -5,7 +5,7 @@ Updated 15 November 2026 (IST). This is the quick resume note; the full history 
 ## Project and source of truth
 
 - Android app: CurrentLens repository, user-facing app label `brrrNews`.
-- GitHub: `Batmancpu/CurrentLens`, `main` only. Latest app source/release commit: `276191f0656261a8f7dfab13847a3e654ca64245`; a documentation-only checkpoint is being added after it. Check live `main` before the next code change.
+- GitHub: `Batmancpu/CurrentLens`, `main` only. Latest app source/release commit: `276191f0656261a8f7dfab13847a3e654ca64245`. The live main tip last checked was documentation commit `944dec0b82108e9ce186a8c86312be903da61e60` (`[skip ci]`); local `main` and `origin/main` matched and the worktree was clean after syncing.
 - Current signed baseline: [0.3.4 (`android-15`)](https://github.com/Batmancpu/CurrentLens/releases/tag/android-15), versionCode 15. Exact run, APK SHA-256 and pinned signer are in `docs/PROJECT_HANDOFF.md` and `docs/SESSION_LEDGER.md`.
 - Read this file, `AGENTS.md`, and the mandatory records listed there. GitHub and live source are authoritative if an old snapshot differs.
 
@@ -37,8 +37,8 @@ The owner reports the app opens and articles load; automatic update to 0.3.2 was
 - Release source: `276191f0656261a8f7dfab13847a3e654ca64245`; run #426 succeeded and published CurrentLens 0.3.4 / code 15 as `android-15`. APK SHA-256: `8a07dd4ab61e51388bd728375defccfd094de1d9b17cf4415457a0cd924a6d4a`; pinned certificate SHA-256: `af046601fe3a36851e645908e759abbf2caedfe748e2be02817991444884c580`. The sole `CurrentLens.apk` is available from the linked release.
 - Reader implementation is shipped: persisted `Aa` sizing, Android font scale for extracted and publisher-fallback content, 48dp save/share controls, refined typography and responsive tables/figures, pinch zoom, source/date, and an explicitly indicative syllabus card when mapping exists. `Aa` stays disabled until the saved preference loads. Sharing is limited to publisher URLs allowed by the existing host policy. No network/publisher-access change was made.
 - CI checks passed; this workspace has no Gradle executable or wrapper, so no local test/build ran. Phone appearance, saved text-size update, save/share, selection anchors, progress restore, and publisher fallback remain **unverified on-device**.
-- Current handoff batch: reconciling stale issue statuses and generating a complete commit index from the 528 commits reachable at the release SHA. No app source is changed in that documentation audit.
-- Next: complete and commit this documentation checkpoint with `[skip ci]`; continue with feed reliability and UPSC real-story evaluation from current main. One workflow has completed; check the queue before any later source push. Do not report live-feed or Reader device validation without evidence.
+- Current handoff batch: the stale issue statuses were reconciled against main and `docs/MAIN_COMMIT_INDEX.md` now covers all 528 commits reachable from the release SHA. This docs-only change was committed to main as `944dec0b82108e9ce186a8c86312be903da61e60` with `[skip ci]`; no new Actions run was created. No app source changed in that documentation audit.
+- Next: inspect feed reliability and UPSC relevance using a small labelled set of real current stories and official syllabus references. Check live main and the Actions queue before source changes. Any next APK must use versionCode >15 with the same app ID/signer. Do not report live-feed, editorial precision or Reader device validation without evidence.
 
 ## Important project history
 
