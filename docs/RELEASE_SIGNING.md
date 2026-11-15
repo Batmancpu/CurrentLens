@@ -4,10 +4,10 @@ The owner chose a fresh install on 14 November 2026. The new release line uses a
 
 ## Latest verified release
 
-- [CurrentLens 0.3.4 (`android-15`)](https://github.com/Batmancpu/CurrentLens/releases/tag/android-15), published from exact main source `276191f0656261a8f7dfab13847a3e654ca64245` by [run #426](https://github.com/Batmancpu/CurrentLens/actions/runs/43728047667).
-- One asset: `CurrentLens.apk`, 30,830,942 bytes; SHA-256 `8a07dd4ab61e51388bd728375defccfd094de1d9b17cf4415457a0cd924a6d4a`.
-- Package/version: `com.mangoloads.currentlens`, 0.3.4, versionCode 15. Pinned signing certificate SHA-256 `af046601fe3a36851e645908e759abbf2caedfe748e2be02817991444884c580`.
-- CI passed dictionary generation, Python builder tests, `:app:testDebugUnitTest`, `:app:assembleRelease`, package/version checks, signature verification and publication. Physical-device install/update and behavior are not implied.
+- [CurrentLens 0.3.5 (`android-16`)](https://github.com/Batmancpu/CurrentLens/releases/tag/android-16), published from exact main source `307a209bc4f871871c08fe7fe0bebfb74764c01f` by [run #427](https://github.com/Batmancpu/CurrentLens/actions/runs/43730681996).
+- One asset: `CurrentLens.apk`, 30,830,942 bytes; SHA-256 `3570a3066cfc21a05bce83983cedd609722dfd07b198dff70a32b8c85f6fb4c9`.
+- Package/version: `com.mangoloads.currentlens`, 0.3.5, versionCode 16. Pinned signing certificate SHA-256 `af046601fe3a36851e645908e759abbf2caedfe748e2be02817991444884c580`.
+- CI passed dictionary generation (151,456 unique words), Python builder tests, `:app:testDebugUnitTest`, `:app:assembleRelease`, package/version checks, signature verification and publication. Physical-device install/update and behavior are not implied.
 
 ## One-time key custody
 

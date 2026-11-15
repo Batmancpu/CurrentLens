@@ -1,13 +1,16 @@
 # CurrentLens — Complete Main Commit Index
 
-Generated from the local Git history reachable from `main@276191f0656261a8f7dfab13847a3e654ca64245` on 15 November 2026 (IST). All 528 commits reachable from that main ref are listed, including the preserved branch histories merged into main. This is a subject/SHA inventory, not a substitute for opening a commit diff. For each row, the commit link opens the canonical GitHub diff/metadata. Refresh the snapshot after each batch; preserve existing commit history.
+Generated from the local Git history reachable from `main@307a209bc4f871871c08fe7fe0bebfb74764c01f` on 15 November 2026 (IST). All 531 commits reachable from that main ref are listed, including the preserved branch histories merged into main. This is a subject/SHA inventory, not a substitute for opening a commit diff. For each row, the commit link opens the canonical GitHub diff/metadata. Refresh the snapshot after each batch; preserve existing commit history.
 
 - Repository: https://github.com/Batmancpu/CurrentLens
-- Snapshot main SHA: 276191f0656261a8f7dfab13847a3e654ca64245
-- Count at snapshot: 528
+- Snapshot main SHA: 307a209bc4f871871c08fe7fe0bebfb74764c01f
+- Count at snapshot: 531
 
 | # | UTC date/time | Commit | Subject |
 |---:|---|---|---|
+| 531 | 2026-11-15T15:34:50Z | [307a209bc4f8](https://github.com/Batmancpu/CurrentLens/commit/307a209bc4f871871c08fe7fe0bebfb74764c01f) | Classify DPDP framework under GS II Governance [publish apk] |
+| 530 | 2026-11-15T15:23:05Z | [2dafd07dca47](https://github.com/Batmancpu/CurrentLens/commit/2dafd07dca472cf6ceae42677f9ec5988d299cca) | docs: mark CurrentLens resume point after release audit [skip ci] |
+| 529 | 2026-11-15T15:20:27Z | [944dec0b8210](https://github.com/Batmancpu/CurrentLens/commit/944dec0b82108e9ce186a8c86312be903da61e60) | docs: record 0.3.4 release and reconcile main handoff [skip ci] |
 | 528 | 2026-11-15T15:06:19Z | [276191f06562](https://github.com/Batmancpu/CurrentLens/commit/276191f0656261a8f7dfab13847a3e654ca64245) | Reader: persist typography and refine article experience [publish apk] |
 | 527 | 2026-11-14T15:54:36Z | [365110f8364e](https://github.com/Batmancpu/CurrentLens/commit/365110f8364e1b1aa88c78d3ca1d88e88e1c96d9) | docs: record 0.3.3 release verification [skip ci] |
 | 526 | 2026-11-14T15:51:30Z | [1c1f980cf816](https://github.com/Batmancpu/CurrentLens/commit/1c1f980cf816fd1e4dd173a5b4d220bd937d0b25) | Release CurrentLens feed and Reader reliability fixes 0.3.3 [publish apk] |

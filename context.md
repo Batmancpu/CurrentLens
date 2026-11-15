@@ -5,8 +5,8 @@ Updated 15 November 2026 (IST). This is the quick resume note; the full history 
 ## Project and source of truth
 
 - Android app: CurrentLens repository, user-facing app label `brrrNews`.
-- GitHub: `Batmancpu/CurrentLens`, `main` only. Latest app source/release commit: `276191f0656261a8f7dfab13847a3e654ca64245`. Current local and live main base: documentation commit `2dafd07dca472cf6ceae42677f9ec5988d299cca` (`[skip ci]`); the worktree now contains the in-progress DPDP mapping fix described below.
-- Current signed baseline: [0.3.4 (`android-15`)](https://github.com/Batmancpu/CurrentLens/releases/tag/android-15), versionCode 15. Exact run, APK SHA-256 and pinned signer are in `docs/PROJECT_HANDOFF.md` and `docs/SESSION_LEDGER.md`.
+- GitHub: `Batmancpu/CurrentLens`, `main` only. Latest app source/release commit: `307a209bc4f871871c08fe7fe0bebfb74764c01f`; main has only a post-release docs/index continuation after this source. Read the live main tip before the next change.
+- Current signed baseline: [0.3.5 (`android-16`)](https://github.com/Batmancpu/CurrentLens/releases/tag/android-16), versionCode 16, published from exact source `307a209...` by successful run #427. APK SHA-256 `3570a3066cfc21a05bce83983cedd609722dfd07b198dff70a32b8c85f6fb4c9`; pinned certificate SHA-256 remains `af046601fe3a36851e645908e759abbf2caedfe748e2be02817991444884c580`.
 - Read this file, `AGENTS.md`, and the mandatory records listed there. GitHub and live source are authoritative if an old snapshot differs.
 
 ## Owner's current direction
@@ -22,7 +22,7 @@ Work autonomously in small batches. After each batch, update this file with the 
 3. Improve UPSC eligibility and mapping using the official syllabus and real labelled examples; do not call keyword matches a validated score or prediction.
 4. Fix observed UI defects with device evidence where visual/runtime behavior matters.
 
-The owner reports the app opens and articles load; automatic update to 0.3.2 was confirmed. The 0.3.4 source, JVM tests, release assembly, package/version checks and signature passed on Actions run #426. The owner has not yet reported installing 0.3.4 or checking its Reader on a handset.
+The owner reports the app opens and articles load; automatic update to 0.3.2 was confirmed. The 0.3.5 source, JVM tests, release assembly, package/version checks and signature passed on Actions run #427. The owner has not yet reported installing 0.3.5 or checking the Reader or DPDP card on a handset.
 
 ## Non-negotiables
 
@@ -34,12 +34,11 @@ The owner reports the app opens and articles load; automatic update to 0.3.2 was
 
 ## Current batch and next step
 
-- Release source: `276191f0656261a8f7dfab13847a3e654ca64245`; run #426 succeeded and published CurrentLens 0.3.4 / code 15 as `android-15`. APK SHA-256: `8a07dd4ab61e51388bd728375defccfd094de1d9b17cf4415457a0cd924a6d4a`; pinned certificate SHA-256: `af046601fe3a36851e645908e759abbf2caedfe748e2be02817991444884c580`. The sole `CurrentLens.apk` is available from the linked release.
+- Release source: `307a209bc4f871871c08fe7fe0bebfb74764c01f`; run [#427](https://github.com/Batmancpu/CurrentLens/actions/runs/43730681996) succeeded and published CurrentLens 0.3.5 / code 16 as `android-16`. APK SHA-256: `3570a3066cfc21a05bce83983cedd609722dfd07b198dff70a32b8c85f6fb4c9`; pinned certificate SHA-256: `af046601fe3a36851e645908e759abbf2caedfe748e2be02817991444884c580`. The sole `CurrentLens.apk` is available from the linked release.
 - Reader implementation is shipped: persisted `Aa` sizing, Android font scale for extracted and publisher-fallback content, 48dp save/share controls, refined typography and responsive tables/figures, pinch zoom, source/date, and an explicitly indicative syllabus card when mapping exists. `Aa` stays disabled until the saved preference loads. Sharing is limited to publisher URLs allowed by the existing host policy. No network/publisher-access change was made.
-- Current audited references: [UPSC CSE 2026 notification](https://www.upsc.gov.in/sites/default/files/Notif-CSP-2026-Engl-060226Rev.pdf) lists government policies, statutory/regulatory bodies and governance/accountability under GS II; [PIB's 14 Nov 2026 Consent Manager release](https://www.pib.gov.in/PressReleseDetailm.aspx?PRID=2336151&lang=1&reg=1) describes implementation under the DPDP Act, Data Protection Board registration and Data Principals/Fiduciaries. Static inspection found generic `digital`/`data protection` signals can outweigh the current governance evidence; a narrow GS-II mapping fix and official-headline regression fixture are in progress.
-- Current source batch on base `2dafd07dca472cf6ceae42677f9ec5988d299cca`: `UpscEngine.kt` and `UpscFeedPolicy.kt` recognize exact DPDP regulatory concepts; `UpscFeedPolicyTest.kt` carries the official PIB title/body plus a generic digital-portal negative fixture; `app/build.gradle.kts` is prepared for 0.3.5 / versionCode 16. `git diff --check` passed. The fixtures and Android build are **not yet run**: this workspace has no Gradle executable or wrapper. The next authorized step is a single main `[publish apk]` commit, then wait for the existing serial workflow and record the exact results.
-- GitHub Actions: run #426 completed successfully, zero open PRs, and no workflow was active on the latest check. Recheck before advancing main. Direct `git push` is unavailable without CLI credentials; if still unavailable, use the connected GitHub Git Data API with an expected-parent fast-forward guard, as documented in the ledger.
-- Phone appearance, saved text-size update, save/share, selection anchors, progress restore, publisher fallback, native launch stability and live-feed behavior remain **unverified on-device**. Do not claim editorial precision/recall from this one fixture or keyword rules.
+- Shipped DPDP mapping: `UpscEngine.kt` and `UpscFeedPolicy.kt` recognize exact DPDP regulatory concepts; `UpscFeedPolicyTest.kt` covers the official PIB title/body and a generic digital-portal negative. Run #427 passed the JVM suite and release assembly. This is one source-based regression fixture, not a precision/recall evaluation.
+- Current GitHub check: run #427 is completed/successful on `307a209...`; release `android-16` is Latest with one APK asset. The latest check returned zero open PRs. The docs-only checkpoint is the only current local work. Direct `git push` previously failed for missing CLI credentials; if needed, use the connected GitHub Git Data API with an expected-parent fast-forward guard.
+- Phone install, saved text-size update, save/share, selection anchors, progress restore, publisher fallback, native launch stability and live-feed behavior remain **unverified on-device**. Do not claim editorial precision/recall from this one fixture or keyword rules.
 
 ## Important project history
 

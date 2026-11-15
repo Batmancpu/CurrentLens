@@ -7,7 +7,7 @@ Status vocabulary:
 - Unverified: insufficient device/test evidence.
 - Resolved in code: code path changed; runtime/user outcome is not automatically proven.
 
-Live snapshot: latest app source `276191f0656261a8f7dfab13847a3e654ca64245` (15 Nov 2026), release `android-15`, run #426 passed; current docs-only main base `2dafd07dca472cf6ceae42677f9ec5988d299cca`. Some detailed Stability/PR history below is retained from its dated snapshot; where a status conflicts, current main and the live entries below are authoritative. No open PRs or active workflows were returned by the latest GitHub check.
+Live snapshot: app source `307a209bc4f871871c08fe7fe0bebfb74764c01f` (15 Nov 2026), release `android-16`, run #427 passed; the latest main continuation records this release without changing app source. Some detailed Stability/PR history below is retained from its dated snapshot; where a status conflicts, current main and the live entries below are authoritative. No open PRs were returned by the latest GitHub check.
 
 ## Highest-priority reliability
 
@@ -188,7 +188,7 @@ Live snapshot: latest app source `276191f0656261a8f7dfab13847a3e654ca64245` (15 
 - Acceptance still requires phone review of toolbar fit, light/dark presentation, font scale, pinch zoom, text selection/definition anchors, bookmark state, share chooser, scroll/progress restore and the fallback page. CI is not visual/device evidence.
 
 ### KL-025 — DPDP implementation can map to a generic technology label
-- Status: Source-audit finding; narrow code fix and official-headline regression fixture are in the current local batch. Test/build have not run yet.
+- Status: Resolved in code for the official example; the focused fixture and full JVM suite passed in run #427. Live publisher-feed mapping and editorial precision/recall remain unverified.
 - The official PIB release of 14 November 2026 describes the Consent Manager registration framework under the Digital Personal Data Protection Act and the Data Protection Board. The current classifier recognized generic `digital` and `data protection` signals but did not give the named regulatory actors enough weight for GS-II Governance.
 - The official 2026 UPSC syllabus places government policy/intervention, statutory and regulatory bodies, and governance/accountability under GS II. The local change adds only DPDP-specific regulatory entities/terms to Governance and the feed eligibility allowlist.
-- Expected outcome: the official fixture maps to GS II / Governance and remains eligible with explainable matched terms, while a generic digital portal remains suppressed. This one official example does not establish editorial precision/recall. Live publisher feed behavior remains unverified.
+- Verification: the official fixture maps to GS II / Governance and remains eligible with explainable matched terms; the generic digital portal fixture is suppressed. Both passed run #427 on source `307a209...`. This one official example does not establish editorial precision/recall. Live publisher feed behavior remains unverified.

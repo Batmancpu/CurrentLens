@@ -1,5 +1,13 @@
 # CurrentLens — Build, Test, Release and Debug Record
 
+## Latest verified build — 15 November 2026
+
+- Exact source: `307a209bc4f871871c08fe7fe0bebfb74764c01f`; [Actions run #427](https://github.com/Batmancpu/CurrentLens/actions/runs/43730681996) completed successfully.
+- The workflow passed WordNet builder tests and bundled 151,456 unique words, `:app:testDebugUnitTest` (including the DPDP-to-Governance and generic digital-portal negative fixtures), `:app:assembleRelease`, package/version increment checks, signer verification and publication.
+- Release: [CurrentLens 0.3.5 (`android-16`)](https://github.com/Batmancpu/CurrentLens/releases/tag/android-16), one `CurrentLens.apk` asset (30,830,942 bytes), SHA-256 `3570a3066cfc21a05bce83983cedd609722dfd07b198dff70a32b8c85f6fb4c9`.
+- Package `com.mangoloads.currentlens`, versionCode 16, pinned certificate SHA-256 `af046601fe3a36851e645908e759abbf2caedfe748e2be02817991444884c580`. GitHub Latest and the `android-16` tag both point to the exact source commit.
+- This workspace has no system Gradle executable or wrapper. CI evidence does not establish handset installation, Reader visuals, startup stability or live-feed behavior.
+
 ## Live review snapshot — 8 November 2026, 16:05 IST
 
 - Canonical main: `73b8a0d1ba33503fede02db2c3c0af082d724a12`, unchanged.
