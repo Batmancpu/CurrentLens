@@ -7,7 +7,7 @@ Status vocabulary:
 - Unverified: insufficient device/test evidence.
 - Resolved in code: code path changed; runtime/user outcome is not automatically proven.
 
-Live snapshot: app source `307a209bc4f871871c08fe7fe0bebfb74764c01f` (15 Nov 2026), release `android-16`, run #427 passed; the latest main continuation records this release without changing app source. Some detailed Stability/PR history below is retained from its dated snapshot; where a status conflicts, current main and the live entries below are authoritative. No open PRs were returned by the latest GitHub check.
+Live snapshot: app source `779c6423e91b77620bec2f5afca2bae6c4b1df3c` (15 Nov 2026), release `android-17`, run #428 passed. Some detailed Stability/PR history below is retained from its dated snapshot; where a status conflicts, current main and the live entries below are authoritative. No open PRs were returned by the latest GitHub check.
 
 ## Highest-priority reliability
 
@@ -194,7 +194,7 @@ Live snapshot: app source `307a209bc4f871871c08fe7fe0bebfb74764c01f` (15 Nov 202
 - Verification: the official fixture maps to GS II / Governance and remains eligible with explainable matched terms; the generic digital portal fixture is suppressed. Both passed run #427 on source `307a209...`. This one official example does not establish editorial precision/recall. Live publisher feed behavior remains unverified.
 
 ### KL-026 — Nutrient Based Subsidy headline may miss the GS-III farm-subsidy mapping
-- Status: Narrow phrase mapping and official-title regression fixture are in candidate 0.3.6 / versionCode 17; CI has not run yet. Live-feed behavior and editorial precision/recall remain unverified.
+- Status: Narrow phrase mapping and official-title regression fixture shipped in 0.3.6 / versionCode 17. The fixture, release assembly, signer check and publication passed run #428 on source `779c642...`. Live-feed behavior and editorial precision/recall remain unverified.
 - The official [PIB Rabi 2026-27 release](https://www.pib.gov.in/PressReleseDetailm.aspx?PRID=2334972&lang=1&reg=1) uses “Nutrient Based Subsidy” in the headline and describes fertilizer subsidies for farmers. The official [UPSC CSE 2026 notice](https://www.upsc.gov.in/sites/default/files/Notif-CSP-2026-Engl-060226Rev.pdf) explicitly lists direct and indirect farm subsidies under GS III.
 - Static review found the headline phrase absent from both the GS-III Agriculture keywords and specific eligibility signals. The candidate adds only `nutrient based subsidy` to those lists. Its title-only fixture asserts GS III / Agriculture, the matched phrase and inclusion; a generic consumer-internet subsidy headline is the negative case.
 - This source-backed fixture is not a labelled-corpus precision/recall result and does not verify the live publisher feed.

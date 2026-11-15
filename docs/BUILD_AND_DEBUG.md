@@ -1,13 +1,14 @@
 # CurrentLens — Build, Test, Release and Debug Record
 
-## Candidate release in progress — 15 November 2026
+## Latest verified release — 15 November 2026
 
-- Main checkpoint: `7ba9abed87cd1c7914de9041cefa868a9b615664`; latest published source remains `307a209bc4f871871c08fe7fe0bebfb74764c01f` / 0.3.5 / versionCode 16.
-- Local 0.3.6 / code 17 candidate adds the exact `nutrient based subsidy` GS-III Agriculture signal to classification and eligibility, with an official PIB title-only positive fixture and generic consumer-subsidy negative. The candidate workflow has not started yet.
-- Next verification: one main push with `[publish apk]`; the workflow runs Python dictionary-builder tests, `:app:testDebugUnitTest` and `:app:assembleRelease`, then checks the package/version, signs with the pinned certificate and publishes one APK. Stop the batch on the first failed stage.
-- Local Gradle is unavailable and no wrapper exists. No handset or live-feed behavior is verified by this candidate.
+- Exact source `779c6423e91b77620bec2f5afca2bae6c4b1df3c`; [Actions run #428](https://github.com/Batmancpu/CurrentLens/actions/runs/43733493845) completed successfully.
+- The workflow passed dictionary verification/bundling, `:app:testDebugUnitTest` (including the official PIB NBS title-only positive and generic consumer-subsidy negative), `:app:assembleRelease`, unsigned transfer, package/version validation, pinned signer verification and publication.
+- Release: [CurrentLens 0.3.6 (`android-17`)](https://github.com/Batmancpu/CurrentLens/releases/tag/android-17), one `CurrentLens.apk` asset displayed as 29.4 MB; SHA-256 `3bd5cbe0b43d0ac09ef782968c4c93748d78afeff29e3eebe648e11cf2e925dc`.
+- Package `com.mangoloads.currentlens`, versionCode 17, pinned certificate SHA-256 `af046601fe3a36851e645908e759abbf2caedfe748e2be02817991444884c580`. `android-17` is Latest and points to the exact source commit.
+- GitHub warned that Node.js 20 based actions will move to Node 24 and `ubuntu-latest` will migrate to Ubuntu 26; all jobs passed. Local Gradle is unavailable and no wrapper exists. Handset and live-feed behavior are not verified.
 
-## Latest verified build — 15 November 2026
+## Previous verified build — 15 November 2026
 
 - Exact source: `307a209bc4f871871c08fe7fe0bebfb74764c01f`; [Actions run #427](https://github.com/Batmancpu/CurrentLens/actions/runs/43730681996) completed successfully.
 - The workflow passed WordNet builder tests and bundled 151,456 unique words, `:app:testDebugUnitTest` (including the DPDP-to-Governance and generic digital-portal negative fixtures), `:app:assembleRelease`, package/version increment checks, signer verification and publication.
