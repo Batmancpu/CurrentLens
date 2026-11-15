@@ -81,12 +81,15 @@ internal object ReaderChromePolicy {
         }
         return ReaderChromeScrollState(visible = direction < 0)
     }
+    const val DEFAULT_FONT_SIZE_SP = 20
     const val MIN_FONT_SIZE_SP = 16
     const val MAX_FONT_SIZE_SP = 28
 
+    fun normalizeFontSize(fontSizeSp: Int): Int =
+        fontSizeSp.coerceIn(MIN_FONT_SIZE_SP, MAX_FONT_SIZE_SP)
+
     fun adjustFontSize(currentSp: Int, delta: Int): Int =
-        (currentSp.coerceIn(MIN_FONT_SIZE_SP, MAX_FONT_SIZE_SP) + delta)
-            .coerceIn(MIN_FONT_SIZE_SP, MAX_FONT_SIZE_SP)
+        normalizeFontSize(normalizeFontSize(currentSp) + delta)
 
     fun shouldShowCompletion(
         reachedBottom: Boolean,

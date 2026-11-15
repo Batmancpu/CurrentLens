@@ -5,6 +5,7 @@ This repository documents an ongoing product built by one user working with Chat
 ## Resume CurrentLens from GitHub
 
 - Open [Batmancpu/CurrentLens on main](https://github.com/Batmancpu/CurrentLens/tree/main). The owner chose main as the sole development branch and a fresh APK install on 14 November 2026. This decision supersedes older branch and signing instructions in historical records.
+- Read the root [context.md](context.md) for the current short resume point. It points into the durable records; it does not replace them.
 - Read [the roadmap](docs/ROADMAP.md), [the current handoff](docs/PROJECT_HANDOFF.md), [the branch disposition register](docs/CONSOLIDATION.md) and [the signing runbook](docs/RELEASE_SIGNING.md) before a change.
 - Read live main, its exact Actions run and the previous release. Work on one manageable scope in a local checkout. Verify and record the expected base SHA, then advance only main with a fast-forward. Create zero development branches. Leave existing branch deletion to the owner after their acceptance.
 - Keep a single Actions workflow active. Wait for the current run to finish before pushing or manually dispatching the next. Main pushes validate. Explicit publication uses the same workflow and one signed APK. Never advance the release identity because a test key or cache changed.
@@ -14,15 +15,16 @@ This repository documents an ongoing product built by one user working with Chat
 
 Read these files in this order before proposing or making changes:
 
-1. docs/CHATGPT_CONTINUITY.md — how to keep this project inside one ChatGPT Project across conversations.
-2. docs/PROJECT_HANDOFF.md — latest known product/repository state and current priorities.
-3. docs/SESSION_LEDGER.md — chronological history, feature phases, PR history, failed attempts and corrections.
-4. docs/MAIN_COMMIT_INDEX.md — every commit on main, with SHA, timestamp and subject.
-5. docs/KNOWN_ISSUES.md — unresolved, proposed, reported and verified issues.
-6. docs/DESIGN_EVIDENCE.md — exact design intent, supplied-image register, user feedback and screenshot/video handling.
-7. docs/BUILD_AND_DEBUG.md — build configuration, workflow, test/release process and failure patterns.
-8. docs/DECISION_LOG.md — durable product/engineering decisions.
-9. THIRD_PARTY_NOTICES.md and relevant licence files before changing dependencies, assets or bundled data.
+1. context.md — current resume pointer and in-flight batch.
+2. docs/CHATGPT_CONTINUITY.md — how to keep this project inside one ChatGPT Project across conversations.
+3. docs/PROJECT_HANDOFF.md — latest known product/repository state and current priorities.
+4. docs/SESSION_LEDGER.md — chronological history, feature phases, PR history, failed attempts and corrections.
+5. docs/MAIN_COMMIT_INDEX.md — every commit on main, with SHA, timestamp and subject.
+6. docs/KNOWN_ISSUES.md — unresolved, proposed, reported and verified issues.
+7. docs/DESIGN_EVIDENCE.md — exact design intent, supplied-image register, user feedback and screenshot/video handling.
+8. docs/BUILD_AND_DEBUG.md — build configuration, workflow, test/release process and failure patterns.
+9. docs/DECISION_LOG.md — durable product/engineering decisions.
+10. THIRD_PARTY_NOTICES.md and relevant licence files before changing dependencies, assets or bundled data.
 
 Do not treat README as the engineering memory or full product specification. It is only a short public overview. Do not edit README during continuity-document work unless the user specifically asks.
 
@@ -100,11 +102,12 @@ Use the status and diff to reconcile the ledger against changed, staged and untr
 ## End-of-session continuity update
 
 At the end of each session that changes project state or decisions:
-1. Refresh docs/PROJECT_HANDOFF.md with current main SHA, open PRs, builds, priorities and evidence.
-2. Append the detailed event to docs/SESSION_LEDGER.md.
-3. Update docs/KNOWN_ISSUES.md and/or docs/DESIGN_EVIDENCE.md when status or evidence changes.
-4. Add only durable decisions to docs/DECISION_LOG.md.
-5. Keep Project instructions and uploaded copies of these docs aligned with GitHub when they change.
+1. Refresh context.md with the current batch and exact resume action.
+2. Refresh docs/PROJECT_HANDOFF.md with current main SHA, open PRs, builds, priorities and evidence.
+3. Append the detailed event to docs/SESSION_LEDGER.md.
+4. Update docs/KNOWN_ISSUES.md and/or docs/DESIGN_EVIDENCE.md when status or evidence changes.
+5. Add only durable decisions to docs/DECISION_LOG.md.
+6. Keep Project instructions and uploaded copies of these docs aligned with GitHub when they change.
 
 Do not use this file as the entire history. It is the rulebook that forces every continuation chat to consult and maintain the complete history in the linked records.
 

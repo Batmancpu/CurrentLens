@@ -2,6 +2,36 @@ package com.mangoloads.currentlens
 
 /** App-owned responsive layout and editorial styling for publisher content inside the reader. */
 internal object ReaderPresentationPolicy {
+    /** CSS pixels matching the selected Reader size in sp, including Android's font scale. */
+    fun bodyFontSizeCssPx(baseFontSizeSp: Int, systemFontScale: Float): Float {
+        val safeFontSize = ReaderChromePolicy.normalizeFontSize(baseFontSizeSp)
+        val safeScale = systemFontScale.takeIf { it.isFinite() && it > 0f } ?: 1f
+        return safeFontSize * safeScale.coerceIn(0.5f, 3f)
+    }
+
+    /** Scales publisher fallback pages from their usual 16px body size. */
+    fun publisherTextZoomPercent(baseFontSizeSp: Int, systemFontScale: Float): Int =
+        (bodyFontSizeCssPx(baseFontSizeSp, systemFontScale) * 100f / 16f)
+            .toInt().coerceAtLeast(1)
+
+    fun escapeHtmlText(value: String): String = value
+        .replace("&", "&amp;")
+        .replace("<", "&lt;")
+        .replace(">", "&gt;")
+        .replace("\"", "&quot;")
+        .replace("'", "&#39;")
+
+    fun studyContextHtml(relevance: Relevance): String {
+        if (relevance.gsPaper == "Unmapped" || relevance.matchedTerms.isEmpty()) return ""
+        val signals = relevance.matchedTerms.take(5).joinToString(", ", transform = ::escapeHtmlText)
+        return "<aside class=\"cl-study\" aria-label=\"Indicative UPSC syllabus connection\">" +
+            "<p class=\"cl-study-label\">UPSC connection · indicative</p>" +
+            "<strong class=\"cl-study-title\">${escapeHtmlText(relevance.gsPaper)} · ${escapeHtmlText(relevance.subject)}</strong>" +
+            "<p>${escapeHtmlText(relevance.syllabusLink)}</p>" +
+            "<p class=\"cl-study-signals\">Signals from publisher feed metadata: $signals. This is not independent primary-source verification.</p>" +
+            "</aside>"
+    }
+
     fun responsiveTableCss(dark: Boolean): String {
         val line = if (dark) "#354050" else "#D9E0E9"
         val header = if (dark) "#202B3A" else "#EAF0F6"
@@ -47,6 +77,8 @@ internal object ReaderPresentationPolicy {
     fun editorialContentCss(dark: Boolean): String {
         val muted = if (dark) "#AAB4C5" else "#667181"
         val divider = if (dark) "#354050" else "#D9E0E9"
+        val studyBackground = if (dark) "#171D27" else "#F2F5F9"
+        val studyBorder = if (dark) "#303A49" else "#E0E6EE"
         return """
             main { width: 100%; max-width: 72ch; margin-inline: auto; }
             main p, main li { text-wrap: pretty; overflow-wrap: break-word; }
@@ -73,6 +105,17 @@ internal object ReaderPresentationPolicy {
                 text-wrap: pretty;
             }
             main hr { border: 0; border-top: 1px solid $divider; margin: 2.1em 0; }
+            .cl-study {
+                margin: 2.5em 0 0; padding: 18px 19px; border: 1px solid $studyBorder;
+                border-radius: 18px; background: $studyBackground;
+            }
+            .cl-study-label {
+                margin: 0 0 8px; color: $muted; font: 700 0.68em/1.4 system-ui, sans-serif;
+                letter-spacing: 0.1em; text-transform: uppercase;
+            }
+            .cl-study-title { display: block; margin: 0 0 7px; font: 700 1em/1.35 system-ui, sans-serif; }
+            .cl-study p { margin: 0 0 8px; font: 0.82em/1.5 system-ui, sans-serif; }
+            .cl-study .cl-study-signals { margin-bottom: 0; color: $muted; font-size: 0.74em; }
             @media (min-width: 640px) {
                 body {
                     padding-left: clamp(32px, 6vw, 72px);

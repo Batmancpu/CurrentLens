@@ -51,8 +51,8 @@ Snapshot main: 73b8a0d1ba33503fede02db2c3c0af082d724a12 (6 Nov 2026).
 - Verify TalkBack and touch on device after integration.
 
 ### KL-007 — Reader font-scale propagation
-- Status: Needs physical review.
-- WebView CSS sizing may not automatically track Android system font scale. Verify on large system font settings.
+- Status: New code path added; CI and physical review pending.
+- Reader CSS now applies Android's configured font scale to the persisted `Aa` size, and the publisher fallback derives `WebSettings.textZoom` from the same scale. The control remains disabled until the stored value loads. Focused policy tests were added in the current main batch; they are not yet run. Verify on large system font settings and confirm definition-selection anchors remain aligned on-device.
 
 ## Editorial trust
 
@@ -189,3 +189,10 @@ Snapshot main: 73b8a0d1ba33503fede02db2c3c0af082d724a12 (6 Nov 2026).
 - PR #40 disables automatic redirects, validates the initial feed host and each resolved `Location` against the configured publisher's HTTPS allowlist, accepts only standard redirect codes, caps the chain at five and fails closed on cross-publisher/lookalike/cleartext/credential/non-standard-port/oversized targets. `bbci.co.uk` is included for the configured `feeds.bbci.co.uk` source.
 - Four focused redirect-policy tests and one BBC feed-host assertion were added. Tests are **added, not run**; main's workflow is push-only and PR #40 has no statuses/check-runs.
 - This prevents an RSS endpoint from silently widening the app's network boundary. It does not restrict image URLs or WebView subresources; those remain separate PRs #25/#26. It adds no new network request and does not prove every live publisher feed's redirect chain.
+
+
+### KL-024 — Apple-inspired Reader fit and finish
+- Status: Owner-requested; the first implementation batch is awaiting CI and physical-device review.
+- The owner asked for an Apple-style Reader “closest to the Apple product.” No CurrentLens Reader screenshot/reference was supplied in this batch, so the current design uses a deliberate editorial hierarchy rather than claiming pixel parity: readable title/body typography, constrained line length, persisted `Aa` sizing, Android font scale, source/date, save/share, restored progress and an indicative syllabus context.
+- The syllabus card is derived from publisher RSS metadata and explicitly says it is not independent primary-source verification. It is omitted for unmapped articles. Share remains limited to URLs allowed by `PublisherHostPolicy`.
+- Acceptance still requires phone review of toolbar fit, light/dark presentation, font scale, pinch zoom, text selection/definition anchors, bookmark state, share chooser, scroll/progress restore and the fallback page. CI is not visual/device evidence.

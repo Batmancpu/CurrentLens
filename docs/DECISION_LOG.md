@@ -33,6 +33,8 @@ Use restrained shared surfaces; preserve PrismalAGSL v1.0.4 and MIT notice. Avoi
 Do not claim a launch crash, visual defect or scroll-jank issue is fixed from CI compile/tests alone. Use local crash report/logcat/tombstone/ANR and physical device; use screenshot/Perfetto/frame-time/memory for UI/performance issues.
 
 ## D-011 — Main branch and Release safety
+**Superseded 14 November 2026:** the owner explicitly chose main as the sole development branch, asked for work to continue on main, and authorized the serialized signed-APK path. The newer `AGENTS.md` and the 14 November handoff/ledger govern this project. Continue only on main, do not create development branches, and serialize the existing build/publish workflow. This historical decision is retained for context; it is no longer the operating rule.
+
 No direct main edits/pushes, no PR merges, no workflow edits, no build dispatch/rerun and no Release publication during ordinary review. Material work goes through isolated branch and focused draft PR after duplicate-PR inspection. The one workflow is push-to-main, contents:write and automatically publishes debug APK prereleases.
 
 ## D-012 — Keep README concise; keep project memory separate

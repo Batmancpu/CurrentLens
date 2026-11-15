@@ -87,6 +87,7 @@ import androidx.compose.material.icons.outlined.BookmarkBorder
 import androidx.compose.material.icons.outlined.Explore
 import androidx.compose.material.icons.outlined.Refresh
 import androidx.compose.material.icons.outlined.Search
+import androidx.compose.material.icons.outlined.Share
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.Settings
@@ -839,10 +840,22 @@ private fun BrrrNewsApp() {
                     val article = selectedArticle!!
                     ReaderScreen(
                         article = article,
+                        isBookmarked = bookmarks.contains(article.url),
                         backdrop = backdrop,
                         glassAlpha = glassAlpha,
                         dark = dark,
                         onBack = { selectedArticle = null },
+                        onToggleBookmark = {
+                            persistenceScope.launch {
+                                val added = withContext(NonCancellable) {
+                                    LocalStore.toggleBookmark(context, article.url)
+                                }
+                                bookmarks = if (added) bookmarks + article.url else bookmarks - article.url
+                            }
+                        },
+                        onSaveReaderFontSize = { size ->
+                            persistenceScope.launch { LocalStore.saveReaderFontSize(context, size) }
+                        },
                         onQuiz = { quizMode = true },
                         onSessionWindow = { window ->
                             persistenceScope.launch {
@@ -3230,10 +3243,13 @@ private fun matchesSearchTerms(article: Article, query: String): Boolean =
 @Composable
 private fun ReaderScreen(
     article: Article,
+    isBookmarked: Boolean,
     backdrop: PrismalBackdrop,
     glassAlpha: Float,
     dark: Boolean,
     onBack: () -> Unit,
+    onToggleBookmark: () -> Unit,
+    onSaveReaderFontSize: (Int) -> Unit,
     onQuiz: () -> Unit,
     onSessionWindow: (ReadingSessionWindow) -> Unit,
     onSaveReaderPosition: (String, Float) -> Unit,
@@ -3241,7 +3257,11 @@ private fun ReaderScreen(
 ) {
     val context = LocalContext.current
     val reduceMotion = LocalGlassReduceMotion.current
+    val readerFontScale = LocalDensity.current.fontScale
     val readerWebViewHolder = remember { mutableStateOf<ReaderWebView?>(null) }
+    var fontSize by remember { mutableIntStateOf(ReaderChromePolicy.DEFAULT_FONT_SIZE_SP) }
+    var readerFontSizeLoaded by remember { mutableStateOf(false) }
+    val readerBodyFontCssPx = ReaderPresentationPolicy.bodyFontSizeCssPx(fontSize, readerFontScale)
     var savedReadingProgress by remember(article.url) { mutableFloatStateOf(0f) }
     var readerPositionLoaded by remember(article.url) { mutableStateOf(false) }
     LaunchedEffect(article.url) {
@@ -3254,6 +3274,10 @@ private fun ReaderScreen(
         }
         savedReadingProgress = restoredProgress
         readerPositionLoaded = true
+    }
+    LaunchedEffect(context) {
+        fontSize = withContext(Dispatchers.IO) { LocalStore.readerFontSize(context) }
+        readerFontSizeLoaded = true
     }
 
     var contentLoaded by remember(article.url) { mutableStateOf(false) }
@@ -3301,7 +3325,6 @@ private fun ReaderScreen(
     var activeWordPreferAbove by remember(article.url) { mutableStateOf(false) }
     var readerViewportWindowOrigin by remember(article.url) { mutableStateOf(Offset.Zero) }
     var readerViewportHeightPx by remember(article.url) { mutableIntStateOf(0) }
-    var fontSize by remember(article.url) { mutableIntStateOf(20) }
     var textSizeMenuExpanded by remember(article.url) { mutableStateOf(false) }
     var completionDismissed by remember(article.url) { mutableStateOf(false) }
     var selectionActionModeActive by remember(article.url) { mutableStateOf(false) }
@@ -3360,6 +3383,8 @@ private fun ReaderScreen(
                 ReaderGlassToolbar(
                     article = article,
                     sourceStatus = readerSourceStatus,
+                    isBookmarked = isBookmarked,
+                    fontSizeLoaded = readerFontSizeLoaded,
                     backdrop = backdrop,
                     glassAlpha = glassAlpha,
                     dark = dark,
@@ -3370,7 +3395,13 @@ private fun ReaderScreen(
                         readerWebViewHolder.value?.flushReadingPosition()
                         onBack()
                     },
-                    onFontSizeChange = { fontSize = it }
+                    onToggleBookmark = onToggleBookmark,
+                    onShare = { shareReaderArticle(context, article) },
+                    onFontSizeChange = {
+                        val normalized = ReaderChromePolicy.normalizeFontSize(it)
+                        fontSize = normalized
+                        onSaveReaderFontSize(normalized)
+                    }
                 )
                 if (savedReadingProgress > 0.005f && !reachedBottom) {
                     Box(
@@ -3386,7 +3417,7 @@ private fun ReaderScreen(
                 }
             }
         }
-        if (extracting || !readerPositionLoaded ||
+        if (extracting || !readerPositionLoaded || !readerFontSizeLoaded ||
             (!pageLoaded && (extractedHtml != null || fallbackToPublisher))
         ) androidx.compose.material3.LinearProgressIndicator(Modifier.fillMaxWidth())
         Box(Modifier.weight(1f).fillMaxWidth().onGloballyPositioned { coordinates ->
@@ -3556,24 +3587,30 @@ private fun ReaderScreen(
                     webView.settings.javaScriptEnabled = selectionBridgeEnabled
                     // Neither the app-owned document nor publisher fallback needs DOM storage.
                     webView.settings.domStorageEnabled = false
-                    webView.settings.textZoom = if (fallbackToPublisher) (fontSize * 100 / 16) else 100
+                    webView.settings.textZoom = if (fallbackToPublisher) {
+                        ReaderPresentationPolicy.publisherTextZoomPercent(fontSize, readerFontScale)
+                    } else 100
                     if (articleChanged) {
                         reachedBottom = false
                         activeWord = null
                         activeWordAnchor = null
                         activeWordPreferAbove = false
                     }
-                    if (readerPositionLoaded) {
+                    if (readerPositionLoaded && readerFontSizeLoaded) {
                         val cleanHtml = extractedHtml
                         if (cleanHtml != null) {
-                            val key = "reader:" + article.url + ":" + fontSize + ":" + dark
+                            val key = "reader:" + article.url + ":" + readerBodyFontCssPx + ":" + dark
                             if (webView.loadedKey != key) {
                                 if (!articleChanged) webView.flushReadingPosition()
                                 webView.queueReadingPositionRestore(savedReadingProgress)
                                 webView.loadedKey = key
                                 pageLoaded = false
                                 contentLoaded = false
-                                webView.loadDataWithBaseURL(article.url, readerDocument(article, cleanHtml, fontSize, dark), "text/html", "UTF-8", null)
+                                webView.loadDataWithBaseURL(
+                                    article.url,
+                                    readerDocument(article, cleanHtml, readerBodyFontCssPx, dark),
+                                    "text/html", "UTF-8", null
+                                )
                             }
                         } else if (fallbackToPublisher) {
                             val key = "publisher:" + article.url + ":" + publisherRetry
@@ -3716,6 +3753,8 @@ private fun ReaderScreen(
 private fun ReaderGlassToolbar(
     article: Article,
     sourceStatus: String,
+    isBookmarked: Boolean,
+    fontSizeLoaded: Boolean,
     backdrop: PrismalBackdrop,
     glassAlpha: Float,
     dark: Boolean,
@@ -3723,6 +3762,8 @@ private fun ReaderGlassToolbar(
     textSizeMenuExpanded: Boolean,
     onTextSizeMenuExpandedChange: (Boolean) -> Unit,
     onBack: () -> Unit,
+    onToggleBookmark: () -> Unit,
+    onShare: () -> Unit,
     onFontSizeChange: (Int) -> Unit
 ) {
     PrismalTransientSurface(
@@ -3761,9 +3802,21 @@ private fun ReaderGlassToolbar(
                     lineHeight = 14.sp
                 )
             }
+            IconButton(onClick = onShare, modifier = Modifier.size(48.dp)) {
+                Icon(Icons.Outlined.Share, contentDescription = "Share article")
+            }
+            IconButton(onClick = onToggleBookmark, modifier = Modifier.size(48.dp)) {
+                Icon(
+                    if (isBookmarked) Icons.Outlined.Bookmark else Icons.Outlined.BookmarkBorder,
+                    contentDescription = if (isBookmarked) "Remove saved article" else "Save article",
+                    tint = if (isBookmarked) MaterialTheme.colorScheme.primary
+                    else MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
             Box {
                 IconButton(
                     onClick = { onTextSizeMenuExpandedChange(true) },
+                    enabled = fontSizeLoaded,
                     modifier = Modifier.size(48.dp).semantics {
                         contentDescription = "Text size, $fontSize sp"
                     }
@@ -3827,21 +3880,52 @@ private fun openPublisherPage(context: android.content.Context, source: String, 
     }
 }
 
-private fun readerDocument(article: Article, content: String, fontSize: Int, dark: Boolean): String {
+private fun shareReaderArticle(context: android.content.Context, article: Article) {
+    if (!PublisherHostPolicy.allows(article.source, article.url)) return
+    val intent = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
+        type = "text/plain"
+        putExtra(android.content.Intent.EXTRA_TITLE, article.title)
+        putExtra(android.content.Intent.EXTRA_SUBJECT, article.title)
+        putExtra(android.content.Intent.EXTRA_TEXT, "${article.title}\n${article.url}")
+    }
+    runCatching {
+        context.startActivity(android.content.Intent.createChooser(intent, "Share article"))
+    }.onFailure {
+        android.widget.Toast.makeText(context, "No sharing app available", android.widget.Toast.LENGTH_SHORT).show()
+    }
+}
+
+private fun readerDocument(article: Article, content: String, fontSizeCssPx: Float, dark: Boolean): String {
     val background = if (dark) "#10141B" else "#FFFFFF"
     val foreground = if (dark) "#E9EDF5" else "#20242B"
     val muted = if (dark) "#AAB4C5" else "#717985"
-    val title = article.title.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
-    val source = article.source.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
-    return "<!doctype html><html><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1, maximum-scale=1\"><style>" +
-        "html{background:" + background + ";color:" + foreground + ";}body{margin:0;padding:22px 20px 44px;background:" + background + ";color:" + foreground + ";font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue',system-ui,sans-serif;font-size:" + fontSize + "px;line-height:1.78;-webkit-text-size-adjust:100%;}" +
-        ".cl-source{font:700 11px/1.4 system-ui,sans-serif;letter-spacing:1.2px;text-transform:uppercase;color:" + muted + ";margin:4px 0 14px;}" +
-        "h1{font:700 1.72em/1.12 -apple-system,BlinkMacSystemFont,'SF Pro Display',system-ui,sans-serif;letter-spacing:-.045em;margin:0 0 18px;color:" + foreground + ";}" +
-        "h2,h3{font-family:system-ui,sans-serif;line-height:1.25;margin:1.55em 0 .55em;}p,li{margin:0 0 1.1em;}img,figure,video{max-width:100%;height:auto;border-radius:14px;}figure{margin:1.4em 0;}figcaption{font:12px/1.5 system-ui,sans-serif;color:" + muted + ";}" +
-        "a{color:" + (if (dark) "#9CB9FF" else "#2859A8") + ";text-decoration:none;}blockquote{margin:1.4em 0;padding:14px 16px;border-left:3px solid " + (if (dark) "#52658D" else "#A9BCE0") + ";border-radius:0 12px 12px 0;background:" + (if (dark) "#171D27" else "#F2F5F9") + ";color:" + muted + ";}" +
-        ReaderPresentationPolicy.responsiveTableCss(dark) +
-        "iframe{max-width:100%;}pre{white-space:pre-wrap;overflow-wrap:anywhere;border-radius:12px;padding:12px;background:" + (if (dark) "#171D27" else "#F2F5F9") + ";}code{overflow-wrap:anywhere;}" +
-        "</style></head><body><div class=\"cl-source\">" + source + " · brrrNews Reader</div><h1>" + title + "</h1><main>" + content + "</main></body></html>"
+    val title = ReaderPresentationPolicy.escapeHtmlText(article.title)
+    val source = ReaderPresentationPolicy.escapeHtmlText(article.source)
+    val published = ReaderPresentationPolicy.escapeHtmlText(ArticlePublicationDatePolicy.label(article.publishedAtMillis))
+    val link = if (dark) "#9CB9FF" else "#2859A8"
+    val quoteBackground = if (dark) "#171D27" else "#F2F5F9"
+    val quoteBorder = if (dark) "#52658D" else "#A9BCE0"
+    return buildString {
+        append("<!doctype html><html><head><meta charset=\"utf-8\">")
+        // Keep pinch zoom available for readers who use it as an accessibility aid.
+        append("<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"><style>")
+        append("html{background:$background;color:$foreground;}body{max-width:860px;margin:0 auto;padding:24px 22px 56px;background:$background;color:$foreground;font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue',system-ui,sans-serif;font-size:${fontSizeCssPx}px;line-height:1.7;-webkit-text-size-adjust:100%;}")
+        append(".cl-source{font:700 11px/1.45 system-ui,sans-serif;letter-spacing:1.1px;text-transform:uppercase;color:$muted;margin:2px 0 10px;}")
+        append(".cl-date{font:500 13px/1.5 system-ui,sans-serif;color:$muted;margin:0 0 22px;}")
+        append("h1{max-width:22ch;font:700 1.76em/1.1 -apple-system,BlinkMacSystemFont,'SF Pro Display',system-ui,sans-serif;letter-spacing:-.04em;margin:0 0 12px;color:$foreground;}")
+        append("main{font-family:Georgia,'Times New Roman',serif;}")
+        append("h2,h3{font-family:system-ui,sans-serif;line-height:1.25;margin:1.55em 0 .55em;}p,li{margin:0 0 1.05em;}img,figure,video{max-width:100%;height:auto;border-radius:14px;}figure{margin:1.4em 0;}figcaption{font:12px/1.5 system-ui,sans-serif;color:$muted;}")
+        append("a{color:$link;text-decoration:none;}blockquote{margin:1.4em 0;padding:14px 16px;border-left:3px solid $quoteBorder;border-radius:0 12px 12px 0;background:$quoteBackground;color:$muted;}")
+        append(ReaderPresentationPolicy.editorialContentCss(dark))
+        append(ReaderPresentationPolicy.responsiveTableCss(dark))
+        append("iframe{max-width:100%;}pre{white-space:pre-wrap;overflow-wrap:anywhere;border-radius:12px;padding:12px;background:$quoteBackground;}code{overflow-wrap:anywhere;}")
+        append("</style></head><body>")
+        append("<header class=\"cl-article-header\"><div class=\"cl-source\">$source · brrrNews Reader</div>")
+        append("<h1>$title</h1><p class=\"cl-date\">$published</p></header>")
+        append("<main>$content</main>")
+        append(ReaderPresentationPolicy.studyContextHtml(UpscEngine.classify(article)))
+        append("</body></html>")
+    }
 }
 
 private class ReaderWebView(context: android.content.Context) : WebView(context) {

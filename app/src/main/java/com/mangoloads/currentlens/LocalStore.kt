@@ -20,6 +20,7 @@ object LocalStore {
     private const val ARTICLE_CACHE = "article_cache"
     private const val GLASS_ALPHA = "glass_alpha"
     private const val REDUCE_TRANSPARENCY = "glass_reduce_transparency"
+    private const val READER_FONT_SIZE_SP = "reader_font_size_sp"
     private const val MAX_CACHED_ARTICLES = 500
     private const val CACHE_DAYS = 30
     private const val DEFAULT_GLASS_ALPHA = AppearancePreferencesPolicy.DEFAULT_GLASS_ALPHA
@@ -545,6 +546,24 @@ object LocalStore {
     }
 
     fun reduceTransparency(context: Context): Boolean = appearancePreferences(context).reduceTransparency
+
+    fun readerFontSize(context: Context): Int = runCatching {
+        ReaderChromePolicy.normalizeFontSize(
+            context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+                .getInt(READER_FONT_SIZE_SP, ReaderChromePolicy.DEFAULT_FONT_SIZE_SP)
+        )
+    }.getOrDefault(ReaderChromePolicy.DEFAULT_FONT_SIZE_SP)
+
+    /** Keep the reader preference write off the Compose/UI thread. */
+    internal suspend fun saveReaderFontSize(context: Context, fontSizeSp: Int) =
+        withContext(Dispatchers.IO) {
+            runCatching {
+                context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+                    .edit()
+                    .putInt(READER_FONT_SIZE_SP, ReaderChromePolicy.normalizeFontSize(fontSizeSp))
+                    .apply()
+            }
+        }
 
     fun saveReduceTransparency(context: Context, enabled: Boolean) {
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)

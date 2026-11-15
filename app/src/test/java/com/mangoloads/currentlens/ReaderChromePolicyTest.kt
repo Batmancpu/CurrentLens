@@ -18,6 +18,9 @@ class ReaderChromePolicyTest {
     fun invalidStoredFontSizeIsClampedBeforeApplyingChange() {
         assertEquals(28, ReaderChromePolicy.adjustFontSize(40, 1))
         assertEquals(16, ReaderChromePolicy.adjustFontSize(10, -1))
+        assertEquals(28, ReaderChromePolicy.normalizeFontSize(40))
+        assertEquals(16, ReaderChromePolicy.normalizeFontSize(10))
+        assertEquals(ReaderChromePolicy.DEFAULT_FONT_SIZE_SP, ReaderChromePolicy.normalizeFontSize(20))
     }
 
     @Test

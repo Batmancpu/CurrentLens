@@ -128,3 +128,11 @@ Do not upload private screenshots to this public repo without explicit approval.
 
 ## Liquid Glass and startup-isolation boundary (6 November 2026)
 The owner explicitly wants the original expensive Liquid Glass effects preserved. Stability-only builds may use a plain first-screen probe before the full composition; this is not a replacement design. Normal app builds must use the complete Prismal automatic pipeline. Do not use the flat diagnostic screen as the default production appearance or call it a visual redesign.
+
+## Apple-inspired Reader request — 15 November 2026
+
+- Owner request (verbatim): “Look at the whole code, compare the idea and add an Apple style reader as well. And make it closest to the Apple product.”
+- No Reader-specific screenshot or Apple News/Safari Reader reference image was supplied in this batch. Treat “Apple style” as a quality direction, not pixel evidence or permission to claim parity.
+- First implementation direction: calm editorial typography with a strong title, comfortable serif body, constrained line width and responsive figures/tables; keep the publisher/date visible; offer saved text size, system font-scale support, bookmark/share actions and restored reading progress; append a clearly indicative GS/syllabus context only when the rule-based mapping exists.
+- Trust boundary: the mapping comes from publisher feed metadata, is labelled indicative and not independently corroborated. Share actions use only a URL accepted by the existing publisher host policy. Existing sanitized content, publisher fallback restrictions and native selection/definition behavior remain in place.
+- Verification state: the source pass and focused pure-policy tests are in the pending main batch. No Android screenshot/recording or physical-device Reader comparison has been made, so typography, spacing, accessibility and Apple likeness remain unverified on-device.
