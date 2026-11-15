@@ -5,8 +5,8 @@ Updated 15 November 2026 (IST). This is the quick resume note; the full history 
 ## Project and source of truth
 
 - Android app: CurrentLens repository, user-facing app label `brrrNews`.
-- GitHub: `Batmancpu/CurrentLens`, `main` only. Current base: `365110f8364e1b1aa88c78d3ca1d88e88e1c96d9` (clean checkout; `origin/main` matched).
-- Current signed baseline: 0.3.3, versionCode 14, release tag `android-14`; same pinned signer as 0.3.1/0.3.2. Exact release/run details are in `docs/PROJECT_HANDOFF.md` and `docs/SESSION_LEDGER.md`.
+- GitHub: `Batmancpu/CurrentLens`, `main` only. Latest app source/release commit: `276191f0656261a8f7dfab13847a3e654ca64245`; a documentation-only checkpoint is being added after it. Check live `main` before the next code change.
+- Current signed baseline: [0.3.4 (`android-15`)](https://github.com/Batmancpu/CurrentLens/releases/tag/android-15), versionCode 15. Exact run, APK SHA-256 and pinned signer are in `docs/PROJECT_HANDOFF.md` and `docs/SESSION_LEDGER.md`.
 - Read this file, `AGENTS.md`, and the mandatory records listed there. GitHub and live source are authoritative if an old snapshot differs.
 
 ## Owner's current direction
@@ -22,7 +22,7 @@ Work autonomously in small batches. After each batch, update this file with the 
 3. Improve UPSC eligibility and mapping using the official syllabus and real labelled examples; do not call keyword matches a validated score or prediction.
 4. Fix observed UI defects with device evidence where visual/runtime behavior matters.
 
-The owner reports the app opens and articles load; automatic update to 0.3.2 was confirmed. The 0.3.3 source run passed, but its updated feed/Reader behavior has not been reported as handset-verified.
+The owner reports the app opens and articles load; automatic update to 0.3.2 was confirmed. The 0.3.4 source, JVM tests, release assembly, package/version checks and signature passed on Actions run #426. The owner has not yet reported installing 0.3.4 or checking its Reader on a handset.
 
 ## Non-negotiables
 
@@ -34,10 +34,11 @@ The owner reports the app opens and articles load; automatic update to 0.3.2 was
 
 ## Current batch and next step
 
-- Starting source: clean `main@365110f8364e1b1aa88c78d3ca1d88e88e1c96d9`; release 0.3.3 / code 14.
-- Reader implementation is now in the worktree: persist the `Aa` preference across Reader entries, apply Android font scale to extracted and publisher-fallback content, add 48dp save/share controls, refine the title/body/line-width/table/image treatment, keep pinch zoom enabled, and append an explicitly indicative GS/syllabus card when mapping exists. The `Aa` control stays disabled until the saved preference loads. Sharing is limited to publisher URLs allowed by the existing host policy. Network and publisher access rules are unchanged.
-- Release identity for this requested update is prepared as 0.3.4 / versionCode 15. Focused font-scale, HTML-escaping and no-mapping tests were added. `git diff --check` passes. This workspace has no Gradle executable or wrapper, so tests/build have not run locally; the serial main workflow must validate them.
-- Next: rerun `git diff --check`, stage and inspect the complete diff, check the live Actions queue, then commit/push fast-forward on `main` with `[publish apk]`. Wait for that single run and verify JVM tests, release build, exact app ID/version, pinned signer and signed `android-15` asset. Update this file and the ledger again with the exact run, signer, asset hash and device-verification status. Feed/UPSC work follows after this workflow completes.
+- Release source: `276191f0656261a8f7dfab13847a3e654ca64245`; run #426 succeeded and published CurrentLens 0.3.4 / code 15 as `android-15`. APK SHA-256: `8a07dd4ab61e51388bd728375defccfd094de1d9b17cf4415457a0cd924a6d4a`; pinned certificate SHA-256: `af046601fe3a36851e645908e759abbf2caedfe748e2be02817991444884c580`. The sole `CurrentLens.apk` is available from the linked release.
+- Reader implementation is shipped: persisted `Aa` sizing, Android font scale for extracted and publisher-fallback content, 48dp save/share controls, refined typography and responsive tables/figures, pinch zoom, source/date, and an explicitly indicative syllabus card when mapping exists. `Aa` stays disabled until the saved preference loads. Sharing is limited to publisher URLs allowed by the existing host policy. No network/publisher-access change was made.
+- CI checks passed; this workspace has no Gradle executable or wrapper, so no local test/build ran. Phone appearance, saved text-size update, save/share, selection anchors, progress restore, and publisher fallback remain **unverified on-device**.
+- Current handoff batch: reconciling stale issue statuses and generating a complete commit index from the 528 commits reachable at the release SHA. No app source is changed in that documentation audit.
+- Next: complete and commit this documentation checkpoint with `[skip ci]`; continue with feed reliability and UPSC real-story evaluation from current main. One workflow has completed; check the queue before any later source push. Do not report live-feed or Reader device validation without evidence.
 
 ## Important project history
 

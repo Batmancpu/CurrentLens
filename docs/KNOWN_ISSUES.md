@@ -7,7 +7,7 @@ Status vocabulary:
 - Unverified: insufficient device/test evidence.
 - Resolved in code: code path changed; runtime/user outcome is not automatically proven.
 
-Snapshot main: 73b8a0d1ba33503fede02db2c3c0af082d724a12 (6 Nov 2026).
+Live snapshot: `276191f0656261a8f7dfab13847a3e654ca64245` (15 Nov 2026), release `android-15`, run #426 passed. Some detailed Stability/PR history below is retained from its dated snapshot; where a status conflicts, current main and the live entries below are authoritative. No open PRs were returned by the live GitHub query on 15 Nov.
 
 ## Highest-priority reliability
 
@@ -40,26 +40,23 @@ Snapshot main: 73b8a0d1ba33503fede02db2c3c0af082d724a12 (6 Nov 2026).
 - Capture current Android test device screen recording with keyboard open/closing; measure IME insets and field-bottom-to-keyboard-top gap. No speculative offset constants.
 
 ### KL-005 — Adaptive glass contrast differs from older descriptions
-- Status: Main is theme-derived; adaptive restoration is Draft PR #13.
-- PR #9 removed recurring 8x8 readback from feed in favour of theme-derived contrast. Probe implementation remains in source.
-- PR #13 proposes one shared bottom-band probe, low cadence and foreground/home/Search gating; it is 13 commits behind/diverged.
-- No physical-device GPU/frame-time proof. Verify active call site before describing as shipped.
+- Status: Shared adaptive sampling is in current main; physical-device appearance/performance remain unverified.
+- `rememberBottomBandGlassLuminance` supplies Navigation and Search from one 8x8 bottom-band sample. Sampling is paused for feed motion, Reader/quiz, Settings, background and Reduce Transparency states.
+- No physical-device GPU/frame-time proof. Do not claim visual or performance correctness from source/CI alone.
 
 ### KL-006 — Explore chip accessibility
-- Status: Draft PR #6.
-- PR #6 proposes 48dp filter hit targets and selected-state TalkBack semantics; not on main. 13 commits behind/diverged.
-- Verify TalkBack and touch on device after integration.
+- Status: Minimum-size and selected semantics are present in current main; TalkBack/touch validation remains pending.
+- Explore category chips use 48dp minimum height and `Role.Tab`; GS/topic filter pills use 48dp minimum dimensions and selectable semantics. Run #426 compiled the current main code; no TalkBack device result is available.
 
 ### KL-007 — Reader font-scale propagation
-- Status: New code path added; CI and physical review pending.
-- Reader CSS now applies Android's configured font scale to the persisted `Aa` size, and the publisher fallback derives `WebSettings.textZoom` from the same scale. The control remains disabled until the stored value loads. Focused policy tests were added in the current main batch; they are not yet run. Verify on large system font settings and confirm definition-selection anchors remain aligned on-device.
+- Status: Implemented and passed the current JVM build; physical review pending.
+- Reader CSS applies Android's configured font scale to persisted `Aa` sizing, and the publisher fallback derives `WebSettings.textZoom` from it. The control remains disabled until its stored value loads. Run #426 passed; verify large system font settings and definition-selection anchors on-device.
 
 ## Editorial trust
 
 ### KL-008 — Geography false negatives
-- Status: Draft PR #6; not in main.
-- Main UpscEngine rules lack dedicated GS I Geography rule per source inspection. PR #6 adds Geography themes/category.
-- PR #6 is 10 ahead/13 behind latest main, diverged. Review/rebase before relying on it.
+- Status: A GS I Geography rule and regression coverage are present in current main; the rule remains heuristic and real-story coverage is incomplete.
+- `UpscEngine` maps physical geography, monsoon, rivers, resources, industry location and geophysical phenomena to the Geography syllabus link. Explore/category/search integration and false-positive safeguards have dedicated regression tests. Run #426 passed JVM CI, which does not establish editorial precision/recall.
 
 ### KL-009 — Primary-source corroboration
 - Status: Open product gap.
@@ -70,16 +67,12 @@ Snapshot main: 73b8a0d1ba33503fede02db2c3c0af082d724a12 (6 Nov 2026).
 - Never fabricate official evidence or describe a publisher RSS feed as a ministry/PIB source.
 
 ### KL-010 — Atom alternate link selection
-- Status: Draft PR #12; not shipped.
-- Main parser uses a single link variable; Atom rel=self may overwrite rel=alternate depending on element order.
-- PR #12 collects candidates and prefers safe HTML rel=alternate, with focused tests.
-- PR #12 1 ahead/13 behind and diverged.
+- Status: Candidate collection and alternate-link preference are present in current main; live publisher behavior remains unverified.
+- The parser resolves candidates against effective `xml:base`, selects safe `rel=alternate` HTML where available, and no longer relies on the last encountered link. `NewsRepositoryTest` covers a relative alternate link and an unsafe alternate. Run #426 passed JVM CI.
 
 ### KL-011 — Publication-date precedence/cache
-- Status: Draft PR #11; not shipped.
-- Main can let Atom updated overwrite published; unparseable dates can remain cached; arbitrary future dates are not bounded.
-- PR #11 prefers pubDate/published, uses updated only as fallback, excludes undated/stale/far-future unsaved stories while keeping bookmarks.
-- PR #11 2 ahead/13 behind, diverged.
+- Status: Original-date precedence and invalid-date rejection are present; arbitrary future dates are still not bounded.
+- `FeedPublicationDatePolicy` prefers valid RSS `pubDate` / Atom `published`, then uses `updated` and generic dates as fallbacks. Timezone-less values use Asia/Kolkata. The current policy does not independently reject a far-future timestamp; assess that separately without losing saved stories.
 - URL duplicate detection remains exact; tracking parameters can create duplicates. Do not strip all query parameters blindly.
 
 ### KL-012 — Editorial relevance validation
@@ -87,7 +80,7 @@ Snapshot main: 73b8a0d1ba33503fede02db2c3c0af082d724a12 (6 Nov 2026).
 - Main uses whole-token/phrase matching plus rule-based GS map/suppression; not statistically validated.
 - Synthetic fixtures do not prove precision/recall. Do not report score as validated or predict exam questions.
 - Evaluate both false positives and false negatives on labelled real corpus.
-- Main includes broad film noise term per source review; PR #6 proposes retaining thin-film photovoltaics while excluding film promotion.
+- Current main includes a narrow thin-film photovoltaic/solar-cell science exception while retaining suppression for film promotion; fixture coverage does not establish real-story precision/recall.
 
 ## Branding and design
 
@@ -103,7 +96,7 @@ Snapshot main: 73b8a0d1ba33503fede02db2c3c0af082d724a12 (6 Nov 2026).
 - Design observations are in docs/DESIGN_EVIDENCE.md; exact dimensions/colours/coordinates cannot be reconstructed.
 - Do not publish private screenshot assets without explicit approval.
 
-## Open PR state at snapshot
+## Historical PR state — 6 November snapshot
 
 - #6 open draft: 10 ahead / 13 behind latest main, diverged.
 - #8 open draft: 3 ahead / 13 behind, diverged.
@@ -115,14 +108,14 @@ Snapshot main: 73b8a0d1ba33503fede02db2c3c0af082d724a12 (6 Nov 2026).
 
 
 ### KL-015 — Latest launcher cold-start exits back to Android launcher
-- Status: User-reported; root cause unverified; PR #16 adds earlier diagnostics/recovery but does not prove the root fix.
+- Status: Historical user report; current cold-start outcome and source-level root cause are unverified. Diagnostics are now on main, but the owner has not confirmed repeated 0.3.4 launches.
 - Current symptom: tap app icon → opening animation → no visible app screen → Android returns to launcher.
 - Same user previously reported a cold-start failure on the Android test device around Build 100. Do not assume the old and new events have identical causes until log evidence matches.
 - Main's prior handler was installed only in MainActivity.onCreate(). PrismalAGSL v1.0.4 registers an AndroidX Startup InitializationProvider through its merged manifest, which is initialised before Activity creation. Prismal's initializer itself only binds the asset manager; this identifies an instrumentation blind spot, not proof that Prismal is the crashing component. Android references: https://developer.android.com/topic/libraries/app-startup and https://developer.android.com/reference/androidx/startup/InitializationProvider.
-- PR #16: https://github.com/Batmancpu/CurrentLens/pull/16 (draft, unmerged; branch head b66315c2f82f7785e7dfd96577d83d203770faad).
-- PR #16 installs the local handler from Application.attachBaseContext(), records startup checkpoints, writes detailed exception reports and falls back to a plain Android View recovery screen. It can also record a clearly labelled startup interruption without a managed stack trace. Diagnostic setup/checkpoint I/O is best-effort. All diagnostics setup/checkpoint I/O is best-effort and must not itself abort Application startup.
+- PR #16 is historical: its early-handler/checkpoint/recovery work was consolidated into current main. The link and old branch head are not current open-PR state.
+- Current main installs a local handler early, records startup checkpoints, writes local exception reports and provides a recovery screen. Diagnostic setup/checkpoint I/O is best-effort and must not abort application startup.
 - No current Android test device logcat/tombstone/ANR/local crash report is available. Do not claim fixed from source review or CI.
-- After review/merge and installation, retry launch and copy the native recovery report. If no report appears, obtain Android bugreport/logcat/tombstone/ANR evidence; native/system kills may not invoke a Java uncaught-exception handler.
+- On 0.3.4, retry cold launch and use the minimised recovery report if one appears. If no report appears, obtain Android bugreport/logcat/tombstone/ANR evidence; native/system kills may not invoke a Java uncaught-exception handler.
 
 
 ### KL-016 — Native crash persists under Prismal Legacy; full-cause isolation pending
@@ -147,7 +140,7 @@ Snapshot main: 73b8a0d1ba33503fede02db2c3c0af082d724a12 (6 Nov 2026).
 
 
 ### KL-018 — Prismal backdrop self-capture in the full app
-- Status: **Resolved in code on draft PR #16; native-crash causality remains unverified without another device trace.**
+- Status: **Background-only capture is in current main and shipped; native-crash causality remains unverified without another device trace.**
 - Source review found that `MainActivity.BrrrNewsApp` applied `.prismalGlassLayer(backdrop)` to the complete content `Column`, while descendant surfaces such as the home header, Explore/Search glass controls and reader/settings glass sampled that same `backdrop`.
 - PrismalAGSL v1.0.6 specifies capture for background content with glass drawn above it. Its modifier draws the child subtree and then records that subtree into the backing GraphicsLayer. Descendant glass surfaces reading the same layer create a self-referential capture/sampling path, a strong explanation for a failure that begins only when the full UI is composed and rendered.
 - Correction: move the captured layer to a background-only sibling and keep all app content/glass surfaces outside the captured subtree. Add subtle ambient background gradients so the full glass effects still have a non-flat source.
@@ -157,10 +150,10 @@ Snapshot main: 73b8a0d1ba33503fede02db2c3c0af082d724a12 (6 Nov 2026).
 
 
 ### KL-019 — Opaque Android process-exit description in copyable diagnostics
-- Status: Evidence-backed privacy defect; focused correction added to draft PR #16; natural CI verification pending.
+- Status: Numeric allow-list correction is in current main and passed release CI; cold-start causality remains a separate question.
 - The full-app recovery screen exposes a selectable/copyable startup report. The previous describeExitInfo() copied ApplicationExitInfo.description directly and also included importance plus PSS/RSS. The free-form platform description is not an allow-listed field and may contain low-level system details; the UI's promise that the report omits raw system traces was therefore stronger than the implementation could guarantee.
-- The PR #16 correction exports only the numeric exit reason and numeric status/signal. It no longer forwards the opaque description, importance or memory measurements. Java/Kotlin reports continue to omit exception messages and raw addresses/traces.
-- Added focused JVM assertions for the exact allow-listed summary and the interrupted-startup report. Tests are added, not yet executed for this new commit.
+- Current main exports only the numeric exit reason and numeric status/signal. It does not forward the opaque description, importance or memory measurements. Java/Kotlin reports continue to omit exception messages and raw addresses/traces.
+- Focused JVM assertions cover the exact allow-listed summary and interrupted-startup report; current release run #426 passed.
 - This change improves report minimisation only. It does not establish the native launch crash's root cause or prove the app launches on a physical device.
 
 
@@ -175,24 +168,21 @@ Snapshot main: 73b8a0d1ba33503fede02db2c3c0af082d724a12 (6 Nov 2026).
 
 ### KL-022 — Inline Atom content is discarded when no summary is present
 
-- **Status:** Standards-based parser false-negative risk; correction proposed in draft PR [#41](https://github.com/Batmancpu/CurrentLens/pull/41), exact-head tests added but not run.
-- On main, `NewsRepository.parse()` treats the local-name `content` element only as an image URL candidate. A valid Atom entry can put its readable text in `atom:content` without a separate `summary`; the parser then discards that content. This can remove the explanatory excerpt used for syllabus classification.
-- RFC 4287 defines Atom content constructs with text, HTML and XHTML forms. PR #41's follow-up commit `e4ca4a522dd236052142aa31dc518979bfafe891` reads inline Atom content only for the Atom namespace and accepted text/HTML/XHTML types, while preserving URL-backed Media RSS image handling and ignoring external Atom `src` references.
-- Added policy tests for default/text/html/xhtml/MIME forms, external `src`, binary media and Media RSS, plus a nested-XHTML parser-cursor fixture. Tests are added, not run; main's workflow is still push-only.
+- **Status:** Corrected in current main and passed release #426 JVM CI; no live-feed format audit has been made.
+- `NewsRepository.parse()` reads inline Atom content only for the Atom namespace and accepted text/HTML/XHTML types, preserves URL-backed Media RSS image handling, and does not fetch external Atom `src` references.
+- Focused tests cover the accepted types, external `src`, binary media, Media RSS and nested-XHTML parser cursor. This remains a parser coverage result, not a measured live-feed or editorial-recall result; the whole-document parser still has a separate streaming/memory limit.
 - This is a standards-derived false-negative risk, not an observed live-feed count or measured editorial recall result. It adds no network request and does not make the 2 MiB whole-document parser streaming. Relative Atom links, entry ceilings, concurrency and publisher-host validation remain separate issues.
 
 
 ### KL-023 — RSS endpoint redirects are not constrained to the configured publisher
 
-- **Status:** Evidence-backed network-boundary defect; correction proposed in draft PR [#40](https://github.com/Batmancpu/CurrentLens/pull/40), exact-head tests added but not run.
-- `NewsRepository.fetchOne()` previously relied on `HttpURLConnection` automatic redirect following. The initial RSS endpoint was publisher-configured, but a 3xx response could send the next request to an arbitrary host before article URL validation.
-- PR #40 disables automatic redirects, validates the initial feed host and each resolved `Location` against the configured publisher's HTTPS allowlist, accepts only standard redirect codes, caps the chain at five and fails closed on cross-publisher/lookalike/cleartext/credential/non-standard-port/oversized targets. `bbci.co.uk` is included for the configured `feeds.bbci.co.uk` source.
-- Four focused redirect-policy tests and one BBC feed-host assertion were added. Tests are **added, not run**; main's workflow is push-only and PR #40 has no statuses/check-runs.
-- This prevents an RSS endpoint from silently widening the app's network boundary. It does not restrict image URLs or WebView subresources; those remain separate PRs #25/#26. It adds no new network request and does not prove every live publisher feed's redirect chain.
+- **Status:** Publisher-bound redirect checks are in current main and passed release #426 JVM CI; live redirect chains remain unverified.
+- `NewsRepository` disables automatic redirects, validates the initial feed host and each resolved `Location` against the configured publisher's HTTPS allowlist, accepts standard redirect codes, caps the chain at five and fails closed on off-publisher/lookalike/cleartext/credential/non-standard-port targets. `bbci.co.uk` is included for the configured `feeds.bbci.co.uk` source.
+- Focused redirect-policy and feed-host tests are present. This closes the code-level network-boundary defect; it does not prove every live publisher feed's redirect chain. Image URLs and WebView subresources remain separate policies.
 
 
 ### KL-024 — Apple-inspired Reader fit and finish
-- Status: Owner-requested; the first implementation batch is awaiting CI and physical-device review.
+- Status: First implementation batch is shipped in 0.3.4 and passed run #426; physical-device review remains pending.
 - The owner asked for an Apple-style Reader “closest to the Apple product.” No CurrentLens Reader screenshot/reference was supplied in this batch, so the current design uses a deliberate editorial hierarchy rather than claiming pixel parity: readable title/body typography, constrained line length, persisted `Aa` sizing, Android font scale, source/date, save/share, restored progress and an indicative syllabus context.
 - The syllabus card is derived from publisher RSS metadata and explicitly says it is not independent primary-source verification. It is omitted for unmapped articles. Share remains limited to URLs allowed by `PublisherHostPolicy`.
 - Acceptance still requires phone review of toolbar fit, light/dark presentation, font scale, pinch zoom, text selection/definition anchors, bookmark state, share chooser, scroll/progress restore and the fallback page. CI is not visual/device evidence.

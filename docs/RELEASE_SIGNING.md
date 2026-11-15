@@ -2,6 +2,13 @@
 
 The owner chose a fresh install on 14 November 2026. The new release line uses application ID `com.mangoloads.currentlens`, begins at versionCode 11, and has one permanent APK signing identity. Old testing APKs and the separate Stability package have their own signing history. Install the first new APK as a fresh install. Use the subsequent APKs as in-place updates.
 
+## Latest verified release
+
+- [CurrentLens 0.3.4 (`android-15`)](https://github.com/Batmancpu/CurrentLens/releases/tag/android-15), published from exact main source `276191f0656261a8f7dfab13847a3e654ca64245` by [run #426](https://github.com/Batmancpu/CurrentLens/actions/runs/43728047667).
+- One asset: `CurrentLens.apk`, 30,830,942 bytes; SHA-256 `8a07dd4ab61e51388bd728375defccfd094de1d9b17cf4415457a0cd924a6d4a`.
+- Package/version: `com.mangoloads.currentlens`, 0.3.4, versionCode 15. Pinned signing certificate SHA-256 `af046601fe3a36851e645908e759abbf2caedfe748e2be02817991444884c580`.
+- CI passed dictionary generation, Python builder tests, `:app:testDebugUnitTest`, `:app:assembleRelease`, package/version checks, signature verification and publication. Physical-device install/update and behavior are not implied.
+
 ## One-time key custody
 
 Run on a computer with Java and an authenticated GitHub CLI account that can write Actions secrets for Batmancpu/CurrentLens. Pick a secure folder outside the checkout. Keep an encrypted backup of the keystore and save the password in a password manager.
