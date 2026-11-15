@@ -178,7 +178,7 @@ internal object UpscFeedPolicy {
         "labour force participation", "plfs",
         "minimum support price", "msp", "food security", "public distribution system",
         "crop insurance", "irrigation", "agricultural marketing", "food processing",
-        "land reforms", "fertiliser subsidy",
+        "land reforms", "fertiliser subsidy", "nutrient based subsidy",
         "climate change", "biodiversity", "air pollution", "water pollution",
         "forest conservation", "wildlife protection", "greenhouse gas",
         "renewable energy", "environmental impact assessment",

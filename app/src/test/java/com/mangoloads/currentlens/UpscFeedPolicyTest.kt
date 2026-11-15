@@ -374,6 +374,29 @@ class UpscFeedPolicyTest {
     }
 
     @Test
+    fun pibNutrientBasedSubsidyMapsToGsThreeFarmSubsidies() {
+        val story = Article(
+            id = "pib-nutrient-based-subsidy-rabi-2026-27",
+            title = "Cabinet approves Nutrient Based Subsidy (NBS) rates for Rabi 2026-27 (from 01.10.2026 to 31.03.2027) on Phosphatic and Potassic (P&K) fertilizers",
+            description = "",
+            url = "https://www.pib.gov.in/PressReleseDetailm.aspx?PRID=2334972&lang=1&reg=1",
+            source = "Press Information Bureau",
+            section = "Cabinet",
+            published = "2026-11-11T15:11:00+05:30"
+        )
+
+        val relevance = UpscEngine.classify(story)
+
+        assertSyllabusMapped(story, "GS III", "Agriculture")
+        assertTrue(relevance.matchedTerms.contains("nutrient based subsidy"))
+        assertFalse(UpscFeedPolicy.shouldInclude(article(
+            "Government announces consumer subsidy for broadband access",
+            "A generic household subsidy covers home internet equipment.",
+            "Technology"
+        )))
+    }
+
+    @Test
     fun institutionNameAloneCannotQualifyRoutineInstitutionNews() {
         assertRejectedDespiteKeywordMatch(article(
             "RBI celebrates foundation day with staff cultural programme",
