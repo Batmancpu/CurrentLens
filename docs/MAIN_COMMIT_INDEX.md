@@ -1,13 +1,14 @@
 # CurrentLens — Complete Main Commit Index
 
-Generated from the local Git history reachable from the APK source checkpoint `main@779c6423e91b77620bec2f5afca2bae6c4b1df3c` on 15 November 2026 (IST). All 534 commits reachable from that source ref are listed, including the preserved branch histories merged into main. This is a subject/SHA inventory, not a substitute for opening a commit diff. For each row, the commit link opens the canonical GitHub diff/metadata. Refresh the snapshot after each batch; preserve existing commit history.
+Generated from the local Git history reachable from the documentation handoff checkpoint `main@f9c8baf7ad5a219c221549e017181e3b818ddc53` on 15 November 2026 (IST). All 535 commits reachable from that ref are listed, including the preserved branch histories merged into main. This is a subject/SHA inventory, not a substitute for opening a commit diff. For each row, the commit link opens the canonical GitHub diff/metadata. Refresh the snapshot after each batch; preserve existing commit history.
 
 - Repository: https://github.com/Batmancpu/CurrentLens
-- Snapshot main SHA: 779c6423e91b77620bec2f5afca2bae6c4b1df3c
-- Count at snapshot: 534
+- Snapshot main SHA: f9c8baf7ad5a219c221549e017181e3b818ddc53
+- Count at snapshot: 535
 
 | # | UTC date/time | Commit | Subject |
 |---:|---|---|---|
+| 535 | 2026-11-15T16:28:47Z | [f9c8baf7ad5a](https://github.com/Batmancpu/CurrentLens/commit/f9c8baf7ad5a219c221549e017181e3b818ddc53) | docs: verify 0.3.6 release and refresh handoff [skip ci] |
 | 534 | 2026-11-15T16:05:25Z | [779c6423e91b](https://github.com/Batmancpu/CurrentLens/commit/779c6423e91b77620bec2f5afca2bae6c4b1df3c) | Map nutrient based subsidy to GS III Agriculture 0.3.6 [publish apk] |
 | 533 | 2026-11-15T15:58:16Z | [7ba9abed87cd](https://github.com/Batmancpu/CurrentLens/commit/7ba9abed87cd1c7914de9041cefa868a9b615664) | docs: checkpoint nutrient subsidy audit [skip ci] |
 | 532 | 2026-11-15T15:48:44Z | [468d77e5c268](https://github.com/Batmancpu/CurrentLens/commit/468d77e5c268a4f57951a4c2b7d013426b1786ad) | docs: record 0.3.5 release and refresh handoff [skip ci] |

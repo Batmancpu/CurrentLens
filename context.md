@@ -5,7 +5,7 @@ Updated 15 November 2026 (IST). This is the quick resume note; the full history 
 ## Project and source of truth
 
 - Android app: CurrentLens repository, user-facing app label `brrrNews`.
-- GitHub: `Batmancpu/CurrentLens`, `main` only. Current source main SHA: `779c6423e91b77620bec2f5afca2bae6c4b1df3c` (0.3.6 APK source); latest documentation checkpoint is recorded in the commit index and session ledger.
+- GitHub: `Batmancpu/CurrentLens`, `main` only. Latest APK source SHA: `779c6423e91b77620bec2f5afca2bae6c4b1df3c` (0.3.6); docs-only handoff checkpoint `f9c8baf7ad5a219c221549e017181e3b818ddc53` follows it. Read live `main` for the current working base.
 - Current signed release: [0.3.6 (`android-17`)](https://github.com/Batmancpu/CurrentLens/releases/tag/android-17), versionCode 17, published from exact source `779c6423e91b77620bec2f5afca2bae6c4b1df3c` by successful run #428. `CurrentLens.apk` is 29.4 MB per GitHub, SHA-256 `3bd5cbe0b43d0ac09ef782968c4c93748d78afeff29e3eebe648e11cf2e925dc`; pinned certificate SHA-256 `af046601fe3a36851e645908e759abbf2caedfe748e2be02817991444884c580`.
 - Read this file, `AGENTS.md`, and the mandatory records listed there. GitHub and live source are authoritative if an old snapshot differs.
 
@@ -13,7 +13,9 @@ Updated 15 November 2026 (IST). This is the quick resume note; the full history 
 
 > “Start working on it ... keep on updating the context files in this repo ... Look at the whole code, compare the idea and add an Apple style reader as well. And make it closest to the Apple product. You have full authority over it.”
 
-Work autonomously in small batches. After each batch, update this file with the exact resume point, append the full record to `docs/SESSION_LEDGER.md`, and refresh `docs/PROJECT_HANDOFF.md`. Keep product and verification evidence distinct; user wants persistent context when switching AI/conversation.
+Latest steering: “remember to stop after releasing a good acceptable APK. Don't run endlessly. Okay? So I am hoping you stop maximum in an hour or half an hour if possible.” This supersedes the earlier request for unbounded continuous work. Stop after the current release handoff is recorded; do not start another code or APK batch in this session.
+
+Work autonomously in small batches within that bound. After each batch, update this file with the exact resume point, append the full record to `docs/SESSION_LEDGER.md`, and refresh `docs/PROJECT_HANDOFF.md`. Keep product and verification evidence distinct; user wants persistent context when switching AI/conversation.
 
 ## Product priorities
 
@@ -40,7 +42,7 @@ The owner reports the app opens and articles load; automatic update to 0.3.2 was
 - 0.3.6 fix: `UpscEngine.kt` and `UpscFeedPolicy.kt` add the exact `nutrient based subsidy` signal. `UpscFeedPolicyTest.kt` contains a title-only fixture for PIB PRID 2334972, asserts GS III / Agriculture, matched phrase and eligibility, and includes a generic consumer-internet subsidy negative. The fixture and release passed run #428. This is one source-based regression fixture, not a precision/recall evaluation.
 - Current GitHub check: run [#428](https://github.com/Batmancpu/CurrentLens/actions/runs/43733493845) completed successfully on exact source `779c6423e91b77620bec2f5afca2bae6c4b1df3c`; dictionary verification/bundling, `:app:testDebugUnitTest`, `:app:assembleRelease`, package/version validation, pinned signer verification and publication all passed. Release [`android-17`](https://github.com/Batmancpu/CurrentLens/releases/tag/android-17) is Latest and its tag points to that source. GitHub reports one APK asset, `CurrentLens.apk`, displayed as 29.4 MB. GitHub reported zero open PRs in the latest check. Direct `git push` lacked CLI credentials, so the connected GitHub Git Data API advanced `main` with an expected-parent guard.
 - Phone install, saved text-size update, save/share, selection anchors, progress restore, publisher fallback, native launch stability and live-feed behavior remain **unverified on-device**. Do not claim editorial precision/recall from these individual source fixtures or keyword rules.
-- Resume action: continue roadmap item 5 with a small labelled sample of real public-affairs positives, unrelated/noise headlines and wrong-paper examples; review the current classifier and feed policy before adding rules. Then audit RSS/refresh and cache behavior. Check Actions for a running job before publishing. Keep the next APK focused and increment above versionCode 17. No handset Reader/live-feed behavior or corpus-level precision/recall is verified.
+- Resume action: stop here. The 0.3.6 / `android-17` APK passed run #428 and is published; the release handoff is current. Do not begin another code or APK batch in this session. When the owner resumes, the next planned work is a small labelled real-story sample, followed by the RSS/refresh/cache audit. Reader visuals, phone behavior, live feeds and corpus-level precision/recall remain unverified.
 
 ## Important project history
 
