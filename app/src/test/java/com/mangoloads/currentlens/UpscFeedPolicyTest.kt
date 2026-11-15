@@ -1,5 +1,6 @@
 package com.mangoloads.currentlens
 
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -66,6 +67,32 @@ class UpscFeedPolicyTest {
         assertTrue(UpscFeedPolicy.shouldInclude(article(
             "Parliament debates climate change and biodiversity safeguards",
             "New environmental impact assessment provisions are discussed."
+        )))
+    }
+
+    @Test
+    fun dpdpConsentManagerFrameworkMapsToGovernanceFromOfficialHeadline() {
+        // Real official example: PIB's 14 November 2026 DPDP Consent Manager release.
+        val story = Article(
+            id = "pib-dpdp-consent-manager",
+            title = "Consent Manager Registration Framework Comes into Effect; MeitY Secretary Launches Online Registration Portal",
+            description = "The registration framework for Consent Managers under the Digital Personal Data Protection (DPDP) Act, 2023, came into effect. A Consent Manager is registered with the Data Protection Board of India and enables Data Principals to give, manage, review and withdraw consent. Data Fiduciaries have related obligations under the framework.",
+            url = "https://www.pib.gov.in/PressReleseDetailm.aspx?PRID=2336151&lang=1&reg=1",
+            source = "Press Information Bureau",
+            section = "Ministry of Electronics & IT",
+            published = "2026-11-14T12:41:00+05:30"
+        )
+
+        val relevance = UpscEngine.classify(story)
+
+        assertEquals("GS II", relevance.gsPaper)
+        assertEquals("Governance", relevance.subject)
+        assertTrue(relevance.matchedTerms.contains("consent manager"))
+        assertTrue(relevance.matchedTerms.contains("dpdp act"))
+        assertTrue(UpscFeedPolicy.shouldInclude(story))
+        assertFalse(UpscFeedPolicy.shouldInclude(article(
+            "Digital portal launches online registration service",
+            "A generic information portal provides a routine administrative service."
         )))
     }
 
