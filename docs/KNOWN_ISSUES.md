@@ -71,8 +71,8 @@ Live snapshot: app source `779c6423e91b77620bec2f5afca2bae6c4b1df3c` (15 Nov 202
 - The parser resolves candidates against effective `xml:base`, selects safe `rel=alternate` HTML where available, and no longer relies on the last encountered link. `NewsRepositoryTest` covers a relative alternate link and an unsafe alternate. Run #426 passed JVM CI.
 
 ### KL-011 — Publication-date precedence/cache
-- Status: Original-date precedence and invalid-date rejection are present; arbitrary future dates are still not bounded.
-- `FeedPublicationDatePolicy` prefers valid RSS `pubDate` / Atom `published`, then uses `updated` and generic dates as fallbacks. Timezone-less values use Asia/Kolkata. The current policy does not independently reject a far-future timestamp; assess that separately without losing saved stories.
+- Status: Original-date precedence and cache-level invalid/future-date rejection are present. The new 19 November 0.3.7 candidate also filters invalid/future entries before the incoming shortlist limit; CI pending.
+- `FeedPublicationDatePolicy` prefers valid RSS `pubDate` / Atom `published`, then uses `updated` and generic dates as fallbacks. Timezone-less values use Asia/Kolkata. Prior to 0.3.7, `ArticleCachePolicy.retain` already rejected entries more than five minutes into the future unless explicitly saved, but `NewsRepository.fetchAll()` sorted/took only 250 before that cache check. Enough future-dated feed items could displace legitimate ones. The candidate screens undated/future items before this limit and retains the same cache/bookmark semantics. `NewsRepositoryTest` models 300 bad future items plus current and slightly future items. **Test added, not yet run.**
 - URL duplicate detection remains exact; tracking parameters can create duplicates. Do not strip all query parameters blindly.
 
 ### KL-012 — Editorial relevance validation
@@ -198,3 +198,8 @@ Live snapshot: app source `779c6423e91b77620bec2f5afca2bae6c4b1df3c` (15 Nov 202
 - The official [PIB Rabi 2026-27 release](https://www.pib.gov.in/PressReleseDetailm.aspx?PRID=2334972&lang=1&reg=1) uses “Nutrient Based Subsidy” in the headline and describes fertilizer subsidies for farmers. The official [UPSC CSE 2026 notice](https://www.upsc.gov.in/sites/default/files/Notif-CSP-2026-Engl-060226Rev.pdf) explicitly lists direct and indirect farm subsidies under GS III.
 - Static review found the headline phrase absent from both the GS-III Agriculture keywords and specific eligibility signals. The candidate adds only `nutrient based subsidy` to those lists. Its title-only fixture asserts GS III / Agriculture, the matched phrase and inclusion; a generic consumer-internet subsidy headline is the negative case.
 - This source-backed fixture is not a labelled-corpus precision/recall result and does not verify the live publisher feed.
+
+### KL-027 — National-highway tolling infrastructure missed by the GS mapping
+- Status: Missing dedicated GS-III Infrastructure rule verified in 0.3.6 source; candidate narrow mapping/test in 0.3.7, **not yet CI verified**.
+- The official 6 November 2026 [PIB NHAI notice](https://www.pib.gov.in/PressReleasePage.aspx?PRID=2333654&lang=1&reg=3) concerns standardised multi-lane free-flow tolling infrastructure and new guidelines. The [UPSC CSE 2026 syllabus](https://www.upsc.gov.in/sites/default/files/Notif-CSP-2026-Engl-060226Rev.pdf) explicitly includes Infrastructure (roads, energy, ports, airports and railways) under GS III.
+- Candidate adds specific phrases (e.g. multi-lane free-flow tolling, highway infrastructure) without opening a generic one-word `road`/`infrastructure` eligibility escape. A headline-only positive and two unrelated-event negatives are added. These cases do not establish real publisher-feed recall or corpus metrics.

@@ -1,5 +1,12 @@
 # CurrentLens — Build, Test, Release and Debug Record
 
+## Candidate run — 19 November 2026, 23:15 IST
+
+- The last observed run was #428 (completed/successful); no Actions run was active when 0.3.7 began. Starting `main`: `c58ab1cf1375741cb88020384aae32a8c5663671` (docs-only after 0.3.6).
+- Local candidate 0.3.7 / versionCode 18 adds an official NHAI Infrastructure mapping fixture and date-shortlist protection. Modified JVM tests are **added but not yet run**. `git diff --check` passed on the implementation-only diff; full pre-commit reconciliation pending.
+- The repo has no `gradlew` and this environment has no system Gradle executable. `python3 -m unittest discover -s scripts -p 'test_*.py' -v` passed all seven local WordNet builder tests on 19 November; Kotlin/JVM and Android build are pending Actions. The next source commit must use `[publish apk]` and the existing workflow on `main`; no custom signing identity, release workflow edit or separate build job is planned. A green build alone will not prove real-device behavior.
+- Before advancing main, inspect expected parent and ensure the single workflow queue is idle. Poll that exact run until terminal, record the first failure if any, then verify tag, package, version, pinned certificate, APK hash and source SHA before documenting an installable release.
+
 ## Latest verified release — 15 November 2026
 
 - Exact source `779c6423e91b77620bec2f5afca2bae6c4b1df3c`; [Actions run #428](https://github.com/Batmancpu/CurrentLens/actions/runs/43733493845) completed successfully.

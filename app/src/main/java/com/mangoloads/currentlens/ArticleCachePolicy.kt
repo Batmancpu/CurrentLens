@@ -9,6 +9,11 @@ package com.mangoloads.currentlens
 internal object ArticleCachePolicy {
     private const val FUTURE_DATE_TOLERANCE_MILLIS = 5L * 60L * 1000L
 
+    /** Prevent malformed or implausibly future-dated RSS items from crowding out real stories. */
+    fun hasPlausibleFeedDate(publishedAtMillis: Long?, nowMillis: Long): Boolean =
+        publishedAtMillis != null &&
+            publishedAtMillis <= nowMillis + FUTURE_DATE_TOLERANCE_MILLIS
+
     fun retain(
         articles: List<Article>,
         bookmarkedUrls: Set<String>,
@@ -16,7 +21,6 @@ internal object ArticleCachePolicy {
         maxArticles: Int,
         nowMillis: Long = System.currentTimeMillis()
     ): List<Article> {
-        val latestAllowedMillis = nowMillis + FUTURE_DATE_TOLERANCE_MILLIS
         val eligible = articles
             .distinctBy { it.url.ifBlank { it.id } }
             .filter { article ->
@@ -24,7 +28,7 @@ internal object ArticleCachePolicy {
                     true
                 } else {
                     article.publishedAtMillis?.let { publishedAt ->
-                        publishedAt >= cutoffMillis && publishedAt <= latestAllowedMillis
+                        publishedAt >= cutoffMillis && hasPlausibleFeedDate(publishedAt, nowMillis)
                     } == true
                 }
             }

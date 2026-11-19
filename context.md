@@ -1,6 +1,13 @@
 # CurrentLens — live context
 
-Updated 15 November 2026 (IST). This is the quick resume note; the full history remains in `docs/SESSION_LEDGER.md`.
+Updated 19 November 2026 (IST). This is the quick resume note; the full history remains in `docs/SESSION_LEDGER.md`.
+
+## Active 19 November batch — 0.3.7 candidate, not yet published
+
+- Live starting `main`: `c58ab1cf1375741cb88020384aae32a8c5663671`. Last successful release remains 0.3.6 / code 17 / `android-17`, run #428, and the pinned signing certificate below. At the start of this batch the Actions queue was empty (428 completed runs) and GitHub listed zero open PRs.
+- New bounded scope: add precise GS-III Infrastructure signals using the official 6 November NHAI multi-lane tolling notice; filter invalid/undated and materially future-dated RSS articles **before** they consume the 250-story fetch budget (previously only the later cache layer rejected them). Add focused JVM tests and a source-labelled editorial evidence register; preserve saved cache entries. Proposed APK identity: 0.3.7 / code 18, same package and pinned certificate.
+- Code/test modifications currently local, **tests and CI not yet run**. Do not claim 0.3.7 is installable or signed until the exact-head workflow passes, produces `android-18`, and its APK/certificate are checked. The workflow is expected to publish only when the reviewed main commit message has `[publish apk]`.
+- Next: review local diff and docs ledger, verify remote head still equals starting SHA and no Actions run overlaps; advance `main` by guarded fast-forward, poll the exact run until terminal. On the first failure inspect the job step/log, fix and rerun serially. After success, record source SHA, run, tag, APK SHA-256/signature and stop after this single release. Phone acceptance and broader roadmap remain unverified/outstanding.
 
 ## Project and source of truth
 

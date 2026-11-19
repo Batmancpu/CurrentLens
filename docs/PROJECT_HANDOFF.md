@@ -1,3 +1,12 @@
+## Active development snapshot — 19 November 2026, 23:15 IST
+
+- Owner resumed development and requested a complete issues/workflows audit, small reasoned batches, Git-based step-by-step continuity and one final APK. Starting main is `c58ab1cf1375741cb88020384aae32a8c5663671`. Last passing source is 0.3.6 `779c642...`; signed release `android-17`, run #428, fixed signer `af046601fe3a36851e645908e759abbf2caedfe748e2be02817991444884c580`. At inspection there were 428 completed runs, no in-progress run, zero open PRs.
+- Candidate 0.3.7 / versionCode 18 (local, not yet CI-run or released): `UpscEngine.kt` + `UpscFeedPolicy.kt` map tightly scoped infrastructure policy terms to the official GS-III Infrastructure syllabus; `UpscFeedPolicyTest.kt` covers official PIB PRID 2333654's NHAI multi-lane free-flow tolling title plus unrelated non-policy negatives. `ArticleCachePolicy.kt` and `NewsRepository.kt` reject undated/implausibly future-dated incoming feed entries before the 250-item cap; `NewsRepositoryTest.kt` checks that 300 future items do not displace valid items, while a two-minute timestamp skew remains. The later cache still retains explicitly saved historical items.
+- `docs/EDITORIAL_EVIDENCE_SAMPLE.md` distinguishes primary PIB evidence for regression fixtures from the publisher RSS metadata seen by the app and lists additional real examples needing future evaluation. No automated independent primary-source corroboration or live-corpus precision/recall is claimed.
+- Next: finish ledger/diff review; use only a guarded `main` fast-forward with `[publish apk]`, wait for exactly one workflow, diagnose any first failure before additional commits, then verify the signed APK and update this handoff. Local Gradle/wrapper is not available. Handset startup, Apple Reader appearance, Search/IME geometry, saved data after update, accessibility, graphics/performance and live-feed behavior remain **unverified**. Stop after one successful release as the owner directed; leave broader issues recorded.
+
+---
+
 ## Live resume point — 15 November 2026 (IST)
 
 - Repository: [Batmancpu/CurrentLens](https://github.com/Batmancpu/CurrentLens), branch `main` only. Current APK source SHA: `779c6423e91b77620bec2f5afca2bae6c4b1df3c`; code is 0.3.6 / versionCode 17. Docs-only handoff checkpoint `f9c8baf7ad5a219c221549e017181e3b818ddc53` follows that source; read live `main` before a future change. Do not create a development branch or overlap Actions workflows.

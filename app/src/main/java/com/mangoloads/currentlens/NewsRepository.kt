@@ -67,11 +67,18 @@ object NewsRepository {
         val results = FeedFetchConcurrencyPolicy.map(feeds, ::fetchOne)
         val fetched = results.filterNotNull().flatten()
         RefreshResult(
-            ArticleUrlIdentityPolicy.deduplicate(fetched, bookmarkedUrls = emptySet()).take(250),
+            selectFreshArticles(fetched, System.currentTimeMillis()),
             failedFeeds = results.count { it == null },
             totalFeeds = results.size
         )
     }
+
+    /** Filter invalid feed dates before the 250-story limit; saved cache entries are merged later. */
+    internal fun selectFreshArticles(articles: List<Article>, nowMillis: Long): List<Article> =
+        ArticleUrlIdentityPolicy.deduplicate(
+            articles.filter { ArticleCachePolicy.hasPlausibleFeedDate(it.publishedAtMillis, nowMillis) },
+            bookmarkedUrls = emptySet()
+        ).take(250)
 
     private fun fetchOne(source: FeedSource): List<Article>? {
         return try {

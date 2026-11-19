@@ -397,6 +397,31 @@ class UpscFeedPolicyTest {
     }
 
     @Test
+    fun pibNhAiTollingGuidelinesMapToGsThreeInfrastructure() {
+        // Real official example: PIB PRID 2333654, 6 November 2026.
+        val story = Article(
+            id = "pib-mlff-highways-2026",
+            title = "NHAI Guidelines to Standardise Design and Infrastructure for Multi-Lane Free Flow Tolling on Four-Lane and Above National Highways",
+            description = "",
+            url = "https://www.pib.gov.in/PressReleasePage.aspx?PRID=2333654&lang=1&reg=3",
+            source = "Press Information Bureau",
+            section = "Ministry of Road Transport & Highways",
+            published = "2026-11-06T17:13:00+05:30"
+        )
+
+        assertSyllabusMapped(story, "GS III", "Infrastructure")
+        assertTrue(UpscEngine.classify(story).matchedTerms.contains("multi lane free flow tolling"))
+        assertFalse(UpscFeedPolicy.shouldInclude(article(
+            "National highway photo tour attracts social media attention",
+            "A travel lifestyle feature covers scenic highways and a popular travel video."
+        )))
+        assertFalse(UpscFeedPolicy.shouldInclude(article(
+            "Cinema festival announced near a toll plaza",
+            "A routine entertainment event with no transport infrastructure decision."
+        )))
+    }
+
+    @Test
     fun institutionNameAloneCannotQualifyRoutineInstitutionNews() {
         assertRejectedDespiteKeywordMatch(article(
             "RBI celebrates foundation day with staff cultural programme",

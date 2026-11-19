@@ -7,6 +7,27 @@ import org.junit.Test
 
 class NewsRepositoryTest {
     @Test
+    fun invalidFutureAndUndatedEntriesCannotCrowdOutValidNews() {
+        val now = java.time.Instant.parse("2026-11-19T10:00:00Z").toEpochMilli()
+        fun story(id: String, whenPublished: String) = Article(
+            id = id, title = id, description = "", url = "https://example.test/$id",
+            source = "Test", section = "India", published = whenPublished
+        )
+        val future = List(300) { index ->
+            story("future-$index", "2026-11-20T10:00:00Z")
+        }
+        val current = story("current", "2026-11-19T09:00:00Z")
+        val smallClockSkew = story("skew", "2026-11-19T10:02:00Z")
+        val undated = story("undated", "")
+
+        val result = NewsRepository.selectFreshArticles(
+            future + undated + current + smallClockSkew, now
+        )
+
+        assertEquals(listOf("skew", "current"), result.map { it.id })
+    }
+
+    @Test
     fun perFeedBudgetAcceptsExactlyTheConfiguredNumberOfEntries() {
         val limit = NewsRepository.MAX_ENTRIES_PER_FEED
         var seen = 0
