@@ -35,6 +35,8 @@ class EditorialFeedIndexPolicyTest {
         assertEquals(listOf(relevant), index.todayArticles)
         assertEquals(listOf(relevant), index.exploreArticles)
         assertFalse(index.eligibleArticles.contains(noise))
+        assertEquals(setOf(relevant.id), index.relevanceById.keys)
+        assertEquals(UpscEngine.classify(relevant), index.relevanceById[relevant.id])
     }
 
     @Test

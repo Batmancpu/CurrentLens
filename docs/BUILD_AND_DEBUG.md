@@ -1,5 +1,13 @@
 # CurrentLens — Build, Test, Release and Debug Record
 
+## 24 November 2026 — verified intermediate release 0.3.8
+
+- Exact source `cd457b25e05d8f0289a9948ee364ea7cae136d50`: [run #430](https://github.com/Batmancpu/CurrentLens/actions/runs/45374496213) completed successfully, both build and publish jobs. WordNet tests/bundling, JVM tests and release assembly, package/version and signing verification passed. [android-19](https://github.com/Batmancpu/CurrentLens/releases/tag/android-19) was published from that exact source; one APK, 30,847,326 bytes. SHA-256 `56285460833cb7b296a59acb4557d32a06074346f12f1acfc2d76605ae9b5d10`, same pinned certificate `af046601fe3a36851e645908e759abbf2caedfe748e2be02817991444884c580`. GitHub asset digest matches notes. [APK](https://github.com/Batmancpu/CurrentLens/releases/download/android-19/CurrentLens.apk).
+- This verifies the first new code batch, including regression tests for the eligibility budget and local Review policy. UI, note round-trip on a handset, accessibility and performance remain unverified.
+- The owner's newer whole-roadmap request supersedes earlier stop-after-one-release snapshots. Continue with the prepared 0.3.9 batch on main, only after reconciling the prior run. No failed build or signing steps.
+
+- Additional 0.3.9 change: add `scripts/check_rss_feeds.py` and `scripts/test_check_rss_feeds.py` and one non-blocking, two-minute live publisher smoke step in the existing build workflow for explicit publication runs only. It reads configured source URLs directly from Kotlin, validates HTTPS publisher redirects and bounded XML size, counts raw entries and reports errors without logging article URLs. It is server-side availability evidence, not app parser or handset proof. The smoke step does not receive signing secrets and cannot block publication solely due to publisher availability. Test results pending.
+
 ## Verified release checkpoint — 24 November 2026 (IST)
 
 - Owner request (verbatim): “Finish whtas  left”. Scope: close the interrupted 0.3.7 release-verification and documentation checkpoint. The bounded-release rule remains in force; no new APK is needed just to correct documentation.

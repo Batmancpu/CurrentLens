@@ -5,6 +5,8 @@ import java.io.IOException
 import java.io.InputStream
 
 /** Strict byte ceilings for untrusted RSS and dictionary responses. */
+internal class ResponseLimitExceededException : IOException("Response exceeds configured limit")
+
 internal object NetworkLimits {
     const val MAX_RSS_BYTES = 2 * 1024 * 1024
     const val MAX_DICTIONARY_BYTES = 512 * 1024
@@ -18,7 +20,7 @@ internal object NetworkLimits {
             val count = input.read(buffer)
             if (count < 0) break
             if (count == 0) continue
-            if (count > maxBytes - total) throw IOException("Response exceeds $maxBytes bytes")
+            if (count > maxBytes - total) throw ResponseLimitExceededException()
             total += count
             output.write(buffer, 0, count)
         }

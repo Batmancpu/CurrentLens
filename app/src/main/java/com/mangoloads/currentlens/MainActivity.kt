@@ -903,12 +903,13 @@ private fun BrrrNewsApp() {
                     selectedTab = selectedTab,
                     youPage = youPage,
                     onYouPageChange = { youPage = it },
-                    onRefresh = { if (!refreshing) refreshKey++ },
+                    onRefresh = { if (!loading && !refreshing) refreshKey++ },
                     refreshing = refreshing,
                     loading = loading || !feedIndexReady,
                     refreshResult = refreshResult,
                     todaysArticles = feedIndex.todayArticles,
                     eligibleArticles = feedIndex.eligibleArticles,
+                    relevanceById = feedIndex.relevanceById,
                     exploreArticles = feedIndex.exploreArticles,
                     allCachedArticles = articles,
                     bookmarks = bookmarks,
@@ -1057,6 +1058,7 @@ private fun HomeScreen(
     refreshResult: NewsRepository.RefreshResult?,
     todaysArticles: List<Article>,
     eligibleArticles: List<Article>,
+    relevanceById: Map<String, Relevance>,
     exploreArticles: List<Article>,
     allCachedArticles: List<Article>,
     bookmarks: Set<String>,
@@ -1124,7 +1126,7 @@ private fun HomeScreen(
             subtitle = subtitle,
             showRefresh = selectedTab != 3,
             onRefresh = onRefresh,
-            refreshing = refreshing,
+            refreshing = refreshing || loading,
             showBack = selectedTab == 3 && youPage != YouPage.DASHBOARD,
             onBack = { onYouPageChange(YouPage.DASHBOARD) }
         )
@@ -1142,6 +1144,10 @@ private fun HomeScreen(
             )
         }
 
+        if (primaryFeedSelected && !loading && !refreshing && refreshResult != null) {
+            FeedHealthPanel(refreshResult.reports)
+        }
+
         AnimatedContent(
             targetState = selectedTab to youPage,
             transitionSpec = {
@@ -1154,17 +1160,17 @@ private fun HomeScreen(
             when (tab) {
                 0 -> TodayFeed(
                     todaysArticles, eligibleArticles, loading, showSkeletons, loadError, refreshing,
-                    bookmarks, onOpenArticle, onToggleBookmark
+                    bookmarks, onOpenArticle, onToggleBookmark, relevanceById
                 )
                 1 -> ExploreFeed(
                     exploreArticles, exploreCategory,
                     { exploreCategory = it }, bookmarks, onOpenArticle, onToggleBookmark,
-                    loading, showSkeletons, loadError, backdrop, glassAlpha, isSystemInDarkTheme()
+                    loading, showSkeletons, loadError, backdrop, glassAlpha, isSystemInDarkTheme(), relevanceById
                 )
                 2 -> SearchFeed(
                     eligibleArticles, searchQuery, searchExpanded,
                     bookmarks, onOpenArticle, onToggleBookmark, loading, showSkeletons, loadError,
-                    backdrop, glassAlpha, isSystemInDarkTheme()
+                    backdrop, glassAlpha, isSystemInDarkTheme(), relevanceById
                 )
                 else -> when (page) {
                     YouPage.DASHBOARD -> YouDashboard(
@@ -1348,7 +1354,8 @@ private fun TodayFeed(
     refreshing: Boolean,
     bookmarks: Set<String>,
     onOpenArticle: (Article) -> Unit,
-    onToggleBookmark: (Article) -> Unit
+    onToggleBookmark: (Article) -> Unit,
+    relevanceById: Map<String, Relevance>
 ) {
     val today = LocalDate.now(ZoneId.of(INDIA_ZONE))
     var showAllToday by remember(today) { mutableStateOf(false) }
@@ -1392,7 +1399,8 @@ private fun TodayFeed(
             loadError && articles.isEmpty() -> item { EmptyPanel("News is temporarily unavailable", "Check your connection and refresh.") }
             articles.isEmpty() -> item { EmptyPanel("No UPSC-relevant stories today", "Broad entertainment and general-interest updates are filtered out. Refresh later for syllabus-linked developments.") }
             else -> items(articles.take(visibleLimit), key = { it.id }, contentType = { "article" }) { article ->
-                NewsCard(article, bookmarks.contains(article.url), onOpenArticle, onToggleBookmark)
+                NewsCard(article, bookmarks.contains(article.url), onOpenArticle, onToggleBookmark,
+                    relevanceOverride = relevanceById[article.id])
             }
         }
         if (articles.size > 12) item {
@@ -1449,7 +1457,8 @@ private fun ExploreFeed(
     loadError: Boolean,
     backdrop: PrismalBackdrop,
     glassAlpha: Float,
-    dark: Boolean
+    dark: Boolean,
+    relevanceById: Map<String, Relevance>
 ) {
     val categories = listOf("All", "India", "World", "Politics", "Geography", "Economy", "Environment", "Science", "Explained", "UPSC", "Opinion")
     val filtered = remember(articles, selectedCategory) {
@@ -1482,7 +1491,8 @@ private fun ExploreFeed(
             } else if (filtered.isEmpty()) item {
                 EmptyPanel("No stories in this topic", "Try another topic or refresh your feeds.")
             } else items(filtered, key = { it.id }, contentType = { "article" }) { article ->
-                NewsCard(article, bookmarks.contains(article.url), onOpenArticle, onToggleBookmark)
+                NewsCard(article, bookmarks.contains(article.url), onOpenArticle, onToggleBookmark,
+                    relevanceOverride = relevanceById[article.id])
             }
         }
     }
@@ -1502,7 +1512,8 @@ private fun SearchFeed(
     loadError: Boolean,
     backdrop: PrismalBackdrop,
     glassAlpha: Float,
-    dark: Boolean
+    dark: Boolean,
+    relevanceById: Map<String, Relevance>
 ) {
     var selectedCategory by remember { mutableStateOf("All") }
     var selectedSubject by remember { mutableStateOf("All") }
@@ -1512,15 +1523,6 @@ private fun SearchFeed(
     val keyboardController = LocalSoftwareKeyboardController.current
     val eligibleArticles = articles
     val categories = listOf("All", "India", "World", "Politics", "Geography", "Economy", "Environment", "Science", "Explained", "UPSC", "Opinion")
-    val classificationInputs = remember(eligibleArticles) {
-        ArticleRelevanceIndexPolicy.keys(eligibleArticles)
-    }
-    // Classification depends only on id/title/description. Reuse the same index for
-    // subject choices, query filters and visible Search cards instead of rerunning the
-    // keyword engine for every query change.
-    val relevanceById = remember(classificationInputs) {
-        ArticleRelevanceIndexPolicy.build(eligibleArticles)
-    }
     val subjects = remember(relevanceById) {
         listOf("All") + relevanceById.values.map { it.subject }.distinct().sorted()
     }
@@ -3420,6 +3422,7 @@ private fun ReaderScreen(
                         onSaveReaderFontSize(normalized)
                     }
                 )
+                PrimaryEvidenceButton(article)
                 if (savedReadingProgress > 0.005f && !reachedBottom) {
                     Box(
                         Modifier.fillMaxWidth().padding(horizontal = 18.dp, vertical = 2.dp)
@@ -3660,6 +3663,8 @@ private fun ReaderScreen(
                     Text("From the publisher’s feed", style = MaterialTheme.typography.labelLarge,
                         color = MaterialTheme.colorScheme.primary)
                     Text(article.title, style = MaterialTheme.typography.headlineSmall)
+                    Text(article.source + " · " + ArticlePublicationDatePolicy.label(article.publishedAtMillis),
+                        style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     if (article.description.isNotBlank()) {
                         Text(article.description, style = MaterialTheme.typography.bodyLarge)
                     }

@@ -1,5 +1,20 @@
 ## Active development snapshot — 19 November 2026, 23:15 IST
 
+## 24 November 2026 — verified intermediate release 0.3.8
+
+- Exact source `cd457b25e05d8f0289a9948ee364ea7cae136d50`: [run #430](https://github.com/Batmancpu/CurrentLens/actions/runs/45374496213) completed successfully, both build and publish jobs. WordNet tests/bundling, JVM tests and release assembly, package/version and signing verification passed. [android-19](https://github.com/Batmancpu/CurrentLens/releases/tag/android-19) was published from that exact source; one APK, 30,847,326 bytes. SHA-256 `56285460833cb7b296a59acb4557d32a06074346f12f1acfc2d76605ae9b5d10`, same pinned certificate `af046601fe3a36851e645908e759abbf2caedfe748e2be02817991444884c580`. GitHub asset digest matches notes. [APK](https://github.com/Batmancpu/CurrentLens/releases/download/android-19/CurrentLens.apk).
+- This verifies the first new code batch, including regression tests for the eligibility budget and local Review policy. UI, note round-trip on a handset, accessibility and performance remain unverified.
+- The owner's newer whole-roadmap request supersedes earlier stop-after-one-release snapshots. Continue with the prepared 0.3.9 batch on main, only after reconciling the prior run. No failed build or signing steps.
+
+## 24 November 2026 — feed health, shared editorial index and primary evidence candidate 0.3.9
+
+- Owner request remains complete the full roadmap. Prepared against source `cd457b25e05d8f0289a9948ee364ea7cae136d50` while its CI #430 was active; do not advance this detached candidate until #430 is terminal and its result is reconciled.
+- Changes: `NewsRepository.kt`, `NetworkLimits.kt`, `FeedHealthPolicy.kt`, `FeedHealthPanel.kt` distinguish publisher errors, unsafe redirects, limits, invalid XML, timeout/TLS/network, no valid entries and undated results. Per-source report and explicit clipboard action expose only fixed source labels/counts; no telemetry. Block duplicate refresh during initial load. Preserve cached items on failed refresh.
+- `EditorialFeedIndexPolicy.kt` retains the eligible relevance mapping built on Dispatchers.Default, passed to Today/Explore/Search cards, avoiding repeated classification on the UI path. This is a source-level workload reduction; no device speed/frame claim.
+- `PrimaryEvidencePolicy.kt` and `PrimaryEvidenceButton.kt` add an exact publisher URL-linked, editorially checked claim and official source link to native Reader chrome. No WebView allowlist expansion or runtime scraping; unknown stories never receive a verified label. `MainActivity.kt` additionally shows publisher/date in the excerpt fallback. Two official documents opened and manually checked 24 November: PIB 2334972 (Cabinet Rabi subsidy) and PIB 2333654 (NHAI guidelines); exact article URLs documented in editorial register. Scope is individual claims only, not full article verification.
+- `UpscEngine.kt` and `UpscFeedPolicy.kt` add narrow tolling/climate diplomacy phrases. `PublisherEditorialSampleTest.kt` uses three public publisher headlines with pre-labelled themes. Added tests for feed status, no article URL in copied reports, evidence identity boundaries, shared relevance index. Version 0.3.9 / code 20; signing unchanged. Candidate tests and device checks not yet run.
+- Live feed audit: direct git/curl network unavailable in this container (DNS), browser open of all 14 RSS endpoints failed to expose parseable XML (unsupported MIME types, restricted URL or 403 from browser). These are tool limitations, not proof of publisher downtime. No representative RSS sample or measured corpus accuracy available. Next add safe live-feed check in CI or on-device, portable local data, then address runtime acceptance.
+
 ## 24 November 2026 — roadmap continuation, 0.3.8 candidate
 
 - Owner request: “What are you waiting for? Complete the whole roadmap, everything.” This explicitly supersedes the prior stop-after-one-release instruction for this continuation. Starting main: `8c3346ad71f703c7b4b698e6c72de0ae1f2373b9`, published 0.3.7/android-18 passed #429. Retain main-only, serial CI and fixed signer.

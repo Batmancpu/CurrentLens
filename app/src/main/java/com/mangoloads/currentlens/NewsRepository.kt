@@ -59,17 +59,27 @@ object NewsRepository {
         FeedSource("Al Jazeera", "World", "https://www.aljazeera.com/xml/rss/all.xml")
     )
 
-    internal data class RefreshResult(val articles: List<Article>, val failedFeeds: Int, val totalFeeds: Int) {
-        val allFeedsFailed: Boolean get() = failedFeeds == totalFeeds
+    internal data class RefreshResult(
+        val articles: List<Article>, val failedFeeds: Int, val totalFeeds: Int,
+        val reports: List<FeedHealthReport> = emptyList()
+    ) {
+        val allFeedsFailed: Boolean get() = totalFeeds > 0 && failedFeeds == totalFeeds
     }
+
+    private data class FeedResult(val source: FeedSource, val articles: List<Article>, val status: FeedHealthStatus)
 
     internal suspend fun fetchAll(): RefreshResult = withContext(Dispatchers.IO) {
         val results = FeedFetchConcurrencyPolicy.map(feeds, ::fetchOne)
-        val fetched = results.filterNotNull().flatten()
+        val now = System.currentTimeMillis()
+        val fetched = results.flatMap { it.articles }
+        val reports = results.map { result ->
+            FeedHealthPolicy.report(result.source, result.status, result.articles, now)
+        }
         RefreshResult(
-            selectFreshArticles(fetched, System.currentTimeMillis()),
-            failedFeeds = results.count { it == null },
-            totalFeeds = results.size
+            selectFreshArticles(fetched, now),
+            failedFeeds = reports.count { it.status.isFailure },
+            totalFeeds = results.size,
+            reports = reports
         )
     }
 
@@ -83,28 +93,39 @@ object NewsRepository {
             250
         )
 
-    private fun fetchOne(source: FeedSource): List<Article>? {
+    private fun fetchOne(source: FeedSource): FeedResult {
         return try {
-            val connection = openAllowedFeedConnection(source) ?: return null
+            val connection = openAllowedFeedConnection(source)
             try {
                 if (connection.contentLengthLong > NetworkLimits.MAX_RSS_BYTES) {
-                    null
-                } else {
-                    connection.inputStream.use { input ->
-                        parse(
-                            source,
-                            NetworkLimits.readUtf8Limited(input, NetworkLimits.MAX_RSS_BYTES),
-                            connection.url.toExternalForm()
-                        )
-                    }
+                    throw FeedRequestFailure(FeedHealthStatus.TOO_LARGE)
                 }
+                val xml = connection.inputStream.use { input ->
+                    NetworkLimits.readUtf8Limited(input, NetworkLimits.MAX_RSS_BYTES)
+                }
+                val parsed = try {
+                    parse(source, xml, connection.url.toExternalForm())
+                } catch (cancelled: CancellationException) {
+                    throw cancelled
+                } catch (_: Exception) {
+                    throw FeedRequestFailure(FeedHealthStatus.INVALID_FEED)
+                }
+                FeedResult(source, parsed, FeedHealthStatus.OK)
             } finally {
                 connection.disconnect()
             }
         } catch (cancelled: CancellationException) {
             throw cancelled
+        } catch (failure: FeedRequestFailure) {
+            FeedResult(source, emptyList(), failure.status)
+        } catch (_: ResponseLimitExceededException) {
+            FeedResult(source, emptyList(), FeedHealthStatus.TOO_LARGE)
+        } catch (_: java.net.SocketTimeoutException) {
+            FeedResult(source, emptyList(), FeedHealthStatus.TIMEOUT)
+        } catch (_: javax.net.ssl.SSLException) {
+            FeedResult(source, emptyList(), FeedHealthStatus.TLS_FAILURE)
         } catch (_: Exception) {
-            null
+            FeedResult(source, emptyList(), FeedHealthStatus.NETWORK_ERROR)
         }
     }
 
@@ -112,12 +133,12 @@ object NewsRepository {
      * RSS feeds are network inputs too: disable automatic redirects and validate each
      * destination against the feed's publisher before issuing the next request.
      */
-    private fun openAllowedFeedConnection(source: FeedSource): HttpURLConnection? {
+    private fun openAllowedFeedConnection(source: FeedSource): HttpURLConnection {
         var currentUrl = source.url
         var redirectsFollowed = 0
 
         while (true) {
-            if (!PublisherHostPolicy.allows(source.name, currentUrl)) return null
+            if (!PublisherHostPolicy.allows(source.name, currentUrl)) throw FeedRequestFailure(FeedHealthStatus.BLOCKED_REDIRECT)
 
             val connection = (URL(currentUrl).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8000
@@ -148,17 +169,19 @@ object NewsRepository {
                     )
                 }
                 connection.disconnect()
-                if (nextUrl == null) return null
+                if (nextUrl == null) throw FeedRequestFailure(FeedHealthStatus.BLOCKED_REDIRECT)
                 currentUrl = nextUrl
                 redirectsFollowed += 1
                 continue
             }
 
-            if (status !in 200..299 ||
-                !PublisherHostPolicy.allows(source.name, connection.url.toExternalForm())
-            ) {
+            if (status !in 200..299) {
                 connection.disconnect()
-                return null
+                throw FeedRequestFailure(FeedHealthStatus.HTTP_ERROR)
+            }
+            if (!PublisherHostPolicy.allows(source.name, connection.url.toExternalForm())) {
+                connection.disconnect()
+                throw FeedRequestFailure(FeedHealthStatus.BLOCKED_REDIRECT)
             }
 
             return connection

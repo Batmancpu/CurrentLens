@@ -19,3 +19,15 @@ The baseline is the [official UPSC CSE 2026 Mains syllabus](https://www.upsc.gov
 - A highway travel-photo story or cinema event near a toll plaza must not be classified as a transport-infrastructure policy announcement (0.3.7 JVM fixtures, passed run #429).
 
 Next evaluation: collect a reproducible, dated set of publisher RSS headlines/excerpts from each configured source under its terms, label inclusion/exclusion and exact paper/theme **before** inspecting classifier output, and record both false positives and false negatives. Separate primary-document evidence from the publisher feed's source/date/URL. Do not add runtime PIB scraping or user tracking as a shortcut.
+
+## Publisher-page sample, 24 November 2026
+
+These are real publisher-page titles, not independently collected RSS items. Labels were set before checking the candidate. Title-only tests cover three positives; the existing synthetic negative controls remain. No population accuracy estimate.
+
+| Publisher article | Expected mapping | Official corroboration |
+| --- | --- | --- |
+| [Cabinet fertiliser subsidy](https://indianexpress.com/article/business/fertiliser-subsidy-rabi-season-2026-27-cabinet-approval-10959144/), 11 Nov | GS III Agriculture | [PIB 2334972](https://www.pib.gov.in/PressReleseDetailm.aspx?PRID=2334972&lang=1&reg=1), same date: approved P&K rates and tentative budget about Rs 62,370 crore. |
+| [Barrier-less toll lanes](https://indianexpress.com/article/business/barrier-less-tolling-system-new-highways-10943979/), Oct 30 | GS III Infrastructure | [PIB 2333654](https://www.pib.gov.in/PressReleasePage.aspx?PRID=2333654&lang=1&reg=3), later 6 Nov: standardized toll infrastructure and rationalized lane count, not every numerical detail. |
+| [COP31 climate summit explainer](https://indianexpress.com/article/explained/explained-climate/cop31-antalya-turkey-un-summit-india-agenda-2026-expert-explains-10953189/), 10 Nov | GS III Environment | No per-claim primary source checked in this batch. |
+
+The first two exact article URLs get a local claim-limited primary-source evidence record. No other URL or generic keyword match does.

@@ -58,6 +58,12 @@ jobs:
             --expected-sha256 cf4afe7ad4cca3f56091d791e665614c564ac84e3782de4e789cf5b745556e2e
           test -s app/src/main/assets/wordnet.db
 
+      - name: Smoke check live publisher RSS (non-blocking)
+        if: ((github.event_name == 'workflow_dispatch' && inputs.publish) || (github.event_name == 'push' && contains(github.event.head_commit.message, '[publish apk]')))
+        continue-on-error: true
+        timeout-minutes: 2
+        run: python3 scripts/check_rss_feeds.py
+
       - name: Run JVM tests and build the release APK
         run: gradle --no-daemon --stacktrace :app:testDebugUnitTest :app:assembleRelease
 
