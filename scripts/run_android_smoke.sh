@@ -6,6 +6,11 @@ if [[ "${GITHUB_ACTIONS:-}" != true || ! -e /dev/kvm ]]; then
   exit 1
 fi
 sudo chmod 666 /dev/kvm
+# The emulator links PulseAudio even with -no-audio; ubuntu-latest may omit it.
+if ! ldconfig -p | grep -F "libpulse.so.0" >/dev/null; then
+  sudo apt-get update -qq
+  sudo apt-get install -y --no-install-recommends libpulse0
+fi
 sdkmanager "emulator" "system-images;android-35;google_apis;x86_64" >/dev/null
 echo no | avdmanager create avd --force --name currentlens-ci --package "system-images;android-35;google_apis;x86_64" >/dev/null
 # Start ADB before the emulator so the console port is registered by the daemon.

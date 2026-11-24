@@ -1,5 +1,25 @@
 ## Active development snapshot — 19 November 2026, 23:15 IST
 
+## 24 November 2026 — verified 0.4.2 and roadmap acceptance checkpoint
+
+Five sequential app releases 0.3.8 through 0.4.2 built, tested, signed and published from main. Latest [0.4.2 / android-23](https://github.com/Batmancpu/CurrentLens/releases/tag/android-23), exact source `bdf41f6ca6a0963cecd76db81ed6c6cdfc39e9b9`, [run #434](https://github.com/Batmancpu/CurrentLens/actions/runs/45377893839): both jobs succeeded. One APK, 30,880,094 bytes, SHA-256 `504f1716dccd63c8b181cc4dd06b1fb3e877e81ec9b6dad14499ee6b6281a3d3`, pinned certificate `af046601fe3a36851e645908e759abbf2caedfe748e2be02817991444884c580`. [APK](https://github.com/Batmancpu/CurrentLens/releases/download/android-23/CurrentLens.apk). Also verified 0.4.1/android-22 [#433](https://github.com/Batmancpu/CurrentLens/actions/runs/45376643738), exact source `43f769ad46300426903fd61f9d20849610f09b44`, APK SHA-256 `30ca8a1eeed3778ea0a5c083aec5f6ce1796c0d15633d1e354bc010191a590c3`, same certificate.
+
+| Scope | Implemented / verified | Outstanding acceptance |
+| --- | --- | --- |
+| Consolidation | Main only, five signed builds | Physical install-over and retained data |
+| Reliability | Off-main restore/persistence, fixture tests, runner smoke script | #433 ADB timeout; #434 missing libpulse.so.0 before app start. Neither run reached app runtime. Runner dependency correction prepared |
+| Reader | Apple-inspired formatting, persistent typography, provenance, accessible markup, isolated ReaderDocument, JVM tests | Handset fallback, selection, pinch zoom, progress and TalkBack |
+| Feed | Date validity, eligibility budget, cache preservation, source health, safe diagnostics, live checks | 10/14 parsed; four Indian Express endpoints HTTP 403 from CI, no circumvention; handset refresh and offline recovery |
+| Editorial | Strict signals, 3 earlier and 12 expanded public-title fixtures passed JVM checks, 2 exact primary-document evidence links | Representative labelled RSS corpus; no general accuracy estimate |
+| Study | You > Review, topic filters, recall, local notes, 12-story stopping point, backup/merge; JVM checks | Physical file-picker and real-use review, official PYQ provenance where available |
+| Maintenance | Reader extraction and shared editorial index off UI; audited core LocalStore call sites use IO/serialized wrappers | Physical startup, jank, frame timing, memory, TalkBack and glass appearance |
+
+Source-side feature work above is shipped; do not claim full roadmap acceptance. The runner-only fix preserves app version and signing; an explicit [runtime smoke] push runs CI without publication. Preserve four tabs, local-first and Prismal.
+
+## 24 November 2026 — runner-only runtime retry
+
+Run #434 passed all JVM tests (including 12 publisher title fixtures) and release assembly. The emulator diagnosed its host environment: KVM acceleration usable, but the qemu dynamic loader reported missing `libpulse.so.0` (exit 127); no app test reached. Add conditional installation of Ubuntu `libpulse0` before emulator setup, and allow an explicit `[runtime smoke]` main-push marker to run the existing debug smoke without publishing another APK. App version and source unchanged. This is a bounded runner repair; do not infer handset performance or startup from a runner failure.
+
 ## 24 November 2026 — emulator infrastructure correction
 
 Run #433 reached successful JVM tests and release assembly, but the non-blocking emulator step exited 124 at 10:44:37 UTC after the 180-second ADB transport wait. No PASS checkpoint; the app was never installed/tested by this step. GitHub marks a continue-on-error step success, so its exit log is authoritative. Candidate 0.4.2 starts ADB before the emulator, explicitly sets console port 5554 and uses software swiftshader rendering, checks acceleration and process liveness, and prints bounded runner-only boot logs on transport/boot failure. Cause not yet established; one bounded retry, not a claim of runtime reliability.
