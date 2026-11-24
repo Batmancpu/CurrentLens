@@ -1,5 +1,16 @@
 # CurrentLens roadmap
 
+## 24 November 2026 — verified 0.4.0 / android-21
+
+- [Run #432](https://github.com/Batmancpu/CurrentLens/actions/runs/45375991778) completed successfully, both build and publish jobs. Exact source `a66bf8af0ea6aefa42045f9dbf9c5a30fbfa3fec`, [tag android-21](https://github.com/Batmancpu/CurrentLens/releases/tag/android-21), one signed APK (30,880,094 bytes), SHA-256 `4e2c742be1c0f598ca1ed9288de84121f5a7b00791557c3bb39167513417c371`, pinned release certificate unchanged. JVM backup merge and codec round-trip tests passed. Physical file-picker/storage verification outstanding.
+- 0.4.1 prepared to extract Reader document generation and improve accessible typography, add a Reader document regression test and bounded debug-emulator runtime smoke, including five launches, warm return, Saved/Reader, Search and offline dictionary definition. Device-specific visual/performance/TalkBack tests remain distinct. The smoke step is non-blocking; inspect actual logs.
+
+## 24 November 2026 — runtime verification / Reader subsystem candidate 0.4.1
+
+- Isolate Reader document generation into `ReaderDocument.kt` without changing the sanitizer or WebView network policy. Add document language, font-relative source/date/caption typography, long-word wrapping and visible underlined links for accessible reading. No Apple-parity or frame-performance claim.
+- Add an explicitly non-blocking, 12-minute Android API 35 debug-emulator acceptance step to the existing serial publish workflow. Fresh ephemeral CI emulator only; no release signing secrets and no personal device. Five cold launches including restored synthetic state, warm return, saved Reader open/return, Search keyboard input and bundled WordNet database installation checks. The test prints pass checkpoints only and no user data. The runtime smoke is not a physical handset or full TalkBack/performance test. Debug artifacts are not published as releases.
+- Prepared against 0.4.0 source `a66bf8af0ea6aefa42045f9dbf9c5a30fbfa3fec`; do not advance until run #432 finishes and its release is verified. Candidate versionCode 22. Follow actual runtime-step outcome, not overall success alone.
+
 ## 24 November 2026 — verified release 0.3.9 and backup candidate 0.4.0
 
 - [Run #431](https://github.com/Batmancpu/CurrentLens/actions/runs/45375211884) completed successfully, both build and publish jobs; source `9cc987b6122dc909dea5ff724fdb7d6a330b83ea`. [android-20](https://github.com/Batmancpu/CurrentLens/releases/tag/android-20) points to that commit. One APK, 30,863,710 bytes, SHA-256 `a7df332cc7ab9a51eafe398c3618dcd9074b8f483502646f16a9a890567886cd`; same pinned signing certificate. JVM and WordNet tests passed.

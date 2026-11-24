@@ -1,5 +1,10 @@
 # CurrentLens — Known Issues and Verification Register
 
+## 24 November 2026 — verified 0.4.0 / android-21
+
+- [Run #432](https://github.com/Batmancpu/CurrentLens/actions/runs/45375991778) completed successfully, both build and publish jobs. Exact source `a66bf8af0ea6aefa42045f9dbf9c5a30fbfa3fec`, [tag android-21](https://github.com/Batmancpu/CurrentLens/releases/tag/android-21), one signed APK (30,880,094 bytes), SHA-256 `4e2c742be1c0f598ca1ed9288de84121f5a7b00791557c3bb39167513417c371`, pinned release certificate unchanged. JVM backup merge and codec round-trip tests passed. Physical file-picker/storage verification outstanding.
+- 0.4.1 prepared to extract Reader document generation and improve accessible typography, add a Reader document regression test and bounded debug-emulator runtime smoke, including five launches, warm return, Saved/Reader, Search and offline dictionary definition. Device-specific visual/performance/TalkBack tests remain distinct. The smoke step is non-blocking; inspect actual logs.
+
 Status vocabulary:
 - Verified on main: directly present/reproduced in current main code or CI evidence.
 - User-reported: user observed it; durable reproduction evidence may be absent.

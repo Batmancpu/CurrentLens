@@ -780,3 +780,16 @@ Branch: `fix/early-startup-crash-diagnostics-2026-11-06`.
 - Actual live runner RSS evidence: 10 of 14 configured endpoints parsed; all seven The Hindu sections (60 entries each), BBC World (24), Al Jazeera World (25), plus one other configured international source. All four Indian Express endpoints returned HTTP 403. This is CI-network availability, not handset proof, and no circumvention was added.
 - 0.4.0 adds portable local data backup/merge, legacy summary-only quiz handling and stable legacy record identity, explicit malformed-local-data rejection and JVM JSON codec round-trip/validation tests. JSON-java test-only dependency; no new app runtime dependency. Publish after #431 terminal. Device acceptance and representative editorial corpus remain outstanding.
 
+
+## 24 November 2026 — runtime verification / Reader subsystem candidate 0.4.1
+
+- Isolate Reader document generation into `ReaderDocument.kt` without changing the sanitizer or WebView network policy. Add document language, font-relative source/date/caption typography, long-word wrapping and visible underlined links for accessible reading. No Apple-parity or frame-performance claim.
+- Add an explicitly non-blocking, 12-minute Android API 35 debug-emulator acceptance step to the existing serial publish workflow. Fresh ephemeral CI emulator only; no release signing secrets and no personal device. Five cold launches including restored synthetic state, warm return, saved Reader open/return, Search keyboard input and bundled WordNet database installation checks. The test prints pass checkpoints only and no user data. The runtime smoke is not a physical handset or full TalkBack/performance test. Debug artifacts are not published as releases.
+- Prepared against 0.4.0 source `a66bf8af0ea6aefa42045f9dbf9c5a30fbfa3fec`; do not advance until run #432 finishes and its release is verified. Candidate versionCode 22. Follow actual runtime-step outcome, not overall success alone.
+
+
+## 24 November 2026 — verified 0.4.0 / android-21
+
+- [Run #432](https://github.com/Batmancpu/CurrentLens/actions/runs/45375991778) completed successfully, both build and publish jobs. Exact source `a66bf8af0ea6aefa42045f9dbf9c5a30fbfa3fec`, [tag android-21](https://github.com/Batmancpu/CurrentLens/releases/tag/android-21), one signed APK (30,880,094 bytes), SHA-256 `4e2c742be1c0f598ca1ed9288de84121f5a7b00791557c3bb39167513417c371`, pinned release certificate unchanged. JVM backup merge and codec round-trip tests passed. Physical file-picker/storage verification outstanding.
+- 0.4.1 prepared to extract Reader document generation and improve accessible typography, add a Reader document regression test and bounded debug-emulator runtime smoke, including five launches, warm return, Saved/Reader, Search and offline dictionary definition. Device-specific visual/performance/TalkBack tests remain distinct. The smoke step is non-blocking; inspect actual logs.
+
