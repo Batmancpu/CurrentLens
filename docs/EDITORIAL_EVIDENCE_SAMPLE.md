@@ -31,3 +31,10 @@ These are real publisher-page titles, not independently collected RSS items. Lab
 | [COP31 climate summit explainer](https://indianexpress.com/article/explained/explained-climate/cop31-antalya-turkey-un-summit-india-agenda-2026-expert-explains-10953189/), 10 Nov | GS III Environment | No per-claim primary source checked in this batch. |
 
 The first two exact article URLs get a local claim-limited primary-source evidence record. No other URL or generic keyword match does.
+
+
+## 24 November 2026 — editorial coverage 0.4.2 candidate
+
+- Extend narrow syllabus evidence for El Niño/La Niña/ENSO (GS I), navigation/earth-observation satellites and NavIC/PSLV/GSLV (GS III science), climate diplomacy/negotiations/phaseout (GS III Environment), and antibiotic resistance (GS II public health). Keep the institutional-only and hard entertainment/sports noise gates; no broad keyword bypass.
+- Add `ExpandedPublisherEditorialSampleTest.kt`: eight positive and four negative title-only public publisher-page examples from Indian Express, DW and Al Jazeera. Expected labels derived from syllabus themes; URLs stored in the test. Timestamps deliberately omitted rather than inventing RSS metadata. These are targeted development fixtures, not a random independent evaluation set, and no corpus precision/recall estimate is supported.
+- Candidate version 0.4.2/code 23. Prepared against `43f769ad46300426903fd61f9d20849610f09b44` while exact-parent run #433 was active; advance only after the parent finishes, reconciling actual runtime smoke logs separately from the build and signing results. Test and release status pending until verified.

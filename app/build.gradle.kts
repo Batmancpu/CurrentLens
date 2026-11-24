@@ -13,8 +13,8 @@ android {
         applicationId = "com.mangoloads.currentlens"
         minSdk = 26
         targetSdk = 35
-        versionCode = 22
-        versionName = "0.4.1"
+        versionCode = 23
+        versionName = "0.4.2"
         manifestPlaceholders["appLabel"] = if (stabilityTestBuild) "brrrNews Stability" else "brrrNews"
         buildConfigField("boolean", "STABILITY_TEST_BUILD", stabilityTestBuild.toString())
     }

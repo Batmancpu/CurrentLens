@@ -1,5 +1,15 @@
 # CurrentLens roadmap
 
+## 24 November 2026 — emulator infrastructure correction
+
+Run #433 reached successful JVM tests and release assembly, but the non-blocking emulator step exited 124 at 10:44:37 UTC after the 180-second ADB transport wait. No PASS checkpoint; the app was never installed/tested by this step. GitHub marks a continue-on-error step success, so its exit log is authoritative. Candidate 0.4.2 starts ADB before the emulator, explicitly sets console port 5554 and uses software swiftshader rendering, checks acceleration and process liveness, and prints bounded runner-only boot logs on transport/boot failure. Cause not yet established; one bounded retry, not a claim of runtime reliability.
+
+## 24 November 2026 — editorial coverage 0.4.2 candidate
+
+- Extend narrow syllabus evidence for El Niño/La Niña/ENSO (GS I), navigation/earth-observation satellites and NavIC/PSLV/GSLV (GS III science), climate diplomacy/negotiations/phaseout (GS III Environment), and antibiotic resistance (GS II public health). Keep the institutional-only and hard entertainment/sports noise gates; no broad keyword bypass.
+- Add `ExpandedPublisherEditorialSampleTest.kt`: eight positive and four negative title-only public publisher-page examples from Indian Express, DW and Al Jazeera. Expected labels derived from syllabus themes; URLs stored in the test. Timestamps deliberately omitted rather than inventing RSS metadata. These are targeted development fixtures, not a random independent evaluation set, and no corpus precision/recall estimate is supported.
+- Candidate version 0.4.2/code 23. Prepared against `43f769ad46300426903fd61f9d20849610f09b44` while exact-parent run #433 was active; advance only after the parent finishes, reconciling actual runtime smoke logs separately from the build and signing results. Test and release status pending until verified.
+
 ## 24 November 2026 — verified 0.4.0 / android-21
 
 - [Run #432](https://github.com/Batmancpu/CurrentLens/actions/runs/45375991778) completed successfully, both build and publish jobs. Exact source `a66bf8af0ea6aefa42045f9dbf9c5a30fbfa3fec`, [tag android-21](https://github.com/Batmancpu/CurrentLens/releases/tag/android-21), one signed APK (30,880,094 bytes), SHA-256 `4e2c742be1c0f598ca1ed9288de84121f5a7b00791557c3bb39167513417c371`, pinned release certificate unchanged. JVM backup merge and codec round-trip tests passed. Physical file-picker/storage verification outstanding.
