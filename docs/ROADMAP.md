@@ -1,5 +1,11 @@
 # CurrentLens roadmap
 
+## 24 November 2026 — verified release 0.3.9 and backup candidate 0.4.0
+
+- [Run #431](https://github.com/Batmancpu/CurrentLens/actions/runs/45375211884) completed successfully, both build and publish jobs; source `9cc987b6122dc909dea5ff724fdb7d6a330b83ea`. [android-20](https://github.com/Batmancpu/CurrentLens/releases/tag/android-20) points to that commit. One APK, 30,863,710 bytes, SHA-256 `a7df332cc7ab9a51eafe398c3618dcd9074b8f483502646f16a9a890567886cd`; same pinned signing certificate. JVM and WordNet tests passed.
+- Actual live runner RSS evidence: 10 of 14 configured endpoints parsed; all seven The Hindu sections (60 entries each), BBC World (24), Al Jazeera World (25), plus one other configured international source. All four Indian Express endpoints returned HTTP 403. This is CI-network availability, not handset proof, and no circumvention was added.
+- 0.4.0 adds portable local data backup/merge, legacy summary-only quiz handling and stable legacy record identity, explicit malformed-local-data rejection and JVM JSON codec round-trip/validation tests. JSON-java test-only dependency; no new app runtime dependency. Publish after #431 terminal. Device acceptance and representative editorial corpus remain outstanding.
+
 CurrentLens is a focused, local-first UPSC current-affairs reader. The product should help a student read a handful of relevant stories, understand the official syllabus connection, and recall them later. The main destinations remain Today, Explore, Search and You. Existing local-first behavior, offline dictionary and Liquid Glass design are part of the baseline.
 
 | Order | Scope | Exit evidence |
@@ -35,6 +41,13 @@ CurrentLens is a focused, local-first UPSC current-affairs reader. The product s
 - The owner's newer whole-roadmap request supersedes earlier stop-after-one-release snapshots. Continue with the prepared 0.3.9 batch on main, only after reconciling the prior run. No failed build or signing steps.
 
 - Additional 0.3.9 change: add `scripts/check_rss_feeds.py` and `scripts/test_check_rss_feeds.py` and one non-blocking, two-minute live publisher smoke step in the existing build workflow for explicit publication runs only. It reads configured source URLs directly from Kotlin, validates HTTPS publisher redirects and bounded XML size, counts raw entries and reports errors without logging article URLs. It is server-side availability evidence, not app parser or handset proof. The smoke step does not receive signing secrets and cannot block publication solely due to publisher availability. Test results pending.
+
+## 24 November 2026 — local data portability candidate 0.4.0
+
+- User requested the entire roadmap; prepared against `9cc987b6122dc909dea5ff724fdb7d6a330b83ea` while #431 was active. Do not advance before #431 is terminal. Main only, fixed signer, versionCode 21.
+- Add `PortableBackupPolicy.kt`, `PortableBackupCodec.kt`, `PortableBackupScreen.kt`; versioned JSON through Android's user-selected document picker, no storage permission, account or automatic network. Exports Saved metadata, read markers, reading sessions, submitted quiz attempts, reader positions and private review notes; excludes extracted article bodies, device identifiers and diagnostics. Warn that exported JSON is unencrypted.
+- Import pre-validates schema, bounded bytes/depth, record types, known publisher article links and data limits; shows preview before user confirms. Merge is local-first, never evicts existing local records to admit imported history; duplicates/excess skipped. Existing main preferences saved with one commit under existing history/bookmark/position locks and new cache lock; note store separately serialized and partial note failure explicitly reported. Root UI reloads restored data. `MainActivity.kt` adds Data Backup under You, no fifth destination; `ReviewScreen.kt` exposes mutex-protected note snapshot and merge.
+- Added pure JVM tests for local-first merge, bounded nesting and HTTPS URL validation. No runtime dependency changes. Android JSON codec, document picker and storage round-trip still need device acceptance. Candidate build/test not yet run.
 
 ## Ideas and evidence
 

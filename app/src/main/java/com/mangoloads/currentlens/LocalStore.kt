@@ -34,6 +34,7 @@ object LocalStore {
     private val bookmarkWriteMutex = Mutex()
     private val historyWriteMutex = Mutex()
     private val readerPositionWriteMutex = Mutex()
+    private val articleCacheLock = Any()
 
     fun bookmarks(context: Context): Set<String> =
         runCatching {
@@ -151,7 +152,7 @@ object LocalStore {
         }.getOrDefault(emptyList())
     }
 
-    fun mergeAndSaveArticles(context: Context, incoming: List<Article>): List<Article> {
+    fun mergeAndSaveArticles(context: Context, incoming: List<Article>): List<Article> = synchronized(articleCacheLock) {
         val savedUrls = bookmarks(context)
         val zone = ZoneId.of("Asia/Kolkata")
         val cutoff = LocalDate.now(zone).minusDays(CACHE_DAYS.toLong())
@@ -187,7 +188,7 @@ object LocalStore {
         }
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
             .edit().putString(ARTICLE_CACHE, array.toString()).apply()
-        return merged
+        merged
     }
 
 
@@ -523,6 +524,110 @@ object LocalStore {
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
             .edit().putString(QUIZ_ATTEMPTS, array.toString()).apply()
         return attempt
+    }
+
+    /** Local-only, explicit export; never includes article bodies, diagnostics, credentials or device IDs. */
+    internal suspend fun exportPortableBackup(context: Context): String = withContext(Dispatchers.IO) {
+        val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+        val snapshot = prefs.all
+        fun strings(key: String): List<String> = snapshot[key]?.let { raw ->
+            (raw as? Set<*> ?: error("Invalid local URL set")).map {
+                it as? String ?: error("Invalid local URL record")
+            }
+        }.orEmpty()
+        fun array(key: String): JSONArray = snapshot[key]?.let {
+            JSONArray(it as? String ?: error("Invalid local record"))
+        } ?: JSONArray()
+        val saved = strings(BOOKMARKS)
+        val savedSet = saved.toSet()
+        val recent = array(RECENT_READ)
+        val data = PortableBackup(
+            saved,
+            PortableBackupCodec.objects(array(ARTICLE_CACHE)).filter { it.optString("url") in savedSet },
+            strings(READ),
+            (0 until recent.length()).map(recent::getString),
+            PortableBackupCodec.objects(array(READING_SESSIONS)),
+            PortableBackupCodec.objects(array(QUIZ_ATTEMPTS)),
+            PortableBackupCodec.objects(array(READER_POSITIONS)),
+            ReviewNoteStore.exportNotes(context)
+        )
+        val encoded = PortableBackupCodec.encode(data)
+        // Do not create a file this version cannot validate and import.
+        PortableBackupCodec.decode(encoded)
+        encoded
+    }
+
+    internal suspend fun importPortableBackup(context: Context, backup: PortableBackup): BackupImportResult =
+        withContext(Dispatchers.IO) {
+            val mainResult = bookmarkWriteMutex.withLock {
+                historyWriteMutex.withLock {
+                    readerPositionWriteMutex.withLock {
+                        synchronized(articleCacheLock) { mergePortableMain(context, backup) }
+                    }
+                }
+            }
+            if (!mainResult.mainSaved) return@withContext mainResult
+            val notes = runCatching { ReviewNoteStore.importMissingNotes(context, backup.notes) }.getOrNull()
+            mainResult.copy(
+                notesSaved = notes?.first == true,
+                added = mainResult.added + (notes?.second ?: 0),
+                skipped = mainResult.skipped + (notes?.third ?: backup.notes.size)
+            )
+        }
+
+    /** All main-preference mutations use one editor after validating the entire backup. */
+    private fun mergePortableMain(context: Context, backup: PortableBackup): BackupImportResult {
+        val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+        val localSaved = prefs.getStringSet(BOOKMARKS, emptySet()).orEmpty().toList()
+        val localLegacy = prefs.getStringSet(READ, emptySet()).orEmpty().toList()
+        fun records(key: String): List<JSONObject> =
+            PortableBackupCodec.objects(JSONArray(prefs.getString(key, "[]") ?: "[]"))
+        val localRecent = parseRecentReadHistory(prefs.getString(RECENT_READ, null))
+            ?: error("Existing read history is malformed")
+        val saved = PortableBackupPolicy.merge(localSaved, backup.bookmarks, Int.MAX_VALUE) { it }
+        val legacy = PortableBackupPolicy.merge(localLegacy, backup.legacyRead, Int.MAX_VALUE) { it }
+        val recent = PortableBackupPolicy.merge(localRecent, backup.recentRead, ReadHistoryPolicy.MAX_RECENT_ENTRIES) { it }
+        val articles = PortableBackupPolicy.merge(records(ARTICLE_CACHE), backup.savedArticles, Int.MAX_VALUE) { it.getString("url") }
+        fun id(record: JSONObject): String = record.optString("id").ifBlank {
+            listOf(record.optString("articleUrl"), record.optLong("startedAtMillis"),
+                record.optLong("durationMillis"), record.optLong("submittedAtMillis"),
+                record.optInt("totalQuestions"), record.optInt("answeredCount"),
+                record.optInt("correctCount")).joinToString("|", prefix = "legacy|")
+        }
+        val sessions = PortableBackupPolicy.merge(records(READING_SESSIONS),
+            backup.sessions.sortedByDescending { it.optLong("startedAtMillis") }, MAX_READING_SESSIONS, ::id)
+        val localAttempts = records(QUIZ_ATTEMPTS)
+        val attempts = PortableBackupPolicy.merge(localAttempts,
+            backup.attempts.sortedByDescending { it.optLong("submittedAtMillis") }, MAX_QUIZ_ATTEMPTS, ::id)
+        var remainingDetails = (MAX_DETAILED_QUIZ_ATTEMPTS - localAttempts.count {
+            (it.optJSONArray("answers")?.length() ?: 0) > 0
+        }).coerceAtLeast(0)
+        val storedAttempts = attempts.values.mapIndexed { index, item ->
+            if (index < localAttempts.size || (item.optJSONArray("answers")?.length() ?: 0) == 0) item
+            else if (remainingDetails > 0) { remainingDetails--; item }
+            else JSONObject(item.toString()).put("answers", JSONArray())
+        }.sortedByDescending { it.optLong("submittedAtMillis") }
+        val now = System.currentTimeMillis()
+        val validPositions = backup.positions.filter {
+            it.optLong("updatedAtMillis") in (now - ReaderPositionPolicy.MAX_AGE_MILLIS).coerceAtLeast(0L)..now
+        }.sortedByDescending { it.optLong("updatedAtMillis") }
+        val positions = PortableBackupPolicy.merge(records(READER_POSITIONS), validPositions, MAX_READER_POSITIONS) {
+            it.getString("articleUrl")
+        }
+        // Existing data wins; even at retention limits import never evicts local records.
+        val recentOrder = recent.values.drop(localRecent.size) + localRecent
+        val committed = prefs.edit()
+            .putStringSet(BOOKMARKS, saved.values.toSet())
+            .putStringSet(READ, legacy.values.toSet())
+            .putString(RECENT_READ, JSONArray(recentOrder).toString())
+            .putString(ARTICLE_CACHE, JSONArray(articles.values).toString())
+            .putString(READING_SESSIONS, JSONArray(sessions.values).toString())
+            .putString(QUIZ_ATTEMPTS, JSONArray(storedAttempts).toString())
+            .putString(READER_POSITIONS, JSONArray(positions.values).toString())
+            .commit()
+        val totals = listOf(saved, legacy, recent, articles, sessions, attempts, positions)
+        return BackupImportResult(committed, false, totals.sumOf { it.added },
+            totals.sumOf { it.skipped } + backup.positions.size - validPositions.size)
     }
 
     fun glassAlpha(context: Context): Float = appearancePreferences(context).glassAlpha

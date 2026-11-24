@@ -465,7 +465,7 @@ private fun MainActivity.showCrashRecoveryScreen(report: String) {
     setContentView(root)
 }
 
-private enum class YouPage { DASHBOARD, SAVED, REVIEW, READING_STATS, QUIZ_STATS }
+private enum class YouPage { DASHBOARD, SAVED, REVIEW, BACKUP, READING_STATS, QUIZ_STATS }
 
 private data class LocalAppSnapshot(
     val appearance: LocalAppearancePreferences,
@@ -499,6 +499,7 @@ private fun BrrrNewsApp() {
     var readingSessions by remember { mutableStateOf(emptyList<ReadingSession>()) }
     var quizAttempts by remember { mutableStateOf(emptyList<QuizAttempt>()) }
     var localStateLoaded by remember { mutableStateOf(false) }
+    var restoreKey by remember { mutableIntStateOf(0) }
     var loading by remember { mutableStateOf(true) }
     var refreshing by remember { mutableStateOf(false) }
     var refreshResult by remember { mutableStateOf<NewsRepository.RefreshResult?>(null) }
@@ -674,7 +675,7 @@ private fun BrrrNewsApp() {
         }
     }
 
-    LaunchedEffect(context) {
+    LaunchedEffect(context, restoreKey) {
         val restored = withContext(Dispatchers.IO) {
             LocalAppSnapshot(
                 appearance = LocalStore.appearancePreferences(context),
@@ -903,6 +904,7 @@ private fun BrrrNewsApp() {
                     selectedTab = selectedTab,
                     youPage = youPage,
                     onYouPageChange = { youPage = it },
+                    onLocalDataChanged = { restoreKey++ },
                     onRefresh = { if (!loading && !refreshing) refreshKey++ },
                     refreshing = refreshing,
                     loading = loading || !feedIndexReady,
@@ -1052,6 +1054,7 @@ private fun HomeScreen(
     selectedTab: Int,
     youPage: YouPage,
     onYouPageChange: (YouPage) -> Unit,
+    onLocalDataChanged: () -> Unit,
     onRefresh: () -> Unit,
     refreshing: Boolean,
     loading: Boolean,
@@ -1100,6 +1103,7 @@ private fun HomeScreen(
             YouPage.DASHBOARD -> "You"
             YouPage.SAVED -> "Saved"
             YouPage.REVIEW -> "Review"
+            YouPage.BACKUP -> "Data Backup"
             YouPage.READING_STATS -> "Reading Stats"
             YouPage.QUIZ_STATS -> "Quiz & Practice Stats"
         }
@@ -1112,6 +1116,7 @@ private fun HomeScreen(
             YouPage.DASHBOARD -> "Your reading and practice at a glance"
             YouPage.SAVED -> "Your saved articles and previously opened stories"
             YouPage.REVIEW -> "Recall a saved topic and write a private study note"
+            YouPage.BACKUP -> "Export or merge your private study data"
             YouPage.READING_STATS -> "Time and reading activity recorded on this device"
             YouPage.QUIZ_STATS -> "Submitted practice results and answer accuracy"
         }
@@ -1180,6 +1185,7 @@ private fun HomeScreen(
                         attempts = quizAttempts,
                         onSaved = { onYouPageChange(YouPage.SAVED) },
                         onReview = { onYouPageChange(YouPage.REVIEW) },
+                        onBackup = { onYouPageChange(YouPage.BACKUP) },
                         onReadingStats = { onYouPageChange(YouPage.READING_STATS) },
                         onQuizStats = { onYouPageChange(YouPage.QUIZ_STATS) },
                         onSettings = onSettings
@@ -1194,6 +1200,7 @@ private fun HomeScreen(
                         glassAlpha = glassAlpha
                     )
                     YouPage.REVIEW -> ReviewScreen(allCachedArticles, bookmarks, quizAttempts, onOpenArticle)
+                    YouPage.BACKUP -> PortableBackupScreen(!loading && !refreshing, onLocalDataChanged)
                     YouPage.READING_STATS -> ReadingStatsScreen(
                         sessions = readingSessions,
                         backdrop = backdrop,
@@ -1930,6 +1937,7 @@ private fun YouDashboard(
     attempts: List<QuizAttempt>,
     onSaved: () -> Unit,
     onReview: () -> Unit,
+    onBackup: () -> Unit,
     onReadingStats: () -> Unit,
     onQuizStats: () -> Unit,
     onSettings: () -> Unit
@@ -1989,6 +1997,7 @@ private fun YouDashboard(
         }
         item { DestinationRow("Saved", "Your bookmarked articles", savedCount.toString(), onSaved) }
         item { DestinationRow("Review", "Recall saved topics and write local notes", "›", onReview) }
+        item { DestinationRow("Data Backup", "Export or merge local study data", "›", onBackup) }
         item { DestinationRow("Reading Stats", "Daily reading time and article activity", "›", onReadingStats) }
         item {
             DestinationRow(

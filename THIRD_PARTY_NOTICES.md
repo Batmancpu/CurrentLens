@@ -32,3 +32,7 @@ No database library was added for the dictionary; the Android platform SQLite en
 ## Publisher feeds
 
 Headlines, excerpts and article URLs are supplied by publisher RSS feeds. CurrentLens attributes the source and links to the original article. Publisher terms apply; the Indian Express states that its RSS feeds are for personal, non-commercial use.
+
+## JVM backup codec tests only
+
+`org.json:json:20240303` (JSON-java; Maven Central declares Public Domain, https://central.sonatype.com/artifact/org.json/json/20240303). Test classpath only; the installed app uses Android's platform `org.json` and does not bundle this library.

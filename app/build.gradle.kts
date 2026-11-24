@@ -13,8 +13,8 @@ android {
         applicationId = "com.mangoloads.currentlens"
         minSdk = 26
         targetSdk = 35
-        versionCode = 20
-        versionName = "0.3.9"
+        versionCode = 21
+        versionName = "0.4.0"
         manifestPlaceholders["appLabel"] = if (stabilityTestBuild) "brrrNews Stability" else "brrrNews"
         buildConfigField("boolean", "STABILITY_TEST_BUILD", stabilityTestBuild.toString())
     }
@@ -67,6 +67,7 @@ dependencies {
     implementation("com.github.styropyr0:PrismalAGSL:v1.0.6")
 
     testImplementation("junit:junit:4.13.2")
+    testImplementation("org.json:json:20240303")
     testImplementation("net.sf.kxml:kxml2:2.3.0")
 
     debugImplementation("androidx.compose.ui:ui-tooling")

@@ -1,6 +1,19 @@
 # CurrentLens — live context
 
+## 24 November 2026 — verified release 0.3.9 and backup candidate 0.4.0
+
+- [Run #431](https://github.com/Batmancpu/CurrentLens/actions/runs/45375211884) completed successfully, both build and publish jobs; source `9cc987b6122dc909dea5ff724fdb7d6a330b83ea`. [android-20](https://github.com/Batmancpu/CurrentLens/releases/tag/android-20) points to that commit. One APK, 30,863,710 bytes, SHA-256 `a7df332cc7ab9a51eafe398c3618dcd9074b8f483502646f16a9a890567886cd`; same pinned signing certificate. JVM and WordNet tests passed.
+- Actual live runner RSS evidence: 10 of 14 configured endpoints parsed; all seven The Hindu sections (60 entries each), BBC World (24), Al Jazeera World (25), plus one other configured international source. All four Indian Express endpoints returned HTTP 403. This is CI-network availability, not handset proof, and no circumvention was added.
+- 0.4.0 adds portable local data backup/merge, legacy summary-only quiz handling and stable legacy record identity, explicit malformed-local-data rejection and JVM JSON codec round-trip/validation tests. JSON-java test-only dependency; no new app runtime dependency. Publish after #431 terminal. Device acceptance and representative editorial corpus remain outstanding.
+
 Updated 24 November 2026 (IST). Full history: `docs/SESSION_LEDGER.md`.
+
+## 24 November 2026 — local data portability candidate 0.4.0
+
+- User requested the entire roadmap; prepared against `9cc987b6122dc909dea5ff724fdb7d6a330b83ea` while #431 was active. Do not advance before #431 is terminal. Main only, fixed signer, versionCode 21.
+- Add `PortableBackupPolicy.kt`, `PortableBackupCodec.kt`, `PortableBackupScreen.kt`; versioned JSON through Android's user-selected document picker, no storage permission, account or automatic network. Exports Saved metadata, read markers, reading sessions, submitted quiz attempts, reader positions and private review notes; excludes extracted article bodies, device identifiers and diagnostics. Warn that exported JSON is unencrypted.
+- Import pre-validates schema, bounded bytes/depth, record types, known publisher article links and data limits; shows preview before user confirms. Merge is local-first, never evicts existing local records to admit imported history; duplicates/excess skipped. Existing main preferences saved with one commit under existing history/bookmark/position locks and new cache lock; note store separately serialized and partial note failure explicitly reported. Root UI reloads restored data. `MainActivity.kt` adds Data Backup under You, no fifth destination; `ReviewScreen.kt` exposes mutex-protected note snapshot and merge.
+- Added pure JVM tests for local-first merge, bounded nesting and HTTPS URL validation. No runtime dependency changes. Android JSON codec, document picker and storage round-trip still need device acceptance. Candidate build/test not yet run.
 
 ## 24 November 2026 — verified intermediate release 0.3.8
 

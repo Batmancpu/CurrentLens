@@ -10,26 +10,54 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.security.MessageDigest
 
 /** Independent local-only note store; no change to bookmarks or quiz history schema. */
 internal object ReviewNoteStore {
+    private val noteMutex = Mutex()
     private fun key(url: String): String = MessageDigest.getInstance("SHA-256")
         .digest(url.toByteArray(Charsets.UTF_8)).joinToString("") { "%02x".format(it.toInt() and 255) }
 
     suspend fun read(context: Context, url: String): String = withContext(Dispatchers.IO) {
-        context.getSharedPreferences("currentlens_review_notes_v1", Context.MODE_PRIVATE)
-            .getString(key(url), "").orEmpty()
+        noteMutex.withLock {
+            context.getSharedPreferences("currentlens_review_notes_v1", Context.MODE_PRIVATE)
+                .getString(key(url), "").orEmpty()
+        }
     }
 
     suspend fun save(context: Context, url: String, text: String): Boolean = withContext(Dispatchers.IO) {
-        val normalized = ReviewPolicy.normalizeNote(text)
-        val edit = context.getSharedPreferences("currentlens_review_notes_v1", Context.MODE_PRIVATE).edit()
-        if (normalized.isEmpty()) edit.remove(key(url)) else edit.putString(key(url), normalized)
-        edit.commit()
+        noteMutex.withLock {
+            val normalized = ReviewPolicy.normalizeNote(text)
+            val edit = context.getSharedPreferences("currentlens_review_notes_v1", Context.MODE_PRIVATE).edit()
+            if (normalized.isEmpty()) edit.remove(key(url)) else edit.putString(key(url), normalized)
+            edit.commit()
+        }
     }
+
+    suspend fun exportNotes(context: Context): Map<String, String> = withContext(Dispatchers.IO) {
+        noteMutex.withLock {
+            context.getSharedPreferences("currentlens_review_notes_v1", Context.MODE_PRIVATE).all.mapValues {
+                it.value as? String ?: error("Invalid local note")
+            }
+        }
+    }
+
+    suspend fun importMissingNotes(context: Context, incoming: Map<String, String>): Triple<Boolean, Int, Int> =
+        withContext(Dispatchers.IO) {
+            noteMutex.withLock {
+                val prefs = context.getSharedPreferences("currentlens_review_notes_v1", Context.MODE_PRIVATE)
+                val missing = incoming.filterKeys { !prefs.contains(it) }
+                val editor = prefs.edit()
+                missing.forEach { (key, text) -> editor.putString(key, text) }
+                val committed = missing.isEmpty() || editor.commit()
+                Triple(committed, if (committed) missing.size else 0,
+                    incoming.size - if (committed) missing.size else 0)
+            }
+        }
 }
 
 @Composable
