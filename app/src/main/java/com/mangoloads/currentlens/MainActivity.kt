@@ -465,7 +465,7 @@ private fun MainActivity.showCrashRecoveryScreen(report: String) {
     setContentView(root)
 }
 
-private enum class YouPage { DASHBOARD, SAVED, READING_STATS, QUIZ_STATS }
+private enum class YouPage { DASHBOARD, SAVED, REVIEW, READING_STATS, QUIZ_STATS }
 
 private data class LocalAppSnapshot(
     val appearance: LocalAppearancePreferences,
@@ -1097,6 +1097,7 @@ private fun HomeScreen(
         else -> when (youPage) {
             YouPage.DASHBOARD -> "You"
             YouPage.SAVED -> "Saved"
+            YouPage.REVIEW -> "Review"
             YouPage.READING_STATS -> "Reading Stats"
             YouPage.QUIZ_STATS -> "Quiz & Practice Stats"
         }
@@ -1108,6 +1109,7 @@ private fun HomeScreen(
         else -> when (youPage) {
             YouPage.DASHBOARD -> "Your reading and practice at a glance"
             YouPage.SAVED -> "Your saved articles and previously opened stories"
+            YouPage.REVIEW -> "Recall a saved topic and write a private study note"
             YouPage.READING_STATS -> "Time and reading activity recorded on this device"
             YouPage.QUIZ_STATS -> "Submitted practice results and answer accuracy"
         }
@@ -1171,6 +1173,7 @@ private fun HomeScreen(
                         savedCount = bookmarks.size,
                         attempts = quizAttempts,
                         onSaved = { onYouPageChange(YouPage.SAVED) },
+                        onReview = { onYouPageChange(YouPage.REVIEW) },
                         onReadingStats = { onYouPageChange(YouPage.READING_STATS) },
                         onQuizStats = { onYouPageChange(YouPage.QUIZ_STATS) },
                         onSettings = onSettings
@@ -1184,6 +1187,7 @@ private fun HomeScreen(
                         backdrop = backdrop,
                         glassAlpha = glassAlpha
                     )
+                    YouPage.REVIEW -> ReviewScreen(allCachedArticles, bookmarks, quizAttempts, onOpenArticle)
                     YouPage.READING_STATS -> ReadingStatsScreen(
                         sessions = readingSessions,
                         backdrop = backdrop,
@@ -1347,6 +1351,8 @@ private fun TodayFeed(
     onToggleBookmark: (Article) -> Unit
 ) {
     val today = LocalDate.now(ZoneId.of(INDIA_ZONE))
+    var showAllToday by remember(today) { mutableStateOf(false) }
+    val visibleLimit = if (showAllToday) 45 else 12
     val weekend = today.dayOfWeek == DayOfWeek.SATURDAY || today.dayOfWeek == DayOfWeek.SUNDAY
     val weekendStart = today.minusDays(if (today.dayOfWeek == DayOfWeek.SATURDAY) 1 else 2)
     val weekendStories = remember(weekend, weekendArticles, today) {
@@ -1385,14 +1391,23 @@ private fun TodayFeed(
             articles.isEmpty() && loading -> Unit
             loadError && articles.isEmpty() -> item { EmptyPanel("News is temporarily unavailable", "Check your connection and refresh.") }
             articles.isEmpty() -> item { EmptyPanel("No UPSC-relevant stories today", "Broad entertainment and general-interest updates are filtered out. Refresh later for syllabus-linked developments.") }
-            else -> items(articles.take(45), key = { it.id }, contentType = { "article" }) { article ->
+            else -> items(articles.take(visibleLimit), key = { it.id }, contentType = { "article" }) { article ->
                 NewsCard(article, bookmarks.contains(article.url), onOpenArticle, onToggleBookmark)
             }
         }
-        if (articles.size > 45) item {
-            Text("Showing today's 45 most recent stories. Explore has the wider recent feed.",
-                style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.secondary,
-                modifier = Modifier.fillMaxWidth().padding(8.dp), textAlign = TextAlign.Center)
+        if (articles.size > 12) item {
+            Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
+                Text(
+                    if (showAllToday) "Showing up to 45 recent stories. Explore has the wider feed."
+                    else "Your first 12 recent stories. The rest remain available.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.secondary,
+                    textAlign = TextAlign.Center
+                )
+                TextButton(onClick = { showAllToday = !showAllToday }, modifier = Modifier.heightIn(min = 48.dp)) {
+                    Text(if (showAllToday) "Show fewer" else "Show more stories")
+                }
+            }
         }
     }
 }
@@ -1912,6 +1927,7 @@ private fun YouDashboard(
     savedCount: Int,
     attempts: List<QuizAttempt>,
     onSaved: () -> Unit,
+    onReview: () -> Unit,
     onReadingStats: () -> Unit,
     onQuizStats: () -> Unit,
     onSettings: () -> Unit
@@ -1970,6 +1986,7 @@ private fun YouDashboard(
                 modifier = Modifier.padding(top = 4.dp))
         }
         item { DestinationRow("Saved", "Your bookmarked articles", savedCount.toString(), onSaved) }
+        item { DestinationRow("Review", "Recall saved topics and write local notes", "›", onReview) }
         item { DestinationRow("Reading Stats", "Daily reading time and article activity", "›", onReadingStats) }
         item {
             DestinationRow(

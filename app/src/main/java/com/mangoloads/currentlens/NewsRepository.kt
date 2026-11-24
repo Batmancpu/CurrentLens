@@ -75,10 +75,13 @@ object NewsRepository {
 
     /** Filter invalid feed dates before the 250-story limit; saved cache entries are merged later. */
     internal fun selectFreshArticles(articles: List<Article>, nowMillis: Long): List<Article> =
-        ArticleUrlIdentityPolicy.deduplicate(
-            articles.filter { ArticleCachePolicy.hasPlausibleFeedDate(it.publishedAtMillis, nowMillis) },
-            bookmarkedUrls = emptySet()
-        ).take(250)
+        EditorialBudgetPolicy.prioritize(
+            ArticleUrlIdentityPolicy.deduplicate(
+                articles.filter { ArticleCachePolicy.hasPlausibleFeedDate(it.publishedAtMillis, nowMillis) },
+                bookmarkedUrls = emptySet()
+            ),
+            250
+        )
 
     private fun fetchOne(source: FeedSource): List<Article>? {
         return try {

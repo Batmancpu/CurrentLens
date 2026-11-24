@@ -38,7 +38,7 @@ internal object ArticleCachePolicy {
         val unpinned = eligible.filterNot { it.url in bookmarkedUrls }
         val remainingSlots = (maxArticles - pinned.size).coerceAtLeast(0)
 
-        return (pinned + unpinned.take(remainingSlots))
+        return (pinned + EditorialBudgetPolicy.prioritize(unpinned, remainingSlots))
             .sortedByDescending { it.publishedAtMillis ?: Long.MIN_VALUE }
     }
 }

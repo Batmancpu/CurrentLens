@@ -2,6 +2,13 @@
 
 Updated 24 November 2026 (IST). Full history: `docs/SESSION_LEDGER.md`.
 
+## 24 November 2026 — roadmap continuation, 0.3.8 candidate
+
+- Owner request: “What are you waiting for? Complete the whole roadmap, everything.” This explicitly supersedes the prior stop-after-one-release instruction for this continuation. Starting main: `8c3346ad71f703c7b4b698e6c72de0ae1f2373b9`, published 0.3.7/android-18 passed #429. Retain main-only, serial CI and fixed signer.
+- Scope implemented in this candidate: `EditorialBudgetPolicy.kt` prioritizes existing UPSC-eligible entries before the incoming 250-item and retained 500-item caps under budget pressure; keep chronological order within groups, fill spare slots with other stories, preserve explicit saved pins. `NewsRepository.kt` and `ArticleCachePolicy.kt` use this policy. `MainActivity.kt` gives Today a 12-story recent-reading stopping point with explicit expansion to 45, and adds a Review subpage to You (no fifth tab). `ReviewPolicy.kt` queues bookmarked articles by never practised then oldest submitted quiz, with syllabus topic filters; `ReviewScreen.kt` supplies an original recall prompt, explicit local note save, and article navigation. Note persistence is isolated, no account or network, bounded at 2,000 characters per note. Existing Saved/quiz data unchanged. New JVM tests for editorial budget and review ordering/length; tests not yet run. Version 0.3.8/code 19.
+- Verification: code inspected with connected GitHub file reads; no local Android build or device tests. Exact-head Actions must pass before declaring the new release complete. No claims of corpus precision/recall or Apple visual parity.
+- Pending after this batch: representative live RSS checks, editorial corpus including false negatives and primary-source corroboration, note storage round-trip/device test, portable export/import, Reader/IME/accessibility/launch/performance physical checks, larger maintenance refactor. Continue after CI; fix any build failures before subsequent batches. User has authorized broader roadmap work, but do not claim unsupported device or editorial results.
+
 ## Verified release checkpoint — 24 November 2026 (IST)
 
 - Owner request (verbatim): “Finish whtas  left”. Scope: close the interrupted 0.3.7 release-verification and documentation checkpoint. The bounded-release rule remains in force; no new APK is needed just to correct documentation.
